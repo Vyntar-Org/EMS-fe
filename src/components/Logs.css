@@ -1,0 +1,151 @@
+.logs-container {
+  padding: 1px;
+}
+
+.logs-title {
+  margin-bottom: 20px;
+  color: #50342c;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.logs-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logs-header {
+  margin-bottom: 20px;
+}
+
+.logs-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.logs-table-container {
+  margin-top: 20px;
+  max-height: 600px;
+  overflow: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.logs-table-container .MuiTable-root {
+  min-width: 100%;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed; /* This helps with column width control */
+}
+
+.logs-table-container .MuiTableCell-root {
+  padding: 5px 8px;
+  font-size: 12px;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  font-family: sans-serif;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logs-table-container .MuiTableCell-root:last-child {
+  border-right: none;
+}
+
+/* DARK BLUE TABLE HEADER */
+.logs-table-container .MuiTableHead .MuiTableCell-root,
+.log-table-header .MuiTableCell-root,
+.log-header-cell {
+  background-color: #0c68b9 !important; /* dark blue */
+  color: #ffffff !important;            /* white text */
+  font-weight: bold;
+  text-align: center;
+  border-bottom: 2px solid #092035;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logs-table-container .MuiTableHead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.log-table-header {
+  height: 20px;
+}
+
+.log-header-cell {
+  font-size: 0.75rem;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.log-table-row:hover {
+  background-color: #f9f9f9;
+}
+
+.log-table-row:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.log-table-row:nth-child(even):hover {
+  background-color: #f0f0f0;
+}
+
+.log-table-cell {
+  font-family: 'sans-serif';
+  color: #333;
+}
+
+.log-header-cell {
+  font-family: sans-serif;
+  text-align: center;
+}
+
+/* Column width adjustments */
+.logs-table-container .MuiTableCell-root:nth-child(1) { /* ENTRYDATE */
+  width: 150px;
+}
+
+.logs-table-container .MuiTableCell-root:nth-child(2), /* R_Phase_VoY */
+.logs-table-container .MuiTableCell-root:nth-child(3), /* Phase_B */
+.logs-table-container .MuiTableCell-root:nth-child(4), /* Phase_R */
+.logs-table-container .MuiTableCell-root:nth-child(5), /* Phase_Y */
+.logs-table-container .MuiTableCell-root:nth-child(6) { /* Phase_B */
+  width: 80px;
+}
+
+.logs-table-container .MuiTableCell-root:nth-child(7), /* RY_Volta */
+.logs-table-container .MuiTableCell-root:nth-child(8), /* YB_Volta */
+.logs-table-container .MuiTableCell-root:nth-child(9) { /* BR_Volta */
+  width: 80px;
+}
+
+.logs-table-container .MuiTableCell-root:nth-child(10) { /* Frequenc */
+  width: 80px;
+}
+
+.logs-table-container .MuiTableCell-root:nth-child(11) { /* Total_Act */
+  width: 80px;
+}
+
+.logs-table-container .MuiTableCell-root:nth-child(12) { /* Average_kWH */
+  width: 90px;
+}
+
+.logs-table-container .MuiTableCell-root:nth-child(13) { /* Consump */
+  width: 120px;
+}
+
+.logs-table-container .MuiTableCell-root:nth-child(14) { /* Machines */
+  width: 80px;
+}
