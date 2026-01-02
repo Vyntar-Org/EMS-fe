@@ -36,7 +36,7 @@
 
 .navbar-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 1.75rem;
   font-weight: 600;
   font-family: sans-serif;
   white-space: nowrap;
@@ -68,7 +68,7 @@
   }
 
   .navbar-title {
-    font-size: 16px;
+    font-size: 1.75rem;
     font-weight: 600;
   }
 
@@ -83,7 +83,8 @@
 
 @media (max-width: 600px) {
   .navbar-title {
-    font-size: 14px;
+    font-size: 1.75rem;
+    display: block;
   }
 
   .navbar-container {
