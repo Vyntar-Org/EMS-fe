@@ -26,8 +26,16 @@ function Navbar({ onMenuClick }) {
             </IconButton>
           )}
           <div className="navbar-brand">
-            <h2 className="navbar-title">Energy Monitoring Dashboard</h2>
+            <img
+              src="/vyntar_new.png"
+              alt="Vyntar Logo"
+              className="navbar-logo"
+              style={{ width: '115px', verticalAlign: 'top', marginRight: '20px' }}
+            />
+
+            <span className="navbar-title">Energy Monitoring Dashboard</span>
           </div>
+
         </div>
         {/* <div className="navbar-menu">
           <span className="navbar-user">User</span>
