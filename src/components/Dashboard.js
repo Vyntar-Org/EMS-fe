@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Button,
   Badge,
   TextField,
   List,
@@ -14,590 +13,681 @@ import {
   ListItemText,
   InputAdornment
 } from '@mui/material';
-import { Search, Power, FlashOn, Dns  as DnsIcon } from '@mui/icons-material';
+import {
+  Search,
+  Power,
+  FlashOn as FlashOnIcon,
+  Dns as DnsIcon,
+  Balance as BalanceIcon,
+  Speed as SpeedIcon,
+  Co2 as Co2Icon,
+  BatteryFull as BatteryIcon,
+  Power as PowerIcon,
+  PaddingOutlined
+} from '@mui/icons-material';
 import Chart from 'react-apexcharts';
+import SearchIcon from '@mui/icons-material/Search';
+import './Dashboard.css';
 
 const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
-  // Chart data based on image
-  const energyConsumption48Hrs = {
-    series: [{
-      name: 'Energy Consumption',
-      data: [120, 130, 150, 180, 200, 170, 140, 160, 190, 175, 155, 135, 145, 165, 185, 195, 175, 150, 125, 140]
-    }],
-    options: {
-      chart: {
-        type: 'line',
-        height: 300,
-        toolbar: { show: false },
-        zoom: { enabled: false }
+  // Chart configurations remain the same
+  const energyConsumptionOptions = {
+    chart: {
+      type: 'line',
+      height: 140,
+      toolbar: { show: false },
+      zoom: { enabled: false },
+      background: 'transparent'
+    },
+    stroke: {
+      curve: 'smooth',
+      width: 2
+    },
+    markers: { size: 0 },
+    grid: {
+      strokeDashArray: 4,
+      borderColor: 'transparent',
+      position: 'back',
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true, color: '#E5E7EB' } }
+    },
+    xaxis: {
+      categories: ['11:00', '16:45', '22:30', '04:15'],
+      labels: {
+        style: { colors: '#6B7280', fontSize: '12px' }
       },
-      colors: ['#9c27b0'],
-      stroke: {
-        curve: 'smooth',
-        width: 2
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+    },
+    yaxis: {
+      min: 0,
+      max: 2,
+      tickAmount: 2,
+      labels: {
+        style: { colors: '#6B7280', fontSize: '12px' }
       },
-      xaxis: {
-        categories: ['02:00', '07:00', '12:00', '17:00', '22:00', '03:00', '08:00', '13:00', '18:00', '23:00', '04:00', '09:00', '14:00', '19:00', '00:00', '05:00', '10:00', '15:00', '20:00', '01:00'],
-        labels: {
-          style: {
-            fontSize: '11px',
-            colors: '#666'
-          }
-        }
-      },
-      yaxis: {
-        min: 100,
-        max: 200,
-        labels: {
-          style: {
-            fontSize: '11px',
-            colors: '#666'
-          }
-        }
-      },
-      grid: {
-        borderColor: '#e0e0e0',
-        strokeDashArray: 3
-      },
-      tooltip: {
-        theme: 'light'
-      }
-    }
+      axisBorder: { show: false }
+    },
+    dataLabels: { enabled: false },
+    tooltip: {
+      enabled: true,
+      theme: 'light',
+      style: { fontSize: '12px' }
+    },
+    legend: { show: false },
+    colors: ['#9B8AE6']
   };
 
-  const machinePowerConsumption = {
-    series: [{
-      name: 'Power Consumption',
-      data: [200, 100, 400, 0, 100, 250, 150]
-    }],
-    options: {
-      chart: {
-        type: 'bar',
-        height: 300,
-        toolbar: { show: false }
+  const energyConsumptionSeries = [{
+    name: 'Energy',
+    data: [0.5, 0.7, 0.3, 0.6]
+  }];
+
+  // Chart 2: Peak Demand Indicator
+  const peakDemandOptions = {
+    chart: {
+      type: 'line',
+      height: 150,
+      toolbar: { show: false },
+      background: 'transparent'
+    },
+    stroke: {
+      curve: 'smooth',
+      width: 3
+    },
+    markers: {
+      size: 6,
+      colors: ['#2F855A'],
+      strokeColors: '#fff',
+      strokeWidth: 2,
+      strokeOpacity: 0.9,
+      fillOpacity: 1
+    },
+    grid: {
+      strokeDashArray: 4,
+      borderColor: 'transparent',
+      position: 'back',
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true, color: '#E5E7EB' } }
+    },
+    xaxis: {
+      categories: ['Day1', 'Day2', 'Day3', 'Day4', 'Day5', 'Day6', 'Day7'],
+      labels: {
+        style: { colors: '#6B7280', fontSize: '12px' }
       },
-      colors: ['#9c27b0'],
-      plotOptions: {
-        bar: {
-          borderRadius: 4,
-          columnWidth: '60%'
-        }
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+    },
+    yaxis: {
+      min: 100,
+      max: 150,
+      tickAmount: 5,
+      labels: {
+        style: { colors: '#6B7280', fontSize: '12px' }
       },
-      xaxis: {
-        categories: ['Day1', 'Day2', 'Day3', 'Day4', 'Day5', 'Day6', 'Day7'],
-        labels: {
-          style: {
-            fontSize: '11px',
-            colors: '#666'
-          }
-        }
-      },
-      yaxis: {
-        min: 0,
-        max: 500,
-        labels: {
-          style: {
-            fontSize: '11px',
-            colors: '#666'
-          }
-        }
-      },
-      grid: {
-        borderColor: '#e0e0e0',
-        strokeDashArray: 3
-      },
-      tooltip: {
-        theme: 'light'
-      }
-    }
+      axisBorder: { show: false }
+    },
+    dataLabels: { enabled: false },
+    tooltip: {
+      enabled: true,
+      theme: 'light',
+      style: { fontSize: '12px' }
+    },
+    legend: { show: false },
+    colors: ['#4C8C6B']
   };
 
-  const peakDemandIndicator = {
-    series: [{
-      name: 'Peak Demand',
-      data: [120, 110, 140, 130, 125, 135, 115]
-    }],
-    options: {
-      chart: {
-        type: 'line',
-        height: 300,
-        toolbar: { show: false },
-        zoom: { enabled: false }
-      },
-      colors: ['#4caf50'],
-      stroke: {
-        curve: 'smooth',
-        width: 2
-      },
-      xaxis: {
-        categories: ['Day1', 'Day2', 'Day3', 'Day4', 'Day5', 'Day6', 'Day7'],
-        labels: {
-          style: {
-            fontSize: '11px',
-            colors: '#666'
-          }
-        }
-      },
-      yaxis: {
-        min: 100,
-        max: 140,
-        labels: {
-          style: {
-            fontSize: '11px',
-            colors: '#666'
-          }
-        }
-      },
-      grid: {
-        borderColor: '#e0e0e0',
-        strokeDashArray: 3
-      },
-      tooltip: {
-        theme: 'light'
+  const peakDemandSeries = [{
+    name: 'Peak Demand',
+    data: [120, 135, 125, 140, 130, 145, 135]
+  }];
+
+  // Chart 3: Machine Power Consumption
+  const machinePowerOptions = {
+    chart: {
+      type: 'bar',
+      height: 100,
+      toolbar: { show: false },
+      background: 'transparent',
+      animations: { enabled: false }
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 8,
+        columnWidth: '45%',
+        dataLabels: { position: 'top' }
       }
-    }
+    },
+    grid: {
+      strokeDashArray: 4,
+      borderColor: 'transparent',
+      position: 'back',
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true, color: '#E5E7EB' } }
+    },
+    xaxis: {
+      categories: ['30 Dec', '31 Dec', '01 Jan', '02 Jan', '03 Jan', '04 Jan', '05 Jan'],
+      labels: {
+        style: { colors: '#6B7280', fontSize: '12px' }
+      },
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      title: {
+        text: 'Date',
+        style: { color: '#6B7280', fontSize: '12px' }
+      }
+    },
+    yaxis: {
+      min: 0,
+      max: 40,
+      tickAmount: 4,
+      labels: {
+        style: { colors: '#6B7280', fontSize: '12px' }
+      },
+      axisBorder: { show: false }
+    },
+    dataLabels: { enabled: false },
+    tooltip: {
+      enabled: true,
+      theme: 'light',
+      style: { fontSize: '12px' }
+    },
+    legend: { show: false },
+    colors: ['#6F4A74']
   };
 
-  const todayVsYesterday = {
-    series: [{
-      name: 'Today',
-      data: [1.2, 1.4, 1.5, 1.6, 1.61, 1.58, 1.55]
-    }, {
-      name: 'Yesterday',
-      data: [4.8, 4.9, 5.0, 5.02, 5.05, 5.03, 5.01]
-    }],
-    options: {
-      chart: {
-        type: 'line',
-        height: 120,
-        toolbar: { show: false },
-        sparkline: { enabled: false }
-      },
-      colors: ['#2196f3', '#ff9800'],
-      stroke: {
-        curve: 'smooth',
-        width: 2
-      },
-      xaxis: {
-        labels: { show: false }
-      },
-      yaxis: {
-        labels: { show: false }
-      },
-      grid: {
-        show: false
-      },
-      tooltip: {
-        theme: 'light'
-      }
-    }
+  const machinePowerSeries = [{
+    name: 'Power',
+    data: [30, 40, 45, 50, 35, 55, 40]
+  }];
+
+  // Card styles
+  const cardStyle1 = {
+    borderRadius: '16px',
+    boxShadow: '0px 8px 24px rgba(0,0,0,0.08)',
+    backgroundColor: '#FFFFFF'
   };
 
-  // Define styles based on the provided CSS
+  const titleStyle1 = {
+    fontSize: '16px',
+    fontWeight: 600,
+    color: '#1F2937',
+    fontFamily: 'Inter, Poppins'
+  };
+  const cardStyle = {
+    width: '200px',
+    height: '120px',
+    borderRadius: '14px',
+    padding: '16px',
+    PaddingLeft: '100px',
+    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.08)',
+    display: 'flex',
+    flexDirection: 'column'
+  };
+
+  const titleStyle = {
+    fontSize: '15px',
+    fontWeight: 600,
+    color: '#1F2937',
+    fontFamily: 'Inter, Roboto, Poppins'
+  };
+
+  const valueStyle = {
+    fontSize: '28px',
+    fontWeight: 700,
+    color: '#1F2937',
+    fontFamily: 'Inter, Roboto, Poppins'
+  };
+
+  const labelStyle = {
+    fontSize: '12px',
+    color: '#6B7280',
+    fontFamily: 'Inter, Roboto, Poppins'
+  };
+
+  const miniBoxStyle = {
+    width: '64px',
+    height: '48px',
+    borderRadius: '8px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center'
+  };
+
+  // Define styles based on the provided requirements
   const styles = {
     mainContent: {
-      width: '100%',
-      minHeight: '100vh',
-      backgroundColor: '#f4f7f6',
-      fontFamily: '"Ubuntu", sans-serif',
+      width: sidebarVisible ? 'calc(100% - 0px)' : 'calc(100% - 0px)', // Adjust width based on sidebar visibility
+      maxWidth: sidebarVisible ? '1600px' : '1800px', // Adjust max width
+      minHeight: 'auto',
+      // backgroundColor: '#F8FAFC',
+      fontFamily: 'Inter, Roboto, system-ui, sans-serif',
       fontSize: '14px',
-      color: '#5A5A5A',
-    },
-    container: {
-      padding: '0 15px',
-    },
-    blockHeader: {
-      padding: '10px 0',
-    },
-    headerTitle: {
+      // padding: '24px',
       margin: '0',
-      fontSize: '24px',
-      fontWeight: '400',
-      color: '#515151',
+      marginBottom: '20px',
+      transition: 'all 0.3s ease', // Add smooth transition
     },
-    toggleButton: {
-      padding: '5px',
-      marginRight: '10px',
-      minWidth: 'auto',
+    header: {
+      height: '64px',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 24px',
+      marginBottom: '20px'
     },
-    kpiCard: {
-      boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
-      transition: 'all 0.3s cubic-bezier(.25,.8,.25,1)',
-      height: '100%',
-      '&:hover': {
-        boxShadow: '0 7px 14px rgba(0,0,0,0.12), 0 5px 5px rgba(0,0,0,0.22)',
-      }
-    },
-    energyCard: {
-      background: 'linear-gradient(to right, #fff, #f9f9f9)',
-      height: '100%',
-    },
-    chartCard: {
-      backgroundColor: '#fff',
-      borderRadius: '4px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
-      padding: '15px',
+    titleRow: {
+      marginTop: '20px',
       marginBottom: '20px',
     },
-    deviceOnline: {
-      background: '#e8f9e6',
-      color: '#30b44a',
+    topCard: {
+      height: '120px',
+      padding: '16px',
+      borderRadius: '12px',
+      // backgroundColor: '#FFFFFF',
+      boxShadow: '0px 4px 12px rgba(0,0,0,0.05)',
     },
-    deviceOffline: {
-      background: '#fae8e8',
-      color: '#e34d4d',
+    chartCard: {
+      // backgroundColor: '#FFFFFF',
+      borderRadius: '12px',
+      boxShadow: '0px 4px 12px rgba(0,0,0,0.05)',
+      // height: '100%',
     },
-    deviceTotal: {
-      background: '#e8f1fa',
-      color: '#428bfa',
-    },
-    feedsLeft: {
-      marginRight: '10px',
-      width: '35px',
-      height: '35px',
-      lineHeight: '35px',
-      textAlign: 'center',
-      borderRadius: '50%',
-      backgroundColor: '#f2f4f8',
-    },
-    feedsWidget: {
-      padding: '10px 5px',
-      borderBottom: '1px solid #eee',
-      display: 'flex',
-    },
-    chartContainer: {
-      minHeight: '200px',
-      width: '100%',
+    alertsCard: {
+      height: '460px',
+      padding: '12px',
+      borderRadius: '12px',
+      // backgroundColor: '#FFFFFF',
+      boxShadow: '0px 4px 12px rgba(0,0,0,0.05)',
     }
+  };
+
+  // Calculate responsive card widths based on sidebar visibility
+  const getCardWidth = () => {
+    if (sidebarVisible) {
+      return '160px'; // Smaller width when sidebar is visible
+    }
+    return '201px'; // Original width when sidebar is hidden
+  };
+
+  // Calculate responsive chart card widths based on sidebar visibility
+  const getChartCardWidth = () => {
+    if (sidebarVisible) {
+      return '470px'; // Smaller width when sidebar is visible
+    }
+    return '570px'; // Original width when sidebar is hidden
+  };
+
+  // Calculate responsive alerts card width based on sidebar visibility
+  const getAlertsCardWidth = () => {
+    if (sidebarVisible) {
+      return '160px'; // Smaller width when sidebar is visible
+    }
+    return '200px'; // Original width when sidebar is hidden
+  };
+
+  // Update card styles with dynamic width
+  const responsiveCardStyle = {
+    ...cardStyle,
+    width: getCardWidth(),
+    transition: 'all 0.3s ease',
   };
 
   return (
     <Box style={styles.mainContent} id="main-content">
-      <Box style={styles.container}>
-        <Box style={styles.blockHeader} className="block-header mb-1">
-          <Grid container>
-            <Grid item lg={5} md={8} xs={12}>
-              <Typography
-                variant="h6"
-                className="logs-title"
+      {/* Header */}
+      <Box style={styles.blockHeader} className="block-header mb-1">
+        <Grid container>
+          <Grid item lg={5} md={8} xs={12}>
+            <Typography
+              variant="h6"
+              className="logs-title"
+              style={{
+                // marginBottom: '-10px',
+                color: '#0156a6',
+                fontWeight: 600,
+                fontFamily: 'inherit',
+              }}
+            >
+              <span
+                onClick={onSidebarToggle}
                 style={{
-                  marginBottom: '-10px',
-                  color: '#50342c',
-                  fontWeight: 600,
-                  fontFamily: 'inherit',
+                  fontSize: '14px',
+                  lineHeight: 1,
+                  marginLeft: '-2px',
+                  fontWeight: '400',
+                  display: 'inline-block',
+                  cursor: 'pointer',
+                  marginRight: '8px',
+                  userSelect: 'none',
+                  color: '#007bff'
                 }}
               >
-                <span 
-                  onClick={onSidebarToggle}
-                  style={{
-                    fontSize: '14px',
-                    lineHeight: 1,
-                    marginLeft: '-2px',
-                    fontWeight: '400',
-                    display: 'inline-block',
-                    cursor: 'pointer',
-                    marginRight: '8px',
-                    userSelect: 'none',
-                    color: '#007bff'
-                  }}
-                >
-                  <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
-                </span>
-                Dashboard
-              </Typography>
-            </Grid>
+                <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
+              </span>
+              Dashboard
+            </Typography>
           </Grid>
+        </Grid>
+      </Box>
+
+      {/* Top Summary Cards Row */}
+      <Box sx={{
+        // backgroundColor: '#FFFFFF', 
+        padding: '20px',
+        display: 'flex',
+        justifyContent: 'center',
+        width: '100%',
+        overflow: 'hidden'
+      }}>
+        <Box sx={{ display: 'flex', gap: '18px', marginLeft: '-40px' }}>
+          {/* Card 1: Devices */}
+          <Card sx={responsiveCardStyle}>
+            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Box display="flex" alignItems="center" mb={1}>
+                <DnsIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
+                <Typography sx={titleStyle}>Devices</Typography>
+              </Box>
+              <Box display="flex" justifyContent="space-between" mt="auto">
+                <Box sx={{ ...miniBoxStyle, backgroundColor: '#E9F7E7' }}>
+                  <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Online</Typography>
+                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#16A34A' }}>0</Typography>
+                </Box>
+                <Box sx={{ ...miniBoxStyle, backgroundColor: '#FDECEC' }}>
+                  <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Offline</Typography>
+                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#EF4444' }}>0</Typography>
+                </Box>
+                <Box sx={{ ...miniBoxStyle, backgroundColor: '#EAF3FF' }}>
+                  <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Total</Typography>
+                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#2563EB' }}>0</Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Card 2: Energy Consumption */}
+          <Card sx={responsiveCardStyle}>
+            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Box display="flex" alignItems="center" mb={1}>
+                <FlashOnIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
+                <Typography sx={titleStyle}>Energy Consumption</Typography>
+              </Box>
+              <Box display="flex" alignItems="baseline" mt="auto">
+                <Typography sx={valueStyle}>0</Typography>
+                <Typography sx={{ fontSize: '13px', color: '#6B7280', ml: 1 }}>kWh</Typography>
+              </Box>
+              <Box display="flex" justifyContent="space-between" mt={1}>
+                <Typography sx={labelStyle}>Predictive:</Typography>
+                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>0 kWh</Typography>
+              </Box>
+              <Box display="flex" justifyContent="space-between">
+                <Typography sx={labelStyle}>Cost:</Typography>
+                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>₹10</Typography>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Card 3: Power Factor */}
+          <Card sx={responsiveCardStyle}>
+            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Box display="flex" alignItems="center" mb={1}>
+                <SpeedIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
+                <Typography sx={titleStyle}>Power Factor</Typography>
+              </Box>
+              <Box display="flex" alignItems="baseline" mt="auto">
+                <Typography sx={valueStyle}>0.25</Typography>
+              </Box>
+              <Box display="flex" justifyContent="space-between" mt={1}>
+                <Typography sx={labelStyle}>Reactive Power:</Typography>
+                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>100 kVAr</Typography>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Card 4: Ener Tree */}
+          <Card sx={responsiveCardStyle}>
+            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Box display="flex" alignItems="center" mb={1}>
+                <PowerIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
+                <Typography sx={titleStyle}>Ener Tree</Typography>
+              </Box>
+              <Box display="flex" justifyContent="space-around" mt="auto">
+                <Box textAlign="center">
+                  <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>100%</Typography>
+                  <Typography sx={labelStyle}>Main</Typography>
+                </Box>
+                <Box textAlign="center">
+                  <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>0%</Typography>
+                  <Typography sx={labelStyle}>Backup</Typography>
+                </Box>
+                <Box textAlign="center">
+                  <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>0%</Typography>
+                  <Typography sx={labelStyle}>Green</Typography>
+                </Box>
+              </Box>
+              <Box display="flex" justifyContent="center" mt={1}>
+                <Typography sx={{ fontSize: '14px', color: '#1F2937' }}>–</Typography>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Card 5: Carbon Footprints */}
+          <Card sx={responsiveCardStyle}>
+            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Box display="flex" alignItems="center" mb={1}>
+                <Co2Icon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
+                <Typography sx={titleStyle}>Carbon Footprints</Typography>
+              </Box>
+              <Box display="flex" justifyContent="space-around" mt="auto">
+                <Box textAlign="center">
+                  <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>100</Typography>
+                  <Typography sx={labelStyle}>Main</Typography>
+                </Box>
+                <Box textAlign="center">
+                  <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>0</Typography>
+                  <Typography sx={labelStyle}>Backup</Typography>
+                </Box>
+                <Box textAlign="center">
+                  <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>0</Typography>
+                  <Typography sx={labelStyle}>Green</Typography>
+                </Box>
+              </Box>
+              <Box display="flex" justifyContent="center" mt={1}>
+                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>kg of CO₂</Typography>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Card 6: Load Balance */}
+          <Card sx={responsiveCardStyle}>
+            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Box display="flex" alignItems="center" mb={1}>
+                <BalanceIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
+                <Typography sx={titleStyle}>Load Balance</Typography>
+              </Box>
+              <Box mt="auto">
+                <Box display="flex" justifyContent="space-between" sx={{ lineHeight: '22px' }}>
+                  <Typography sx={labelStyle}>IR</Typography>
+                  <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>25 A</Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between" sx={{ lineHeight: '22px' }}>
+                  <Typography sx={labelStyle}>IY</Typography>
+                  <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>25 A</Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between" sx={{ lineHeight: '22px' }}>
+                  <Typography sx={labelStyle}>IB</Typography>
+                  <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>25 A</Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between" sx={{ lineHeight: '22px' }}>
+                  <Typography sx={labelStyle}>Current LBI %</Typography>
+                  <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>11%</Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
         </Box>
-        <Box style={{ padding: '-10px', paddingTop: '12px', fontFamily: "inherit" }}>
-          {/* KPI ROW */}
-          <Grid container spacing={2}>
-            <Grid item xs={2}>
-              <Card style={styles.kpiCard} className="kpi-card">
-                <CardContent style={{ padding: '12px' }}>
-                  <Box display="flex" alignItems="center" style={{ marginBottom: "28px" }}>
-                    <i className="fa fa-hdd-o mr-2"></i>
-                    <Typography variant="h5" className="card-title mb-0 fw-semibold" style={{ fontWeight: 600, fontSize: "17px", fontFamily: "inherit", lineHeight: 1.2 }}>
-                      <DnsIcon  sx={{ mr: 1, verticalAlign: 'middle', fontSize: '14px', lineHeight: 1 }} />
-                      Devices
-                    </Typography>
-                  </Box>
-                  <Box display="flex" justifyContent="space-between" textAlign="center">
-                    <Box p={1} borderRadius={4} style={{ ...styles.deviceOnline, width: "32%" }}>
-                      <Typography variant="caption" color="textSecondary">Online</Typography>
-                      <Typography variant="h5" style={{ color: "#30b44a", fontSize: "20px", fontWeight: 700 }}>
-                        3
-                      </Typography>
-                    </Box>
-                    <Box p={1} borderRadius={4} style={{ ...styles.deviceOffline, width: "32%" }}>
-                      <Typography variant="caption" color="textSecondary">Offline</Typography>
-                      <Typography variant="h5" style={{ color: "#e34d4d", fontSize: "20px", fontWeight: 700 }}>
-                        2
-                      </Typography>
-                    </Box>
-                    <Box p={1} borderRadius={4} style={{ ...styles.deviceTotal, width: "32%" }}>
-                      <Typography variant="caption" color="textSecondary">Total</Typography>
-                      <Typography variant="h5" style={{ color: "#428bfa", fontSize: "20px", fontWeight: 700 }}>
-                        5
-                      </Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+      </Box>
 
-            {/* CARD 2: Energy Consumption */}
-            <Grid item xs={2}>
-              <Card style={{ ...styles.energyCard, ...styles.kpiCard }} className="energy-card kpi-card">
-                <CardContent style={{ padding: '12px' }}>
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <span className="me-2 fs-4">🔌</span>
-                    <Typography variant="h4" style={{ fontSize: "25px", fontWeight: "500", marginRight: '8px', marginLeft: '8px' }}>
-                      755
-                    </Typography>
-                    <Typography variant="body1">kWh</Typography>
-                  </Box>
-                  <Typography variant="h6" style={{ fontWeight: 600, fontSize: "14px", fontFamily: "inherit", lineHeight: 1.2 }}>Energy Consumption</Typography>
-                  <Box mt={2}>
-                    <Box display="flex" justifyContent="space-between" mb={1}>
-                      <Typography variant="body2" color="textSecondary">Predictive:</Typography>
-                      <Typography variant="body1" style={{ fontWeight: "500" }}>10 kWh</Typography>
-                    </Box>
-                    <Box display="flex" justifyContent="space-between">
-                      <Typography variant="body2" color="textSecondary">Cost:</Typography>
-                      <Typography variant="body1" style={{ fontWeight: "500" }}>₹10</Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={2}>
-              <Card style={{ ...styles.energyCard, ...styles.kpiCard }} className="energy-card kpi-card">
-                <CardContent style={{ padding: '12px' }}>
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <span className="me-2 fs-4">🔌</span>
-                    <Typography variant="h4" style={{ fontSize: "25px", fontWeight: "500", marginRight: '8px', marginLeft: '8px' }}>
-                      0.25
-                    </Typography>
-                  </Box>
-                  <Typography variant="h6" style={{ fontWeight: 600, fontSize: "14px", fontFamily: "inherit", lineHeight: 1.2 }}>Power Factor</Typography>
-                  <Box style={{ marginTop: "29px" }}>
-                    <Box display="flex" justifyContent="space-between" mb={1}>
-                      <Typography variant="body2" color="textSecondary">Reactive<br /> Power:</Typography>
-                      <Typography variant="body1" style={{ fontWeight: "500" }}>100<br /> kVAr</Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* CARD 4: Ener Tree */}
-            <Grid item xs={2}>
-              <Card style={{ ...styles.energyCard, ...styles.kpiCard }} className="energy-card kpi-card">
-                <CardContent style={{ padding: '12px', textAlign: 'center' }}>
-                  <Box display="flex" justifyContent="space-around" style={{ marginBottom: "13px" }}>
-                    <Box textAlign="center">
-                      <Typography variant="body1">🔌 75%</Typography>
-                      <Typography variant="caption" color="textSecondary">Main</Typography>
-                    </Box>
-                    <Box textAlign="center">
-                      <Typography variant="body1">🔋 20%</Typography>
-                      <Typography variant="caption" color="textSecondary">Backup</Typography>
-                    </Box>
-                    <Box textAlign="center">
-                      <Typography variant="body1">🌿 5%</Typography>
-                      <Typography variant="caption" color="textSecondary">Green</Typography>
-                    </Box>
-                  </Box>
-                  <Typography variant="h6" style={{ fontWeight: 600, fontSize: "14px", fontFamily: "inherit", lineHeight: 1.2 }}>Ener Tree</Typography>
-                  <Box mt={3}>
-                    <Box display="flex" justifyContent="flex-end" mb={1}>
-                      <Typography variant="body1" style={{ fontWeight: "500" }}>-</Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={2}>
-              <Card style={{ ...styles.energyCard, ...styles.kpiCard }} className="energy-card kpi-card">
-                <CardContent style={{ padding: '12px', textAlign: 'center' }}>
-                  <Box display="flex" justifyContent="space-around" style={{ marginBottom: "13px" }}>
-                    <Box textAlign="center">
-                      <Typography variant="body1">🔌 75%</Typography>
-                      <Typography variant="caption" color="textSecondary">Main</Typography>
-                    </Box>
-                    <Box textAlign="center">
-                      <Typography variant="body1">🔋 20%</Typography>
-                      <Typography variant="caption" color="textSecondary">Backup</Typography>
-                    </Box>
-                    <Box textAlign="center">
-                      <Typography variant="body1">🌿 5%</Typography>
-                      <Typography variant="caption" color="textSecondary">Green</Typography>
-                    </Box>
-                  </Box>
-                  <Typography variant="h6" style={{ fontWeight: 600, fontSize: "14px", fontFamily: "inherit", lineHeight: 1.2 }}>Carbon Footprints</Typography>
-                  <Box mt={3}>
-                    <Box display="flex" justifyContent="flex-end" mb={1}>
-                      <Typography variant="body1" style={{ fontWeight: "500" }}>kg of CO2</Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={2}>
-              <Card style={{ ...styles.energyCard, ...styles.kpiCard }} className="energy-card kpi-card">
-                <CardContent style={{ padding: '12px' }}>
-                  <Typography variant="h6" style={{ fontSize: "18px", fontWeight: "500" }}>Load Balance</Typography>
-                  <Box>
-                    <Box display="flex" justifyContent="space-between">
-                      <Typography variant="body2" color="textSecondary">IR</Typography>
-                      <Typography variant="body1" style={{ fontWeight: "500" }}>25 A</Typography>
-                    </Box>
-                    <Box display="flex" justifyContent="space-between">
-                      <Typography variant="body2" color="textSecondary">IY</Typography>
-                      <Typography variant="body1" style={{ fontWeight: "500" }}>25 A</Typography>
-                    </Box>
-                    <Box display="flex" justifyContent="space-between">
-                      <Typography variant="body2" color="textSecondary">IB</Typography>
-                      <Typography variant="body1" style={{ fontWeight: "500" }}>25 A</Typography>
-                    </Box>
-                    <Box display="flex" justifyContent="space-between">
-                      <Typography variant="body2" color="textSecondary">Current LBI %</Typography>
-                      <Typography variant="body1" style={{ fontWeight: "500" }}>11 %</Typography>
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </Box>
-        {/* END KPI ROW */}
-
-        {/* MAIN CONTENT 3-COLUMN LAYOUT */}
-        <Grid container spacing={3} style={{ padding: '0 15px', marginTop: '24px' }}>
-          {/* COLUMN 1 (col-5) */}
-          <Grid item xs={12} md={5}>
-            {/* Energy Consumption 48 hrs */}
-            <Card style={styles.chartCard} className="panel chart-card mb-3">
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">Energy Consumption (Last 48 Hours)</Typography>
-                <Typography variant="caption" color="textSecondary">kWh</Typography>
+      {/* Chart Section Layout */}
+      <Box sx={{ backgroundColor: '', padding: '0px', marginLeft: '-1px' }}>
+        <Grid container spacing={3} justifyContent="center" gap={'18px'}>
+          {/* Left Column - 2 Stacked Cards */}
+          <Grid item xs={8}>
+            {/* Card 1: Energy Consumption (Last 24 Hours) */}
+            <Card sx={{
+              ...cardStyle1,
+              width: getChartCardWidth(),
+              height: '200px',
+              padding: '20px',
+              marginBottom: '20px',
+              transition: 'all 0.3s ease'
+            }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography sx={titleStyle1}>Energy Consumption (Last 24 Hours)</Typography>
+                <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>kWh</Typography>
               </Box>
               <Chart
-                options={energyConsumption48Hrs.options}
-                series={energyConsumption48Hrs.series}
+                options={energyConsumptionOptions}
+                series={energyConsumptionSeries}
                 type="line"
-                height={300}
+                height={110}  // Reduced to fit within 150px card
               />
             </Card>
 
-            {/* Peak Demand */}
-            <Card style={styles.chartCard} className="panel chart-card">
-              <Typography variant="h6" mb={2}>Peak Demand Indicator</Typography>
+            {/* Card 2: Peak Demand Indicator */}
+            <Card sx={{
+              ...cardStyle1,
+              width: getChartCardWidth(),
+              height: '200px',
+              padding: '20px',
+              marginBottom: '20px',
+              transition: 'all 0.3s ease'
+            }}>
+              <Typography sx={titleStyle1}>Peak Demand Indicator</Typography>
               <Chart
-                options={peakDemandIndicator.options}
-                series={peakDemandIndicator.series}
+                options={peakDemandOptions}
+                series={peakDemandSeries}
                 type="line"
-                height={300}
+                height={180}  // Reduced to fit within 150px card
               />
             </Card>
           </Grid>
 
-          {/* COLUMN 2 (col-5) */}
-          <Grid item xs={12} md={5}>
-            {/* Today vs Yesterday */}
-            <Card style={styles.chartCard} className="panel chart-card mb-3">
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">Today vs Yesterday</Typography>
-                <Typography variant="caption" color="textSecondary">Trend</Typography>
+          <Grid item xs={8}>
+            {/* Card 3: Energy Consumption (Empty Title) */}
+            <Card sx={{
+              ...cardStyle1,
+              width: getChartCardWidth(),
+              height: '200px',  // Changed from 100px to 150px
+              padding: '20px',
+              marginBottom: '20px',
+              transition: 'all 0.3s ease'
+            }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography sx={titleStyle1}></Typography>
+                <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>kWh</Typography>
               </Box>
               <Chart
-                options={todayVsYesterday.options}
-                series={todayVsYesterday.series}
+                options={energyConsumptionOptions}
+                series={energyConsumptionSeries}
                 type="line"
-                height={120}
+                height={110}  // Reduced to fit within 150px card
               />
-              <Typography variant="caption" color="textSecondary" mt={2}>Today: 1.61 MLD • Yesterday: 5.05 MLD</Typography>
             </Card>
 
-            {/* Machine Power Consumption */}
-            <Card style={styles.chartCard} className="panel chart-card">
-              <Typography variant="h6" mb={2}>Machine Power Consumption</Typography>
+            {/* Card 4: Machine Power Consumption */}
+            <Card sx={{
+              ...cardStyle1,
+              width: getChartCardWidth(),
+              height: '200px',  // Changed from 400px to 150px
+              padding: '20px',
+              marginBottom: '20px',
+              transition: 'all 0.3s ease'
+            }}>
+              <Typography sx={titleStyle1}>Machine Power Consumption</Typography>
               <Chart
-                options={machinePowerConsumption.options}
-                series={machinePowerConsumption.series}
+                options={machinePowerOptions}
+                series={machinePowerSeries}
                 type="bar"
-                height={300}
+                height={180}  // Reduced to fit within 150px card
               />
             </Card>
           </Grid>
 
-          {/* COLUMN 3 (col-2) Sidebar */}
-          <Grid item xs={12} md={2}>
-            <Card style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'row', padding: '15px', marginBottom: '16px' }}>
-              <Typography variant="h6">Alerts</Typography>
-              <Badge badgeContent={3} color="error" style={{ color: "#fff" }}></Badge>
+          {/* Right Side - Alerts Panel */}
+          <Grid item xs={4}>
+            <Card sx={{
+              ...cardStyle1,
+              width: getAlertsCardWidth(),
+              height: '30px',  // Changed from 400px to 150px
+              padding: '16px',
+              transition: 'all 0.3s ease',
+              marginBottom: '5px'
+            }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography sx={titleStyle1}>Alerts</Typography>
+                <Badge badgeContent={3} color="error"></Badge>
+              </Box>
             </Card>
-            <Card style={{ marginBottom: '16px' }}>
+            <Card sx={{
+              ...cardStyle1,
+              width: getAlertsCardWidth(),
+              height: '400px',  // Changed from 400px to 150px
+              padding: '16px',
+              transition: 'all 0.3s ease',
+            }}>
+
               <TextField
                 fullWidth
                 size="small"
                 placeholder="Search machines..."
-                style={{ marginBottom: '8px', padding: '0 15px', paddingTop: '15px' }}
+                sx={{
+                  marginBottom: '8px',  // Reduced margin
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '8px',
+                    height: '30px'  // Reduced height
+                  }
+                }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Search />
+                      <SearchIcon />
                     </InputAdornment>
                   ),
                 }}
               />
 
-              {/* Machine list */}
-              <Box style={{ maxHeight: "420px", overflowY: "auto", padding: '0 15px', paddingBottom: '15px' }}>
-                <Card>
-                  <CardContent>
-                    {/* Search Bar */}
-                    <Box mb={1}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        placeholder="Search..."
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Search />
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
+              {/* Alert Items - Limited to fit in 150px height */}
+              <Box sx={{ maxHeight: "300px", overflowY: "auto" }}>
+                {[
+                  { icon: <FlashOnIcon />, text: "Machine 1" },
+                  { icon: <FlashOnIcon />, text: "Machine 2" },
+                  { icon: <FlashOnIcon />, text: "Machine 3" },
+                  { icon: <FlashOnIcon />, text: "Machine 4" },
+                ].map((item, index) => (  // Reduced number of items shown
+                  <Box
+                    key={index}
+                    sx={{
+                      height: '30px',  // Reduced height
+                      padding: '6px 8px',  // Reduced padding
+                      borderRadius: '8px',
+                      marginBottom: '4px',  // Reduced margin
+                      display: 'flex',
+                      alignItems: 'center',
+                      backgroundColor: index % 2 === 0 ? '#F9FAFB' : 'transparent',
+                      '&:hover': {
+                        backgroundColor: '#F3F4F6'
+                      }
+                    }}
+                  >
+                    <Box sx={{ marginRight: '8px', color: '#6B7280' }}>
+                      {item.icon}
                     </Box>
-
-                    {/* List of Items */}
-                    <List style={{ padding: 0 }}>
-                      <ListItem style={styles.feedsWidget} data-key="energy">
-                        <Box style={styles.feedsLeft}>
-                          <FlashOn />
-                        </Box>
-                        <ListItemText primary="Machine 1" />
-                      </ListItem>
-                      <ListItem style={styles.feedsWidget} data-key="genset_diesel_con">
-                        <Box style={styles.feedsLeft}>
-                          <FlashOn />
-                        </Box>
-                        <ListItemText primary="Machine 2" />
-                      </ListItem>
-                      <ListItem style={styles.feedsWidget} data-key="power_cut">
-                        <Box style={styles.feedsLeft}>
-                          <FlashOn />
-                        </Box>
-                        <ListItemText primary="Machine 3" />
-                      </ListItem>
-                    </List>
-                  </CardContent>
-                </Card>
+                    <Typography sx={{ fontSize: '12px', color: '#374151' }}>
+                      {item.text}
+                    </Typography>
+                  </Box>
+                ))}
               </Box>
             </Card>
           </Grid>
