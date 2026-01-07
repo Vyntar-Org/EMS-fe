@@ -427,6 +427,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
               />
             </Box>
           )}
+          
         </CardContent>
       </Card>
     </Box>
