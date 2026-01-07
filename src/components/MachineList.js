@@ -47,14 +47,15 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const styles = {
         mainContent: {
             width: '100%',
-            minHeight: '100vh',
-            backgroundColor: '#f4f7f6',
+            minHeight: 'auto',
+            // backgroundColor: '#f4f7f6',
             fontFamily: '"Ubuntu", sans-serif',
             fontSize: '14px',
             color: '#5A5A5A',
+            marginBottom: '20px',
         },
         container: {
-            padding: '0 15px',
+            // padding: '0 15px',
         },
         blockHeader: {
             padding: '10px 0',
@@ -100,41 +101,42 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent} id="main-content">
-            <Box style={styles.container}>
-                <Box style={styles.blockHeader} className="block-header mb-1">
+            <Box style={styles.blockHeader} className="block-header mb-1">
                     <Grid container>
-                        <Grid item lg={5} md={8} xs={12}>
-                            <Typography
-                                variant="h6"
-                                className="logs-title"
-                                style={{
-                                    marginBottom: '-10px',
-                                    color: '#50342c',
-                                    fontWeight: 600,
-                                    fontFamily: 'inherit',
-                                }}
-                            >
-                                <span
-                                    onClick={onSidebarToggle}
-                                    style={{
-                                        fontSize: '14px',
-                                        lineHeight: 1,
-                                        marginLeft: '-2px',
-                                        fontWeight: '400',
-                                        display: 'inline-block',
-                                        cursor: 'pointer',
-                                        marginRight: '8px',
-                                        userSelect: 'none',
-                                        color: '#007bff'
-                                    }}
-                                >
-                                    <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
-                                </span>
-                                Machine List
-                            </Typography>
-                        </Grid>
+                      <Grid item lg={5} md={8} xs={12}>
+                        <Typography
+                          variant="h6"
+                          className="logs-title"
+                          style={{
+                            // marginBottom: '-10px',
+                            color: '#0156a6',
+                            fontWeight: 600,
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          <span
+                            onClick={onSidebarToggle}
+                            style={{
+                              fontSize: '14px',
+                              lineHeight: 1,
+                              marginLeft: '-2px',
+                              fontWeight: '400',
+                              display: 'inline-block',
+                              cursor: 'pointer',
+                              marginRight: '8px',
+                              userSelect: 'none',
+                              color: '#007bff'
+                            }}
+                          >
+                            <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
+                          </span>
+                          Machine List
+                        </Typography>
+                      </Grid>
                     </Grid>
-                </Box>
+                  </Box>
+            <Box style={styles.container}>
+                
 
                 {/* Machine List Table */}
                 <Card style={styles.tableCard}>

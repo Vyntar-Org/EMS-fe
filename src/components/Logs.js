@@ -20,6 +20,7 @@ import {
   InputLabel,
   Chip,
   Button,
+  Grid,
   Pagination,
 } from '@mui/material';
 import {
@@ -27,6 +28,10 @@ import {
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import './Logs.css';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 
 function Logs({ onSidebarToggle, sidebarVisible }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +39,9 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   const [filterDate, setFilterDate] = useState('');
   const [page, setPage] = useState(1);
   const rowsPerPage = 20; // Show 20 rows per page
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+  const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
 
   // Generate 25 rows of sample log data matching the image structure
   const generateLogData = () => {
@@ -60,6 +68,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
       logs.push({
         id: i + 1,
         entryDate,
+        timestamp: date, // Store as Date object for easier comparison
         rPhaseVoY: (254 + Math.random() * 2 - 1).toFixed(2),
         phaseB1: (253 + Math.random() * 2 - 1).toFixed(2),
         phaseR: (252 + Math.random() * 2 - 1).toFixed(2),
@@ -69,6 +78,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
         ybVolta: (439 + Math.random() * 3 - 1.5).toFixed(2),
         brVolta: (439 + Math.random() * 3 - 1.5).toFixed(2),
         frequenc: (50.2 + Math.random() * 0.2 - 0.1).toFixed(2),
+        totalAct: (22 + Math.random() * 3 - 1.5).toFixed(2),
         totalAct: (22 + Math.random() * 3 - 1.5).toFixed(2),
         averageKWH: (0.65 + Math.random() * 0.1).toFixed(2),
         consumpMachines: `${baseConsump.toFixed(1)} ${baseConsump.toFixed(1)} ${status}`,
@@ -80,42 +90,56 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   };
 
   const logs = generateLogData();
-
   const devices = ['all', 'Machine 1', 'Machine 2', 'Machine 3'];
 
-  const formatDateForFilter = (dateString) => {
-    if (!dateString) return '';
-    // Convert DD-MM-YYYY HH:MM:SS to YYYY-MM-DD for date input
-    const parts = dateString.split(' ');
-    if (parts.length > 0) {
-      const dateParts = parts[0].split('-');
-      if (dateParts.length === 3) {
-        return `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-      }
-    }
-    return '';
+  // Convert date string to Date object for comparison
+  const parseDateTimeLocal = (dateTimeString) => {
+    if (!dateTimeString) return null;
+    return new Date(dateTimeString);
   };
 
-  const matchesDate = (logDate, filterDate) => {
-    if (!filterDate) return true;
-    const logDateOnly = logDate.split(' ')[0]; // Get DD-MM-YYYY part
-    // Convert YYYY-MM-DD to DD-MM-YYYY
-    const filterParts = filterDate.split('-');
-    if (filterParts.length === 3) {
-      const filterDateFormatted = `${filterParts[2]}-${filterParts[1]}-${filterParts[0]}`;
-      return logDateOnly === filterDateFormatted;
+  // Check if log date is within the selected date range
+  const isDateInRange = (logTimestamp, startDate, endDate) => {
+    if (!startDate && !endDate) return true;
+
+    const logDate = new Date(logTimestamp);
+
+    if (startDate && endDate) {
+      return logDate >= startDate && logDate <= endDate;
+    } else if (startDate) {
+      return logDate >= startDate;
+    } else if (endDate) {
+      return logDate <= endDate;
     }
+
     return true;
   };
 
+  // Handle search button click
+  const handleSearch = () => {
+    setSearchClicked(true);
+    setPage(1); // Reset to first page when searching
+  };
+
+  // Filter logs based on all criteria
   const filteredLogs = logs.filter((log) => {
-    const matchesSearch =
+    const matchesSearch = !searchTerm ||
       log.entryDate.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.machine.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.consumpMachines.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesDevice = filterDevice === 'all' || log.machine === filterDevice;
-    const matchesDateFilter = matchesDate(log.entryDate, filterDate);
-    return matchesSearch && matchesDevice && matchesDateFilter;
+
+    const startDate = parseDateTimeLocal(filterStartDate);
+    const endDate = parseDateTimeLocal(filterEndDate);
+    const matchesDateRange = isDateInRange(log.timestamp, startDate, endDate);
+
+    // If search hasn't been clicked, show all logs
+    if (!searchClicked) {
+      return true;
+    }
+
+    return matchesSearch && matchesDevice && matchesDateRange;
   });
 
   // Calculate pagination
@@ -133,7 +157,10 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
     setSearchTerm('');
     setFilterDevice('all');
     setFilterDate('');
-    setPage(1); // Reset to first page when filters are reset
+    setFilterStartDate('');
+    setFilterEndDate('');
+    setPage(1);
+    setSearchClicked(false); // Reset search state
   };
 
   // Handle page change
@@ -143,92 +170,156 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
 
   // Reset page when filters change
   React.useEffect(() => {
-    setPage(1);
-  }, [searchTerm, filterDevice, filterDate]);
+    if (searchClicked) {
+      setPage(1);
+    }
+  }, [searchTerm, filterDevice, filterDate, filterStartDate, filterEndDate, searchClicked]);
 
+  const styles = {
+    mainContent: {
+      width: sidebarVisible ? 'calc(100% - 0px)' : 'calc(100% - 0px)', // Adjust width based on sidebar visibility
+      maxWidth: sidebarVisible ? '1600px' : '1800px', // Adjust max width
+      minHeight: 'auto',
+      // backgroundColor: '#F8FAFC',
+      fontFamily: 'Inter, Roboto, system-ui, sans-serif',
+      fontSize: '14px',
+      // padding: '24px',
+      margin: '0',
+      transition: 'all 0.3s ease', // Add smooth transition
+    },
+  }
   return (
-    <Box className="logs-container">
-      <Typography
-        variant="h6"
-        className="logs-title"
-        style={{
-          marginBottom: '20px',
-          color: '#50342c',
-          fontWeight: 600,
-          fontFamily: 'inherit',
-        }}
-      >
-        <span
-          onClick={onSidebarToggle}
-          style={{
-            fontSize: '14px',
-            lineHeight: 1,
-            marginLeft: '-2px',
-            fontWeight: '400',
-            display: 'inline-block',
-            cursor: 'pointer',
-            marginRight: '8px',
-            userSelect: 'none',
-            color: '#007bff'
-          }}
-        >
-          <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
-        </span>
-        Logs
-      </Typography>
+    <Box style={styles.mainContent} id="main-content">
+      <Box  className="block-header mb-1">
+        <Grid container>
+          <Grid item lg={5} md={8} xs={12}>
+            <Typography
+              variant="h6"
+              className="logs-title"
+              style={{
+                // marginBottom: '-10px',
+                color: '#0156a6',
+                fontWeight: 600,
+                fontFamily: 'inherit',
+              }}
+            >
+              <span
+                onClick={onSidebarToggle}
+                style={{
+                  fontSize: '14px',
+                  lineHeight: 1,
+                  marginLeft: '-2px',
+                  fontWeight: '400',
+                  display: 'inline-block',
+                  cursor: 'pointer',
+                  marginRight: '8px',
+                  userSelect: 'none',
+                  color: '#007bff'
+                }}
+              >
+                <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
+              </span>
+              Logs
+            </Typography>
+          </Grid>
+        </Grid>
+      </Box>
 
-      <Card className="logs-card">
+      <Card className="logs-card" sx={{marginTop: '20px'}}>
         <CardContent>
           <Box className="logs-header">
             <Box className="logs-filters">
-              <TextField
-                placeholder="Search logs..."
-                variant="outlined"
-                size="small"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{ width: 300, mr: 2 }}
-              />
-              <FormControl size="small" sx={{ minWidth: 180, mr: 2 }}>
-                <InputLabel>Filter by Device</InputLabel>
+              <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
+                <InputLabel>Select Device</InputLabel>
                 <Select
                   value={filterDevice}
-                  label="Filter by Device"
+                  label="Select Device"
                   onChange={(e) => setFilterDevice(e.target.value)}
                 >
                   {devices.map((device) => (
                     <MenuItem key={device} value={device}>
-                      {device === 'all' ? 'All Devices' : device}
+                      {device === 'all' ? 'Select Device' : device}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
-              <TextField
-                type="date"
-                label="Filter by Date"
-                variant="outlined"
-                size="small"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                InputLabelProps={{
-                  shrink: true,
+
+              <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
+                <InputLabel>Select Device</InputLabel>
+                <Select
+                  value={filterDevice}
+                  label="Select Device"
+                  onChange={(e) => setFilterDevice(e.target.value)}
+                >
+                  {devices.map((device) => (
+                    <MenuItem key={device} value={device}>
+                      {device === 'all' ? 'Select Device' : device}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+               <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DateTimePicker
+                  value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
+                  onChange={(newValue) => setFilterStartDate(newValue)}
+                  slotProps={{
+                    textField: {
+                      size: 'small',
+                      sx: {
+                        minWidth: 220,
+                        mr: 2,
+                        borderRadius: 2,
+                      },
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DateTimePicker
+                  value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
+                  onChange={(newValue) => setFilterStartDate(newValue)}
+                  slotProps={{
+                    textField: {
+                      size: 'small',
+                      sx: {
+                        minWidth: 220,
+                        mr: 2,
+                        borderRadius: 2,
+                      },
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+
+              <Button
+                variant="contained"
+                startIcon={<SearchIcon />}
+                onClick={handleSearch}
+                sx={{
+                  backgroundColor: '#0156a6', // Blue color to match the image
+                  '&:hover': {
+                    backgroundColor: '#166aa0', // Darker blue on hover
+                  },
+                  mr: 1
                 }}
-                sx={{ minWidth: 180, mr: 2 }}
-              />
+              >
+              </Button>
+
               <Button
                 variant="outlined"
                 startIcon={<RefreshIcon />}
                 onClick={handleResetFilters}
-                title="Reset Filters"
+                sx={{
+                  borderColor: '#6c757d',
+                  color: '#6c757d',
+                  '&:hover': {
+                    borderColor: '#5a6268',
+                    color: '#5a6268',
+                  }
+                }}
               >
-                Reset
               </Button>
             </Box>
           </Box>
@@ -241,20 +332,21 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
             <Table stickyHeader style={{ tableLayout: 'fixed', width: '100%' }}>
               <TableHead>
                 <TableRow className="log-table-header">
-                  <TableCell className="log-header-cell">ENTRYDATE</TableCell>
-                  <TableCell className="log-header-cell">R_Phase_VoY</TableCell>
-                  <TableCell className="log-header-cell">Phase_B</TableCell>
-                  <TableCell className="log-header-cell">Phase_R</TableCell>
-                  <TableCell className="log-header-cell">Phase_Y</TableCell>
-                  <TableCell className="log-header-cell">Phase_B</TableCell>
-                  <TableCell className="log-header-cell">RY_Volta</TableCell>
-                  <TableCell className="log-header-cell">YB_Volta</TableCell>
-                  <TableCell className="log-header-cell">BR_Volta</TableCell>
-                  <TableCell className="log-header-cell">Frequenc</TableCell>
-                  <TableCell className="log-header-cell">Total_Act</TableCell>
-                  <TableCell className="log-header-cell">Average_kWH</TableCell>
-                  <TableCell className="log-header-cell">Consump</TableCell>
-                  <TableCell className="log-header-cell">Machines</TableCell>
+                  <TableCell className="log-header-cell">timestamp</TableCell>
+                  <TableCell className="log-header-cell">Active Energy Import (kWh)</TableCell>
+                  <TableCell className="log-header-cell">Total Active Power (kW)</TableCell>
+                  <TableCell className="log-header-cell">Total Apparent Power (kVA)</TableCell>
+                  <TableCell className="log-header-cell">Average Current (A)</TableCell>
+                  <TableCell className="log-header-cell">Average Line-to-Line Voltage (V)</TableCell>
+                  <TableCell className="log-header-cell">C–A Phase Voltage RMS (V)</TableCell>
+                  <TableCell className="log-header-cell">System Frequency (Hz)</TableCell>
+                  <TableCell className="log-header-cell">RMS Current – Phase C (A)</TableCell>
+                  <TableCell className="log-header-cell">RMS Current – Phase A (A)</TableCell>
+                  <TableCell className="log-header-cell">RMS Current – Phase B (A)</TableCell>
+                  <TableCell className="log-header-cell">Total Power Factor</TableCell>
+                  <TableCell className="log-header-cell">Reactive Energy Import (kVArh)</TableCell>
+                  <TableCell className="log-header-cell">A–B Phase Voltage RMS (V)</TableCell>
+                  <TableCell className="log-header-cell">B–C Phase Voltage RMS (V)</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -275,6 +367,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                         <TableCell className="log-table-cell">{log.ybVolta}</TableCell>
                         <TableCell className="log-table-cell">{log.brVolta}</TableCell>
                         <TableCell className="log-table-cell">{log.frequenc}</TableCell>
+                        <TableCell className="log-table-cell">{log.totalAct}</TableCell>
                         <TableCell className="log-table-cell">{log.totalAct}</TableCell>
                         <TableCell className="log-table-cell">{log.averageKWH}</TableCell>
                         <TableCell className="log-table-cell">
@@ -312,7 +405,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={14} align="center">
-                      No logs found
+                      {searchClicked ? 'No logs found matching your filters' : 'Select filters and click Search to view logs'}
                     </TableCell>
                   </TableRow>
                 )}
@@ -334,6 +427,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
               />
             </Box>
           )}
+          
         </CardContent>
       </Card>
     </Box>

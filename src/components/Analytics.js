@@ -35,9 +35,10 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             fontFamily: '"Ubuntu", sans-serif',
             fontSize: '14px',
             color: '#5A5A5A',
+            marginBottom: '20px',
         },
         container: {
-            padding: '0 15px',
+            // padding: '0 15px',
         },
         blockHeader: {
             padding: '10px 0',
@@ -221,41 +222,41 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent} id="main-content">
-            <Box style={styles.container}>
-                <Box style={styles.blockHeader} className="block-header mb-1">
+            <Box style={styles.blockHeader} className="block-header mb-1">
                     <Grid container>
-                        <Grid item lg={5} md={8} xs={12}>
-                            <Typography
-                                variant="h6"
-                                className="logs-title"
-                                style={{
-                                    marginBottom: '20px',
-                                    color: '#50342c',
-                                    fontWeight: 600,
-                                    fontFamily: 'inherit',
-                                }}
-                            >
-                                <span
-                                    onClick={onSidebarToggle}
-                                    style={{
-                                        fontSize: '14px',
-                                        lineHeight: 1,
-                                        marginLeft: '-2px',
-                                        fontWeight: '400',
-                                        display: 'inline-block',
-                                        cursor: 'pointer',
-                                        marginRight: '8px',
-                                        userSelect: 'none',
-                                        color: '#007bff'
-                                    }}
-                                >
-                                    <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
-                                </span>
-                                Analytics
-                            </Typography>
-                        </Grid>
+                      <Grid item lg={5} md={8} xs={12}>
+                        <Typography
+                          variant="h6"
+                          className="logs-title"
+                          style={{
+                            // marginBottom: '-10px',
+                            color: '#0156a6',
+                            fontWeight: 600,
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          <span
+                            onClick={onSidebarToggle}
+                            style={{
+                              fontSize: '14px',
+                              lineHeight: 1,
+                              marginLeft: '-2px',
+                              fontWeight: '400',
+                              display: 'inline-block',
+                              cursor: 'pointer',
+                              marginRight: '8px',
+                              userSelect: 'none',
+                              color: '#007bff'
+                            }}
+                          >
+                            <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
+                          </span>
+                          Analytics
+                        </Typography>
+                      </Grid>
                     </Grid>
-                </Box>
+                  </Box>
+            <Box style={styles.container}>
                 <Card style={styles.tableCard}>
                     <CardContent sx={{ p: 1 }}>
                         <Typography
@@ -315,6 +316,29 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 Generate Chart 1
                             </Button>
                         </Box>
+                        <Chart
+                            options={chartOptions}
+                            series={chartSeries}
+                            type="line"
+                            height={420}
+                        />
+                    </CardContent>
+                </Card>
+            </Box>
+                        <Box style={styles.container}>
+                <Card style={styles.tableCard}>
+                    <CardContent sx={{ p: 1 }}>
+                        <Typography
+                            gutterBottom
+                            sx={{
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                color: '#50342c',
+                                mb: 1
+                            }}
+                        >
+                            Consumption (Last 7 Days)
+                        </Typography>
                         <Chart
                             options={chartOptions}
                             series={chartSeries}

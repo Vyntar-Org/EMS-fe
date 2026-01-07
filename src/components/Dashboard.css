@@ -1,454 +1,101 @@
-/* Base Styles */
-:root {
-  --blue: #007bff;
-  --indigo: #6610f2;
-  --purple: #6f42c1;
-  --pink: #e83e8c;
-  --red: #dc3545;
-  --orange: #fd7e14;
-  --yellow: #ffc107;
-  --green: #28a745;
-  --teal: #20c997;
-  --cyan: #17a2b8;
-  --white: #fff;
-  --gray: #6c757d;
-  --gray-dark: #343a40;
-  --primary: #007bff;
-  --secondary: #6c757d;
-  --success: #28a745;
-  --info: #17a2b8;
-  --warning: #ffc107;
-  --danger: #dc3545;
-  --light: #f8f9fa;
-  --dark: #343a40;
+/* Mobile Responsive Styles for Dashboard */
+
+/* Base mobile styles (320px and up) */
+@media (max-width: 767px) {
+  #main-content {
+    padding: 12px !important;
+    width: 100% !important;
+  }
   
-  /* Custom colors for the dashboard */
-  --online-color: #30b44a;
-  --offline-color: #e34d4d;
-  --total-color: #428bfa;
-  --online-bg: #e8f9e6;
-  --offline-bg: #fae8e8;
-  --total-bg: #e8f1fa;
-}
-
-/* Global Styles */
-body {
-  background-color: #f4f7f6;
-  font-family: "Ubuntu", sans-serif;
-  font-size: 14px;
-  color: #5A5A5A;
-  overflow-y: scroll;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  margin: 0;
-  line-height: 1.5;
-}
-
-html {
-  font-family: sans-serif;
-  line-height: 1.15;
-  -webkit-text-size-adjust: 100%;
-  -ms-text-size-adjust: 100%;
-  -ms-overflow-style: scrollbar;
-  -webkit-tap-highlight-color: transparent;
-}
-
-*, ::after, ::before {
-  box-sizing: border-box;
-}
-
-/* Theme-specific styles */
-.theme-blue ::selection {
-  color: #fff;
-  background: #0156a6;
-}
-
-/* Layout Components */
-#main-content {
-  width: 100%;
-  min-height: 100vh;
-}
-
-.container-fluid {
-  width: 100%;
-  padding-right: 15px;
-  padding-left: 15px;
-  margin-right: auto;
-  margin-left: auto;
-}
-
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-right: -15px;
-  margin-left: -15px;
-}
-
-.g-2 > * {
-  padding: 0.5rem;
-}
-
-.g-3 > * {
-  padding: 1rem;
-}
-
-.col-1, .col-2, .col-3, .col-4, .col-5, .col-6, .col-7, .col-8, .col-9, .col-10, .col-11, .col-12, .col,
-.col-auto, .col-sm-1, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-sm-10, .col-sm-11, .col-sm-12, .col-sm,
-.col-sm-auto, .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12, .col-md,
-.col-md-auto, .col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-lg-10, .col-lg-11, .col-lg-12, .col-lg,
-.col-lg-auto, .col-xl-1, .col-xl-2, .col-xl-3, .col-xl-4, .col-xl-5, .col-xl-6, .col-xl-7, .col-xl-8, .col-xl-9, .col-xl-10, .col-xl-11, .col-xl-12, .col-xl,
-.col-xl-auto {
-  position: relative;
-  width: 100%;
-  padding-right: 15px;
-  padding-left: 15px;
-}
-
-/* Responsive columns */
-.col-6 { flex: 0 0 50%; max-width: 50%; }
-.col-12 { flex: 0 0 100%; max-width: 100%; }
-.col-md-2 { flex: 0 0 16.666667%; max-width: 16.666667%; }
-.col-md-5 { flex: 0 0 41.666667%; max-width: 41.666667%; }
-
-@media (min-width: 768px) {
-  .col-md-2 { flex: 0 0 16.666667%; max-width: 16.666667%; }
-  .col-md-5 { flex: 0 0 41.666667%; max-width: 41.666667%; }
-}
-
-/* Header */
-.block-header {
-  padding: 10px 0;
-}
-
-.block-header h2 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 400;
-  color: #515151;
-}
-
-.btn-toggle-fullwidth {
-  padding: 5px;
-  margin-right: 10px;
-}
-
-/* Cards */
-.card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  word-wrap: break-word;
-  background-color: #fff;
-  background-clip: border-box;
-  border: 1px solid rgba(0, 0, 0, 0.125);
-  border-radius: 0.25rem;
-  margin-bottom: 1rem;
-}
-
-.card-body {
-  flex: 1 1 auto;
-  padding: 1.25rem;
-}
-
-/* KPI Cards */
-.kpi-card {
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-  transition: all 0.3s cubic-bezier(.25,.8,.25,1);
-}
-
-.kpi-card:hover {
-  box-shadow: 0 7px 14px rgba(0,0,0,0.12), 0 5px 5px rgba(0,0,0,0.22);
-}
-
-.energy-card {
-  background: linear-gradient(to right, #fff, #f9f9f9);
-}
-
-/* Chart Cards */
-.chart-card {
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-  padding: 15px;
-  margin-bottom: 20px;
-}
-
-.panel {
-  margin-bottom: 20px;
-}
-
-/* Typography */
-h2, h3, h4, h5, h6 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-}
-
-h5 {
-  font-size: 1.25rem;
-}
-
-h6 {
-  font-size: 1rem;
-}
-
-.fw-semibold {
-  font-weight: 600 !important;
-}
-
-.fw-bold {
-  font-weight: 700 !important;
-}
-
-.text-muted {
-  color: #6c757d !important;
-}
-
-/* Utility Classes */
-.d-flex {
-  display: flex !important;
-}
-
-.align-items-center {
-  align-items: center !important;
-}
-
-.justify-content-between {
-  justify-content: space-between !important;
-}
-
-.justify-content-around {
-  justify-content: space-around !important;
-}
-
-.justify-content-end {
-  justify-content: flex-end !important;
-}
-
-.text-center {
-  text-align: center !important;
-}
-
-.text-right {
-  text-align: right !important;
-}
-
-.p-2 {
-  padding: 0.5rem !important;
-}
-
-.p-3 {
-  padding: 1rem !important;
-}
-
-.mb-1 {
-  margin-bottom: 0.25rem !important;
-}
-
-.mb-2 {
-  margin-bottom: 0.5rem !important;
-}
-
-.mb-3 {
-  margin-bottom: 1rem !important;
-}
-
-.mt-2 {
-  margin-top: 0.5rem !important;
-}
-
-.mt-3 {
-  margin-top: 1rem !important;
-}
-
-.me-2 {
-  margin-right: 0.5rem !important;
-}
-
-.ms-1 {
-  margin-left: 0.25rem !important;
-}
-
-.mr-2 {
-  margin-right: 0.5rem !important;
-}
-
-.ml-2 {
-  margin-left: 0.5rem !important;
-}
-
-.rounded {
-  border-radius: 0.25rem !important;
-}
-
-/* Buttons */
-.btn {
-  display: inline-block;
-  font-weight: 400;
-  text-align: center;
-  white-space: nowrap;
-  vertical-align: middle;
-  user-select: none;
-  border: 1px solid transparent;
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  line-height: 1.5;
-  border-radius: 0.25rem;
-  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-.btn-xs {
-  padding: 1px 5px;
-  font-size: 12px;
-  line-height: 1.5;
-  border-radius: 3px;
-}
-
-.btn-link {
-  font-weight: 400;
-  color: #007bff;
-  text-decoration: none;
-}
-
-.btn-link:hover {
-  color: #0056b3;
-  text-decoration: underline;
-}
-
-/* Badges */
-.badge {
-  display: inline-block;
-  padding: 0.25em 0.4em;
-  font-size: 75%;
-  font-weight: 700;
-  line-height: 1;
-  text-align: center;
-  white-space: nowrap;
-  vertical-align: baseline;
-  border-radius: 0.25rem;
-}
-
-.bg-danger {
-  background-color: #dc3545 !important;
-}
-
-/* Form Controls */
-.form-control {
-  display: block;
-  width: 100%;
-  height: calc(1.5em + 0.75rem + 2px);
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5;
-  color: #495057;
-  background-color: #fff;
-  background-clip: padding-box;
-  border: 1px solid #ced4da;
-  border-radius: 0.25rem;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-.form-control-sm {
-  height: calc(1.5em + 0.5rem + 2px);
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  border-radius: 0.2rem;
-}
-
-.input-group {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  width: 100%;
-}
-
-.input-group-prepend {
-  margin-right: -1px;
-}
-
-.input-group-text {
-  display: flex;
-  align-items: center;
-  padding: 0.375rem 0.75rem;
-  margin-bottom: 0;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5;
-  color: #495057;
-  text-align: center;
-  white-space: nowrap;
-  background-color: #e9ecef;
-  border: 1px solid #ced4da;
-  border-radius: 0.25rem;
-}
-
-/* Lists */
-.list-unstyled {
-  padding-left: 0;
-  list-style: none;
-}
-
-.feeds_widget li {
-  padding: 10px 5px;
-  border-bottom: 1px solid #eee;
-  display: flex;
-}
-
-.feeds-left {
-  margin-right: 10px;
-  width: 35px;
-  height: 35px;
-  line-height: 35px;
-  text-align: center;
-  border-radius: 50%;
-  background-color: #f2f4f8;
-}
-
-.feeds-body {
-  flex: 1;
-}
-
-/* Font Awesome Icons */
-.fa, .fas, .far, .fal, .fad, .fab, .fa-solid, .fa-regular, .fa-light, .fa-thin, .fa-duotone, .fa-brands {
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
-  display: inline-block;
-  font-style: normal;
-  font-variant: normal;
-  line-height: 1;
-  text-rendering: auto;
-}
-
-.fa-arrow-right:before {
-  content: "\f061";
-}
-
-.fa-hdd-o:before {
-  content: "\f0a0";
-}
-
-.fa-bolt:before {
-  content: "\f0e7";
-}
-
-/* Font sizes */
-.fs-4 {
-  font-size: 1.5rem !important;
-}
-
-.fs-6 {
-  font-size: 1rem !important;
-}
-
-.fs-2 {
-  font-size: 1.5rem !important;
-}
-
-/* Chart containers */
-#chart48, #chartPeak, #chartSpark, #chartMachines {
-  min-height: 200px;
-  width: 100%;
+  .block-header {
+    padding: 0 12px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  .logs-title {
+    font-size: 18px !important;
+  }
+  
+  /* Top summary cards - make them stack vertically */
+  .MuiBox-root:has(.MuiCard-root) {
+    flex-direction: column !important;
+    align-items: center !important;
+    margin-left: 0 !important;
+  }
+  
+  .MuiCard-root {
+    width: 100% !important;
+    max-width: 340px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  /* Chart cards - adjust for mobile */
+  .MuiGrid-container {
+    width: 100% !important;
+  }
+  
+  .MuiGrid-item {
+    width: 100% !important;
+    margin-bottom: 16px !important;
+  }
+  
+  /* Charts - reduce height for mobile */
+  .apexcharts-canvas {
+    height: 120px !important;
+  }
+  
+  /* Alerts panel - full width on mobile */
+  .MuiCard-root:has(.MuiBadge-root) {
+    width: 100% !important;
+    max-width: 340px !important;
+  }
+}
+
+/* Small mobile phones (320px - 374px) */
+@media (max-width: 374px) {
+  #main-content {
+    padding: 8px !important;
+  }
+  
+  .logs-title {
+    font-size: 16px !important;
+  }
+  
+  .MuiCard-root {
+    max-width: 100% !important;
+  }
+  
+  /* Reduce font sizes for very small screens */
+  .MuiTypography-root {
+    font-size: 12px !important;
+  }
+  
+  .valueStyle {
+    font-size: 24px !important;
+  }
+}
+
+/* Medium mobile phones (375px - 424px) */
+@media (min-width: 375px) and (max-width: 424px) {
+  .MuiCard-root {
+    max-width: 100% !important;
+  }
+}
+
+/* Large mobile phones (425px - 767px) */
+@media (min-width: 425px) and (max-width: 767px) {
+  .MuiCard-root {
+    max-width: 100% !important;
+  }
+}
+
+/* Landscape orientation for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .MuiCard-root {
+    height: 100px !important;
+  }
+  
+  .apexcharts-canvas {
+    height: 80px !important;
+  }
 }
