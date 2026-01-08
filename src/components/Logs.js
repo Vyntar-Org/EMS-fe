@@ -43,13 +43,13 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   const [filterEndDate, setFilterEndDate] = useState('');
   const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
 
-  // Generate 25 rows of sample log data matching the image structure
+  // Generate 40 rows of sample log data matching the image structure
   const generateLogData = () => {
     const baseDate = new Date('2025-05-27T12:51:32');
     const machines = ['Machine 1', 'Machine 2', 'Machine 3'];
     const logs = [];
 
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 40; i++) {
       const date = new Date(baseDate);
       date.setSeconds(date.getSeconds() - (i * 45));
 
@@ -79,7 +79,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
         brVolta: (439 + Math.random() * 3 - 1.5).toFixed(2),
         frequenc: (50.2 + Math.random() * 0.2 - 0.1).toFixed(2),
         totalAct: (22 + Math.random() * 3 - 1.5).toFixed(2),
-        totalAct: (22 + Math.random() * 3 - 1.5).toFixed(2),
+        totalApp: (24 + Math.random() * 2 - 1).toFixed(2),
         averageKWH: (0.65 + Math.random() * 0.1).toFixed(2),
         consumpMachines: `${baseConsump.toFixed(1)} ${baseConsump.toFixed(1)} ${status}`,
         machine,
@@ -244,21 +244,6 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                 </Select>
               </FormControl>
 
-              <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
-                <InputLabel>Select Device</InputLabel>
-                <Select
-                  value={filterDevice}
-                  label="Select Device"
-                  onChange={(e) => setFilterDevice(e.target.value)}
-                >
-                  {devices.map((device) => (
-                    <MenuItem key={device} value={device}>
-                      {device === 'all' ? 'Select Device' : device}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
                <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateTimePicker
                   value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
@@ -278,8 +263,8 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
 
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateTimePicker
-                  value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
-                  onChange={(newValue) => setFilterStartDate(newValue)}
+                  value={dayjs.isDayjs(filterEndDate) ? filterEndDate : null}
+                  onChange={(newValue) => setFilterEndDate(newValue)}
                   slotProps={{
                     textField: {
                       size: 'small',
@@ -336,6 +321,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                   <TableCell className="log-header-cell">Active Energy Import (kWh)</TableCell>
                   <TableCell className="log-header-cell">Total Active Power (kW)</TableCell>
                   <TableCell className="log-header-cell">Total Apparent Power (kVA)</TableCell>
+                  <TableCell className="log-header-cell">Total Reactive Power (kVAr)</TableCell>
                   <TableCell className="log-header-cell">Average Current (A)</TableCell>
                   <TableCell className="log-header-cell">Average Line-to-Line Voltage (V)</TableCell>
                   <TableCell className="log-header-cell">C–A Phase Voltage RMS (V)</TableCell>
@@ -344,7 +330,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                   <TableCell className="log-header-cell">RMS Current – Phase A (A)</TableCell>
                   <TableCell className="log-header-cell">RMS Current – Phase B (A)</TableCell>
                   <TableCell className="log-header-cell">Total Power Factor</TableCell>
-                  <TableCell className="log-header-cell">Reactive Energy Import (kVArh)</TableCell>
+                  <TableCell className="log-header-cell">Reactive Power (kVAr)</TableCell>
                   <TableCell className="log-header-cell">A–B Phase Voltage RMS (V)</TableCell>
                   <TableCell className="log-header-cell">B–C Phase Voltage RMS (V)</TableCell>
                 </TableRow>
@@ -368,7 +354,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                         <TableCell className="log-table-cell">{log.brVolta}</TableCell>
                         <TableCell className="log-table-cell">{log.frequenc}</TableCell>
                         <TableCell className="log-table-cell">{log.totalAct}</TableCell>
-                        <TableCell className="log-table-cell">{log.totalAct}</TableCell>
+                        <TableCell className="log-table-cell">{log.totalApp}</TableCell>
                         <TableCell className="log-table-cell">{log.averageKWH}</TableCell>
                         <TableCell className="log-table-cell">
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap' }}>

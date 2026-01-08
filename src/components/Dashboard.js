@@ -212,7 +212,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     fontSize: '16px',
     fontWeight: 600,
     color: '#1F2937',
-    fontFamily: 'Inter, Poppins'
+    fontFamily: 'sans-serif'
   };
   const cardStyle = {
     width: '200px',
@@ -229,20 +229,20 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     fontSize: '15px',
     fontWeight: 600,
     color: '#1F2937',
-    fontFamily: 'Inter, Roboto, Poppins'
+    fontFamily: 'sans-serif'
   };
 
   const valueStyle = {
     fontSize: '28px',
     fontWeight: 700,
     color: '#1F2937',
-    fontFamily: 'Inter, Roboto, Poppins'
+    fontFamily: 'sans-serif'
   };
 
   const labelStyle = {
     fontSize: '12px',
     color: '#6B7280',
-    fontFamily: 'Inter, Roboto, Poppins'
+    fontFamily: 'sans-serif'
   };
 
   const miniBoxStyle = {
@@ -262,7 +262,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       maxWidth: sidebarVisible ? '1600px' : '1800px', // Adjust max width
       minHeight: 'auto',
       // backgroundColor: '#F8FAFC',
-      fontFamily: 'Inter, Roboto, system-ui, sans-serif',
+      fontFamily: 'sans-serif',
       fontSize: '14px',
       // padding: '24px',
       margin: '0',
@@ -346,7 +346,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 // marginBottom: '-10px',
                 color: '#0156a6',
                 fontWeight: 600,
-                fontFamily: 'inherit',
+                fontFamily: 'sans-serif',
               }}
             >
               <span

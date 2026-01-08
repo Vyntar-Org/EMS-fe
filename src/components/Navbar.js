@@ -14,6 +14,7 @@ import {
   useTheme,
   Divider,
   ListItemIcon,
+  CircularProgress,
 } from '@mui/material';
 
 import MenuIcon from '@mui/icons-material/Menu';
@@ -23,6 +24,8 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import loginApi from '../auth/LoginApi';
 import './Navbar.css';
 
 function Navbar({ onMenuClick }) {
@@ -32,6 +35,8 @@ function Navbar({ onMenuClick }) {
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const { logout } = useAuth();
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -50,14 +55,30 @@ function Navbar({ onMenuClick }) {
     setLogoutOpen(false);
   };
 
-  const handleLogoutConfirm = () => {
-    setLogoutOpen(false);
-
-    // Clear auth data if any
-    localStorage.clear();
-
-    // Redirect to login page
-    navigate('/login');
+  const handleLogoutConfirm = async () => {
+    setLoggingOut(true);
+    
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      console.log('Refresh token for logout:', refreshToken);
+      if (refreshToken) {
+        await loginApi.logout(refreshToken);
+      }
+    } catch (error) {
+      // Even if API logout fails, we should still clear local data and redirect
+      console.error('Logout error:', error);
+    } finally {
+      // Clear auth data
+      localStorage.clear();
+      
+      // Update auth context
+      logout();
+      
+      // Close dialog and redirect to login page
+      setLogoutOpen(false);
+      setLoggingOut(false);
+      navigate('/login');
+    }
   };
 
   return (
@@ -147,13 +168,15 @@ function Navbar({ onMenuClick }) {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleLogoutCancel}>Cancel</Button>
+          <Button onClick={handleLogoutCancel} disabled={loggingOut}>Cancel</Button>
           <Button
             onClick={handleLogoutConfirm}
             variant="contained"
             color="error"
+            disabled={loggingOut}
           >
-            Logout
+            {loggingOut ? <CircularProgress size={20} sx={{ color: '#fff', mr: 1 }} /> : null}
+            {loggingOut ? 'Logging out...' : 'Logout'}
           </Button>
         </DialogActions>
       </Dialog>
