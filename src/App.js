@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -11,8 +12,17 @@ import Login from './components/Login';
 import './App.css';
 
 function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+function AppContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false); // Sidebar hidden by default
+  const { isLoggedIn } = useAuth();
 
   const handleMenuToggle = useCallback(() => {
     setMobileMenuOpen(prev => !prev);
@@ -28,67 +38,95 @@ function App() {
 
   const handleSidebarHide = useCallback(() => setSidebarVisible(false), []);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'true');
-
-  // Update login status when routes change
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  // Component wrapper for protected routes
+  const ProtectedRoute = ({ children }) => {
+    if (!isLoggedIn) {
+      return <Navigate to="/login" replace />;
+    }
+    return children;
+  };
 
   return (
     <Router>
       <div className="App">
-        {!isLoggedIn && (
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/login" element={<Login />} />
-          </Routes>
-        )}
-        
-        {isLoggedIn && (
-          <>
-            <Navbar onMenuClick={handleMenuToggle} />
-            <Sidebar 
-              mobileOpen={mobileMenuOpen} 
-              onClose={handleMenuClose}
-              visible={sidebarVisible}
-              onSidebarHide={handleSidebarHide}
-            />
-            <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
-              <Routes>
-                <Route 
-                  path="/dashboard" 
-                  element={<Dashboard onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />} 
-                />
-                <Route 
-                  path="/logs" 
-                  element={<Logs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />} 
-                />
-                <Route 
-                  path="/machine-list" 
-                  element={<MachineList onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />} 
-                />
-                <Route
-                  path="/equipment-insight"
-                  element={<EquipmentInsight onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />}
-                />
-                <Route
-                  path="/analytics"
-                  element={<Analytics onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />}
-                />
-                <Route
-                  path="*"
-                  element={<Dashboard onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />}
-                />
-              </Routes>
-            </main>
-          </>
-        )}
+        <Routes>
+          <Route path="/" element={isLoggedIn ? <Navigate to="/dashboard" replace /> : <Login />} />
+          <Route path="/login" element={isLoggedIn ? <Navigate to="/dashboard" replace /> : <Login />} />
+          
+          {/* Protected routes */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <Dashboard onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          <Route path="/logs" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <Logs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          <Route path="/machine-list" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <MachineList onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          <Route path="/equipment-insight" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <EquipmentInsight onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          <Route path="/analytics" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <Analytics onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="*" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
+        </Routes>
       </div>
     </Router>
   );
