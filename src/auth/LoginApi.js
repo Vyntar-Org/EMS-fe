@@ -22,14 +22,17 @@ const loginApi = {
         withCredentials: false // Using Authorization header instead of cookies
       });
       
-      // Store tokens in localStorage if present in response
-      if (response.data.access) {
-        localStorage.setItem('accessToken', response.data.access);
-        console.log('Access token stored:', response.data.access);
+      // Store tokens in localStorage - check both direct properties and nested in data
+      let access_token = response.data.access || (response.data.data && response.data.data.access);
+      let refresh_token = response.data.refresh || (response.data.data && response.data.data.refresh);
+      
+      if (access_token) {
+        localStorage.setItem('accessToken', access_token);
+        console.log('Access token stored:', access_token);
       }
-      if (response.data.refresh) {
-        localStorage.setItem('refreshToken', response.data.refresh);
-        console.log('Refresh token stored:', response.data.refresh);
+      if (refresh_token) {
+        localStorage.setItem('refreshToken', refresh_token);
+        console.log('Refresh token stored:', refresh_token);
       }
       
       console.log('Login successful, response:', response.data);

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, Fragment } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
@@ -8,6 +8,7 @@ import Logs from './components/Logs';
 import MachineList from './components/MachineList';
 import EquipmentInsight from './components/EquipmentInsight';
 import Analytics from './components/Analytics';
+import FuelConsumptionReport from './components/FuelConsumptionReport';
 import Login from './components/Login';
 import './App.css';
 
@@ -22,7 +23,7 @@ function App() {
 function AppContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false); // Sidebar hidden by default
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, loading } = useAuth();
 
   const handleMenuToggle = useCallback(() => {
     setMobileMenuOpen(prev => !prev);
@@ -40,9 +41,21 @@ function AppContent() {
 
   // Component wrapper for protected routes
   const ProtectedRoute = ({ children }) => {
+    const { isLoggedIn, loading } = useAuth();
+    
+    // Show loading state while auth state is being initialized
+    if (loading) {
+      return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <div>Loading...</div>
+        </div>
+      );
+    }
+    
     if (!isLoggedIn) {
       return <Navigate to="/login" replace />;
     }
+    
     return children;
   };
 
@@ -50,13 +63,37 @@ function AppContent() {
     <Router>
       <div className="App">
         <Routes>
-          <Route path="/" element={isLoggedIn ? <Navigate to="/dashboard" replace /> : <Login />} />
-          <Route path="/login" element={isLoggedIn ? <Navigate to="/dashboard" replace /> : <Login />} />
+          <Route path="/" element={
+            <Fragment>
+              {loading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                  <div>Loading...</div>
+                </div>
+              ) : isLoggedIn ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Login />
+              )}
+            </Fragment>
+          } />
+          <Route path="/login" element={
+            <Fragment>
+              {loading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                  <div>Loading...</div>
+                </div>
+              ) : isLoggedIn ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Login />
+              )}
+            </Fragment>
+          } />
           
           {/* Protected routes */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <Navbar onMenuClick={handleMenuToggle} />
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
@@ -70,7 +107,7 @@ function AppContent() {
           } />
           <Route path="/logs" element={
             <ProtectedRoute>
-              <Navbar onMenuClick={handleMenuToggle} />
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
@@ -84,7 +121,7 @@ function AppContent() {
           } />
           <Route path="/machine-list" element={
             <ProtectedRoute>
-              <Navbar onMenuClick={handleMenuToggle} />
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
@@ -98,7 +135,7 @@ function AppContent() {
           } />
           <Route path="/equipment-insight" element={
             <ProtectedRoute>
-              <Navbar onMenuClick={handleMenuToggle} />
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
@@ -112,7 +149,7 @@ function AppContent() {
           } />
           <Route path="/analytics" element={
             <ProtectedRoute>
-              <Navbar onMenuClick={handleMenuToggle} />
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
@@ -121,6 +158,20 @@ function AppContent() {
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <Analytics onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <FuelConsumptionReport onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
               </main>
             </ProtectedRoute>
           } />

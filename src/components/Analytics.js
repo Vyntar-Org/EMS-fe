@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {
     Box,
     Grid,
@@ -25,6 +25,7 @@ import {
     ListItemText
 } from '@mui/material';
 import Chart from 'react-apexcharts';
+import { getTotalActiveEnergy7Days, getConsumption7Days } from '../auth/AnalyticsApi';
 
 const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const styles = {
@@ -82,7 +83,87 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
     const [parameters, setParameters] = React.useState([]);
-    
+    const [totalActiveEnergyData, setTotalActiveEnergyData] = useState([]);
+    const [consumptionData, setConsumptionData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+        
+    // Fetch analytics data on component mount
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const [energyData, consumption] = await Promise.all([
+                    getTotalActiveEnergy7Days(),
+                    getConsumption7Days()
+                ]);
+                setTotalActiveEnergyData(energyData);
+                setConsumptionData(consumption);
+                setError(null);
+            } catch (err) {
+                console.error('Error fetching analytics data:', err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+            
+        fetchData();
+    }, []);
+        
+    // Process the total active energy data to create chart series and categories
+    const processedEnergyData = React.useMemo(() => {
+        if (!totalActiveEnergyData || !Array.isArray(totalActiveEnergyData) || totalActiveEnergyData.length === 0) {
+            return { series: [], categories: [] };
+        }
+            
+        // Extract the first item's data to get the dates
+        const firstSlaveData = totalActiveEnergyData[0]?.data || [];
+        const categories = firstSlaveData.map(item => {
+            // Format date as 'DD MMM' (e.g., '01 Jan')
+            const date = new Date(item.date);
+            return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
+        });
+            
+        // Create series for each slave
+        const series = totalActiveEnergyData.map(slave => {
+            return {
+                name: slave.slave_name,
+                data: slave.data.map(item => item.value)
+            };
+        });
+            
+        return { series, categories };
+    }, [totalActiveEnergyData]);
+        
+    // Process the consumption data to create chart series and categories
+    const processedConsumptionData = React.useMemo(() => {
+        if (!consumptionData || !Array.isArray(consumptionData) || consumptionData.length === 0) {
+            return { series: [], categories: [] };
+        }
+            
+        // Extract the first item's data to get the dates
+        const firstSlaveData = consumptionData[0]?.data || [];
+        const categories = firstSlaveData.map(item => {
+            // Format date as 'DD MMM' (e.g., '01 Jan')
+            const date = new Date(item.date);
+            return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
+        });
+            
+        // Create series for each slave
+        const series = consumptionData.map(slave => {
+            return {
+                name: slave.slave_name,
+                data: slave.data.map(item => item.value)
+            };
+        });
+            
+        return { series, categories };
+    }, [consumptionData]);
+
+    // Define colors for each series to match the dots in the image
+    const seriesColors = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'];
+
     // Chart configuration based on requirements
     const chartOptions = {
         chart: {
@@ -107,7 +188,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             size: 0  // This removes the data points, showing only lines
         },
         xaxis: {
-            categories: [0, 1, 2, 3, 4, 5, 6],
+            categories: processedEnergyData.categories,
             labels: {
                 style: {
                     colors: '#6B7280',
@@ -124,7 +205,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         },
         yaxis: {
             min: 0,
-            max: 6,
             tickAmount: 6,
             labels: {
                 style: {
@@ -164,16 +244,44 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             style: {
                 fontSize: '12px',
             },
+            shared: true, // Enable shared tooltip to show all series at once
+            intersect: false, // Show tooltip when hovering anywhere on the x-axis
+            custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+                // Get the original date from the data
+                let originalDate = '';
+                if (totalActiveEnergyData && totalActiveEnergyData.length > 0) {
+                    originalDate = totalActiveEnergyData[0]?.data[dataPointIndex]?.date || '';
+                }
+                
+                // Build the tooltip content
+                let tooltipContent = `<div class="apexcharts-tooltip-custom" style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                    <div style="font-weight: bold; margin-bottom: 8px; color: lightgray; font-size: 14px; padding: 10px; background-color: #f4f7f6">${originalDate}</div>`;
+                
+                // Add each series with its color dot and value
+                w.globals.seriesNames.forEach((name, index) => {
+                    const value = series[index][dataPointIndex];
+                    const color = seriesColors[index % seriesColors.length];
+                    tooltipContent += `
+                        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${color}; margin-right: 8px;"></span>
+                            <span style="flex: 1; color: #333; font-size: 12px;">${name}:</span>
+                            <span style="font-weight: bold; color: #333; margin-left: 5px; font-size: 12px;">${value}</span>
+                        </div>`;
+                });
+                
+                tooltipContent += '</div>';
+                return tooltipContent;
+            }
         },
         legend: {
-            show: parameters.length > 1,  // Show legend only when multiple parameters selected
+            show: true,  // Show legend for multiple slaves
             position: 'top',
             fontSize: '12px',
             labels: {
                 colors: '#6B7280'
             }
         },
-        colors: ['#2563EB', '#7C5D8A'],  // Default line colors
+        colors: seriesColors,  // Use the defined colors for multiple slaves
         fill: {
             type: 'solid'
         },
@@ -181,81 +289,43 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             mode: 'light'
         }
     };
-    
-    // Generate chart series based on selected parameters
-    const generateChartSeries = () => {
-        if (parameters.length === 0) {
-            return [];  // Return empty series when no parameters selected
-        }
-        
-        return parameters.map((param, index) => {
-            // Generate different data based on parameter type
-            let data;
-            switch(param) {
-                case 'active_power':
-                    data = [0, 1, 1.5, 2.5, 3, 4.5, 6];
-                    break;
-                case 'load_demand':
-                    data = [0.5, 1.2, 2.3, 3.1, 4.2, 5.1, 5.8];
-                    break;
-                case 'power_factor':
-                    data = [0.2, 1.3, 2.1, 2.8, 3.6, 4.4, 6];
-                    break;
-                case 'max_recorded_energy':
-                    data = [0.8, 1.6, 2.4, 3.2, 4, 4.8, 5.6];
-                    break;
-                case 'max_recorded_power':
-                    data = [0.3, 1.4, 2.2, 3.7, 4.1, 5.3, 6];
-                    break;
-                default:
-                    data = [0, 1, 2, 3, 4, 5, 6];
-            }
-            
-            return {
-                name: param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), // Convert parameter name to readable format
-                data: data
-            };
-        });
-    };
-    
-    const chartSeries = generateChartSeries();
 
     return (
         <Box style={styles.mainContent} id="main-content">
             <Box style={styles.blockHeader} className="block-header mb-1">
-                    <Grid container>
-                      <Grid item lg={5} md={8} xs={12}>
+                <Grid container>
+                    <Grid item lg={5} md={8} xs={12}>
                         <Typography
-                          variant="h6"
-                          className="logs-title"
-                          style={{
-                            // marginBottom: '-10px',
-                            color: '#0156a6',
-                            fontWeight: 600,
-                            fontFamily: 'inherit',
-                          }}
-                        >
-                          <span
-                            onClick={onSidebarToggle}
+                            variant="h6"
+                            className="logs-title"
                             style={{
-                              fontSize: '14px',
-                              lineHeight: 1,
-                              marginLeft: '-2px',
-                              fontWeight: '400',
-                              display: 'inline-block',
-                              cursor: 'pointer',
-                              marginRight: '8px',
-                              userSelect: 'none',
-                              color: '#007bff'
+                                // marginBottom: '-10px',
+                                color: '#0156a6',
+                                fontWeight: 600,
+                                fontFamily: 'inherit',
                             }}
-                          >
-                            <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
-                          </span>
-                          Analytics
+                        >
+                            <span
+                                onClick={onSidebarToggle}
+                                style={{
+                                    fontSize: '14px',
+                                    lineHeight: 1,
+                                    marginLeft: '-2px',
+                                    fontWeight: '400',
+                                    display: 'inline-block',
+                                    cursor: 'pointer',
+                                    marginRight: '8px',
+                                    userSelect: 'none',
+                                    color: '#007bff'
+                                }}
+                            >
+                                <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
+                            </span>
+                            Analytics
                         </Typography>
-                      </Grid>
                     </Grid>
-                  </Box>
+                </Grid>
+            </Box>
             <Box style={styles.container}>
                 <Card style={styles.tableCard}>
                     <CardContent sx={{ p: 1 }}>
@@ -268,64 +338,24 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 mb: 1
                             }}
                         >
-                            Select Parameters
+                            Total Active Energy (Last 7 Days)
                         </Typography>
-
-                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                            <FormControl  size="small" sx={{ flex: 1, width: '300px', mr: 2 }}>
-                                <Select
-                                    multiple
-                                    displayEmpty
-                                    value={parameters}
-                                    onChange={(e) => setParameters(e.target.value)}
-                                    renderValue={(selected) => {
-                                        if (selected.length === 0) {
-                                            return <span style={{ color: '#999' }}>Select up to 3 parameters</span>;
-                                        }
-                                        return selected.join(', ');
-                                    }}
-                                >
-
-                                    <MenuItem value="active_power">
-                                        <ListItemText primary="Power" />
-                                    </MenuItem>
-
-                                    <MenuItem value="load_demand">
-                                        <ListItemText primary="Load" />
-                                    </MenuItem>
-
-                                    <MenuItem value="power_factor">
-                                        <ListItemText primary="Power Factor" />
-                                    </MenuItem>
-
-                                    <MenuItem value="max_recorded_energy">
-                                        <ListItemText primary="Max Recorded Energy" />
-                                    </MenuItem>
-
-                                    <MenuItem value="max_recorded_power">
-                                        <ListItemText primary="Max Recorded Power" />
-                                    </MenuItem>
-                                </Select>
-                            </FormControl>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={() => console.log('Generate Chart clicked', parameters)}
-                                sx={{ height: '40px' }}
-                            >
-                                Generate Chart 1
-                            </Button>
-                        </Box>
-                        <Chart
-                            options={chartOptions}
-                            series={chartSeries}
-                            type="line"
-                            height={420}
-                        />
+                        {loading ? (
+                            <div>Loading...</div>
+                        ) : error ? (
+                            <div>Error: {error}</div>
+                        ) : (
+                            <Chart
+                                options={chartOptions}
+                                series={processedEnergyData.series}
+                                type="line"
+                                height={420}
+                            />
+                        )}
                     </CardContent>
                 </Card>
             </Box>
-                        <Box style={styles.container}>
+            <Box style={styles.container}>
                 <Card style={styles.tableCard}>
                     <CardContent sx={{ p: 1 }}>
                         <Typography
@@ -339,12 +369,18 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                         >
                             Consumption (Last 7 Days)
                         </Typography>
-                        <Chart
-                            options={chartOptions}
-                            series={chartSeries}
-                            type="line"
-                            height={420}
-                        />
+                        {loading ? (
+                            <div>Loading...</div>
+                        ) : error ? (
+                            <div>Error: {error}</div>
+                        ) : (
+                            <Chart
+                                options={chartOptions}
+                                series={processedConsumptionData.series}
+                                type="line"
+                                height={420}
+                            />
+                        )}
                     </CardContent>
                 </Card>
             </Box>

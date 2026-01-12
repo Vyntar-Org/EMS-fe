@@ -16,8 +16,7 @@ import {
     Switch,
     Chip,
     IconButton,
-    Tooltip,
-    Pagination,
+    Tooltip
 } from '@mui/material';
 import {
     PowerSettingsNew as PowerIcon,
@@ -29,50 +28,19 @@ import { useNavigate } from 'react-router-dom';
 
 const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const navigate = useNavigate();
-    const rowsPerPage = 20; // Show 20 rows per page
-    const [page, setPage] = useState(1);
 
-    // Generate 40 machine data entries
-    const generateMachineData = () => {
-        const machines = [];
-        for (let i = 1; i <= 40; i++) {
-            machines.push({
-                id: i,
-                name: `Machine - ${i}`,
-                status: i % 3 !== 0, // Alternate status for variety
-                kw: (1000 + Math.random() * 1000).toFixed(2), // Random KW value between 1000-2000
-                kwh: (1000 + Math.random() * 500).toFixed(2) // Random KWH value between 1000-1500
-            });
-        }
-        return machines;
-    };
-
-    const allMachines = generateMachineData();
-
-    // Calculate pagination
-    const count = allMachines.length;
-    const totalPages = Math.ceil(count / rowsPerPage);
-
-    // Get machines for current page
-    const paginatedMachines = allMachines.slice(
-        (page - 1) * rowsPerPage,
-        page * rowsPerPage
-    );
+    // Machine data from the image
+    const [machines, setMachines] = useState([
+        { id: 1, name: 'Machine - 1', status: true, kw: 1653.34, kwh: 1057.89 },
+        { id: 2, name: 'Machine - 2', status: false, kw: 1383.94, kwh: 1287.09 },
+        { id: 3, name: 'Machine - 3', status: true, kw: 1555.34, kwh: 1157.89 }
+    ]);
 
     // Toggle machine status
     const handleToggleStatus = (id) => {
-        const updatedMachines = allMachines.map(machine =>
+        setMachines(machines.map(machine =>
             machine.id === id ? { ...machine, status: !machine.status } : machine
-        );
-        
-        // Update the state with the modified array
-        // For this demo, we'll just update the original array
-        // In a real app, you might want to maintain state differently
-    };
-
-    // Handle page change
-    const handlePageChange = (event, value) => {
-        setPage(value);
+        ));
     };
 
     // Define styles
@@ -185,7 +153,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {paginatedMachines.map((machine) => (
+                                    {machines.map((machine) => (
                                         <TableRow key={machine.id} style={styles.tableRow}>
                                             <TableCell>
                                                 <Chip
@@ -211,21 +179,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </TableContainer>
                     </CardContent>
                 </Card>
-                
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <Box sx={{ display: 'flex', justifyContent: 'right', mt: 2 }}>
-                        <Pagination
-                            count={totalPages}
-                            page={page}
-                            onChange={handlePageChange}
-                            color="primary"
-                            showFirstButton
-                            showLastButton
-                            size="small"
-                        />
-                    </Box>
-                )}
             </Box>
         </Box>
     );

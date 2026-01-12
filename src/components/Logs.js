@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getSlaveList, getDeviceLogs } from '../auth/LogsApi';
 import {
   Box,
   Typography,
@@ -42,14 +43,22 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
   const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
+  const [devices, setDevices] = useState([]); // Initialize as empty array
+  const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
+  const [loading, setLoading] = useState(true); // Loading state for devices
+  const [error, setError] = useState(null); // Error state for devices
 
-  // Generate 40 rows of sample log data matching the image structure
-  const generateLogData = () => {
+  // Generate 25 rows of sample log data matching the image structure
+  const generateLogData = (availableDevices = []) => {
     const baseDate = new Date('2025-05-27T12:51:32');
-    const machines = ['Machine 1', 'Machine 2', 'Machine 3'];
+    // Use the actual device names from the API, or fallback to default machines
+    const deviceNames = availableDevices && availableDevices.length > 1 
+      ? availableDevices.filter(device => device !== 'all') // Exclude 'all' from the list of actual devices
+      : ['Machine 1', 'Machine 2', 'Machine 3'];
+    
     const logs = [];
 
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 25; i++) {
       const date = new Date(baseDate);
       date.setSeconds(date.getSeconds() - (i * 45));
 
@@ -61,7 +70,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
       const seconds = String(date.getSeconds()).padStart(2, '0');
 
       const entryDate = `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
-      const machine = machines[i % 3];
+      const device = deviceNames[i % deviceNames.length];
       const baseConsump = 126730 + (i * 0.1);
       const status = i % 4 === 2 ? 'Off' : 'On';
 
@@ -79,18 +88,103 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
         brVolta: (439 + Math.random() * 3 - 1.5).toFixed(2),
         frequenc: (50.2 + Math.random() * 0.2 - 0.1).toFixed(2),
         totalAct: (22 + Math.random() * 3 - 1.5).toFixed(2),
-        totalApp: (24 + Math.random() * 2 - 1).toFixed(2),
+        totalAct: (22 + Math.random() * 3 - 1.5).toFixed(2),
         averageKWH: (0.65 + Math.random() * 0.1).toFixed(2),
         consumpMachines: `${baseConsump.toFixed(1)} ${baseConsump.toFixed(1)} ${status}`,
-        machine,
+        machine: device,
       });
     }
 
     return logs;
   };
 
-  const logs = generateLogData();
-  const devices = ['all', 'Machine 1', 'Machine 2', 'Machine 3'];
+  const [logs, setLogs] = useState([]); // State for logs
+  const [realLogs, setRealLogs] = useState([]); // State for real API logs
+  const [logsLoading, setLogsLoading] = useState(false); // Loading state for logs
+  
+  // Fetch device logs when search is clicked
+  useEffect(() => {
+    const fetchDeviceLogs = async () => {
+      if (searchClicked && filterDevice !== 'all') {
+        try {
+          setLogsLoading(true);
+          
+          // Find the selected device object to get its ID
+          const selectedDeviceObj = deviceObjects.find(device => device.name === filterDevice);
+          if (!selectedDeviceObj) {
+            console.error('Selected device not found in device list');
+            return;
+          }
+          
+          // Format dates properly for API request
+          const formatDateTime = (date) => {
+            if (!date) return '';
+            // Check if it's a dayjs object
+            if (typeof date.format === 'function') {
+              return date.format('YYYY-MM-DD HH:mm:ss');
+            }
+            // If it's a regular Date object
+            if (date instanceof Date) {
+              return date.toISOString().slice(0, 19).replace('T', ' ');
+            }
+            // If it's already a string, return as is
+            return date;
+          };
+          
+          const startDate = filterStartDate ? formatDateTime(filterStartDate) : '2026-01-03 23:03:00';
+          const endDate = filterEndDate ? formatDateTime(filterEndDate) : '2026-01-05 23:03:00';
+          
+          const slaveId = selectedDeviceObj.id; // Use the actual ID from the device object
+          
+          const deviceLogs = await getDeviceLogs(slaveId, startDate, endDate);
+          setRealLogs(deviceLogs);
+          setLogs(deviceLogs); // Use real logs instead of generated logs
+          
+        } catch (error) {
+          console.error('Error fetching device logs:', error);
+          // Optionally set an error state here
+        } finally {
+          setLogsLoading(false);
+        }
+      }
+    };
+    
+    fetchDeviceLogs();
+  }, [searchClicked, filterDevice, filterStartDate, filterEndDate, devices]);
+  
+  // Regenerate sample logs when devices change (fallback)
+  useEffect(() => {
+    if (!searchClicked && !loading) { // Only regenerate sample logs when not searching
+      const generatedLogs = generateLogData(devices);
+      setLogs(generatedLogs);
+      setRealLogs([]); // Clear real logs when not searching
+    }
+  }, [devices, loading, searchClicked]);
+
+  // Fetch slave list from API on component mount
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        setLoading(true);
+        const slaveList = await getSlaveList();
+        // Store full device objects for ID mapping
+        setDeviceObjects(slaveList);
+        // Transform the slave list to the format expected by the dropdown
+        const deviceNames = slaveList.map(slave => slave.name);
+        setDevices(['all', ...deviceNames]); // Add 'all' as the first option
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching devices:', err);
+        setError(err.message || 'Failed to fetch device list');
+        // Keep the default 'all' option if there's an error
+        setDevices(['all']);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDevices();
+  }, []);
 
   // Convert date string to Date object for comparison
   const parseDateTimeLocal = (dateTimeString) => {
@@ -117,30 +211,55 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
 
   // Handle search button click
   const handleSearch = () => {
+    if (!filterDevice || filterDevice === 'all') {
+      alert('Please select a device');
+      return;
+    }
+    if (!filterStartDate) {
+      alert('Please select a start date');
+      return;
+    }
+    if (!filterEndDate) {
+      alert('Please select an end date');
+      return;
+    }
     setSearchClicked(true);
     setPage(1); // Reset to first page when searching
   };
 
   // Filter logs based on all criteria
-  const filteredLogs = logs.filter((log) => {
-    const matchesSearch = !searchTerm ||
-      log.entryDate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.machine.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.consumpMachines.toLowerCase().includes(searchTerm.toLowerCase());
+  let filteredLogs;
+  
+  if (searchClicked) {
+    // When search is clicked, use real logs from API
+    filteredLogs = realLogs.filter((log) => {
+      const matchesSearch = !searchTerm ||
+        (log.timestamp && log.timestamp.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (log.ry_v !== undefined && log.ry_v.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (log.yb_v !== undefined && log.yb_v.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (log.br_v !== undefined && log.br_v.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (log.acte_im !== undefined && log.acte_im.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (log.actpr_t !== undefined && log.actpr_t.toString().toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesDevice = filterDevice === 'all' || log.machine === filterDevice;
+      return matchesSearch;
+    });
+  } else {
+    // When not searching, use generated logs
+    filteredLogs = logs.filter((log) => {
+      const matchesSearch = !searchTerm ||
+        log.entryDate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.machine.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.consumpMachines.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const startDate = parseDateTimeLocal(filterStartDate);
-    const endDate = parseDateTimeLocal(filterEndDate);
-    const matchesDateRange = isDateInRange(log.timestamp, startDate, endDate);
+      const matchesDevice = filterDevice === 'all' || log.machine === filterDevice;
 
-    // If search hasn't been clicked, show all logs
-    if (!searchClicked) {
-      return true;
-    }
+      const startDate = parseDateTimeLocal(filterStartDate);
+      const endDate = parseDateTimeLocal(filterEndDate);
+      const matchesDateRange = isDateInRange(log.timestamp, startDate, endDate);
 
-    return matchesSearch && matchesDevice && matchesDateRange;
-  });
+      return matchesSearch && matchesDevice && matchesDateRange;
+    });
+  }
 
   // Calculate pagination
   const count = filteredLogs.length;
@@ -244,6 +363,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                 </Select>
               </FormControl>
 
+
                <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateTimePicker
                   value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
@@ -263,7 +383,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
 
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateTimePicker
-                  value={dayjs.isDayjs(filterEndDate) ? filterEndDate : null}
+                  value={filterEndDate ? (dayjs.isDayjs(filterEndDate) ? filterEndDate : dayjs(filterEndDate)) : null}
                   onChange={(newValue) => setFilterEndDate(newValue)}
                   slotProps={{
                     textField: {
@@ -309,6 +429,14 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
             </Box>
           </Box>
 
+          {/* {!searchClicked && (
+            <Box sx={{ p: 3, textAlign: 'center', backgroundColor: '#f5f5f5', borderRadius: 2, mt: 2 }}>
+              <Typography variant="h6" color="textSecondary">
+                Please select a device, start date, and end date, then click the search button to view logs.
+              </Typography>
+            </Box>
+          )} */}
+          {searchClicked && (
           <TableContainer
             component={Paper}
             className="logs-table-container"
@@ -321,7 +449,6 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                   <TableCell className="log-header-cell">Active Energy Import (kWh)</TableCell>
                   <TableCell className="log-header-cell">Total Active Power (kW)</TableCell>
                   <TableCell className="log-header-cell">Total Apparent Power (kVA)</TableCell>
-                  <TableCell className="log-header-cell">Total Reactive Power (kVAr)</TableCell>
                   <TableCell className="log-header-cell">Average Current (A)</TableCell>
                   <TableCell className="log-header-cell">Average Line-to-Line Voltage (V)</TableCell>
                   <TableCell className="log-header-cell">C–A Phase Voltage RMS (V)</TableCell>
@@ -330,7 +457,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                   <TableCell className="log-header-cell">RMS Current – Phase A (A)</TableCell>
                   <TableCell className="log-header-cell">RMS Current – Phase B (A)</TableCell>
                   <TableCell className="log-header-cell">Total Power Factor</TableCell>
-                  <TableCell className="log-header-cell">Reactive Power (kVAr)</TableCell>
+                  <TableCell className="log-header-cell">Reactive Energy Import (kVArh)</TableCell>
                   <TableCell className="log-header-cell">A–B Phase Voltage RMS (V)</TableCell>
                   <TableCell className="log-header-cell">B–C Phase Voltage RMS (V)</TableCell>
                 </TableRow>
@@ -338,24 +465,48 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
               <TableBody>
                 {paginatedLogs.length > 0 ? (
                   paginatedLogs.map((log) => {
-                    const [consumption, total, status] = log.consumpMachines.split(' ');
+                    // Check if log is from API (has timestamp) or generated (has entryDate)
+                    const isAPIData = log.hasOwnProperty('timestamp');
+                    
+                    // For API data
+                    const timestamp = isAPIData ? new Date(log.timestamp).toLocaleString() : log.entryDate;
+                    const ryVoltage = isAPIData ? log.ry_v : log.rPhaseVoY;
+                    const ybVoltage = isAPIData ? log.yb_v : log.phaseB1;
+                    const brVoltage = isAPIData ? log.br_v : log.phaseR;
+                    const avgLineToLineVoltage = isAPIData ? log.avg_l_l_v : log.phaseY;
+                    const frequency = isAPIData ? log.fq : log.phaseB2;
+                    const irCurrent = isAPIData ? log.i_r : log.ryVolta;
+                    const iyCurrent = isAPIData ? log.i_y : log.ybVolta;
+                    const ibCurrent = isAPIData ? log.i_b : log.brVolta;
+                    const avgCurrent = isAPIData ? log.avg_i : log.frequenc;
+                    const totalActivePower = isAPIData ? log.actpr_t : log.totalAct;
+                    const totalApparentPower = isAPIData ? log.apppr_t : log.totalAct;
+                    const totalPowerFactor = isAPIData ? log.pf_t : log.averageKWH;
+                    const activeEnergyImport = isAPIData ? log.acte_im : parseFloat(log.consumpMachines.split(' ')[0]);
+                    const reactiveEnergyImport = isAPIData ? log.reacte_im : 0;
+                    
+                    // For generated data compatibility
+                    const [consumption, total, status] = isAPIData ? [activeEnergyImport, activeEnergyImport, 'N/A'] : log.consumpMachines.split(' ');
+                    
                     return (
-                      <TableRow key={log.id} hover className="log-table-row">
-                        <TableCell className="log-table-cell" title={log.entryDate}>
-                          {log.entryDate}
+                      <TableRow key={isAPIData ? log.timestamp : log.id} hover className="log-table-row">
+                        <TableCell className="log-table-cell" title={timestamp}>
+                          {timestamp}
                         </TableCell>
-                        <TableCell className="log-table-cell">{log.rPhaseVoY}</TableCell>
-                        <TableCell className="log-table-cell">{log.phaseB1}</TableCell>
-                        <TableCell className="log-table-cell">{log.phaseR}</TableCell>
-                        <TableCell className="log-table-cell">{log.phaseY}</TableCell>
-                        <TableCell className="log-table-cell">{log.phaseB2}</TableCell>
-                        <TableCell className="log-table-cell">{log.ryVolta}</TableCell>
-                        <TableCell className="log-table-cell">{log.ybVolta}</TableCell>
-                        <TableCell className="log-table-cell">{log.brVolta}</TableCell>
-                        <TableCell className="log-table-cell">{log.frequenc}</TableCell>
-                        <TableCell className="log-table-cell">{log.totalAct}</TableCell>
-                        <TableCell className="log-table-cell">{log.totalApp}</TableCell>
-                        <TableCell className="log-table-cell">{log.averageKWH}</TableCell>
+                        <TableCell className="log-table-cell">{activeEnergyImport}</TableCell>
+                        <TableCell className="log-table-cell">{totalActivePower}</TableCell>
+                        <TableCell className="log-table-cell">{totalApparentPower}</TableCell>
+                        <TableCell className="log-table-cell">{avgCurrent}</TableCell>
+                        <TableCell className="log-table-cell">{avgLineToLineVoltage}</TableCell>
+                        <TableCell className="log-table-cell">{brVoltage}</TableCell>
+                        <TableCell className="log-table-cell">{frequency}</TableCell>
+                        <TableCell className="log-table-cell">{ibCurrent}</TableCell>
+                        <TableCell className="log-table-cell">{irCurrent}</TableCell>
+                        <TableCell className="log-table-cell">{iyCurrent}</TableCell>
+                        <TableCell className="log-table-cell">{totalPowerFactor}</TableCell>
+                        <TableCell className="log-table-cell">{reactiveEnergyImport}</TableCell>
+                        <TableCell className="log-table-cell">{ryVoltage}</TableCell>
+                        <TableCell className="log-table-cell">{ybVoltage}</TableCell>
                         <TableCell className="log-table-cell">
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap' }}>
                             <Typography
@@ -377,7 +528,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                           <Chip
                             label={status}
                             size="small"
-                            color={status === 'On' ? 'success' : 'default'}
+                            color={status === 'On' ? 'success' : status === 'N/A' ? 'default' : 'default'}
                             sx={{
                               height: '20px',
                               fontSize: '0.7rem',
@@ -390,17 +541,18 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={14} align="center">
-                      {searchClicked ? 'No logs found matching your filters' : 'Select filters and click Search to view logs'}
+                    <TableCell colSpan={16} align="center">
+                      {loading || logsLoading ? 'Loading...' : (paginatedLogs.length === 0 ? 'No logs found matching your filters' : '')}
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </TableContainer>
+          )}
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {searchClicked && totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'right', mt: 2 }}>
               <Pagination
                 count={totalPages}
