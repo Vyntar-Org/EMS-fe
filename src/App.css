@@ -1,6 +1,6 @@
 .App {
   height: auto;
-  width: 100%;
+  /* width: 100%; */
   background-color: #f4f7f6;
   overflow: hidden;
   display: flex;

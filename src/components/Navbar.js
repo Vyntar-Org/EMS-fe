@@ -29,9 +29,9 @@ import loginApi from '../auth/LoginApi';
 import './Navbar.css';
 
 function Navbar({ onMenuClick }) {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const navigate = useNavigate();
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -99,7 +99,8 @@ function Navbar({ onMenuClick }) {
               src="/vyntar_new.png"
               alt="Vyntar Logo"
               className="navbar-logo"
-              style={{ width: '115px', verticalAlign: 'top', marginRight: '20px' }}
+              style={{ width: '115px', verticalAlign: 'top', marginRight: '20px', cursor: 'pointer' }}
+              onClick={() => navigate('/dashboard')}
             />
           </div>
 

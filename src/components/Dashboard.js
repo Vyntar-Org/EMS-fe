@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Grid,
@@ -27,9 +27,130 @@ import {
 } from '@mui/icons-material';
 import Chart from 'react-apexcharts';
 import SearchIcon from '@mui/icons-material/Search';
+import { getDashboardOverview, getSlaveList, getSlaveWeeklyConsumption } from '../auth/DashboardApi';
 import './Dashboard.css';
 
 const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [slaveList, setSlaveList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSlave, setSelectedSlave] = useState(null);
+  const [weeklyConsumptionData, setWeeklyConsumptionData] = useState([]);
+
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null); // Clear any previous errors
+
+        // Fetch both dashboard overview and slave list concurrently
+        const [dashboardResponse, slaveResponse] = await Promise.all([
+          getDashboardOverview(),
+          getSlaveList()
+        ]);
+
+        console.log('Dashboard API response in useEffect:', dashboardResponse);
+        console.log('Slave list API response:', slaveResponse);
+
+        // Set the data
+        setDashboardData(dashboardResponse);
+        setSlaveList(slaveResponse);
+
+        // Automatically select slave ID 1 if it exists
+        const slaveId1 = slaveResponse.find(slave => slave.id === 1);
+        if (slaveId1) {
+          console.log('Auto-selecting slave ID 1');
+          handleSlaveSelect(slaveId1);
+        }
+
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError(err.message || 'An error occurred while fetching dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Function to handle slave selection and fetch weekly consumption data
+  const handleSlaveSelect = async (slave) => {
+    try {
+      setSelectedSlave(slave);
+      console.log('Selected slave:', slave);
+      
+      // Fetch weekly consumption data for the selected slave
+      const weeklyData = await getSlaveWeeklyConsumption(slave.id);
+      console.log('Weekly consumption data:', weeklyData);
+      
+      setWeeklyConsumptionData(weeklyData);
+    } catch (error) {
+      console.error('Error fetching weekly consumption data:', error);
+      setError(error.message || 'An error occurred while fetching weekly consumption data');
+    }
+  };
+
+  // Extract data from API response
+  console.log('Dashboard data state:', dashboardData);
+  console.log('Loading state:', loading);
+  console.log('Error state:', error);
+
+  const slavesData = dashboardData?.slaves || { total: 0, online: 0, offline: 0 };
+  const energyConsumption = dashboardData?.acte_im_total || 0;
+  const hourlyData = dashboardData?.acte_im_hourly_24h?.data || [];
+
+  console.log('Slaves data:', slavesData);
+  console.log('Energy consumption:', energyConsumption);
+  console.log('Hourly data length:', hourlyData.length);
+
+  // Helper function to format as 'HH.MM'
+  const formatDateTime = (hourString) => {
+    if (!hourString) return '';
+    const date = new Date(hourString);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${hours}.${minutes}`;
+  };
+
+  // Transform hourly data for charts - Sample only 6 data points
+  const totalDataPoints = hourlyData.length;
+  let hourlyCategories = [];
+  let hourlyValues = [];
+
+  if (totalDataPoints > 0) {
+    if (totalDataPoints <= 8) {
+      // If we have 6 or fewer points, use all of them
+      hourlyCategories = hourlyData.map(item => {
+        return formatDateTime(item.hour);
+      });
+      hourlyValues = hourlyData.map(item => item.value);
+    } else {
+      // If we have more than 6 points, sample 6 evenly spaced points
+      const step = Math.floor((totalDataPoints - 1) / 7); // To get 6 points including first and last
+      for (let i = 0; i < totalDataPoints; i += step) {
+        if (hourlyCategories.length < 8) {
+          const item = hourlyData[i];
+          hourlyCategories.push(formatDateTime(item.hour));
+          hourlyValues.push(item.value);
+        } else {
+          break; // Stop once we have 6 points
+        }
+      }
+      // Ensure we have exactly 6 points by adding the last point if needed
+      if (hourlyCategories.length < 8 && hourlyData.length >= 8) {
+        const lastItem = hourlyData[hourlyData.length - 1];
+        const lastIndex = hourlyCategories.length - 1;
+        hourlyCategories[lastIndex] = formatDateTime(lastItem.hour);
+        hourlyValues[lastIndex] = lastItem.value;
+      }
+    }
+  }
+
   // Chart configurations remain the same
   const energyConsumptionOptions = {
     chart: {
@@ -52,16 +173,22 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       yaxis: { lines: { show: true, color: '#E5E7EB' } }
     },
     xaxis: {
-      categories: ['11:00', '16:45', '22:30', '04:15'],
+      categories: hourlyCategories,
       labels: {
-        style: { colors: '#6B7280', fontSize: '12px' }
+        style: { colors: '#6B7280', fontSize: '12px' },
+        // rotate: -45,
+        // rotateAlways: true,
+        hideOverlappingLabels: false,
+        formatter: function(val) {
+          return val; // Return the full formatted value
+        }
       },
       axisBorder: { show: false },
       axisTicks: { show: false }
     },
     yaxis: {
-      min: 0,
-      max: 2,
+      min: Math.min(...hourlyValues, 0),
+      max: Math.max(...hourlyValues, 1),
       tickAmount: 2,
       labels: {
         style: { colors: '#6B7280', fontSize: '12px' }
@@ -72,15 +199,31 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     tooltip: {
       enabled: true,
       theme: 'light',
-      style: { fontSize: '12px' }
+      style: { fontSize: '12px' },
+      x: {
+        formatter: function (val, opts) {
+          // Get the original data point index
+          const index = opts.dataPointIndex;
+          // Get the original hour string from hourlyData
+          if (hourlyData[index]) {
+            return formatDateTime(hourlyData[index].hour);
+          }
+          return val;
+        }
+      },
+      y: {
+        formatter: function (val) {
+          return val + ' kWh';
+        }
+      }
     },
     legend: { show: false },
     colors: ['#9B8AE6']
   };
 
   const energyConsumptionSeries = [{
-    name: 'Energy',
-    data: [0.5, 0.7, 0.3, 0.6]
+    name: '(kWh)',
+    data: hourlyValues
   }];
 
   // Chart 2: Peak Demand Indicator
@@ -143,13 +286,61 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   }];
 
   // Chart 3: Machine Power Consumption
+  // Helper function to format date as 'Jan 01'
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${months[date.getMonth()]} ${day}`;
+  };
+
+  // Helper function to calculate appropriate y-axis values based on data range
+  const calculateYAxis = (data) => {
+    if (data.length === 0) {
+      return { min: 0, max: 1, tickAmount: 4 };
+    }
+    
+    const maxValue = Math.max(...data.map(item => item.value));
+    
+    // Determine the appropriate scale based on the max value
+    let max, tickAmount;
+    if (maxValue <= 10) {
+      max = 10;
+      tickAmount = 5;
+    } else if (maxValue <= 20) {
+      max = 20;
+      tickAmount = 4;
+    } else if (maxValue <= 50) {
+      max = 50;
+      tickAmount = 5;
+    } else if (maxValue <= 100) {
+      max = 100;
+      tickAmount = 5;
+    } else if (maxValue <= 150) {
+      max = 150;
+      tickAmount = 5;
+    } else if (maxValue <= 200) {
+      max = 200;
+      tickAmount = 4;
+    } else {
+      // For larger values, round up to a nice number
+      const scale = Math.pow(10, Math.floor(Math.log10(maxValue)));
+      max = Math.ceil(maxValue / scale) * scale;
+      tickAmount = 5;
+    }
+    
+    return { min: 0, max, tickAmount };
+  };
+
+  // Dynamic chart configuration based on selected slave
   const machinePowerOptions = {
     chart: {
       type: 'bar',
       height: 100,
       toolbar: { show: false },
       background: 'transparent',
-      animations: { enabled: false }
+      animations: { enabled: true }
     },
     plotOptions: {
       bar: {
@@ -166,7 +357,9 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       yaxis: { lines: { show: true, color: '#E5E7EB' } }
     },
     xaxis: {
-      categories: ['30 Dec', '31 Dec', '01 Jan', '02 Jan', '03 Jan', '04 Jan', '05 Jan'],
+      categories: weeklyConsumptionData.length > 0 
+        ? weeklyConsumptionData.map(item => formatDate(item.date)) 
+        : ['-'],
       labels: {
         style: { colors: '#6B7280', fontSize: '12px' }
       },
@@ -179,8 +372,8 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     },
     yaxis: {
       min: 0,
-      max: 40,
-      tickAmount: 4,
+      max: calculateYAxis(weeklyConsumptionData).max,
+      tickAmount: calculateYAxis(weeklyConsumptionData).tickAmount,
       labels: {
         style: { colors: '#6B7280', fontSize: '12px' }
       },
@@ -188,17 +381,24 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     },
     dataLabels: { enabled: false },
     tooltip: {
-      enabled: true,
+      enabled: weeklyConsumptionData.length > 0, // Only show tooltip when data exists
       theme: 'light',
-      style: { fontSize: '12px' }
+      style: { fontSize: '12px' },
+      y: {
+        formatter: function(val) {
+          return val + ' kWh';
+        }
+      }
     },
     legend: { show: false },
     colors: ['#6F4A74']
   };
 
   const machinePowerSeries = [{
-    name: 'Power',
-    data: [30, 40, 45, 50, 35, 55, 40]
+    name: 'kWh',
+    data: weeklyConsumptionData.length > 0 
+      ? weeklyConsumptionData.map(item => item.value)
+      : [0] // Provide a minimal data point to prevent chart breaking
   }];
 
   // Card styles
@@ -333,12 +533,32 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     transition: 'all 0.3s ease',
   };
 
+  // if (loading) {
+  //   return (
+  //     <Box style={{...styles.mainContent, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}} id="main-content">
+  //       <Typography variant="h6">Loading dashboard data...</Typography>
+  //     </Box>
+  //   );
+  // }
+
+  if (error) {
+    return (
+      <Box style={{ ...styles.mainContent, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }} id="main-content">
+        <Box textAlign="center">
+          <Typography variant="h6" color="error">Error loading dashboard data</Typography>
+          <Typography variant="body2">{error}</Typography>
+          <button onClick={() => window.location.reload()} style={{ marginTop: '10px', padding: '8px 16px', cursor: 'pointer' }}>Retry</button>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box style={styles.mainContent} id="main-content">
       {/* Header */}
       <Box style={styles.blockHeader} className="block-header mb-1">
         <Grid container>
-          <Grid item lg={5} md={8} xs={12}>
+          <Grid lg={5} md={8} xs={12}>
             <Typography
               variant="h6"
               className="logs-title"
@@ -391,15 +611,15 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               <Box display="flex" justifyContent="space-between" mt="auto">
                 <Box sx={{ ...miniBoxStyle, backgroundColor: '#E9F7E7' }}>
                   <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Online</Typography>
-                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#16A34A' }}>0</Typography>
+                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#16A34A' }}>{slavesData.online}</Typography>
                 </Box>
                 <Box sx={{ ...miniBoxStyle, backgroundColor: '#FDECEC' }}>
                   <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Offline</Typography>
-                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#EF4444' }}>0</Typography>
+                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#EF4444' }}>{slavesData.offline}</Typography>
                 </Box>
                 <Box sx={{ ...miniBoxStyle, backgroundColor: '#EAF3FF' }}>
                   <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Total</Typography>
-                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#2563EB' }}>0</Typography>
+                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#2563EB' }}>{slavesData.total}</Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -413,16 +633,16 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 <Typography sx={titleStyle}>Energy Consumption</Typography>
               </Box>
               <Box display="flex" alignItems="baseline" mt="auto">
-                <Typography sx={valueStyle}>0</Typography>
+                <Typography sx={valueStyle}>{energyConsumption.toFixed(1)}</Typography>
                 <Typography sx={{ fontSize: '13px', color: '#6B7280', ml: 1 }}>kWh</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" mt={1}>
                 <Typography sx={labelStyle}>Predictive:</Typography>
-                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>0 kWh</Typography>
+                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>{(energyConsumption * 1.1).toFixed(1)} kWh</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between">
                 <Typography sx={labelStyle}>Cost:</Typography>
-                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>₹10</Typography>
+                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>₹{(energyConsumption * 0.1).toFixed(2)}</Typography>
               </Box>
             </CardContent>
           </Card>
@@ -550,7 +770,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 options={energyConsumptionOptions}
                 series={energyConsumptionSeries}
                 type="line"
-                height={110}  // Reduced to fit within 150px card
+                height={150}  // Reduced to fit within 150px card
               />
             </Card>
 
@@ -591,7 +811,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 options={energyConsumptionOptions}
                 series={energyConsumptionSeries}
                 type="line"
-                height={110}  // Reduced to fit within 150px card
+                height={150}  // Reduced to fit within 150px card
               />
             </Card>
 
@@ -626,7 +846,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
             }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                 <Typography sx={titleStyle1}>Alerts</Typography>
-                <Badge badgeContent={3} color="error"></Badge>
+                <Badge badgeContent={slaveList.length} color="error"></Badge>
               </Box>
             </Card>
             <Card sx={{
@@ -635,12 +855,15 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               height: '400px',  // Changed from 400px to 150px
               padding: '16px',
               transition: 'all 0.3s ease',
+              cursor: 'pointer',
             }}>
 
               <TextField
                 fullWidth
                 size="small"
                 placeholder="Search machines..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
                 sx={{
                   marginBottom: '8px',  // Reduced margin
                   '& .MuiOutlinedInput-root': {
@@ -659,35 +882,51 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
               {/* Alert Items - Limited to fit in 150px height */}
               <Box sx={{ maxHeight: "300px", overflowY: "auto" }}>
-                {[
-                  { icon: <FlashOnIcon />, text: "Machine 1" },
-                  { icon: <FlashOnIcon />, text: "Machine 2" },
-                  { icon: <FlashOnIcon />, text: "Machine 3" },
-                  { icon: <FlashOnIcon />, text: "Machine 4" },
-                ].map((item, index) => (  // Reduced number of items shown
-                  <Box
-                    key={index}
-                    sx={{
-                      height: '30px',  // Reduced height
-                      padding: '6px 8px',  // Reduced padding
-                      borderRadius: '8px',
-                      marginBottom: '4px',  // Reduced margin
-                      display: 'flex',
-                      alignItems: 'center',
-                      backgroundColor: index % 2 === 0 ? '#F9FAFB' : 'transparent',
-                      '&:hover': {
-                        backgroundColor: '#F3F4F6'
-                      }
-                    }}
-                  >
-                    <Box sx={{ marginRight: '8px', color: '#6B7280' }}>
-                      {item.icon}
+                {slaveList
+                  .filter(slave => slave.name.toLowerCase().includes(searchTerm))
+                  .map((slave, index) => (  // Use actual slave data
+                    <Box
+                      key={slave.id}
+                      sx={{
+                        height: '40px',  // Increased height for better card appearance
+                        padding: '8px 12px',  // Increased padding
+                        borderRadius: '8px',
+                        marginBottom: '6px',  // Increased margin
+                        display: 'flex',
+                        alignItems: 'center',
+                        backgroundColor: index % 2 === 0 ? '#F9FAFB' : '#FFFFFF',
+                        border: '1px solid #E5E7EB',  // Add border for card appearance
+                        transition: 'all 0.2s ease-in-out',  // Smooth transition
+                        '&:hover': {
+                          backgroundColor: '#F3F4F6',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',  // Shadow effect on hover
+                          transform: 'translateY(-1px)',  // Slight lift effect
+                          border: '1px solid #D1D5DB'  // Darker border on hover
+                        }
+                      }}
+                      onClick={() => handleSlaveSelect(slave)}
+                    >
+                      <Box sx={{ marginRight: '8px', color: '#444444', fontWeight: 'bold' }}>
+                        <FlashOnIcon fontSize="small" onClick={() => handleSlaveSelect(slave)} />
+                      </Box>
+                      <Typography 
+                        sx={{ 
+                          fontSize: '16px', 
+                          color: '#444444', 
+                          fontWeight: 'bold', 
+                          fontFamily: 'ubuntu, sans-serif',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            // textDecoration: 'underline',
+                            // color: '#1976d2'
+                          }
+                        }}
+                        onClick={() => handleSlaveSelect(slave)}
+                      >
+                        {slave.name}
+                      </Typography>
                     </Box>
-                    <Typography sx={{ fontSize: '12px', color: '#374151' }}>
-                      {item.text}
-                    </Typography>
-                  </Box>
-                ))}
+                  ))}
               </Box>
             </Card>
           </Grid>
