@@ -5,18 +5,23 @@ import {
   TextField,
   Typography,
   Paper,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import loginApi from '../auth/LoginApi';
 // import './Login.css';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     
     // Simple validation
@@ -25,10 +30,38 @@ const Login = () => {
       return;
     }
     
-    // For now, just store login status in localStorage and redirect
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('username', username);
-    navigate('/dashboard');
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await loginApi.login(username, password);
+      
+      // Store user data in localStorage
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('username', username);
+      
+      // You can store additional user data from the response if needed
+      if (response.user) {
+        localStorage.setItem('userData', JSON.stringify(response.user));
+      }
+      
+      // Also store tokens that were saved in localStorage by the login API
+      
+      
+      // Log the tokens for debugging
+      console.log('Access Token:', localStorage.getItem('accessToken'));
+      console.log('Refresh Token:', localStorage.getItem('refreshToken'));
+      
+      
+      // Update auth context
+      login({ username });
+      
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -113,6 +146,7 @@ const Login = () => {
           fullWidth
           variant="contained"
           type="submit"
+          disabled={loading}
           sx={{
             mt: 3,
             py: 1.2,
@@ -123,9 +157,12 @@ const Login = () => {
             '&:hover': {
               background: 'linear-gradient(135deg, #013d7a, #014a92)',
             },
+            '&:disabled': {
+              background: 'linear-gradient(135deg, #6c8fb5, #7ca0c4)',
+            },
           }}
         >
-          LOGIN
+          {loading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'LOGIN'}
         </Button>
         </form>
 
