@@ -29,22 +29,7 @@ const months = [
 
 const monthwiseRows = [
     {
-        station: "DG 1500 KVA",
-        data: ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"],
-        total: "--"
-    },
-    {
-        station: "Mother Tank",
-        data: ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"],
-        total: "--"
-    },
-    {
-        station: "DG 625 KVA",
-        data: ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"],
-        total: "--"
-    },
-    {
-        station: "DG 380 KVA",
+        station: "",
         data: ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"],
         total: "--"
     }
@@ -52,24 +37,9 @@ const monthwiseRows = [
 
 const rows = [
     {
-        station: "DG 1500 KVA",
+        station: "",
         data: [63, 115, 473, 0, 0, 38, 3, 0, 0, 0, 19, 16, 0, 0, 0, 0, 1661, 16, 0, 0, 0, 0, 0, 32, 8, 0, 0, 0, 0, 0, 150],
         total: "2594.00"
-    },
-    {
-        station: "Mother Tank",
-        data: [8, 0, 2, 8, 6, 6, 4, 8, 10, 6, 8, 6, 10, 6, 201, 2, 2541, 814, 4, 4, 6, 6, 6, 4, 600, 6, 6, 8, 6, 6, 506],
-        total: "4814.00"
-    },
-    {
-        station: "DG 625 KVA",
-        data: [0, 124, 54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 118, 0, 0, 0, 2, 0, 0, 7, 6, 0, 0, 0, 0, 0, 0, 79],
-        total: "390.00"
-    },
-    {
-        station: "DG 380 KVA",
-        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 2, 4, 0, 0, 0, 0, 0, 0, 5],
-        total: "19.00"
     }
 ];
 export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible }) {
@@ -219,7 +189,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                             className="logs-title"
                             style={{
                                 // marginBottom: '-10px',
-                                color: '#0156a6',
+                                color: '#0F2A44',
                                 fontWeight: 600,
                                 fontFamily: 'sans-serif',
                             }}
@@ -265,8 +235,8 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
             >
                 <Typography variant="h6">
                     {activeTab === 0 ? 
-                        "Stations Daily Avg. Fuel Consumption in Ltrs. Report" : 
-                        "Stations Monthly Avg. Fuel Consumption in Ltrs. Report"}
+                        "Consumption Date wise" : 
+                        "Consumption Monthwise"}
                 </Typography>
 
                 <Box>
@@ -291,7 +261,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                 <Table stickyHeader size="small">
                     <TableHead>
                         <TableRow>
-                            <TableCell><b>STATION</b></TableCell>
+                            <TableCell><b></b></TableCell>
                             {activeTab === 0 ? (
                                 days.map(day => (
                                     <TableCell key={day} align="center">
@@ -344,6 +314,98 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                     </TableBody>
                 </Table>
             </TableContainer>
+            {/* Header */}
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginTop: "20px",
+                    // mb: 2
+                }}
+            >
+                <Typography variant="h6">
+                    {activeTab === 0 ? 
+                        "Reading Date wise" : 
+                        "Reading Monthwise"}
+                </Typography>
+
+                <Box>
+                    <Button variant="outlined" sx={{ mr: 1 }} onClick={exportToExcel}>
+                        Export to Excel
+                    </Button>
+                    <Button variant="outlined" onClick={exportToPDF}>
+                        Export to PDF
+                    </Button>
+                </Box>
+            </Box>
+            {/* Table Tools */}
+            <Box sx={{ display: "flex", justifyContent: "right", mb: 1 }}>
+                <Box>
+                    <IconButton onClick={handleSearch} title="Search"><SearchIcon /></IconButton>
+                    <IconButton onClick={handleColumnVisibility} title="Toggle Column Visibility"><ViewColumnIcon /></IconButton>
+                    <IconButton onClick={toggleFullscreen} title="Toggle Fullscreen"><FullscreenIcon /></IconButton>
+                </Box>
+            </Box>
+            {/* Table */}
+            <TableContainer component={Paper} sx={{ maxHeight: 500 }}>
+                <Table stickyHeader size="small">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell><b></b></TableCell>
+                            {activeTab === 0 ? (
+                                days.map(day => (
+                                    <TableCell key={day} align="center">
+                                        <b>{day}</b>
+                                    </TableCell>
+                                ))
+                            ) : (
+                                months.map(month => (
+                                    <TableCell key={month} align="center">
+                                        <b>{month}</b>
+                                    </TableCell>
+                                ))
+                            )}
+                            <TableCell align="center"><b>TOTAL</b></TableCell>
+                        </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+                        {(activeTab === 0 ? rows : monthwiseRows).map((row, i) => (
+                            <TableRow key={i}>
+                                <TableCell>{row.station}</TableCell>
+                                {row.data.map((val, idx) => (
+                                    <TableCell 
+                                        key={idx} 
+                                        align="center"
+                                        style={{ cursor: 'pointer' }}
+                                        onClick={() => {
+                                            if (activeTab === 0) {
+                                                // Daywise report click handler
+                                                if (val !== 0) {
+                                                    alert(`Clicked on ${row.station} for Day ${days[idx]} with value ${val}`);
+                                                }
+                                            } else {
+                                                // Monthwise report click handler
+                                                if (val !== "--") {
+                                                    alert(`Clicked on ${row.station} for ${months[idx]} with value ${val}`);
+                                                } else {
+                                                    // Placeholder for handling clicks on empty cells in monthwise view
+                                                    console.log(`${row.station} - ${months[idx]} is not configured yet`);
+                                                }
+                                            }
+                                        }}
+                                    >
+                                        {val}
+                                    </TableCell>
+                                ))}
+                                <TableCell align="center">{row.total}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+
         </Box>
     );
 }
