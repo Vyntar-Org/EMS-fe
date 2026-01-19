@@ -300,7 +300,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                             className="logs-title"
                             style={{
                                 // marginBottom: '-10px',
-                                color: '#0156a6',
+                                color: '#0F2A44',
                                 fontWeight: 600,
                                 fontFamily: 'inherit',
                             }}

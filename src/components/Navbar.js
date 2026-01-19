@@ -96,7 +96,7 @@ function Navbar({ onMenuClick }) {
             )}
 
             <img
-              src="/vyntar_new.png"
+              src="/Vyntax_Logo_PNG.png"
               alt="Vyntar Logo"
               className="navbar-logo"
               style={{ width: '115px', verticalAlign: 'top', marginRight: '20px', cursor: 'pointer' }}
@@ -157,7 +157,7 @@ function Navbar({ onMenuClick }) {
               </MenuItem>
             </Menu>
           </div>
-        </div>
+        </div>  
       </nav>
 
       {/* LOGOUT CONFIRMATION DIALOG */}

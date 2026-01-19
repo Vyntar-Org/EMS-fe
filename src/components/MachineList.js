@@ -176,7 +176,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     ))}
                                 </TableBody>
                             </Table>
-                        </TableContainer>
+                        </TableContainer>  
                     </CardContent>
                 </Card>
             </Box>

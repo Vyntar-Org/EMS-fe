@@ -38,6 +38,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSlave, setSelectedSlave] = useState(null);
   const [weeklyConsumptionData, setWeeklyConsumptionData] = useState([]);
+  const [slaveLoading, setSlaveLoading] = useState(false);
 
   // Fetch dashboard data
   useEffect(() => {
@@ -80,17 +81,34 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   // Function to handle slave selection and fetch weekly consumption data
   const handleSlaveSelect = async (slave) => {
     try {
+      // Prevent multiple simultaneous requests
+      if (slaveLoading) return;
+
+      setSlaveLoading(true);
       setSelectedSlave(slave);
-      console.log('Selected slave:', slave);
-      
+      console.log('Selected slave:', slave.name);
+
+      // Clear previous data to show loading state
+      setWeeklyConsumptionData([]);
+
       // Fetch weekly consumption data for the selected slave
+      console.log(`Fetching weekly consumption data for slave ID: ${slave.id}`);
       const weeklyData = await getSlaveWeeklyConsumption(slave.id);
-      console.log('Weekly consumption data:', weeklyData);
-      
+      console.log('Weekly consumption data received:', weeklyData);
+
+      // Update the chart data
       setWeeklyConsumptionData(weeklyData);
+
+      // Show success feedback
+      console.log(`Successfully loaded data for ${slave.name}`);
+
     } catch (error) {
       console.error('Error fetching weekly consumption data:', error);
       setError(error.message || 'An error occurred while fetching weekly consumption data');
+      // Reset loading state on error
+      setSelectedSlave(null);
+    } finally {
+      setSlaveLoading(false);
     }
   };
 
@@ -113,7 +131,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     const date = new Date(hourString);
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    
+
     return `${hours}.${minutes}`;
   };
 
@@ -179,7 +197,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         // rotate: -45,
         // rotateAlways: true,
         hideOverlappingLabels: false,
-        formatter: function(val) {
+        formatter: function (val) {
           return val; // Return the full formatted value
         }
       },
@@ -300,9 +318,9 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     if (data.length === 0) {
       return { min: 0, max: 1, tickAmount: 4 };
     }
-    
+
     const maxValue = Math.max(...data.map(item => item.value));
-    
+
     // Determine the appropriate scale based on the max value
     let max, tickAmount;
     if (maxValue <= 10) {
@@ -329,7 +347,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       max = Math.ceil(maxValue / scale) * scale;
       tickAmount = 5;
     }
-    
+
     return { min: 0, max, tickAmount };
   };
 
@@ -357,8 +375,8 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       yaxis: { lines: { show: true, color: '#E5E7EB' } }
     },
     xaxis: {
-      categories: weeklyConsumptionData.length > 0 
-        ? weeklyConsumptionData.map(item => formatDate(item.date)) 
+      categories: weeklyConsumptionData.length > 0
+        ? weeklyConsumptionData.map(item => formatDate(item.date))
         : ['-'],
       labels: {
         style: { colors: '#6B7280', fontSize: '12px' }
@@ -385,7 +403,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       theme: 'light',
       style: { fontSize: '12px' },
       y: {
-        formatter: function(val) {
+        formatter: function (val) {
           return val + ' kWh';
         }
       }
@@ -396,7 +414,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
   const machinePowerSeries = [{
     name: 'kWh',
-    data: weeklyConsumptionData.length > 0 
+    data: weeklyConsumptionData.length > 0
       ? weeklyConsumptionData.map(item => item.value)
       : [0] // Provide a minimal data point to prevent chart breaking
   }];
@@ -416,7 +434,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   };
   const cardStyle = {
     width: '200px',
-    height: '120px',
+    height: '130px',
     borderRadius: '14px',
     padding: '16px',
     PaddingLeft: '100px',
@@ -505,9 +523,9 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   // Calculate responsive card widths based on sidebar visibility
   const getCardWidth = () => {
     if (sidebarVisible) {
-      return '160px'; // Smaller width when sidebar is visible
+      return '165px'; // Smaller width when sidebar is visible
     }
-    return '201px'; // Original width when sidebar is hidden
+    return '210px'; // Original width when sidebar is hidden
   };
 
   // Calculate responsive chart card widths based on sidebar visibility
@@ -515,15 +533,21 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     if (sidebarVisible) {
       return '470px'; // Smaller width when sidebar is visible
     }
-    return '570px'; // Original width when sidebar is hidden
+    return '600px'; // Original width when sidebar is hidden
+  };
+    const getChartCardWidth1 = () => {
+    if (sidebarVisible) {
+      return '670px'; // Smaller width when sidebar is visible
+    }
+    return '810px'; // Original width when sidebar is hidden
   };
 
   // Calculate responsive alerts card width based on sidebar visibility
   const getAlertsCardWidth = () => {
     if (sidebarVisible) {
-      return '160px'; // Smaller width when sidebar is visible
+      return '150px'; // Smaller width when sidebar is visible
     }
-    return '200px'; // Original width when sidebar is hidden
+    return '230px'; // Original width when sidebar is hidden
   };
 
   // Update card styles with dynamic width
@@ -564,7 +588,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               className="logs-title"
               style={{
                 // marginBottom: '-10px',
-                color: '#0156a6',
+                color: '#0F2A44',
                 fontWeight: 600,
                 fontFamily: 'sans-serif',
               }}
@@ -594,13 +618,13 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       {/* Top Summary Cards Row */}
       <Box sx={{
         // backgroundColor: '#FFFFFF', 
-        padding: '20px',
+        padding: '10px',
         display: 'flex',
         justifyContent: 'center',
         width: '100%',
         overflow: 'hidden'
       }}>
-        <Box sx={{ display: 'flex', gap: '18px', marginLeft: '-40px' }}>
+        <Box sx={{ display: 'flex', gap: '10px', marginLeft: '-20px' }}>
           {/* Card 1: Devices */}
           <Card sx={responsiveCardStyle}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -750,7 +774,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
       {/* Chart Section Layout */}
       <Box sx={{ backgroundColor: '', padding: '0px', marginLeft: '-1px' }}>
-        <Grid container spacing={3} justifyContent="center" gap={'18px'}>
+        <Grid container spacing={3} justifyContent="center" gap={'10px'}>
           {/* Left Column - 2 Stacked Cards */}
           <Grid item xs={8}>
             {/* Card 1: Energy Consumption (Last 24 Hours) */}
@@ -759,7 +783,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               width: getChartCardWidth(),
               height: '200px',
               padding: '20px',
-              marginBottom: '20px',
+              marginBottom: '10px',
               transition: 'all 0.3s ease'
             }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -780,7 +804,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               width: getChartCardWidth(),
               height: '200px',
               padding: '20px',
-              marginBottom: '20px',
+              marginBottom: '10px',
               transition: 'all 0.3s ease'
             }}>
               <Typography sx={titleStyle1}>Peak Demand Indicator</Typography>
@@ -793,141 +817,180 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
             </Card>
           </Grid>
 
-          <Grid item xs={8}>
-            {/* Card 3: Energy Consumption (Empty Title) */}
+          <Grid item xs={12}>
             <Card sx={{
               ...cardStyle1,
-              width: getChartCardWidth(),
-              height: '200px',  // Changed from 100px to 150px
+              width: getChartCardWidth1(),
+              height: '450px',
               padding: '20px',
-              marginBottom: '20px',
+              marginBottom: '10px',
               transition: 'all 0.3s ease'
             }}>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography sx={titleStyle1}></Typography>
-                <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>kWh</Typography>
-              </Box>
-              <Chart
-                options={energyConsumptionOptions}
-                series={energyConsumptionSeries}
-                type="line"
-                height={150}  // Reduced to fit within 150px card
-              />
-            </Card>
-
-            {/* Card 4: Machine Power Consumption */}
-            <Card sx={{
-              ...cardStyle1,
-              width: getChartCardWidth(),
-              height: '200px',  // Changed from 400px to 150px
-              padding: '20px',
-              marginBottom: '20px',
-              transition: 'all 0.3s ease'
-            }}>
-              <Typography sx={titleStyle1}>Machine Power Consumption</Typography>
-              <Chart
-                options={machinePowerOptions}
-                series={machinePowerSeries}
-                type="bar"
-                height={180}  // Reduced to fit within 150px card
-              />
-            </Card>
-          </Grid>
-
-          {/* Right Side - Alerts Panel */}
-          <Grid item xs={4}>
-            <Card sx={{
-              ...cardStyle1,
-              width: getAlertsCardWidth(),
-              height: '30px',  // Changed from 400px to 150px
-              padding: '16px',
-              transition: 'all 0.3s ease',
-              marginBottom: '5px'
-            }}>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography sx={titleStyle1}>Alerts</Typography>
-                <Badge badgeContent={slaveList.length} color="error"></Badge>
-              </Box>
-            </Card>
-            <Card sx={{
-              ...cardStyle1,
-              width: getAlertsCardWidth(),
-              height: '400px',  // Changed from 400px to 150px
-              padding: '16px',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer',
-            }}>
-
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Search machines..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-                sx={{
-                  marginBottom: '8px',  // Reduced margin
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '8px',
-                    height: '30px'  // Reduced height
-                  }
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              {/* Alert Items - Limited to fit in 150px height */}
-              <Box sx={{ maxHeight: "300px", overflowY: "auto" }}>
-                {slaveList
-                  .filter(slave => slave.name.toLowerCase().includes(searchTerm))
-                  .map((slave, index) => (  // Use actual slave data
-                    <Box
-                      key={slave.id}
-                      sx={{
-                        height: '40px',  // Increased height for better card appearance
-                        padding: '8px 12px',  // Increased padding
-                        borderRadius: '8px',
-                        marginBottom: '6px',  // Increased margin
-                        display: 'flex',
-                        alignItems: 'center',
-                        backgroundColor: index % 2 === 0 ? '#F9FAFB' : '#FFFFFF',
-                        border: '1px solid #E5E7EB',  // Add border for card appearance
-                        transition: 'all 0.2s ease-in-out',  // Smooth transition
-                        '&:hover': {
-                          backgroundColor: '#F3F4F6',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',  // Shadow effect on hover
-                          transform: 'translateY(-1px)',  // Slight lift effect
-                          border: '1px solid #D1D5DB'  // Darker border on hover
-                        }
-                      }}
-                      onClick={() => handleSlaveSelect(slave)}
-                    >
-                      <Box sx={{ marginRight: '8px', color: '#444444', fontWeight: 'bold' }}>
-                        <FlashOnIcon fontSize="small" onClick={() => handleSlaveSelect(slave)} />
+              <Grid container spacing={2}>
+                {/* Left Column - Charts */}
+                <Grid item xs={8}>
+                  {/* Energy Consumption Chart */}
+                  <Box sx={{ marginBottom: '20px' }}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                      <Typography sx={titleStyle1}>
+                        {selectedSlave ? `${selectedSlave.name} Energy` : 'Energy Consumption'}
+                      </Typography>
+                      <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>kWh</Typography>
+                    </Box>
+                    {slaveLoading && selectedSlave ? (
+                      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '150px' }}>
+                        <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
+                          Loading {selectedSlave.name} data...
+                        </Typography>
                       </Box>
-                      <Typography 
-                        sx={{ 
-                          fontSize: '16px', 
-                          color: '#444444', 
-                          fontWeight: 'bold', 
-                          fontFamily: 'ubuntu, sans-serif',
-                          cursor: 'pointer',
-                          '&:hover': {
-                            // textDecoration: 'underline',
-                            // color: '#1976d2'
+                    ) : selectedSlave && weeklyConsumptionData.length > 0 ? (
+                      <Chart
+                        options={{
+                          ...energyConsumptionOptions,
+                          xaxis: {
+                            ...energyConsumptionOptions.xaxis,
+                            categories: weeklyConsumptionData.map(item => formatDate(item.date)),
+                            title: {
+                              text: 'Date',
+                              style: { color: '#6B7280', fontSize: '12px' }
+                            }
+                          },
+                          yaxis: {
+                            ...energyConsumptionOptions.yaxis,
+                            min: 0,
+                            max: calculateYAxis(weeklyConsumptionData).max,
+                            tickAmount: calculateYAxis(weeklyConsumptionData).tickAmount,
+                            labels: { show: false }
+                          },
+                          tooltip: {
+                            ...energyConsumptionOptions.tooltip,
+                            y: {
+                              formatter: function (val) {
+                                return val + ' kWh';
+                              }
+                            }
                           }
                         }}
-                        onClick={() => handleSlaveSelect(slave)}
-                      >
-                        {slave.name}
-                      </Typography>
-                    </Box>
-                  ))}
-              </Box>
+                        series={[{
+                          name: 'Weekly Consumption',
+                          data: weeklyConsumptionData.map(item => item.value)
+                        }]}
+                        type="line"
+                        height={100}
+                        width={500}
+                      />
+                    ) : (
+                      <Chart
+                        options={{
+                          ...energyConsumptionOptions,
+                          yaxis: {
+                            ...energyConsumptionOptions.yaxis,
+                            labels: { show: false }
+                          }
+                        }}
+                        series={energyConsumptionSeries}
+                        type="line"
+                        height={200}
+                      />
+                    )}
+                  </Box>
+
+                  {/* Machine Power Consumption Chart */}
+                  <Box>
+                    <Typography sx={{ ...titleStyle1, marginBottom: '10px' }}>Machine Power Consumption</Typography>
+                    <Chart
+                      options={machinePowerOptions}
+                      series={machinePowerSeries}
+                      type="bar"
+                      height={250}
+                      width={500}
+                    />
+                  </Box>
+                </Grid>
+
+                {/* Right Column - Alerts Panel */}
+                <Grid item xs={4} sx={{ width: getAlertsCardWidth(), padding: '10px', marginLeft: sidebarVisible ? '0px' : '60px' }}>
+                  {/* <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Typography sx={titleStyle1}>Alerts</Typography>
+                    <Badge badgeContent={slaveList.length} color="error"></Badge>
+                  </Box> */}
+                  
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Search machines..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+                    sx={{
+                      marginBottom: '8px',
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '8px',
+                        height: '40px'
+                      }
+                    }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+
+                  <Box sx={{ maxHeight: "400px", overflowY: "auto", scrollbarWidth: "thin" }}>
+                    {slaveList
+                      .filter(slave => slave.name.toLowerCase().includes(searchTerm))
+                      .map((slave, index) => (
+                        <Box
+                          key={slave.id}
+                          sx={{
+                            height: '40px',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            marginBottom: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            backgroundColor: selectedSlave?.id === slave.id ? '#E3F2FD' : (index % 2 === 0 ? '#F9FAFB' : '#FFFFFF'),
+                            border: selectedSlave?.id === slave.id ? '2px solid #E5E7EB' : '1px solid #E5E7EB',
+                            transition: 'all 0.3s ease',
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: '#F3F4F6',
+                              boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                              transform: 'translateY(-2px)',
+                              border: '1px solid #1976d2'
+                            }
+                          }}
+                          onClick={() => {
+                            console.log('Slave list item clicked:', slave.name);
+                            handleSlaveSelect(slave);
+                          }}
+                        >
+                          <Box sx={{ marginRight: '8px', color: '#444444', fontWeight: 'bold', marginTop: "10px" }}>
+                            <FlashOnIcon fontSize="small" onClick={() => handleSlaveSelect(slave)} />
+                          </Box>
+                          <Typography
+                            sx={{
+                              fontSize: '14px',
+                              color: '#444444',
+                              fontWeight: 'bold',
+                              fontFamily: 'ubuntu, sans-serif',
+                              cursor: 'pointer',
+                              flex: 1,
+                              transition: 'all 0.3s ease'
+                            }}
+                            onClick={() => {
+                              console.log('Slave clicked:', slave.name);
+                              handleSlaveSelect(slave);
+                            }}
+                          >
+                            {slave.name}
+                          </Typography>
+                        </Box>
+                      ))}
+                  </Box>
+                </Grid>
+              </Grid>
             </Card>
           </Grid>
         </Grid>

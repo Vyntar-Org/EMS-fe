@@ -15,7 +15,7 @@ import './App.css';
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <AppContent /> 
     </AuthProvider>
   );
 }
