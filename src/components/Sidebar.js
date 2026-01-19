@@ -99,7 +99,7 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
         {isMobile && (
           <div className="sidebar-mobile-header">
             <Typography variant="h6" className="sidebar-mobile-title">
-              Menu
+              Menu   
             </Typography>
             <IconButton
               onClick={handleDrawerToggle}
