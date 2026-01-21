@@ -52,8 +52,10 @@ const Login = () => {
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('username', username);
 
-      // You can store additional user data from the response if needed
-      if (response.user) {
+      // Store additional user data from the response if available
+      if (response.data?.user) {
+        localStorage.setItem('userData', JSON.stringify(response.data.user));
+      } else if (response.user) {
         localStorage.setItem('userData', JSON.stringify(response.user));
       }
 
