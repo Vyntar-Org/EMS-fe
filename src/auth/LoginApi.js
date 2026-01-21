@@ -22,9 +22,13 @@ const loginApi = {
         withCredentials: false // Using Authorization header instead of cookies
       });
       
-      // Store tokens in localStorage - check both direct properties and nested in data
-      let access_token = response.data.access || (response.data.data && response.data.data.access);
-      let refresh_token = response.data.refresh || (response.data.data && response.data.data.refresh);
+      // Store tokens in localStorage - API returns tokens in data object
+      let access_token = response.data.data?.access;
+      let refresh_token = response.data.data?.refresh;
+      
+      // Fallback to direct properties if data object doesn't exist
+      if (!access_token) access_token = response.data.access;
+      if (!refresh_token) refresh_token = response.data.refresh;
       
       if (access_token) {
         localStorage.setItem('accessToken', access_token);
