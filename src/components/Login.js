@@ -62,11 +62,6 @@ const Login = () => {
       // Also store tokens that were saved in localStorage by the login API
 
 
-      // Log the tokens for debugging
-      console.log('Access Token:', localStorage.getItem('accessToken'));
-      console.log('Refresh Token:', localStorage.getItem('refreshToken'));
-
-
       // Update auth context
       login({ username });
 
@@ -152,16 +147,32 @@ const Login = () => {
                 borderRadius: '30px',
                 color: '#fff',
                 height: '40px',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'transparent', // Default border color (optional)
+                },
               },
             }}
             sx={{
               mb: 2,
-              '& input::placeholder': { color: '#9ca3af' },
+              // 1. Placeholder Styling
+              '& input::placeholder': { color: '#9ca3af', opacity: 1 },
+              // 2. Focus Border Styling
+              '& .MuiOutlinedInput-root': {
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#4b5563', // Border color on hover
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#ccc751', // Change this to your desired focus color
+                  borderWidth: '1px',
+                },
+              },
+              // 3. Autofill Fix (Prevents resizing and color flashing)
               '& input:-webkit-autofill': {
-                WebkitBoxShadow: '0 0 0 1000px #1f2933 inset',
-                WebkitTextFillColor: '#fff',
-                height: '10px',
-                // borderRadius: '30px',
+                WebkitBoxShadow: '0 0 0 1000px #1f2933 inset !important',
+                WebkitTextFillColor: '#fff !important',
+                caretColor: '#fff',
+                transition: 'background-color 5000s ease-in-out 0s',
+                height:'0px'
               },
             }}
           />
@@ -198,16 +209,29 @@ const Login = () => {
                 borderRadius: '30px',
                 color: '#fff',
                 height: '40px',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'transparent',
+                },
               },
             }}
             sx={{
-              mb: 3,
-              '& input::placeholder': { color: '#9ca3af' },
+             mb: 3,
+              '& input::placeholder': { color: '#9ca3af', opacity: 1 },
+              '& .MuiOutlinedInput-root': {
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#4b5563',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#ccc751', 
+                  borderWidth: '1px',
+                },
+              },
               '& input:-webkit-autofill': {
-                WebkitBoxShadow: '0 0 0 1000px #1f2933 inset',
-                WebkitTextFillColor: '#fff',
-                borderRadius: '30px',
-                height: '10px',
+                WebkitBoxShadow: '0 0 0 1000px #1f2933 inset !important',
+                WebkitTextFillColor: '#fff !important',
+                caretColor: '#fff',
+                transition: 'background-color 5000s ease-in-out 0s',
+                height:'0px'
               },
             }}
           />

@@ -631,11 +631,16 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                             sx={{
                                 bgcolor: "#217346",
                                 color: "#fff",
-                                "&:hover": { bgcolor: "#1e6b40" }
+                                borderRadius: "8px", // Slightly rounded corners look better for export buttons
+                                "&:hover": { 
+                                    bgcolor: "#1e6b40",
+                                    transform: "translateY(-1px)", // Subtle lift effect
+                                },
+                                transition: "all 0.2s"
                             }}
                             title="Export Excel"
                         >
-                            <img src="/Excel.png" alt="Excel" style={{ width: 18 }} />
+                            <FileDownloadIcon sx={{ fontSize: 22 }} />
                         </IconButton>
 
                         <IconButton
@@ -643,11 +648,16 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                             sx={{
                                 bgcolor: "#EA3323",
                                 color: "#fff",
-                                "&:hover": { bgcolor: "#c6281c" }
+                                borderRadius: "8px",
+                                "&:hover": { 
+                                    bgcolor: "#c6281c",
+                                    transform: "translateY(-1px)",
+                                },
+                                transition: "all 0.2s"
                             }}
                             title="Export PDF"
                         >
-                            <PictureAsPdfIcon />
+                            <PictureAsPdfIcon sx={{ fontSize: 22 }} />
                         </IconButton>
                     </Box>
 
