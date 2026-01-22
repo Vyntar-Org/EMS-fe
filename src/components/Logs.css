@@ -55,6 +55,16 @@
   white-space: nowrap;
 }
 
+/* Override ellipsis for header cells to show full text */
+.logs-table-container .MuiTableHead .MuiTableCell-root {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: none !important;
+}
+
 .logs-table-container .MuiTableCell-root:last-child {
   border-right: none;
 }
@@ -71,6 +81,12 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: none !important;
 }
 
 .logs-table-container .MuiTableHead {
@@ -80,13 +96,20 @@
 }
 
 .log-table-header {
-  height: 20px;
+  height: auto;
+  min-height: 40px;
 }
 
 .log-header-cell {
   font-size: 0.75rem;
   letter-spacing: 0.6px;
   text-transform: uppercase;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: none !important;
 }
 
 .log-table-row:hover {
@@ -111,41 +134,56 @@
   text-align: center;
 }
 
-/* Column width adjustments */
-.logs-table-container .MuiTableCell-root:nth-child(1) { /* ENTRYDATE */
-  width: 150px;
-}
-
-.logs-table-container .MuiTableCell-root:nth-child(2), /* R_Phase_VoY */
-.logs-table-container .MuiTableCell-root:nth-child(3), /* Phase_B */
-.logs-table-container .MuiTableCell-root:nth-child(4), /* Phase_R */
-.logs-table-container .MuiTableCell-root:nth-child(5), /* Phase_Y */
-.logs-table-container .MuiTableCell-root:nth-child(6) { /* Phase_B */
-  width: 80px;
-}
-
-.logs-table-container .MuiTableCell-root:nth-child(7), /* RY_Volta */
-.logs-table-container .MuiTableCell-root:nth-child(8), /* YB_Volta */
-.logs-table-container .MuiTableCell-root:nth-child(9) { /* BR_Volta */
-  width: 80px;
-}
-
-.logs-table-container .MuiTableCell-root:nth-child(10) { /* Frequenc */
-  width: 80px;
-}
-
-.logs-table-container .MuiTableCell-root:nth-child(11) { /* Total_Act */
-  width: 80px;
-}
-
-.logs-table-container .MuiTableCell-root:nth-child(12) { /* Average_kWH */
-  width: 90px;
-}
-
-.logs-table-container .MuiTableCell-root:nth-child(13) { /* Consump */
+/* Column width adjustments (covering all 16 columns) */
+.logs-table-container .MuiTableCell-root:nth-child(1) { width: 170px; }  /* timestamp */
+.logs-table-container .MuiTableCell-root:nth-child(2),
+.logs-table-container .MuiTableCell-root:nth-child(3),
+.logs-table-container .MuiTableCell-root:nth-child(4),
+.logs-table-container .MuiTableCell-root:nth-child(5),
+.logs-table-container .MuiTableCell-root:nth-child(6),
+.logs-table-container .MuiTableCell-root:nth-child(7),
+.logs-table-container .MuiTableCell-root:nth-child(8),
+.logs-table-container .MuiTableCell-root:nth-child(9),
+.logs-table-container .MuiTableCell-root:nth-child(10),
+.logs-table-container .MuiTableCell-root:nth-child(11),
+.logs-table-container .MuiTableCell-root:nth-child(12),
+.logs-table-container .MuiTableCell-root:nth-child(13),
+.logs-table-container .MuiTableCell-root:nth-child(14),
+.logs-table-container .MuiTableCell-root:nth-child(15),
+.logs-table-container .MuiTableCell-root:nth-child(16) {
   width: 120px;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.logs-table-container .MuiTableCell-root:nth-child(14) { /* Machines */
-  width: 80px;
+/* Override for header cells to show full text */
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(1) { 
+  width: 170px;
+  max-width: none !important;
+}
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(2),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(3),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(4),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(5),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(6),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(7),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(8),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(9),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(10),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(11),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(12),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(13),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(14),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(15),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(16) {
+  width: auto;
+  min-width: 120px;
+  max-width: none !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-wrap: break-word;
+  word-break: break-word;
 }

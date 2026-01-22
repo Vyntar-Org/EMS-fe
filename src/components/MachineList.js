@@ -47,18 +47,19 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const styles = {
         mainContent: {
             width: '100%',
-            minHeight: 'auto',
+            minHeight: '86.4vh',
             // backgroundColor: '#f4f7f6',
             fontFamily: '"Ubuntu", sans-serif',
             fontSize: '14px',
             color: '#5A5A5A',
             marginBottom: '20px',
+            marginLeft: '5px',
         },
         container: {
-            // padding: '0 15px',
+            // padding: '0 15px',  
         },
         blockHeader: {
-            padding: '10px 0',
+            // padding: '10px 0',
         },
         headerTitle: {
             margin: '0',
@@ -71,7 +72,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             borderRadius: '4px',
             boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
             padding: '15px',
-            marginTop: '20px',
+            marginTop: '10px',
         },
         statusChip: {
             fontWeight: 'bold',
@@ -109,9 +110,9 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                           className="logs-title"
                           style={{
                             // marginBottom: '-10px',
-                            color: '#0156a6',
+                            color: '#0F2A44',
                             fontWeight: 600,
-                            fontFamily: 'inherit',
+                            fontFamily: 'sans-serif',
                           }}
                         >
                           <span

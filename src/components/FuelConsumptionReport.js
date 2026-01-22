@@ -333,67 +333,67 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
 
     // Export to PDF functionality
     const exportToPDF = () => {
-  const { headers, data, title } = getCurrentData();
+        const { headers, data, title } = getCurrentData();
 
-  // 🔑 Format numbers to 2 decimals
-  const formattedData = data.map(row =>
-    row.map(cell =>
-      typeof cell === "number"
-        ? cell.toFixed(2)
-        : cell
-    )
-  );
+        // 🔑 Format numbers to 2 decimals
+        const formattedData = data.map(row =>
+            row.map(cell =>
+                typeof cell === "number"
+                    ? cell.toFixed(2)
+                    : cell
+            )
+        );
 
-  import("jspdf").then(({ default: jsPDF }) => {
-    import("jspdf-autotable").then(({ default: autoTable }) => {
+        import("jspdf").then(({ default: jsPDF }) => {
+            import("jspdf-autotable").then(({ default: autoTable }) => {
 
-      const doc = new jsPDF("landscape", "mm", "a4");
+                const doc = new jsPDF("landscape", "mm", "a4");
 
-      doc.setFontSize(16);
-      doc.text(title, 14, 15);
+                doc.setFontSize(16);
+                doc.text(title, 14, 15);
 
-      doc.setFontSize(10);
-      doc.text(
-        `Generated on: ${new Date().toLocaleDateString()}`,
-        14,
-        22
-      );
+                doc.setFontSize(10);
+                doc.text(
+                    `Generated on: ${new Date().toLocaleDateString()}`,
+                    14,
+                    22
+                );
 
-      autoTable(doc, {
-        head: [headers],
-        body: formattedData, // ✅ use formatted data
-        startY: 28,
-        theme: "grid",
+                autoTable(doc, {
+                    head: [headers],
+                    body: formattedData, // ✅ use formatted data
+                    startY: 28,
+                    theme: "grid",
 
-        styles: {
-          fontSize: 7,
-          cellPadding: 2,
-          halign: "center",
-          valign: "middle",
-        },
+                    styles: {
+                        fontSize: 7,
+                        cellPadding: 2,
+                        halign: "center",
+                        valign: "middle",
+                    },
 
-        headStyles: {
-          fillColor: [1, 86, 166],
-          textColor: 255,
-          fontSize: 7,
-        },
+                    headStyles: {
+                        fillColor: [1, 86, 166],
+                        textColor: 255,
+                        fontSize: 7,
+                    },
 
-        columnStyles: {
-          0: { cellWidth: 30 },
-          ...Object.fromEntries(
-            headers.slice(1, -1).map((_, i) => [i + 1, { cellWidth: 7 }])
-          ),
-          [headers.length - 1]: { cellWidth: 14 },
-        },
+                    columnStyles: {
+                        0: { cellWidth: 30 },
+                        ...Object.fromEntries(
+                            headers.slice(1, -1).map((_, i) => [i + 1, { cellWidth: 7 }])
+                        ),
+                        [headers.length - 1]: { cellWidth: 14 },
+                    },
 
-        margin: { left: 8, right: 8 },
-        showHead: "everyPage",
-      });
+                    margin: { left: 8, right: 8 },
+                    showHead: "everyPage",
+                });
 
-      doc.save(`${title.replace(/\s+/g, "_")}_Export.pdf`);
-    });
-  });
-};
+                doc.save(`${title.replace(/\s+/g, "_")}_Export.pdf`);
+            });
+        });
+    };
 
     // Get all unique station names from current data
     const getAllStations = () => {
@@ -462,7 +462,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
         mainContent: {
             width: sidebarVisible ? 'calc(100% - 0px)' : 'calc(100% - 0px)',
             maxWidth: sidebarVisible ? '1600px' : '1800px',
-            minHeight: 'auto',
+            minHeight: '86.2vh',
             fontFamily: 'sans-serif',
             fontSize: '14px',
             margin: '0',
@@ -483,10 +483,17 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                 color: '#0F2A44',
                                 fontWeight: 600,
                                 fontFamily: 'sans-serif',
+                                marginLeft: '5px',
                             }}
                         >
                             <span
-                                onClick={onSidebarToggle}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (onSidebarToggle) {
+                                        onSidebarToggle();
+                                    }
+                                }}
                                 style={{
                                     fontSize: '14px',
                                     lineHeight: 1,
@@ -496,19 +503,27 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                     cursor: 'pointer',
                                     marginRight: '8px',
                                     userSelect: 'none',
-                                    color: '#007bff'
+                                    color: '#007bff',
+                                    zIndex: 10,
+                                    position: 'relative'
                                 }}
                             >
                                 <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
                             </span>
-                            Reports
+                            <Tabs value={activeTab} onChange={handleTabChange} centered={false} sx={{ mb: 3, marginTop: '-37px' }}>
+                                <Tab sx={{fontWeight: 600}} label={`Daywise Consumption`} />
+                                <Tab sx={{fontWeight: 600}} label={`Monthwise Consumption`} />
+                                <Tab sx={{fontWeight: 600}} label={`Daily Meter Reading`} />
+                                <Tab sx={{fontWeight: 600}} label={`Daywise Cost Consumption`} />
+                                <Tab sx={{fontWeight: 600}} label={`Monthwise Cost Consumption`} />
+                            </Tabs>
                         </Typography>
                     </Grid>
                 </Grid>
             </Box>
 
             {/* Tabs with Selector */}
-            <Paper sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* <Paper sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f7f6f4' }}>
                 <Box>
                     <Tabs value={activeTab} onChange={handleTabChange} centered={false} sx={{ minHeight: '48px' }}>
                         <Tab label={`Daywise Consumption`} />
@@ -518,7 +533,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                         <Tab label={`Monthwise Cost Consumption`} />
                     </Tabs>
                 </Box>
-            </Paper>
+            </Paper> */}
             <Box
                 sx={{
                     display: "flex",
@@ -632,7 +647,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                 bgcolor: "#217346",
                                 color: "#fff",
                                 borderRadius: "8px", // Slightly rounded corners look better for export buttons
-                                "&:hover": { 
+                                "&:hover": {
                                     bgcolor: "#1e6b40",
                                     transform: "translateY(-1px)", // Subtle lift effect
                                 },
@@ -649,7 +664,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                 bgcolor: "#EA3323",
                                 color: "#fff",
                                 borderRadius: "8px",
-                                "&:hover": { 
+                                "&:hover": {
                                     bgcolor: "#c6281c",
                                     transform: "translateY(-1px)",
                                 },

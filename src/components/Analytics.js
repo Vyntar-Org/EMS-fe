@@ -31,7 +31,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const styles = {
         mainContent: {
             width: '100%',
-            minHeight: '100vh',
+            minHeight: '86.4vh',
             backgroundColor: '#f4f7f6',
             fontFamily: '"Ubuntu", sans-serif',
             fontSize: '14px',
@@ -42,7 +42,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             // padding: '0 15px',
         },
         blockHeader: {
-            padding: '10px 0',
+            // padding: '10px 0',
         },
         headerTitle: {
             margin: '0',
@@ -55,7 +55,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             borderRadius: '4px',
             boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
             padding: '15px',
-            marginTop: '20px',
+            marginTop: '10px',
         },
         statusChip: {
             fontWeight: 'bold',
@@ -302,7 +302,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 // marginBottom: '-10px',
                                 color: '#0F2A44',
                                 fontWeight: 600,
-                                fontFamily: 'inherit',
+                                fontFamily: 'sans-serif',
+                                 marginLeft: '5px',
                             }}
                         >
                             <span
@@ -355,7 +356,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                     </CardContent>
                 </Card>
             </Box>
-            <Box style={styles.container}>
+            {/* <Box style={styles.container}>
                 <Card style={styles.tableCard}>
                     <CardContent sx={{ p: 1 }}>
                         <Typography
@@ -383,7 +384,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                         )}
                     </CardContent>
                 </Card>
-            </Box>
+            </Box> */}
         </Box>
     )
 }

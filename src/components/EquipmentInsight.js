@@ -43,7 +43,7 @@ const EquipmentInsight = ({ onSidebarToggle, sidebarVisible }) => {
         backgroundColor: '#FFFFFF',
         boxShadow: '0 6px 18px rgba(31, 78, 121, 0.18)',
         display: 'flex',
-        padding: '18px',
+        padding: '14px',
         boxSizing: 'border-box',
         gap: '18px',
         position: 'relative',
@@ -195,12 +195,13 @@ const EquipmentInsight = ({ onSidebarToggle, sidebarVisible }) => {
         },
         mainContent: {
             width: sidebarVisible ? 'calc(100% - 0px)' : 'calc(100% - 0px)', // Adjust width based on sidebar visibility
-            height: '900px',
+            height: '89vh',
             // padding: '24px',
-            margin: '0 auto',
+            // margin: '0 auto',
             fontFamily: 'Inter, Roboto, system-ui, sans-serif',
             overflow: 'hidden',
             transition: 'width 0.3s ease', // Add transition for smooth width change
+             marginLeft: '5px',
         },
         sectionTitle: {
             fontSize: '14px',
@@ -384,9 +385,10 @@ const EquipmentInsight = ({ onSidebarToggle, sidebarVisible }) => {
                           className="logs-title"
                           style={{
                             // marginBottom: '-10px',
-                            color: '#0156a6',
+                            color: '#0F2A44',
                             fontWeight: 600,
-                            fontFamily: 'inherit',
+                            fontFamily: 'sans-serif',
+                            marginLeft: '5px',
                           }}
                         >
                           <span
