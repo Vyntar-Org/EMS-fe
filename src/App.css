@@ -1,17 +1,20 @@
 .App {
-  height: auto;
+  /* height: 100vh; */
   /* width: 100%; */
-  background-color: #f4f7f6;
-  overflow: hidden;
+  background-color: #f7f6f4;
+  overflow: hidden; 
   display: flex;
   flex-direction: column;
+  /* border-bottom: 5px solid #0156a6;
+  border-right: 25px solid #0156a6;
+  border-left: 25px solid #0156a6; */
 }
 
 .main-content {
-  margin-top: 60px;
-  padding: 30px;
+  margin-top: 70px;
+  /* padding: 30px; */
   /* height: calc(100vh - 60px); */
-  /* overflow-y: hidden; */
+  overflow-y: hidden;
   overflow-x: hidden;
   /* transition: margin-left 0.3s ease; */
   flex: 1;
@@ -22,13 +25,13 @@
 }
 
 .main-content.sidebar-hidden {
-  margin-left: 0;
+  margin-left: 70px;
 }
 
 @media (max-width: 960px) {
   .main-content {
     margin-left: 0 !important;
-    padding: 15px;
+    /* padding: 15px; */
     height: calc(100vh - 60px);
   }
 }

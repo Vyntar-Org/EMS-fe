@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { IconButton, Drawer, useMediaQuery, useTheme, Typography } from '@mui/material';
+import { IconButton, Drawer, useMediaQuery, useTheme, Typography, Tooltip } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import './Sidebar.css';
+import SummarizeIcon from '@mui/icons-material/Summarize';
 
 function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, onSidebarHide }) {
   const location = useLocation();
@@ -33,14 +34,14 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
-  
+
   const menuItems = [
     { id: 1, name: 'Dashboard', path: '/dashboard', icon: 'home' },
     { id: 2, name: 'Machine List', path: '/machine-list', icon: 'list' },
     { id: 3, name: 'Equipment Insight', path: '/equipment-insight', icon: 'paper-plane' },
     { id: 4, name: 'Analytics', path: '/analytics', icon: 'bar-chart' },
     { id: 5, name: 'Logs', path: '/logs', icon: 'file-text' },
-    { id: 6, name: 'Reports', path: '/reports', icon: 'file-text' },
+    { id: 6, name: 'Reports', path: '/reports', icon: 'reports' },
   ];
 
   const getIcon = (iconName) => {
@@ -88,6 +89,9 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
         );
+      case 'reports':
+        return <SummarizeIcon fontSize="small" />;
+
       default:
         return null;
     }
@@ -99,7 +103,7 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
         {isMobile && (
           <div className="sidebar-mobile-header">
             <Typography variant="h6" className="sidebar-mobile-title">
-              Menu   
+              Menu
             </Typography>
             <IconButton
               onClick={handleDrawerToggle}
@@ -113,16 +117,31 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
         <ul className="sidebar-menu">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
+            const truncatedName = item.name.length > 17 ? item.name.substring(0, 17) + '...' : item.name;
+
+            const linkContent = (
+              <Link
+                to={item.path}
+                className={`sidebar-link ${isActive ? 'active' : ''}`}
+                onClick={isMobile ? handleDrawerToggle : () => { if (typeof onSidebarHide === 'function') onSidebarHide(); }}
+              >
+                <span className="sidebar-icon">{getIcon(item.icon)}</span>
+                <span className="sidebar-text">{item.name}</span>
+                {!isMobile && !visible && (
+                  <span className="sidebar-text-truncated">{truncatedName}</span>
+                )}
+              </Link>
+            );
+
             return (
               <li key={item.id} className="sidebar-item">
-                <Link 
-                  to={item.path}
-                  className={`sidebar-link ${isActive ? 'active' : ''}`}
-                  onClick={isMobile ? handleDrawerToggle : () => { if (typeof onSidebarHide === 'function') onSidebarHide(); }}
-                >
-                  <span className="sidebar-icon">{getIcon(item.icon)}</span>
-                  <span className="sidebar-text">{item.name}</span>
-                </Link>
+                {!isMobile && !visible ? (
+                  <Tooltip title={item.name} placement="right" arrow>
+                    {linkContent}
+                  </Tooltip>
+                ) : (
+                  linkContent
+                )}
               </li>
             );
           })}

@@ -298,7 +298,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
     mainContent: {
       width: sidebarVisible ? 'calc(100% - 0px)' : 'calc(100% - 0px)', // Adjust width based on sidebar visibility
       maxWidth: sidebarVisible ? '1600px' : '1800px', // Adjust max width
-      minHeight: 'auto',
+      minHeight: '89vh',
       // backgroundColor: '#F8FAFC',
       fontFamily: 'Inter, Roboto, system-ui, sans-serif',
       fontSize: '14px',
@@ -317,9 +317,10 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
               className="logs-title"
               style={{
                 // marginBottom: '-10px',
-                color: '#0156a6',
+                color: '#0F2A44',
                 fontWeight: 600,
-                fontFamily: 'inherit',
+                fontFamily: 'sans-serif',
+                 marginLeft: '5px',
               }}
             >
               <span
@@ -344,7 +345,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
         </Grid>
       </Box>
 
-      <Card className="logs-card" sx={{marginTop: '20px'}}>
+      <Card className="logs-card" sx={{marginTop: '10px'}}>
         <CardContent>
           <Box className="logs-header">
             <Box className="logs-filters">

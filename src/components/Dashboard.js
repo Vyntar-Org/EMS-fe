@@ -483,9 +483,10 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       fontFamily: 'sans-serif',
       fontSize: '14px',
       // padding: '24px',
-      margin: '0',
-      marginBottom: '20px',
-      transition: 'all 0.3s ease', // Add smooth transition
+      // margin: '0',
+      // marginBottom: '20px',
+      marginLeft: '8px',
+      // marginRight: '20px',
     },
     header: {
       height: '64px',
@@ -523,17 +524,17 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   // Calculate responsive card widths based on sidebar visibility
   const getCardWidth = () => {
     if (sidebarVisible) {
-      return '165px'; // Smaller width when sidebar is visible
+      return '170px'; // Smaller width when sidebar is visible
     }
-    return '210px'; // Original width when sidebar is hidden
+    return '200px'; // Original width when sidebar is hidden
   };
 
   // Calculate responsive chart card widths based on sidebar visibility
   const getChartCardWidth = () => {
     if (sidebarVisible) {
-      return '470px'; // Smaller width when sidebar is visible
+      return '500px'; // Smaller width when sidebar is visible
     }
-    return '600px'; // Original width when sidebar is hidden
+    return '540px'; // Original width when sidebar is hidden
   };
     const getChartCardWidth1 = () => {
     if (sidebarVisible) {
@@ -591,6 +592,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 color: '#0F2A44',
                 fontWeight: 600,
                 fontFamily: 'sans-serif',
+                marginTop: '-5px'
               }}
             >
               <span
@@ -624,7 +626,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         width: '100%',
         overflow: 'hidden'
       }}>
-        <Box sx={{ display: 'flex', gap: '10px', marginLeft: '-20px' }}>
+        <Box sx={{ display: 'flex', gap: '10px', marginLeft: '-40px' }}>
           {/* Card 1: Devices */}
           <Card sx={responsiveCardStyle}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -773,7 +775,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       </Box>
 
       {/* Chart Section Layout */}
-      <Box sx={{ backgroundColor: '', padding: '0px', marginLeft: '-1px' }}>
+      <Box sx={{ backgroundColor: '', padding: '0px', marginLeft: '-20px' }}>
         <Grid container spacing={3} justifyContent="center" gap={'10px'}>
           {/* Left Column - 2 Stacked Cards */}
           <Grid item xs={8}>
@@ -781,7 +783,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
             <Card sx={{
               ...cardStyle1,
               width: getChartCardWidth(),
-              height: '200px',
+              height: '170px',
               padding: '20px',
               marginBottom: '10px',
               transition: 'all 0.3s ease'
@@ -802,7 +804,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
             <Card sx={{
               ...cardStyle1,
               width: getChartCardWidth(),
-              height: '200px',
+              height: '170px',
               padding: '20px',
               marginBottom: '10px',
               transition: 'all 0.3s ease'
@@ -812,7 +814,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 options={peakDemandOptions}
                 series={peakDemandSeries}
                 type="line"
-                height={180}  // Reduced to fit within 150px card
+                height={165}  // Reduced to fit within 150px card
               />
             </Card>
           </Grid>
@@ -821,7 +823,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
             <Card sx={{
               ...cardStyle1,
               width: getChartCardWidth1(),
-              height: '450px',
+              height: '389px',
               padding: '20px',
               marginBottom: '10px',
               transition: 'all 0.3s ease'
@@ -897,12 +899,12 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
                   {/* Machine Power Consumption Chart */}
                   <Box>
-                    <Typography sx={{ ...titleStyle1, marginBottom: '10px' }}>Machine Power Consumption</Typography>
+                    <Typography sx={{ ...titleStyle1, marginBottom: '-15px' }}>Machine Power Consumption</Typography>
                     <Chart
                       options={machinePowerOptions}
                       series={machinePowerSeries}
                       type="bar"
-                      height={250}
+                      height={230}
                       width={500}
                     />
                   </Box>
@@ -937,7 +939,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     }}
                   />
 
-                  <Box sx={{ maxHeight: "400px", overflowY: "auto", scrollbarWidth: "thin" }}>
+                  <Box sx={{ maxHeight: "340px", overflowY: "auto", scrollbarWidth: "thin" }}>
                     {slaveList
                       .filter(slave => slave.name.toLowerCase().includes(searchTerm))
                       .map((slave, index) => (
