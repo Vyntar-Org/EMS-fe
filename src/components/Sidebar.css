@@ -1,19 +1,23 @@
 .sidebar-wrapper {
   position: fixed;
-  top: 60px;
+  top: 50px;
   left: 0;
   width: 250px;
-  height: calc(100vh - 60px);
+  /* height: calc(100vh - 60px); */
   z-index: 999;
-  transition: transform 0.3s ease;
+  transition: width 0.3s ease;
 }
 
 .sidebar-wrapper.sidebar-hidden {
-  transform: translateX(-100%);
+  width: 70px;
+}
+
+.sidebar-wrapper.sidebar-hidden .sidebar-item {
+  margin-bottom: 4px;
 }
 
 .sidebar-wrapper.sidebar-visible {
-  transform: translateX(0);
+  width: 250px;
 }
 
 .sidebar {
@@ -22,11 +26,14 @@
   background-color: #f4f7f6;
   color: #17191c;
   overflow-y: auto;
-  /* border: 1px solid #e0e0e0; */
+   /* border: 1px solid #e0e0e0; */
 }
 
 .sidebar-container {
   padding: 20px 0;
+  border-left: 5px solid #0156a6;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .sidebar-menu {
@@ -48,10 +55,19 @@
   color: #1c1718;
   text-decoration: none;
   font-size: 15px;
-  font-family: "Ubuntu",sans-serif;
+  font-family: "Ubuntu", sans-serif;
   transition: all 0.3s ease;
   border-left: 3px solid transparent;
   cursor: pointer;
+  justify-content: flex-start;
+}
+
+.sidebar-wrapper.sidebar-hidden .sidebar-link {
+  flex-direction: column;
+  padding: 12px 8px;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
 }
 
 .sidebar-link:visited {
@@ -70,12 +86,12 @@
 .sidebar-link.active {
   background-color: #f1f1f1;
   color: #125493;
-  border-left-color: #125493;
+  border-left-color: #0156a6;
   font-weight: 500;
 }
 
 .sidebar-link.active .sidebar-icon {
-  color: #125493;
+  color: #0156a6;
 }
 
 .sidebar-icon {
@@ -87,11 +103,44 @@
 }
 
 .sidebar-link:hover .sidebar-icon {
-  color: #125493;
+  color: #0156a6;
 }
 
 .sidebar-text {
   flex: 1;
+  white-space: nowrap;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sidebar-wrapper.sidebar-hidden .sidebar-text {
+  display: none;
+}
+
+.sidebar-wrapper.sidebar-visible .sidebar-text {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sidebar-text-truncated {
+  display: none;
+  font-size: 10px;
+  text-align: center;
+  color: #1c1718;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.sidebar-wrapper.sidebar-hidden .sidebar-text-truncated {
+  display: block;
+}
+
+.sidebar-wrapper.sidebar-hidden .sidebar-link.active .sidebar-text-truncated {
+  color: #125493;
+  font-weight: 500;
 }
 
 /* Mobile Styles */
@@ -144,4 +193,3 @@
     display: none !important;
   }
 }
-
