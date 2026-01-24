@@ -38,7 +38,7 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
   const menuItems = [
     { id: 1, name: 'Dashboard', path: '/dashboard', icon: 'home' },
     { id: 2, name: 'Machine List', path: '/machine-list', icon: 'list' },
-    { id: 3, name: 'Equipment Insight', path: '/equipment-insight', icon: 'paper-plane' },
+    // { id: 3, name: 'Equipment Insight', path: '/equipment-insight', icon: 'paper-plane' },
     { id: 4, name: 'Analytics', path: '/analytics', icon: 'bar-chart' },
     { id: 5, name: 'Logs', path: '/logs', icon: 'file-text' },
     { id: 6, name: 'Reports', path: '/reports', icon: 'reports' },

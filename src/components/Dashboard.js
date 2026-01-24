@@ -524,9 +524,9 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   // Calculate responsive card widths based on sidebar visibility
   const getCardWidth = () => {
     if (sidebarVisible) {
-      return '170px'; // Smaller width when sidebar is visible
+      return '176px'; // Smaller width when sidebar is visible
     }
-    return '200px'; // Original width when sidebar is hidden
+    return '206px'; // Original width when sidebar is hidden
   };
 
   // Calculate responsive chart card widths based on sidebar visibility
@@ -626,7 +626,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         width: '100%',
         overflow: 'hidden'
       }}>
-        <Box sx={{ display: 'flex', gap: '10px', marginLeft: '-40px' }}>
+        <Box sx={{ display: 'flex', gap: '10px', marginLeft: '-30px' }}>
           {/* Card 1: Devices */}
           <Card sx={responsiveCardStyle}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -635,57 +635,81 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 <Typography sx={titleStyle}>Devices</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" mt="auto">
-                <Box sx={{ ...miniBoxStyle, backgroundColor: '#E9F7E7' }}>
+                <Box sx={{ ...miniBoxStyle, backgroundColor: '#E9F7E7', flex: 1, mr: 1, minHeight: '80px' }}>
                   <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Online</Typography>
                   <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#16A34A' }}>{slavesData.online}</Typography>
                 </Box>
-                <Box sx={{ ...miniBoxStyle, backgroundColor: '#FDECEC' }}>
+                <Box sx={{ ...miniBoxStyle, backgroundColor: '#FDECEC', flex: 1, ml: 1, minHeight: '80px' }}>
                   <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Offline</Typography>
                   <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#EF4444' }}>{slavesData.offline}</Typography>
                 </Box>
-                <Box sx={{ ...miniBoxStyle, backgroundColor: '#EAF3FF' }}>
-                  <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Total</Typography>
-                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#2563EB' }}>{slavesData.total}</Typography>
-                </Box>
               </Box>
             </CardContent>
           </Card>
 
-          {/* Card 2: Energy Consumption */}
-          <Card sx={responsiveCardStyle}>
-            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <Box display="flex" alignItems="center" mb={1}>
+          {/* Merged Card: Energy Consumption & Power Factor */}
+          <Card sx={{
+            ...responsiveCardStyle,
+            width: getCardWidth() === '230px' ? '500px' : (parseInt(getCardWidth()) * 2) + 'px',
+            height: '130px',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column'}}>
+              {/* Header */}
+              <Box display="flex" alignItems="center" mb={1.5}>
                 <FlashOnIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
-                <Typography sx={titleStyle}>Energy Consumption</Typography>
+                <Typography sx={{ ...titleStyle, fontSize: '16px' }}>Energy Consumption</Typography>
               </Box>
-              <Box display="flex" alignItems="baseline" mt="auto">
-                <Typography sx={valueStyle}>{energyConsumption.toFixed(1)}</Typography>
-                <Typography sx={{ fontSize: '13px', color: '#6B7280', ml: 1 }}>kWh</Typography>
-              </Box>
-              <Box display="flex" justifyContent="space-between" mt={1}>
-                <Typography sx={labelStyle}>Predictive:</Typography>
-                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>{(energyConsumption * 1.1).toFixed(1)} kWh</Typography>
-              </Box>
-              <Box display="flex" justifyContent="space-between">
-                <Typography sx={labelStyle}>Cost:</Typography>
-                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>₹{(energyConsumption * 0.1).toFixed(2)}</Typography>
-              </Box>
-            </CardContent>
-          </Card>
 
-          {/* Card 3: Power Factor */}
-          <Card sx={responsiveCardStyle}>
-            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <Box display="flex" alignItems="center" mb={1}>
-                <SpeedIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
-                <Typography sx={titleStyle}>Power Factor</Typography>
-              </Box>
-              <Box display="flex" alignItems="baseline" mt="auto">
-                <Typography sx={valueStyle}>0.25</Typography>
-              </Box>
-              <Box display="flex" justifyContent="space-between" mt={1}>
-                <Typography sx={labelStyle}>Reactive Power:</Typography>
-                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>100 kVAr</Typography>
+              {/* Main Content Grid */}
+              <Box display="flex" justifyContent="space-between" alignItems="flex-start" sx={{ flex: 1, pr: '80px' }}>
+                {/* Left Side - Metrics */}
+                <Box display="flex" flexDirection="column" gap={0.8} sx={{ flex: 1, minWidth: 0 }}>
+                  {/* MTD Row */}
+                  <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
+                    <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>MTD</Typography>
+                    <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: '120px', flexShrink: 0, textAlign: 'right' }}>
+                      {energyConsumption.toFixed(1)} kWH
+                    </Typography>
+                    <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, }}>
+                      Cost: ₹{(energyConsumption * 0.1).toFixed(2)}
+                    </Typography>
+                  </Box>
+
+                  {/* Value kWH Row */}
+                  <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
+                    <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>Value kWH</Typography>
+                    <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: '120px', flexShrink: 0, textAlign: 'right' }}>
+                      {energyConsumption.toFixed(1)} kWH
+                    </Typography>
+                    <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, }}>
+                      Cost: ₹{(energyConsumption * 0.1).toFixed(2)}
+                    </Typography>
+                  </Box>
+
+                  {/* Today Value Row */}
+                  <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
+                    <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>Today Value</Typography>
+                    <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: '120px', flexShrink: 0, textAlign: 'right' }}>
+                      {(energyConsumption * 0.4).toFixed(1)} kWH
+                    </Typography>
+                    <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, }}>
+                      Cost: ₹{((energyConsumption * 0.4) * 0.1).toFixed(2)}
+                    </Typography>
+                  </Box>
+
+                  {/* Yesterday Value Row */}
+                  <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
+                    <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>Yesterday Value</Typography>
+                    <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: '120px', flexShrink: 0, textAlign: 'right' }}>
+                      {(energyConsumption * 0.35).toFixed(1)} kWH
+                    </Typography>
+                    <Typography sx={{ marginLeft: 'px' ,fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, }}>
+                      Cost: ₹{((energyConsumption * 0.35) * 0.1).toFixed(2)}
+                    </Typography>
+                  </Box>
+                </Box>
               </Box>
             </CardContent>
           </Card>
