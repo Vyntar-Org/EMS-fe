@@ -116,9 +116,9 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   console.log('Dashboard data state:', dashboardData);
   console.log('Loading state:', loading);
   console.log('Error state:', error);
-
-  const slavesData = dashboardData?.slaves || { total: 0, online: 0, offline: 0 };
-  const energyConsumption = dashboardData?.acte_im_total || 0;
+  const slavesData = dashboardData?.devices || { total: 0, online: 0, offline: 0 };
+  const energyConsumption = dashboardData?.energy_consumption || 0;
+  const energyConsumptionUnit = dashboardData?.energy_consumption?.unit || 'kWh';
   const hourlyData = dashboardData?.acte_im_hourly_24h?.data || [];
 
   console.log('Slaves data:', slavesData);
@@ -236,7 +236,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       }
     },
     legend: { show: false },
-    colors: ['#9B8AE6']
+    colors: ['#0a223e']
   };
 
   const energyConsumptionSeries = [{
@@ -258,7 +258,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     },
     markers: {
       size: 6,
-      colors: ['#2F855A'],
+      colors: ['#cbc84c'],
       strokeColors: '#fff',
       strokeWidth: 2,
       strokeOpacity: 0.9,
@@ -295,7 +295,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       style: { fontSize: '12px' }
     },
     legend: { show: false },
-    colors: ['#4C8C6B']
+    colors: ['#0a223e']
   };
 
   const peakDemandSeries = [{
@@ -397,7 +397,15 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       },
       axisBorder: { show: false }
     },
-    dataLabels: { enabled: false },
+    dataLabels: { enabled: true,
+          formatter: function (val) {
+            return val;
+          },
+          offsetY: -20,
+          style: {
+            fontSize: '12px',
+            colors: ["#0a223e"]
+          } },
     tooltip: {
       enabled: weeklyConsumptionData.length > 0, // Only show tooltip when data exists
       theme: 'light',
@@ -409,7 +417,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       }
     },
     legend: { show: false },
-    colors: ['#6F4A74']
+    colors: ['#0a223e']
   };
 
   const machinePowerSeries = [{
@@ -556,6 +564,11 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     ...cardStyle,
     width: getCardWidth(),
     transition: 'all 0.3s ease',
+    '&:hover': {
+      backgroundColor: '#fff',
+      boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+      transform: 'translateY(-2px)',
+    }
   };
 
   // if (loading) {
@@ -670,15 +683,15 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                   <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
                     <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>MTD</Typography>
                     <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: '120px', flexShrink: 0, textAlign: 'right' }}>
-                      {energyConsumption.toFixed(1)} kWH
+                      {energyConsumption?.mtd?.value.toFixed(1)} {energyConsumptionUnit}
                     </Typography>
                     <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, }}>
-                      Cost: ₹{(energyConsumption * 0.1).toFixed(2)}
+                      Cost: ₹{(energyConsumption?.mtd?.cost.toFixed(2))}
                     </Typography>
                   </Box>
 
                   {/* Value kWH Row */}
-                  <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
+                  {/* <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
                     <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>Value kWH</Typography>
                     <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: '120px', flexShrink: 0, textAlign: 'right' }}>
                       {energyConsumption.toFixed(1)} kWH
@@ -686,16 +699,16 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, }}>
                       Cost: ₹{(energyConsumption * 0.1).toFixed(2)}
                     </Typography>
-                  </Box>
+                  </Box> */}
 
                   {/* Today Value Row */}
                   <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
                     <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>Today Value</Typography>
                     <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: '120px', flexShrink: 0, textAlign: 'right' }}>
-                      {(energyConsumption * 0.4).toFixed(1)} kWH
+                      {(energyConsumption?.today?.value.toFixed(1))} {energyConsumptionUnit}
                     </Typography>
                     <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, }}>
-                      Cost: ₹{((energyConsumption * 0.4) * 0.1).toFixed(2)}
+                      Cost: ₹{((energyConsumption?.today?.cost.toFixed(2)))} 
                     </Typography>
                   </Box>
 
@@ -703,10 +716,10 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                   <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
                     <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>Yesterday Value</Typography>
                     <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: '120px', flexShrink: 0, textAlign: 'right' }}>
-                      {(energyConsumption * 0.35).toFixed(1)} kWH
+                      {(energyConsumption?.yesterday?.value.toFixed(1))} {energyConsumptionUnit}
                     </Typography>
                     <Typography sx={{ marginLeft: 'px' ,fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, }}>
-                      Cost: ₹{((energyConsumption * 0.35) * 0.1).toFixed(2)}
+                      Cost: ₹{((energyConsumption?.yesterday?.cost.toFixed(2)))}
                     </Typography>
                   </Box>
                 </Box>
@@ -778,19 +791,19 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               <Box mt="auto">
                 <Box display="flex" justifyContent="space-between" sx={{ lineHeight: '22px' }}>
                   <Typography sx={labelStyle}>IR</Typography>
-                  <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>25 A</Typography>
+                  <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>0 A</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" sx={{ lineHeight: '22px' }}>
                   <Typography sx={labelStyle}>IY</Typography>
-                  <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>25 A</Typography>
+                  <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>0 A</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" sx={{ lineHeight: '22px' }}>
                   <Typography sx={labelStyle}>IB</Typography>
-                  <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>25 A</Typography>
+                  <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>0 A</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" sx={{ lineHeight: '22px' }}>
                   <Typography sx={labelStyle}>Current LBI %</Typography>
-                  <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>11%</Typography>
+                  <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>0%</Typography>
                 </Box>
               </Box>
             </CardContent>
@@ -810,7 +823,12 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               height: '170px',
               padding: '20px',
               marginBottom: '10px',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                backgroundColor: '#fff',
+                boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                transform: 'translateY(-2px)',
+              }
             }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                 <Typography sx={titleStyle1}>Energy Consumption (Last 24 Hours)</Typography>
@@ -831,7 +849,12 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               height: '170px',
               padding: '20px',
               marginBottom: '10px',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                backgroundColor: '#fff',
+                boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                transform: 'translateY(-2px)',
+              }
             }}>
               <Typography sx={titleStyle1}>Peak Demand Indicator</Typography>
               <Chart
@@ -850,7 +873,12 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               height: '389px',
               padding: '20px',
               marginBottom: '10px',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                backgroundColor: '#fff',
+                boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                transform: 'translateY(-2px)',
+              }
             }}>
               <Grid container spacing={2}>
                 {/* Left Column - Charts */}
@@ -940,7 +968,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     <Typography sx={titleStyle1}>Alerts</Typography>
                     <Badge badgeContent={slaveList.length} color="error"></Badge>
                   </Box> */}
-                  
+
                   <TextField
                     fullWidth
                     size="small"
@@ -951,7 +979,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                       marginBottom: '8px',
                       '& .MuiOutlinedInput-root': {
                         borderRadius: '8px',
-                        height: '40px'
+                        height: '30px'
                       }
                     }}
                     InputProps={{
@@ -970,7 +998,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                         <Box
                           key={slave.id}
                           sx={{
-                            height: '40px',
+                            height: '20px',
                             padding: '8px 12px',
                             borderRadius: '8px',
                             marginBottom: '6px',
@@ -984,7 +1012,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                               backgroundColor: '#F3F4F6',
                               boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
                               transform: 'translateY(-2px)',
-                              border: '1px solid #1976d2'
+                              border: '1px solid #0a223e'
                             }
                           }}
                           onClick={() => {

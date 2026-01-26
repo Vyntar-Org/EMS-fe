@@ -2,7 +2,7 @@
   position: fixed;
   top: 50px;
   left: 0;
-  width: 250px;
+  width: 200px;
   /* height: calc(100vh - 60px); */
   z-index: 999;
   transition: width 0.3s ease;
@@ -17,7 +17,7 @@
 }
 
 .sidebar-wrapper.sidebar-visible {
-  width: 250px;
+  width: 200px;
 }
 
 .sidebar {
