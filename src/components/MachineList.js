@@ -133,7 +133,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     // Chart series using the selected floor's phase selection
     const getCurrentChartSeries = () => [{
-        name: `Phase ${cardPhaseSelections[selectedFloor] || 'R'} Consumption`,
+        name: `${cardPhaseSelections[selectedFloor] || ''} Consumption`,
         data: getPhaseData(cardPhaseSelections[selectedFloor] || 'R')
     }];
     
@@ -322,10 +322,11 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             flexDirection: 'row',
             flexWrap: 'wrap',
-            justifyContent: 'space-between',
+            justifyContent: 'space-around',
+            gap: '20px'
         },
         gridItem: {
-            width: '48%',
+            width: '30%',
             marginBottom: '15px',
         },
         tableCell: {
@@ -378,13 +379,13 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 {floorData.isOnline ? 'Online' : 'Offline'}
                             </Typography>
                             <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
-                                kWH: {floorData.valueKWH.toFixed(1)}
+                                {floorData.valueKWH.toFixed(1)} kWH
                             </Typography>
                         </Box>
                     </Box>
 
                     {/* Phase Indicators */}
-                    <Box style={{ display: 'flex', marginBottom: '8px' }}>
+                    {/* <Box style={{ display: 'flex', marginBottom: '8px' }}>
                         <Box 
                             style={{
                                 ...styles.phaseIndicator,
@@ -430,7 +431,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 Phase B
                             </Typography>
                         </Box>
-                    </Box>
+                    </Box> */}
 
                     {/* Phase Data Table */}
                     <TableContainer style={styles.phaseTable}>
@@ -446,11 +447,11 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 {Object.entries(floorData.phases).map(([phase, data]) => (
                                     <TableRow key={phase}>
                                         <TableCell style={styles.tableCell}>
-                                                                                <Box style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                    <Box style={{ ...styles.phaseDot, ...(phase === 'R' ? styles.phaseR : phase === 'Y' ? styles.phaseY : styles.phaseB) }}></Box>
-                                                                                    Phase {phase}
-                                                                                </Box>
-                                                                            </TableCell>
+                                            <Box style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <Box style={{ ...styles.phaseDot, ...(phase === 'R' ? styles.phaseR : phase === 'Y' ? styles.phaseY : styles.phaseB) }}></Box>
+                                                Phase {phase}
+                                            </Box>
+                                        </TableCell>
                                         <TableCell align="right" style={styles.tableCell}>{data.voltage.toFixed(2)}</TableCell>
                                         <TableCell align="right" style={styles.tableCell}>{data.current.toFixed(1)}</TableCell>
                                     </TableRow>
@@ -460,7 +461,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     </TableContainer>
 
                     {/* Metrics Row */}
-                    <Box style={styles.metricsRow}>
+                    <Box style={{ ...styles.metricsRow, marginTop: '0px' }}>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>Active power</Typography>
                             <Typography style={styles.metricValue}>{floorData.activePower.toFixed(2)} kw</Typography>
@@ -479,20 +480,19 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </Box>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>MTD</Typography>
-                            <Typography style={styles.metricValue}>??</Typography>
+                            <Typography style={styles.metricValue}>1254 kWh</Typography>
                         </Box>
                     </Box>
-                    
                     <Box style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button 
-                            variant="contained" 
+                        <Button
+                            variant="contained"
                             style={styles.chartButton}
                             onClick={() => {
                                 setSelectedFloor(floorName);
                                 setChartModalOpen(true);
                             }}
                         >
-                            View Chart ({cardPhaseSelections[floorName] || 'R'})
+                            Trend ({cardPhaseSelections[floorName] || 'R'})
                         </Button>
                     </Box>
                 </CardContent>
@@ -556,9 +556,9 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 <Box style={styles.modalPaper}>
                     <Box style={styles.modalHeader}>
                         <Typography id="chart-modal-title" variant="h6" component="h2">
-                            {selectedFloor} - Phase {cardPhaseSelections[selectedFloor] || 'R'} Consumption over last 8/12 hours
+                            {selectedFloor} - Consumption over last 12 hours
                         </Typography>
-                        <IconButton 
+                        <IconButton
                             style={styles.closeButton}
                             onClick={() => setChartModalOpen(false)}
                         >

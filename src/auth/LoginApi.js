@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://ems.api.v1.vyntar.in/api'; // Default to production URL, can be overridden with environment variable
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://bms.api.v1.vyntar.in/api'; // Default to production URL, can be overridden with environment variable
 
 const loginApi = {
   /**

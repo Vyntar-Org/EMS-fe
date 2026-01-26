@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://ems.api.v1.vyntar.in/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://bms.api.v1.vyntar.in/api';
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -67,7 +67,7 @@ export const getDashboardOverview = async () => {
     console.log('Making dashboard API call with token:', token.substring(0, 20) + '...');
     console.log('API Base URL:', apiClient.defaults.baseURL);
     
-    const response = await apiClient.get('/admin/dashboard/overview/');
+    const response = await apiClient.get('/dashboards/overview/');
     console.log('Dashboard API response:', response);
     
     // Log the structure of the response data to understand it better
@@ -80,7 +80,7 @@ export const getDashboardOverview = async () => {
       if (response.data.success === true) {
         // Standard format: {success: true, message: '...', data: {...}, ...}
         return response.data.data;
-      } else if (response.data.hasOwnProperty('slaves') || response.data.hasOwnProperty('acte_im_total')) {
+      } else if (response.data.hasOwnProperty('slaves') || response.data.hasOwnProperty('energy_consumption')) {
         // Direct format: {slaves: {...}, acte_im_total: ..., ...}
         console.log('Using direct data format');
         return response.data;
