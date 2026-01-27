@@ -60,6 +60,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
     const [selectedMonth, setSelectedMonth] = useState(1); // Default to January
     const [selectedYear, setSelectedYear] = useState(2026); // Default to 2026
     const [selectedStation, setSelectedStation] = useState(''); // For dropdown filter
+    const [searchTrigger, setSearchTrigger] = useState(0); // Used to trigger re-render on search
 
     const selectStyle = {
         minWidth: 200,
@@ -70,24 +71,26 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
     };
 
 
-    // Fetch all data when component mounts or month/year changes
+    // Fetch data only for active tab
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchDataForActiveTab = async () => {
             try {
                 setLoading(true);
-
-                // Fetch all four types of data
-                const [consumptionResponse, readingResponse, monthlyReadingResponse, monthlyConsumptionResponse] = await Promise.all([
-                    fetchConsumptionData(selectedMonth, selectedYear),
-                    fetchReadingData(selectedMonth, selectedYear),
-                    fetchMonthlyReadingData(selectedYear),
-                    fetchMonthlyConsumptionData(selectedYear)
-                ]);
-
-                setConsumptionData(consumptionResponse);
-                setReadingData(readingResponse);
-                setMonthlyReadingData(monthlyReadingResponse);
-                setMonthlyConsumptionData(monthlyConsumptionResponse);
+                
+                if (activeTab === 0 || activeTab === 3) {
+                    // Daywise consumption data
+                    const response = await fetchConsumptionData(selectedMonth, selectedYear);
+                    setConsumptionData(response);
+                } else if (activeTab === 1 || activeTab === 4) {
+                    // Monthwise consumption data
+                    const response = await fetchMonthlyConsumptionData(selectedYear);
+                    setMonthlyConsumptionData(response);
+                } else if (activeTab === 2) {
+                    // Daily meter reading data
+                    const response = await fetchReadingData(selectedMonth, selectedYear);
+                    setReadingData(response);
+                }
+                
                 setError(null);
             } catch (err) {
                 setError('Failed to fetch data. Please try again later.');
@@ -97,8 +100,8 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
             }
         };
 
-        fetchData();
-    }, [selectedMonth, selectedYear]);
+        fetchDataForActiveTab();
+    }, [activeTab, selectedMonth, selectedYear, searchTrigger]);
 
     // Transform API data to table rows format
     const transformDataToRows = (data) => {
@@ -434,12 +437,15 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
             rows = monthwiseRows;
         }
 
+        // Apply filters if they exist
+        let filteredRows = rows;
+        
         // Apply station filter if selectedStation exists
         if (selectedStation) {
-            return rows.filter(row => row.station === selectedStation);
+            filteredRows = filteredRows.filter(row => row.station === selectedStation);
         }
 
-        return rows;
+        return filteredRows;
     };
 
     // Get reading rows for the reading table
@@ -450,12 +456,15 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
             rows = transformReadingDataToRows(readingData);
         }
 
+        // Apply filters if they exist
+        let filteredRows = rows;
+        
         // Apply station filter if selectedStation exists
         if (selectedStation) {
-            return rows.filter(row => row.station === selectedStation);
+            filteredRows = filteredRows.filter(row => row.station === selectedStation);
         }
 
-        return rows;
+        return filteredRows;
     };
 
     const styles = {
@@ -484,6 +493,8 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                 fontWeight: 600,
                                 fontFamily: 'sans-serif',
                                 marginLeft: '5px',
+                                backgroundColor: '#fff',
+                                width: '150%'
                             }}
                         >
                             <span
@@ -510,30 +521,17 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                             >
                                 <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
                             </span>
-                            <Tabs value={activeTab} onChange={handleTabChange} centered={false} sx={{ mb: 3, marginTop: '-37px' }}>
-                                <Tab sx={{fontWeight: 600}} label={`Daywise Consumption`} />
-                                <Tab sx={{fontWeight: 600}} label={`Monthwise Consumption`} />
-                                <Tab sx={{fontWeight: 600}} label={`Daily Meter Reading`} />
-                                <Tab sx={{fontWeight: 600}} label={`Daywise Cost Consumption`} />
-                                <Tab sx={{fontWeight: 600}} label={`Monthwise Cost Consumption`} />
+                            <Tabs value={activeTab} onChange={handleTabChange} centered={false} sx={{ mb: 2, marginTop: '-37px'}}>
+                                <Tab sx={{fontWeight: 600, textTransform: 'capitalize'}} label="Daywise Consumption" />
+                                <Tab sx={{fontWeight: 600, textTransform: 'capitalize'}} label="Monthwise Consumption" />
+                                <Tab sx={{fontWeight: 600, textTransform: 'capitalize'}} label="Daily Meter Reading" />
+                                <Tab sx={{fontWeight: 600, textTransform: 'capitalize'}} label="Daywise Cost Consumption" />
+                                <Tab sx={{fontWeight: 600, textTransform: 'capitalize'}} label="Monthwise Cost Consumption" />
                             </Tabs>
                         </Typography>
                     </Grid>
                 </Grid>
             </Box>
-
-            {/* Tabs with Selector */}
-            {/* <Paper sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f7f6f4' }}>
-                <Box>
-                    <Tabs value={activeTab} onChange={handleTabChange} centered={false} sx={{ minHeight: '48px' }}>
-                        <Tab label={`Daywise Consumption`} />
-                        <Tab label={`Monthwise Consumption`} />
-                        <Tab label={`Daily Meter Reading`} />
-                        <Tab label={`Daywise Cost Consumption`} />
-                        <Tab label={`Monthwise Cost Consumption`} />
-                    </Tabs>
-                </Box>
-            </Paper> */}
             <Box
                 sx={{
                     display: "flex",
@@ -548,10 +546,10 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                         display: "flex",
                         alignItems: "center",
                         gap: 2,
-                        background: "#f8fafc",
+                        // background: "#f8fafc",
                         p: 1.5,
                         borderRadius: 2,
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.08)"
+                        // boxShadow: "0 1px 4px rgba(0,0,0,0.08)"
                     }}
                 >
                     {/* MONTH */}
@@ -562,8 +560,9 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                             label="Month"
                             value={selectedMonth}
                             onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                            sx={{ minWidth: 150 }}
+                            sx={{ minWidth: 150, height: '30px' }}
                             InputProps={{
+                                sx: { height: '30px', padding: '6px 14px' },
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <CalendarMonthIcon fontSize="small" />
@@ -586,8 +585,9 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                         label="Year"
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(Number(e.target.value))}
-                        sx={{ minWidth: 130 }}
+                        sx={{ minWidth: 130, height: '30px' }}
                         InputProps={{
+                            sx: { height: '30px', padding: '6px 14px' },
                             startAdornment: (
                                 <InputAdornment position="start">
                                     <EventIcon fontSize="small" />
@@ -609,8 +609,9 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                         label="Station"
                         value={selectedStation}
                         onChange={(e) => setSelectedStation(e.target.value)}
-                        sx={{ minWidth: 200 }}
+                        sx={{ minWidth: 200, height: '30px' }}
                         InputProps={{
+                            sx: { height: '30px', padding: '6px 14px' },
                             startAdornment: (
                                 <InputAdornment position="start">
                                     {/* <FactoryIcon fontSize="small" /> */}
@@ -625,6 +626,26 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                             </MenuItem>
                         ))}
                     </TextField>
+                    
+                    {/* SEARCH BUTTON */}
+                    <IconButton
+                        onClick={() => {
+                            // Force re-render to apply current filters
+                            setSearchTrigger(prev => prev + 1);
+                        }}
+                        sx={{
+                            bgcolor: '#0156a6',
+                            color: '#fff',
+                            width: '30px',
+                            height: '30px',
+                            '&:hover': {
+                                bgcolor: '#0a223e',
+                            }
+                        }}
+                        title="Search with selected filters"
+                    >
+                        <SearchIcon fontSize="small" />
+                    </IconButton>
                 </Box>
 
 
@@ -696,7 +717,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
 
             {/* Consumption Table - Show only for consumption tabs */}
             {!loading && !error && showConsumptionTables && (
-                <TableContainer component={Paper} sx={{ maxHeight: 500 }}>
+                <TableContainer component={Paper} sx={{ maxHeight: 520, height: '501px' }}>
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
@@ -756,7 +777,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
             )}
             {/* Reading Table - Show only for reading tabs */}
             {!loading && !error && showReadingTables && (
-                <TableContainer component={Paper} sx={{ maxHeight: 500 }}>
+                <TableContainer component={Paper} sx={{ maxHeight: 500, height: '700px' }}>
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
