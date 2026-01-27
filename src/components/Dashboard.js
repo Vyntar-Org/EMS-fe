@@ -29,8 +29,13 @@ import Chart from 'react-apexcharts';
 import SearchIcon from '@mui/icons-material/Search';
 import { getDashboardOverview, getSlaveList, getSlaveWeeklyConsumption } from '../auth/DashboardApi';
 import './Dashboard.css';
+import Tooltip from '@mui/material/Tooltip';
+
 
 const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
+  const truncateText = (text, length = 9) =>
+    text.length > length ? text.slice(0, length) + '...' : text;
+
   const [dashboardData, setDashboardData] = useState(null);
   const [slaveList, setSlaveList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +44,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const [selectedSlave, setSelectedSlave] = useState(null);
   const [weeklyConsumptionData, setWeeklyConsumptionData] = useState([]);
   const [slaveLoading, setSlaveLoading] = useState(false);
+  const [activeChart, setActiveChart] = useState('line'); // 'line' or 'bar'
 
   // Fetch dashboard data
   useEffect(() => {
@@ -213,7 +219,20 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       },
       axisBorder: { show: false }
     },
-    dataLabels: { enabled: false },
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) {
+        return val;
+      },
+      offsetY: -20,
+      style: {
+        fontSize: '12px',
+        colors: ["#0a223e"]
+      },
+      background: {
+        enabled: false, // 👈 this removes the blue background
+      },
+    },
     tooltip: {
       enabled: true,
       theme: 'light',
@@ -397,15 +416,20 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       },
       axisBorder: { show: false }
     },
-    dataLabels: { enabled: true,
-          formatter: function (val) {
-            return val;
-          },
-          offsetY: -20,
-          style: {
-            fontSize: '12px',
-            colors: ["#0a223e"]
-          } },
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) {
+        return val;
+      },
+      offsetY: -20,
+      style: {
+        fontSize: '12px',
+        colors: ["#0a223e"]
+      },
+      background: {
+        enabled: false, // 👈 this removes the blue background
+      },
+    },
     tooltip: {
       enabled: weeklyConsumptionData.length > 0, // Only show tooltip when data exists
       theme: 'light',
@@ -544,7 +568,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     }
     return '540px'; // Original width when sidebar is hidden
   };
-    const getChartCardWidth1 = () => {
+  const getChartCardWidth1 = () => {
     if (sidebarVisible) {
       return '670px'; // Smaller width when sidebar is visible
     }
@@ -668,7 +692,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
             position: 'relative',
             overflow: 'hidden'
           }}>
-            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column'}}>
+            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               {/* Header */}
               <Box display="flex" alignItems="center" mb={1.5}>
                 <FlashOnIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
@@ -685,7 +709,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: '120px', flexShrink: 0, textAlign: 'right' }}>
                       {energyConsumption?.mtd?.value.toFixed(1)} {energyConsumptionUnit}
                     </Typography>
-                    <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, }}>
+                    <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, marginLeft: sidebarVisible ? '0' : '50px' }}>
                       Cost: ₹{(energyConsumption?.mtd?.cost.toFixed(2))}
                     </Typography>
                   </Box>
@@ -703,22 +727,22 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
                   {/* Today Value Row */}
                   <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
-                    <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>Today Value</Typography>
+                    <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>Today </Typography>
                     <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: '120px', flexShrink: 0, textAlign: 'right' }}>
                       {(energyConsumption?.today?.value.toFixed(1))} {energyConsumptionUnit}
                     </Typography>
-                    <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, }}>
-                      Cost: ₹{((energyConsumption?.today?.cost.toFixed(2)))} 
+                    <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, marginLeft: sidebarVisible ? '0' : '50px' }}>
+                      Cost: ₹{((energyConsumption?.today?.cost.toFixed(2)))}
                     </Typography>
                   </Box>
 
                   {/* Yesterday Value Row */}
                   <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
-                    <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>Yesterday Value</Typography>
+                    <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>Yesterday </Typography>
                     <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: '120px', flexShrink: 0, textAlign: 'right' }}>
                       {(energyConsumption?.yesterday?.value.toFixed(1))} {energyConsumptionUnit}
                     </Typography>
-                    <Typography sx={{ marginLeft: 'px' ,fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, }}>
+                    <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, marginLeft: sidebarVisible ? '0' : '50px' }}>
                       Cost: ₹{((energyConsumption?.yesterday?.cost.toFixed(2)))}
                     </Typography>
                   </Box>
@@ -883,83 +907,171 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               <Grid container spacing={2}>
                 {/* Left Column - Charts */}
                 <Grid item xs={8}>
-                  {/* Energy Consumption Chart */}
-                  <Box sx={{ marginBottom: '20px' }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                      <Typography sx={titleStyle1}>
-                        {selectedSlave ? `${selectedSlave.name} Energy` : 'Energy Consumption'}
-                      </Typography>
-                      <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>kWh</Typography>
-                    </Box>
-                    {slaveLoading && selectedSlave ? (
-                      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '150px' }}>
-                        <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
-                          Loading {selectedSlave.name} data...
+                  {/* Conditional Chart Rendering with Inline Buttons */}
+                  {activeChart === 'line' ? (
+                    /* Energy Consumption Chart */
+                    <Box sx={{ marginBottom: '20px' }}>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                        <Typography sx={titleStyle1}>
+                          {selectedSlave ? `${selectedSlave.name} Energy` : 'Energy Consumption'}
                         </Typography>
-                      </Box>
-                    ) : selectedSlave && weeklyConsumptionData.length > 0 ? (
-                      <Chart
-                        options={{
-                          ...energyConsumptionOptions,
-                          xaxis: {
-                            ...energyConsumptionOptions.xaxis,
-                            categories: weeklyConsumptionData.map(item => formatDate(item.date)),
-                            title: {
-                              text: 'Date',
-                              style: { color: '#6B7280', fontSize: '12px' }
-                            }
-                          },
-                          yaxis: {
-                            ...energyConsumptionOptions.yaxis,
-                            min: 0,
-                            max: calculateYAxis(weeklyConsumptionData).max,
-                            tickAmount: calculateYAxis(weeklyConsumptionData).tickAmount,
-                            labels: { show: false }
-                          },
-                          tooltip: {
-                            ...energyConsumptionOptions.tooltip,
-                            y: {
-                              formatter: function (val) {
-                                return val + ' kWh';
+                        <Box display="flex" gap={1}>
+                          <button
+                            onClick={() => setActiveChart('line')}
+                            style={
+                              {
+                                padding: '4px 12px',
+                                backgroundColor: activeChart === 'line' ? '#0156a6' : '#e0e0e0',
+                                color: activeChart === 'line' ? 'white' : '#333',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: activeChart === 'line' ? 'bold' : 'normal',
+                                fontSize: '12px'
                               }
                             }
-                          }
-                        }}
-                        series={[{
-                          name: 'Weekly Consumption',
-                          data: weeklyConsumptionData.map(item => item.value)
-                        }]}
-                        type="line"
-                        height={100}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => setActiveChart('bar')}
+                            style={
+                              {
+                                padding: '4px 12px',
+                                backgroundColor: activeChart === 'bar' ? '#0156a6' : '#e0e0e0',
+                                color: activeChart === 'bar' ? 'white' : '#333',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: activeChart === 'bar' ? 'bold' : 'normal',
+                                fontSize: '12px'
+                              }
+                            }
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="18" y1="20" x2="18" y2="10"></line>
+                              <line x1="12" y1="20" x2="12" y2="4"></line>
+                              <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                          </button>
+                        </Box>
+                      </Box>
+                      {slaveLoading && selectedSlave ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '150px' }}>
+                          <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
+                            Loading {selectedSlave.name} data...
+                          </Typography>
+                        </Box>
+                      ) : selectedSlave && weeklyConsumptionData.length > 0 ? (
+                        <Chart
+                          options={{
+                            ...energyConsumptionOptions,
+                            xaxis: {
+                              ...energyConsumptionOptions.xaxis,
+                              categories: weeklyConsumptionData.map(item => formatDate(item.date)),
+                              title: {
+                                text: 'Date',
+                                style: { color: '#6B7280', fontSize: '12px' }
+                              }
+                            },
+                            yaxis: {
+                              ...energyConsumptionOptions.yaxis,
+                              min: 0,
+                              max: calculateYAxis(weeklyConsumptionData).max,
+                              tickAmount: calculateYAxis(weeklyConsumptionData).tickAmount,
+                              labels: { show: false }
+                            },
+                            tooltip: {
+                              ...energyConsumptionOptions.tooltip,
+                              y: {
+                                formatter: function (val) {
+                                  return val + ' kWh';
+                                }
+                              }
+                            }
+                          }}
+                          series={[{
+                            name: 'Weekly Consumption',
+                            data: weeklyConsumptionData.map(item => item.value)
+                          }]}
+                          type="line"
+                          height={350}
+                          width={500}
+                        />
+                      ) : (
+                        <Chart
+                          options={{
+                            ...energyConsumptionOptions,
+                            yaxis: {
+                              ...energyConsumptionOptions.yaxis,
+                              labels: { show: false }
+                            }
+                          }}
+                          series={energyConsumptionSeries}
+                          type="line"
+                          height={200}
+                        />
+                      )}
+                    </Box>
+                  ) : (
+                    /* Machine Power Consumption Chart */
+                    <Box>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                        <Typography sx={titleStyle1}>Machine Power Consumption</Typography>
+                        <Box display="flex" gap={1}>
+                          <button
+                            onClick={() => setActiveChart('line')}
+                            style={
+                              {
+                                padding: '4px 12px',
+                                backgroundColor: activeChart === 'line' ? '#0156a6' : '#e0e0e0',
+                                color: activeChart === 'line' ? 'white' : '#333',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: activeChart === 'line' ? 'bold' : 'normal',
+                                fontSize: '12px'
+                              }
+                            }
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => setActiveChart('bar')}
+                            style={
+                              {
+                                padding: '4px 12px',
+                                backgroundColor: activeChart === 'bar' ? '#0156a6' : '#e0e0e0',
+                                color: activeChart === 'bar' ? 'white' : '#333',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: activeChart === 'bar' ? 'bold' : 'normal',
+                                fontSize: '12px'
+                              }
+                            }
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="18" y1="20" x2="18" y2="10"></line>
+                              <line x1="12" y1="20" x2="12" y2="4"></line>
+                              <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                          </button>
+                        </Box>
+                      </Box>
+                      <Chart
+                        options={machinePowerOptions}
+                        series={machinePowerSeries}
+                        type="bar"
+                        height={350}
                         width={500}
                       />
-                    ) : (
-                      <Chart
-                        options={{
-                          ...energyConsumptionOptions,
-                          yaxis: {
-                            ...energyConsumptionOptions.yaxis,
-                            labels: { show: false }
-                          }
-                        }}
-                        series={energyConsumptionSeries}
-                        type="line"
-                        height={200}
-                      />
-                    )}
-                  </Box>
-
-                  {/* Machine Power Consumption Chart */}
-                  <Box>
-                    <Typography sx={{ ...titleStyle1, marginBottom: '-15px' }}>Machine Power Consumption</Typography>
-                    <Chart
-                      options={machinePowerOptions}
-                      series={machinePowerSeries}
-                      type="bar"
-                      height={230}
-                      width={500}
-                    />
-                  </Box>
+                    </Box>
+                  )}
                 </Grid>
 
                 {/* Right Column - Alerts Panel */}
@@ -1023,23 +1135,35 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                           <Box sx={{ marginRight: '8px', color: '#444444', fontWeight: 'bold', marginTop: "10px" }}>
                             <FlashOnIcon fontSize="small" onClick={() => handleSlaveSelect(slave)} />
                           </Box>
-                          <Typography
-                            sx={{
-                              fontSize: '14px',
-                              color: '#444444',
-                              fontWeight: 'bold',
-                              fontFamily: 'ubuntu, sans-serif',
-                              cursor: 'pointer',
-                              flex: 1,
-                              transition: 'all 0.3s ease'
-                            }}
-                            onClick={() => {
-                              console.log('Slave clicked:', slave.name);
-                              handleSlaveSelect(slave);
-                            }}
+
+                          <Tooltip
+                            title={sidebarVisible ? slave.name : ''}
+                            placement="right"
+                            arrow
+                            disableHoverListener={!sidebarVisible} // 👈 tooltip ONLY when sidebarVisible = true
                           >
-                            {slave.name}
-                          </Typography>
+                            <Typography
+                              sx={{
+                                fontSize: '14px',
+                                color: '#444444',
+                                fontWeight: 'bold',
+                                fontFamily: 'ubuntu, sans-serif',
+                                cursor: 'pointer',
+                                flex: 1,
+
+                                /* ✅ Correct truncate rules */
+                                whiteSpace: sidebarVisible ? 'nowrap' : 'normal',
+                                overflow: sidebarVisible ? 'hidden' : 'visible',
+                                textOverflow: sidebarVisible ? 'ellipsis' : 'clip',
+                                maxWidth: sidebarVisible ? '90px' : '100%',
+
+                                transition: 'all 0.3s ease',
+                              }}
+                              onClick={() => handleSlaveSelect(slave)}
+                            >
+                              {sidebarVisible ? truncateText(slave.name) : slave.name}
+                            </Typography>
+                          </Tooltip>
                         </Box>
                       ))}
                   </Box>
