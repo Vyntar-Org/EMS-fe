@@ -45,7 +45,6 @@ apiClient.interceptors.response.use(
 // Using the specific endpoint you provided
 export const fetchConsumptionData = async (month, year) => {
   try {
-    console.log(`Fetching from: https://bms.api.v1.vyntar.in/api/reports/date-wise/consumption?month=${month}&year=${year}`);
     let token = localStorage.getItem('token');
     if (!token) {
       token = localStorage.getItem('accessToken');
@@ -103,8 +102,38 @@ export const fetchReadingData = async (month, year) => {
   }
 };
 
+// Using the specific endpoint you provided
+export const fetchConsumptionCostData = async (month, year) => {
+  try {
+    let token = localStorage.getItem('token');
+    if (!token) {
+      token = localStorage.getItem('accessToken');
+    }
+    if (!token) {
+      console.warn('No authentication token found. Please log in first.');
+      throw new Error('Authentication token not found. Please log in first.');
+    }
+
+    const response = await apiClient.get('/reports/date-wise/consumption-cost', {
+      params: { month, year }
+    });
+    
+    console.log('API Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching consumption data:', error);
+    
+    // If it's a CORS error, suggest using the proxy approach
+    if (error.code === 'ERR_NETWORK' || error.message.includes('CORS')) {
+      console.log('CORS error detected. Consider using the proxy approach or enabling CORS on the server.');
+    }
+    
+    throw error;
+  }
+};
+
 // Fetch monthly reading data
-export const fetchMonthlyReadingData = async (year) => {
+export const fetchMonthlyConsumptionCostData = async (year) => {
   try {
     console.log(`Fetching monthly reading data from: https://bms.api.v1.vyntar.in/api/reports/month-wise/reading?year=${year}`);
     let token = localStorage.getItem('token');
@@ -116,7 +145,7 @@ export const fetchMonthlyReadingData = async (year) => {
       throw new Error('Authentication token not found. Please log in first.');
     }
 
-    const response = await apiClient.get('/reports/month-wise/reading', {
+    const response = await apiClient.get('/reports/month-wise/consumption-cost', {
       params: { year }
     });
     

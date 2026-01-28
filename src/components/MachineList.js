@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Grid,
@@ -22,22 +22,44 @@ import {
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
+import {getMachineList} from '../auth/MachineList';
+
 
 const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Sample data based on the image
-    const [meterData] = useState({
-        isOnline: true,
-        valueKWH: 1267.6,
-        phases: {
-            R: { voltage: 244.76, current: 15.2 },
-            Y: { voltage: 244.66, current: 15.1 },
-            B: { voltage: 247.35, current: 15.3 }
-        },
-        activePower: 11.72,
-        powerFactor: 0.93,
-        energyConsumed: 1267.6,
-        mtd: 0 // Month-To-Date placeholder
-    });
+
+
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [machineListData, setMachineListData] = useState(null);
+
+    // Fetch machine list data
+    useEffect(() => {
+        const fetchData = async () => {
+          try {
+            setLoading(true);
+            setError(null); // Clear any previous errors
+    
+            // Fetch machine list concurrently
+            const [machineListResponse] = await Promise.all([
+              getMachineList()
+            ]);
+    
+            console.log('Machine list API response:', machineListResponse);
+    
+            // Set the data
+            setMachineListData(machineListResponse);
+    
+          } catch (err) {
+            console.error('Error fetching machine list data:', err);
+            setError(err.message || 'An error occurred while fetching machine list data');
+          } finally {
+            setLoading(false);
+          }
+        };
+    
+        fetchData();
+      }, []);
 
     // State for modal visibility
     const [chartModalOpen, setChartModalOpen] = useState(false);
@@ -45,9 +67,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [selectedFloor, setSelectedFloor] = useState('Common');
     // State for individual card phase selections
     const [cardPhaseSelections, setCardPhaseSelections] = useState({});
-
-    // Define floor names
-    const floorNames = ['Common', 'First Floor', 'Ground Floor', 'Second Floor', 'Terrace', 'Third Floor'];
 
     // Chart data for Kw Consumption over last 8/12 hours
     const chartOptions = {
@@ -323,7 +342,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             flexDirection: 'row',
             flexWrap: 'wrap',
             justifyContent: 'space-around',
-            gap: '20px'
+            gap: '20px 0px'
         },
         gridItem: {
             width: '30%',
@@ -336,28 +355,12 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     };
 
     // Function to render a floor card
-    const renderFloorCard = (floorName) => {
-        // Generate slightly different data for each floor
-        const floorData = {
-            ...meterData,
-            valueKWH: meterData.valueKWH + Math.random() * 100 - 50,
-            activePower: meterData.activePower + Math.random() * 2 - 1,
-            energyConsumed: meterData.energyConsumed + Math.random() * 100 - 50,
-            phases: {
-                R: { 
-                    voltage: meterData.phases.R.voltage + Math.random() * 2 - 1, 
-                    current: meterData.phases.R.current + Math.random() * 0.5 - 0.25 
-                },
-                Y: { 
-                    voltage: meterData.phases.Y.voltage + Math.random() * 2 - 1, 
-                    current: meterData.phases.Y.current + Math.random() * 0.5 - 0.25 
-                },
-                B: { 
-                    voltage: meterData.phases.B.voltage + Math.random() * 2 - 1, 
-                    current: meterData.phases.B.current + Math.random() * 0.5 - 0.25 
-                }
-            }
-        };
+    const renderFloorCard = (machine) => {
+        if (!machine) return null;
+
+        const isOnline = machine.status === 'online';
+        const latest = machine.latest || {};
+        const energy = machine.energy || {};
 
         return (
             <Card style={styles.floorCard}>
@@ -371,67 +374,18 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 }}>
                     <Box style={styles.commonHeader}>
                         <Typography style={styles.floorTitle}>
-                            {floorName}
+                            {machine.name}
                         </Typography>
                         <Box style={styles.onlineStatus}>
-                            <Box style={floorData.isOnline ? styles.onlineIndicator : styles.offlineIndicator}></Box>
-                            <Typography style={{ fontSize: '11px', color: floorData.isOnline ? '#30b44a' : '#e34d4d' }}>
-                                {floorData.isOnline ? 'Online' : 'Offline'}
+                            {/* <Box style={isOnline ? styles.onlineIndicator : styles.offlineIndicator}></Box> */}
+                            <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
+                                {isOnline ? 'Online' : 'Offline'}
                             </Typography>
                             <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
-                                {floorData.valueKWH.toFixed(1)} kWH
+                                {latest.acte_im?.toFixed(1)} kWH
                             </Typography>
                         </Box>
                     </Box>
-
-                    {/* Phase Indicators */}
-                    {/* <Box style={{ display: 'flex', marginBottom: '8px' }}>
-                        <Box 
-                            style={{
-                                ...styles.phaseIndicator,
-                                cursor: 'pointer',
-                                backgroundColor: cardPhaseSelections[floorName] === 'R' ? '#f0f0f0' : 'transparent',
-                                padding: '3px',
-                                borderRadius: '4px'
-                            }}
-                            onClick={() => setCardPhaseSelections(prev => ({ ...prev, [floorName]: 'R' }))}
-                        >
-                            <Box style={{ ...styles.phaseDot, ...styles.phaseR }}></Box>
-                            <Typography style={{ fontSize: '12px', fontWeight: cardPhaseSelections[floorName] === 'R' ? 'bold' : 'normal' }}>
-                               Phase R
-                            </Typography>
-                        </Box>
-                        <Box 
-                            style={{
-                                ...styles.phaseIndicator,
-                                cursor: 'pointer',
-                                backgroundColor: cardPhaseSelections[floorName] === 'Y' ? '#f0f0f0' : 'transparent',
-                                padding: '3px',
-                                borderRadius: '4px'
-                            }}
-                            onClick={() => setCardPhaseSelections(prev => ({ ...prev, [floorName]: 'Y' }))}
-                        >
-                            <Box style={{ ...styles.phaseDot, ...styles.phaseY }}></Box>
-                            <Typography style={{ fontSize: '12px', fontWeight: cardPhaseSelections[floorName] === 'Y' ? 'bold' : 'normal' }}>
-                                Phase Y
-                            </Typography>
-                        </Box>
-                        <Box 
-                            style={{
-                                ...styles.phaseIndicator,
-                                cursor: 'pointer',
-                                backgroundColor: cardPhaseSelections[floorName] === 'B' ? '#f0f0f0' : 'transparent',
-                                padding: '3px',
-                                borderRadius: '4px'
-                            }}
-                            onClick={() => setCardPhaseSelections(prev => ({ ...prev, [floorName]: 'B' }))}
-                        >
-                            <Box style={{ ...styles.phaseDot, ...styles.phaseB }}></Box>
-                            <Typography style={{ fontSize: '12px', fontWeight: cardPhaseSelections[floorName] === 'B' ? 'bold' : 'normal' }}>
-                                Phase B
-                            </Typography>
-                        </Box>
-                    </Box> */}
 
                     {/* Phase Data Table */}
                     <TableContainer style={styles.phaseTable}>
@@ -444,57 +398,80 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {Object.entries(floorData.phases).map(([phase, data]) => (
-                                    <TableRow key={phase}>
-                                        <TableCell style={styles.tableCell}>
-                                            <Box style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <Box style={{ ...styles.phaseDot, ...(phase === 'R' ? styles.phaseR : phase === 'Y' ? styles.phaseY : styles.phaseB) }}></Box>
-                                                Phase {phase}
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell align="right" style={styles.tableCell}>{data.voltage.toFixed(2)}</TableCell>
-                                        <TableCell align="right" style={styles.tableCell}>{data.current.toFixed(1)}</TableCell>
-                                    </TableRow>
-                                ))}
+                                <TableRow>
+                                    <TableCell style={styles.tableCell}>
+                                        <Box style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <Box style={{ ...styles.phaseDot, ...styles.phaseR }}></Box>
+                                            Phase R
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{latest.rv?.toFixed(2)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{latest.ir?.toFixed(1)}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell style={styles.tableCell}>
+                                        <Box style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <Box style={{ ...styles.phaseDot, ...styles.phaseY }}></Box>
+                                            Phase Y
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{latest.yv?.toFixed(2)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{latest.iy?.toFixed(1)}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell style={styles.tableCell}>
+                                        <Box style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <Box style={{ ...styles.phaseDot, ...styles.phaseB }}></Box>
+                                            Phase B
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{latest.bv?.toFixed(2)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{latest.ib?.toFixed(1)}</TableCell>
+                                </TableRow>
                             </TableBody>
                         </Table>
                     </TableContainer>
 
                     {/* Metrics Row */}
-                    <Box style={{ ...styles.metricsRow, marginTop: '0px' }}>
+                    <Box style={{ ...styles.metricsRow, marginTop: '0px', display: 'flex', justifyContent: 'space-between' }}>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>Active power</Typography>
-                            <Typography style={styles.metricValue}>{floorData.activePower.toFixed(2)} kw</Typography>
+                            <Typography style={styles.metricValue}>{latest.actpr_t?.toFixed(2)} kw</Typography>
                         </Box>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>Power factor</Typography>
-                            <Typography style={styles.metricValue}>{floorData.powerFactor} Pf</Typography>
+                            <Typography style={styles.metricValue}>{latest.pf_t} Pf</Typography>
+                        </Box>
+                        <Box style={styles.metricItem}>
+                            <Typography style={styles.metricLabel}>Frequency</Typography>
+                            <Typography style={styles.metricValue}>{latest.fq} Hz</Typography>
                         </Box>
                     </Box>
 
                     {/* Energy Consumed and MTD */}
-                    <Box style={{ ...styles.metricsRow, marginTop: '8px' }}>
+                    <Box style={{ ...styles.metricsRow, marginTop: '8px', display: 'flex', justifyContent: 'space-between'  }}>
                         <Box style={styles.metricItem}>
-                            <Typography style={styles.metricLabel}>Energy consumed</Typography>
-                            <Typography style={styles.metricValue}>{floorData.energyConsumed.toFixed(1)} kWH</Typography>
+                            <Typography style={styles.metricLabel}>Today</Typography>
+                            <Typography style={styles.metricValue}>{energy.today?.toFixed(1)} kWH</Typography>
                         </Box>
                         <Box style={styles.metricItem}>
-                            <Typography style={styles.metricLabel}>MTD</Typography>
-                            <Typography style={styles.metricValue}>1254 kWh</Typography>
+                            <Typography style={{...styles.metricLabel, marginLeft: '15px'}}>MTD</Typography>
+                            <Typography style={{...styles.metricValue, marginLeft: '15px'}}>{energy.mtd?.toFixed(1)} kWh</Typography>
                         </Box>
-                    </Box>
-                    <Box style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
+                        <Box style={{ marginTop: 'auto'}}>
                         <Button
                             variant="contained"
                             style={styles.chartButton}
                             onClick={() => {
-                                setSelectedFloor(floorName);
+                                setSelectedFloor(machine.name);
                                 setChartModalOpen(true);
                             }}
                         >
-                            Trend ({cardPhaseSelections[floorName] || 'R'})
+                            Trend
                         </Button>
                     </Box>
+                    </Box>
+                    
                 </CardContent>
             </Card>
         );
@@ -538,9 +515,11 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
             {/* Custom Grid Container for 2 cards per row */}
             <Box style={styles.gridContainer}>
-                {floorNames.map((floorName, index) => (
-                    <Box style={styles.gridItem} key={index}>
-                        {renderFloorCard(floorName)}
+                {loading && <Typography>Loading...</Typography>}
+                {error && <Typography color="error">{error}</Typography>}
+                {!loading && !error && machineListData?.data?.machines?.map((machine, index) => (
+                    <Box style={styles.gridItem} key={machine.slave_id || index}>
+                        {renderFloorCard(machine)}
                     </Box>
                 ))}
             </Box>
