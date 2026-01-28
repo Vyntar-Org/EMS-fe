@@ -29,7 +29,7 @@ import FactoryIcon from "@mui/icons-material/Factory";
 import MenuItem from "@mui/material/MenuItem";
 
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import { fetchConsumptionData, fetchReadingData, fetchMonthlyReadingData, fetchMonthlyConsumptionData } from "../auth/ReportsApi";
+import { fetchConsumptionData, fetchReadingData, fetchConsumptionCostData, fetchMonthlyConsumptionData, fetchMonthlyConsumptionCostData } from "../auth/ReportsApi";
 
 const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
@@ -38,13 +38,7 @@ const months = [
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
-const monthwiseRows = [
-    {
-        station: "",
-        data: ["--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--", "--"],
-        total: "--"
-    }
-];
+
 
 export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible }) {
     const [activeTab, setActiveTab] = useState(0); // 0: Daywise Consumption, 1: Monthwise Consumption, 2: Daily Meter Reading, 3: Daywise Cost Consumption, 4: Monthwise Cost Consumption
@@ -55,7 +49,8 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
     const [error, setError] = useState(null);
     const [consumptionData, setConsumptionData] = useState(null);
     const [readingData, setReadingData] = useState(null);
-    const [monthlyReadingData, setMonthlyReadingData] = useState(null);
+    const [consumptionCostData, setConsumptionCostData] = useState(null);
+    const [monthlyConsumptionCostData, setMonthlyConsumptionCostData] = useState(null);
     const [monthlyConsumptionData, setMonthlyConsumptionData] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(1); // Default to January
     const [selectedYear, setSelectedYear] = useState(2026); // Default to 2026
@@ -77,11 +72,11 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
             try {
                 setLoading(true);
                 
-                if (activeTab === 0 || activeTab === 3) {
+                if (activeTab === 0) {
                     // Daywise consumption data
                     const response = await fetchConsumptionData(selectedMonth, selectedYear);
                     setConsumptionData(response);
-                } else if (activeTab === 1 || activeTab === 4) {
+                } else if (activeTab === 1) {
                     // Monthwise consumption data
                     const response = await fetchMonthlyConsumptionData(selectedYear);
                     setMonthlyConsumptionData(response);
@@ -89,6 +84,14 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                     // Daily meter reading data
                     const response = await fetchReadingData(selectedMonth, selectedYear);
                     setReadingData(response);
+                } else if (activeTab === 3) {
+                    // Daywise cost consumption data
+                    const response = await fetchConsumptionCostData(selectedMonth, selectedYear);
+                    setConsumptionCostData(response);
+                } else if (activeTab === 4) {
+                    // Monthwise cost consumption data
+                    const response = await fetchMonthlyConsumptionCostData(selectedYear);
+                    setMonthlyConsumptionCostData(response);
                 }
                 
                 setError(null);
@@ -105,12 +108,13 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
 
     // Transform API data to table rows format
     const transformDataToRows = (data) => {
+        console.log(data);
         if (!data || !data.data) return [];
 
         return Object.entries(data.data).map(([station, dailyData]) => {
             // Create an array of consumption values for all days (1-31)
             const consumptionValues = days.map(day => {
-                const dayData = dailyData.find(d => parseInt(d.date) === day);
+                const dayData = dailyData.find(d => Number(d.date.split('-').pop()) === day || Number(d.date) === day);
                 return dayData ? dayData.consumption : 0;
             });
 
@@ -125,52 +129,44 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
         });
     };
 
-    // Transform API reading data to table rows format
-    const transformReadingDataToRows = (data) => {
+    // Transform API consumption cost data to table rows format
+    const transformConsumptionCostDataToRows = (data) => {
+        console.log(data);
         if (!data || !data.data) return [];
 
         return Object.entries(data.data).map(([station, dailyData]) => {
-            // Create an array of reading values for all days (1-31)
-            const readingValues = days.map(day => {
-                const dayData = dailyData.find(d => parseInt(d.date) === day);
-                return dayData ? (dayData.reading !== null ? dayData.reading : '--') : '--';
+            // Create an array of Consumption cost values for all days (1-31)
+            const consumptionCostValues = days.map(day => {
+                const dayData = dailyData.find(d => Number(d.date.split('-').pop()) === day || Number(d.date) === day);
+                return dayData ? dayData.cost : 0;
             });
 
-            // Calculate total reading for this station
-            const total = readingValues.reduce((sum, val) => {
-                const numVal = parseFloat(val);
-                return sum + (isNaN(numVal) || val === '--' ? 0 : numVal);
-            }, 0);
+            // Calculate total consumption for this station
+            const total = consumptionCostValues.reduce((sum, val) => sum + val, 0);
 
             return {
                 station,
-                data: readingValues,
+                data: consumptionCostValues,
                 total: total.toFixed(2)
             };
         });
     };
 
-    // Transform API monthly reading data to table rows format
-    const transformMonthlyReadingDataToRows = (data) => {
+    // Transform API reading data to table rows format
+    const transformReadingDataToRows = (data) => {
         if (!data || !data.data) return [];
-
-        return Object.entries(data.data).map(([station, monthlyData]) => {
-            // Create an array of reading values for all months (1-12)
-            const readingValues = months.map((month, index) => {
-                const monthData = monthlyData.find(d => parseInt(d.month) === (index + 1));
-                return monthData ? (monthData.reading !== null ? monthData.reading : '--') : '--';
+        console.log(data);
+        return Object.entries(data.data).map(([station, dailyData]) => {
+            // Create an array of reading values for all days (1-31)
+            const readingValues = days.map(day => {
+                const dayData = dailyData.find(d => Number(d.date.split('-').pop()) === day || Number(d.date) === day);
+                return dayData ? (dayData.first_meter_reading !== null ? dayData.first_meter_reading : '--') : '--';
             });
 
-            // Calculate total reading for this station
-            const total = readingValues.reduce((sum, val) => {
-                const numVal = parseFloat(val);
-                return sum + (isNaN(numVal) || val === '--' ? 0 : numVal);
-            }, 0);
 
             return {
                 station,
-                data: readingValues,
-                total: total.toFixed(2)
+                data: readingValues
             };
         });
     };
@@ -180,43 +176,87 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
         if (!data || !data.data) return [];
 
         return Object.entries(data.data).map(([station, monthlyData]) => {
-            // Create an array of consumption values for all months (1-12)
-            const consumptionValues = months.map((month, index) => {
-                const monthData = monthlyData.find(d => parseInt(d.month) === (index + 1));
-                return monthData ? monthData.consumption : 0;
-            });
-
-            // Calculate total consumption for this station
-            const total = consumptionValues.reduce((sum, val) => sum + val, 0);
-
-            return {
-                station,
-                data: consumptionValues,
-                total: total.toFixed(2)
-            };
+        
+        // 3. Map our 12 months to the data provided by the API
+        const consumptionValues = months.map((_, index) => {
+            const monthNumber = index + 1; // Jan = 1, Feb = 2...
+            
+            // Find the record where the month number matches
+            const monthRecord = monthlyData.find(d => parseInt(d.month) === monthNumber);
+            
+            return monthRecord ? monthRecord.consumption_kwh : 0;
         });
-    };
+
+        // 4. Calculate total for the station
+        const total = consumptionValues.reduce((sum, val) => sum + val, 0);
+
+        return {
+            station,
+            data: consumptionValues,
+            total: total.toFixed(2)
+        };
+    });
+};
+
+    // Transform API monthly consumption cost data to table rows format
+    const transformMonthlyConsumptionCostDataToRows = (data) => {
+        if (!data || !data.data) return [];
+
+        return Object.entries(data.data).map(([station, monthlyData]) => {
+        
+        // 3. Map our 12 months to the data provided by the API
+        const consumptionValues = months.map((_, index) => {
+            const monthNumber = index + 1; // Jan = 1, Feb = 2...
+            
+            // Find the record where the month number matches
+            const monthRecord = monthlyData.find(d => parseInt(d.month) === monthNumber);
+            
+            return monthRecord ? monthRecord.cost : 0;
+        });
+
+        // 4. Calculate total for the station
+        const total = consumptionValues.reduce((sum, val) => sum + val, 0);
+
+        return {
+            station,
+            data: consumptionValues,
+            total: total.toFixed(2)
+        };
+    });
+};
 
     // Get current data based on active tab
     const getCurrentData = () => {
-        if (activeTab === 0 || activeTab === 3) {
+        if (activeTab === 0) {
             // Daywise data from API
             const headers = ['STATION', ...Array.from({ length: 31 }, (_, i) => `Day ${i + 1}`), 'TOTAL'];
             const rows = transformDataToRows(consumptionData);
             const data = rows.map(row => [row.station, ...row.data, row.total]);
             return { headers, data, title: activeTab === 0 ? 'Daywise Consumption Report' : 'Daywise Cost Consumption Report' };
-        } else if (activeTab === 1 || activeTab === 4) {
+        } else if (activeTab === 1) {
             // Monthwise data from API
             const headers = ['STATION', ...months, 'TOTAL'];
             const rows = transformMonthlyConsumptionDataToRows(monthlyConsumptionData);
             const data = rows.map(row => [row.station, ...row.data, row.total]);
             return { headers, data, title: activeTab === 1 ? 'Monthwise Consumption Report' : 'Monthwise Cost Consumption Report' };
-        } else {
+        } else if (activeTab === 2) {
             // Reading data
-            const headers = ['STATION', ...Array.from({ length: 31 }, (_, i) => `Day ${i + 1}`), 'TOTAL'];
+            const headers = ['STATION', ...Array.from({ length: 31 }, (_, i) => `Day ${i + 1}`)];
             const rows = transformReadingDataToRows(readingData);
-            const data = rows.map(row => [row.station, ...row.data, row.total]);
+            const data = rows.map(row => [row.station, ...row.data]);
             return { headers, data, title: 'Daily Meter Reading Report' };
+        } else if (activeTab === 3) {
+            // Daywise cost consumption data
+            const headers = ['STATION', ...Array.from({ length: 31 }, (_, i) => `Day ${i + 1}`), 'TOTAL'];
+            const rows = transformConsumptionCostDataToRows(consumptionCostData);
+            const data = rows.map(row => [row.station, ...row.data, row.total]);
+            return { headers, data, title: 'Daywise Cost Consumption Report' };
+        } else if (activeTab === 4) {
+            // Monthwise cost consumption data
+            const headers = ['STATION', ...months, 'TOTAL'];
+            const rows = transformMonthlyConsumptionCostDataToRows(monthlyConsumptionCostData);
+            const data = rows.map(row => [row.station, ...row.data, row.total]);
+            return { headers, data, title: 'Monthwise Cost Consumption Report' };
         }
     };
 
@@ -224,13 +264,13 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
     const getCurrentReadingData = () => {
         if (activeTab === 2) {
             // Reading Daywise data from API
-            const headers = ['STATION', ...Array.from({ length: 31 }, (_, i) => `Day ${i + 1}`), 'TOTAL'];
+            const headers = ['STATION', ...Array.from({ length: 31 }, (_, i) => `Day ${i + 1}`)];
             const rows = transformReadingDataToRows(readingData);
-            const data = rows.map(row => [row.station, ...row.data, row.total]);
+            const data = rows.map(row => [row.station, ...row.data]);
             return { headers, data, title: 'Reading Daywise Report' };
         } else {
             // For other tabs, return empty data
-            const headers = ['STATION', ...Array.from({ length: 31 }, (_, i) => `Day ${i + 1}`), 'TOTAL'];
+            const headers = ['STATION', ...Array.from({ length: 31 }, (_, i) => `Day ${i + 1}`)];
             const data = [];
             return { headers, data, title: 'Reading Data' };
         }
@@ -417,11 +457,6 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
             stations = [...stations, ...Object.keys(readingData.data)];
         }
 
-        // Get stations from monthly reading data
-        if (monthlyReadingData && monthlyReadingData.data) {
-            stations = [...stations, ...Object.keys(monthlyReadingData.data)];
-        }
-
         // Remove duplicates and sort
         return [...new Set(stations)].sort();
     };
@@ -429,12 +464,18 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
     // Get rows for the current view
     const getRows = () => {
         let rows = [];
-        if ((activeTab === 0 || activeTab === 3) && consumptionData) {
+        if ((activeTab === 0 ) && consumptionData) {
             rows = transformDataToRows(consumptionData);
-        } else if ((activeTab === 1 || activeTab === 4) && monthlyConsumptionData) {
+        } else if ((activeTab === 1 ) && monthlyConsumptionData) {
             rows = transformMonthlyConsumptionDataToRows(monthlyConsumptionData);
+        } else if ((activeTab === 2 ) && readingData) {
+            rows = transformReadingDataToRows(readingData);
+        } else if ((activeTab === 3) && consumptionCostData) {
+            rows = transformConsumptionCostDataToRows(consumptionCostData);
+        } else if ((activeTab === 4) && monthlyConsumptionCostData) {
+            rows = transformMonthlyConsumptionCostDataToRows(monthlyConsumptionCostData);
         } else {
-            rows = monthwiseRows;
+            rows = transformMonthlyConsumptionCostDataToRows(monthlyConsumptionCostData);
         }
 
         // Apply filters if they exist
@@ -748,22 +789,22 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                             key={idx}
                                             align="center"
                                             style={{ cursor: 'pointer' }}
-                                            onClick={() => {
-                                                if (activeTab === 0 || activeTab === 3) {
-                                                    // Daywise report click handler
-                                                    if (val !== 0) {
-                                                        alert(`Clicked on ${row.station} for Day ${days[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
-                                                    }
-                                                } else {
-                                                    // Monthwise report click handler
-                                                    if (val !== "--") {
-                                                        alert(`Clicked on ${row.station} for ${months[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
-                                                    } else {
-                                                        // Placeholder for handling clicks on empty cells in monthwise view
-                                                        console.log(`${row.station} - ${months[idx]} is not configured yet`);
-                                                    }
-                                                }
-                                            }}
+                                            // onClick={() => {
+                                            //     if (activeTab === 0 || activeTab === 3) {
+                                            //         // Daywise report click handler
+                                            //         if (val !== 0) {
+                                            //             alert(`Clicked on ${row.station} for Day ${days[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
+                                            //         }
+                                            //     } else {
+                                            //         // Monthwise report click handler
+                                            //         if (val !== "--") {
+                                            //             alert(`Clicked on ${row.station} for ${months[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
+                                            //         } else {
+                                            //             // Placeholder for handling clicks on empty cells in monthwise view
+                                            //             console.log(`${row.station} - ${months[idx]} is not configured yet`);
+                                            //         }
+                                            //     }
+                                            // }}
                                         >
                                             {typeof val === 'number' ? val.toFixed(2) : val}
                                         </TableCell>
@@ -795,7 +836,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                         </TableCell>
                                     ))
                                 )}
-                                <TableCell align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>TOTAL</b></TableCell>
+                                {/* <TableCell align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>TOTAL</b></TableCell> */}
                             </TableRow>
                         </TableHead>
 
@@ -808,14 +849,14 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                             key={idx}
                                             align="center"
                                             style={{ cursor: 'pointer' }}
-                                            onClick={() => {
-                                                if (activeTab === 2) {
-                                                    // Daywise report click handler
-                                                    if (val !== 0 && val !== "--") {
-                                                        alert(`Clicked on ${row.station} for Day ${days[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
-                                                    }
-                                                }
-                                            }}
+                                            // onClick={() => {
+                                            //     if (activeTab === 2) {
+                                            //         // Daywise report click handler
+                                            //         if (val !== 0 && val !== "--") {
+                                            //             alert(`Clicked on ${row.station} for Day ${days[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
+                                            //         }
+                                            //     }
+                                            // }}
                                         >
                                             {typeof val === 'number' ? val.toFixed(2) : val}
                                         </TableCell>

@@ -224,7 +224,8 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       formatter: function (val) {
         return val;
       },
-      offsetY: -20,
+      offsetY: -10,
+      offsetX: 5,
       style: {
         fontSize: '12px',
         colors: ["#0a223e"]
@@ -981,7 +982,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                               min: 0,
                               max: calculateYAxis(weeklyConsumptionData).max,
                               tickAmount: calculateYAxis(weeklyConsumptionData).tickAmount,
-                              labels: { show: false }
+                              labels: { show: true }
                             },
                             tooltip: {
                               ...energyConsumptionOptions.tooltip,
@@ -993,7 +994,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                             }
                           }}
                           series={[{
-                            name: 'Weekly Consumption',
+                            name: 'Energy Consumption',
                             data: weeklyConsumptionData.map(item => item.value)
                           }]}
                           type="line"
