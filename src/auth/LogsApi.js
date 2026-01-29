@@ -117,13 +117,25 @@ export const getDeviceLogs = async (slaveId, startDatetime, endDatetime, limit =
     if (response.data && typeof response.data === 'object') {
       if (response.data.success === true) {
         console.log('Using standard format for device logs');
-        return response.data.data;
+        // Return both data and meta information
+        return {
+          data: response.data.data,
+          meta: response.data.meta || {}
+        };
       } else if (response.data.hasOwnProperty('data') && Array.isArray(response.data.data)) {
         console.log('Using direct format with data field for device logs');
-        return response.data.data;
+        // Return both data and meta information
+        return {
+          data: response.data.data,
+          meta: response.data.meta || {}
+        };
       } else if (Array.isArray(response.data)) {
         console.log('Using direct array format for device logs');
-        return response.data;
+        // Return data in expected format
+        return {
+          data: response.data,
+          meta: {}
+        };
       } else {
         console.warn('Unknown response format for device logs:', response.data);
         throw new Error('API returned unexpected response format');

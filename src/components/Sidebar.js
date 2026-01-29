@@ -6,7 +6,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import './Sidebar.css';
 import SummarizeIcon from '@mui/icons-material/Summarize';
 
-function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, onSidebarHide }) {
+function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, onSidebarHide, onSidebarToggle }) {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -36,7 +36,7 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
   }, [location.pathname]);
 
   const menuItems = [
-    { id: 1, name: '', path: '', icon: 'list' },
+    // { id: 1, name: '', path: '', icon: 'toggle', isToggle: true },
     { id: 2, name: 'Dashboard', path: '/dashboard', icon: 'home' },
     { id: 3, name: 'Machine List', path: '/machine-list', icon: 'list' },
     // { id: 3, name: 'Equipment Insight', path: '/equipment-insight', icon: 'paper-plane' },
@@ -47,6 +47,9 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
 
   const getIcon = (iconName) => {
     switch (iconName) {
+      case 'toggle':
+        // Use hamburger icon when sidebar is hidden, close icon when visible
+        return visible ? <CloseIcon fontSize="small" /> : <MenuIcon fontSize="small" />;
       case 'home':
         return (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -124,7 +127,26 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
               <Link
                 to={item.path}
                 className={`sidebar-link ${isActive ? 'active' : ''}`}
-                onClick={isMobile ? handleDrawerToggle : () => { if (typeof onSidebarHide === 'function') onSidebarHide(); }}
+                onClick={(e) => {
+                  if (item.isToggle) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // First try onSidebarToggle, then onSidebarHide
+                    if (typeof onSidebarToggle === 'function') {
+                      onSidebarToggle();
+                    } else if (typeof onSidebarHide === 'function') {
+                      onSidebarHide();
+                    } else if (isMobile) {
+                      handleDrawerToggle();
+                    }
+                  } else {
+                    if (isMobile) {
+                      handleDrawerToggle();
+                    } else {
+                      if (typeof onSidebarHide === 'function') onSidebarHide();
+                    }
+                  }
+                }}
               >
                 <span className="sidebar-icon">{getIcon(item.icon)}</span>
                 <span className="sidebar-text">{item.name}</span>
@@ -137,7 +159,7 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
             return (
               <li key={item.id} className="sidebar-item">
                 {!isMobile && !visible ? (
-                  <Tooltip title={item.name} placement="right" arrow>
+                  <Tooltip title={visible ? 'Hide sidebar' : 'Show sidebar'} placement="right" arrow>
                     {linkContent}
                   </Tooltip>
                 ) : (
@@ -187,4 +209,3 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
 }
 
 export default Sidebar;
-
