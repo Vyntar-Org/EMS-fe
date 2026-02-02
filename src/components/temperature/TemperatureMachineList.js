@@ -495,7 +495,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
-
+        console.log(latest);
         // Apply the conditional logic for values
         const getConditionalValue = (value, isAllowedField = false) => {
             if (isOnline) {
@@ -550,7 +550,16 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
                             <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
-                                {conditionalLatest.acte_im?.toFixed(1)} kWh
+                                {machine.last_ts 
+                                    ? new Date(machine.last_ts).toLocaleString('en-GB', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        hour12: true
+                                    }) 
+                                    : 'N/A'}
                             </Typography>
                         </Box>
                     </Box>
