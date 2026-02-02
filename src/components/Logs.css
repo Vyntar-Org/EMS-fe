@@ -75,6 +75,7 @@
 .log-header-cell {
   background-color: #0156a6 !important; /* dark blue */
   color: #ffffff !important;            /* white text */
+  font-size: 13px;
   font-weight: bold;
   text-align: center;
   border-bottom: 2px solid #092035;

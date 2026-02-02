@@ -98,7 +98,7 @@ function AppContent() {
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
                 visible={sidebarVisible}
-                onSidebarHide={handleSidebarHide}
+                onSidebarHide={handleSidebarToggle}
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <Dashboard onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
@@ -112,7 +112,7 @@ function AppContent() {
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
                 visible={sidebarVisible}
-                onSidebarHide={handleSidebarHide}
+                onSidebarHide={handleSidebarToggle}
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <Logs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
@@ -126,7 +126,7 @@ function AppContent() {
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
                 visible={sidebarVisible}
-                onSidebarHide={handleSidebarHide}
+                onSidebarHide={handleSidebarToggle}
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <MachineList onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
@@ -140,7 +140,7 @@ function AppContent() {
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
                 visible={sidebarVisible}
-                onSidebarHide={handleSidebarHide}
+                onSidebarHide={handleSidebarToggle}
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <EquipmentInsight onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
@@ -154,7 +154,7 @@ function AppContent() {
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
                 visible={sidebarVisible}
-                onSidebarHide={handleSidebarHide}
+                onSidebarHide={handleSidebarToggle}
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <Analytics onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
@@ -168,7 +168,7 @@ function AppContent() {
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
                 visible={sidebarVisible}
-                onSidebarHide={handleSidebarHide}
+                onSidebarHide={handleSidebarToggle}
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <FuelConsumptionReport onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />

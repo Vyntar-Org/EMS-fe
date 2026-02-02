@@ -20,9 +20,10 @@ import {
     Modal,
     IconButton,
 } from '@mui/material';
+import axios from 'axios';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
-import {getMachineList} from '../auth/MachineList';
+import { getMachineList, getActivePowerChart, getVoltageChart, getCurrentChart, getPowerFactorChart, getFrequencyChart } from '../auth/MachineList';
 
 
 const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
@@ -32,34 +33,48 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [machineListData, setMachineListData] = useState(null);
+    const [keyParameter, setKeyParameter] = useState('');
+
+    useEffect(() => {
+        if (keyParameter === 'voltage') {
+            // load voltage chart data
+        } else if (keyParameter === 'current') {
+            // load current chart data
+        } else if (keyParameter === 'pf') {
+            // load power factor chart data
+        } else if (keyParameter === 'frequency') {
+            // load frequency chart data
+        }
+    }, [keyParameter]);
+
 
     // Fetch machine list data
     useEffect(() => {
         const fetchData = async () => {
-          try {
-            setLoading(true);
-            setError(null); // Clear any previous errors
-    
-            // Fetch machine list concurrently
-            const [machineListResponse] = await Promise.all([
-              getMachineList()
-            ]);
-    
-            console.log('Machine list API response:', machineListResponse);
-    
-            // Set the data
-            setMachineListData(machineListResponse);
-    
-          } catch (err) {
-            console.error('Error fetching machine list data:', err);
-            setError(err.message || 'An error occurred while fetching machine list data');
-          } finally {
-            setLoading(false);
-          }
+            try {
+                setLoading(true);
+                setError(null); // Clear any previous errors
+
+                // Fetch machine list concurrently
+                const [machineListResponse] = await Promise.all([
+                    getMachineList()
+                ]);
+
+                console.log('Machine list API response:', machineListResponse);
+
+                // Set the data
+                setMachineListData(machineListResponse);
+
+            } catch (err) {
+                console.error('Error fetching machine list data:', err);
+                setError(err.message || 'An error occurred while fetching machine list data');
+            } finally {
+                setLoading(false);
+            }
         };
-    
+
         fetchData();
-      }, []);
+    }, []);
 
     // State for modal visibility
     const [chartModalOpen, setChartModalOpen] = useState(false);
@@ -67,6 +82,18 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [selectedFloor, setSelectedFloor] = useState('Common');
     // State for individual card phase selections
     const [cardPhaseSelections, setCardPhaseSelections] = useState({});
+    // State for chart type
+    const [chartType, setChartType] = useState('activePower');
+    // State for active power chart data
+    const [activePowerData, setActivePowerData] = useState([]);
+    // State for voltage chart data
+    const [voltageData, setVoltageData] = useState([]);
+    // State for current chart data
+    const [currentData, setCurrentData] = useState([]);
+    // State for power factor chart data
+    const [powerFactorData, setPowerFactorData] = useState([]);
+    // State for frequency chart data
+    const [frequencyData, setFrequencyData] = useState([]);
 
     // Chart data for Kw Consumption over last 8/12 hours
     const chartOptions = {
@@ -80,11 +107,9 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         stroke: {
             curve: 'smooth',
             width: 2,
-            colors: ['#2F6FB0'],
         },
         markers: {
             size: 4,
-            colors: ['#2F6FB0'],
         },
         grid: {
             borderColor: '#E5E7EB',
@@ -102,23 +127,33 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         },
         xaxis: {
             title: {
-                text: 'hours',
+                text: 'Time',
                 style: {
                     color: '#6B7280',
                     fontSize: '12px',
                 },
             },
-            categories: Array.from({ length: 12 }, (_, i) => i + 1),
+            categories: chartType === 'voltage' ? 
+                voltageData.map(item => new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) :
+                chartType === 'current' ?
+                    currentData.map(item => new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) :
+                chartType === 'powerFactor' ?
+                    powerFactorData.map(item => new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) :
+                chartType === 'frequency' ?
+                    frequencyData.map(item => new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) :
+                    activePowerData.map(item => new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
             labels: {
                 style: {
                     colors: '#6B7280',
                     fontSize: '11px',
                 },
+                rotate: -45,
+                rotateAlways: true,
             },
         },
         yaxis: {
             title: {
-                text: 'Kw',
+                text: chartType === 'voltage' ? 'V' : (chartType === 'current' ? 'A' : (chartType === 'powerFactor' ? 'PF' : (chartType === 'frequency' ? 'Hz' : 'kW'))),
                 style: {
                     color: '#6B7280',
                     fontSize: '12px',
@@ -134,10 +169,103 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         tooltip: {
             enabled: true,
             theme: 'light',
+            x: {
+                format: 'dd/MM/yyyy HH:mm',
+            },
         },
         legend: {
-            show: false,
+            show: true,
         },
+    };
+
+    // Function to fetch active power chart data
+    const fetchActivePowerData = async (slaveId) => {
+        try {
+            const response = await getActivePowerChart(slaveId);
+            
+            if (response.success) {
+                setActivePowerData(response.data.data);
+                return response.data.data;
+            } else {
+                console.error('Failed to fetch active power data:', response.message);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching active power data:', error);
+            return [];
+        }
+    };
+    
+    // Function to fetch voltage chart data
+    const fetchVoltageData = async (slaveId) => {
+        try {
+            const response = await getVoltageChart(slaveId);
+            
+            if (response.success) {
+                setVoltageData(response.data.data);
+                return response.data.data;
+            } else {
+                console.error('Failed to fetch voltage data:', response.message);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching voltage data:', error);
+            return [];
+        }
+    };
+    
+    // Function to fetch current chart data
+    const fetchCurrentData = async (slaveId) => {
+        try {
+            const response = await getCurrentChart(slaveId);
+            
+            if (response.success) {
+                setCurrentData(response.data.data);
+                return response.data.data;
+            } else {
+                console.error('Failed to fetch current data:', response.message);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching current data:', error);
+            return [];
+        }
+    };
+    
+    // Function to fetch power factor chart data
+    const fetchPowerFactorData = async (slaveId) => {
+        try {
+            const response = await getPowerFactorChart(slaveId);
+            
+            if (response.success) {
+                setPowerFactorData(response.data.data);
+                return response.data.data;
+            } else {
+                console.error('Failed to fetch power factor data:', response.message);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching power factor data:', error);
+            return [];
+        }
+    };
+    
+    // Function to fetch frequency chart data
+    const fetchFrequencyData = async (slaveId) => {
+        try {
+            const response = await getFrequencyChart(slaveId);
+            
+            if (response.success) {
+                setFrequencyData(response.data.data);
+                return response.data.data;
+            } else {
+                console.error('Failed to fetch frequency data:', response.message);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching frequency data:', error);
+            return [];
+        }
     };
 
     // Phase-specific data
@@ -150,12 +278,94 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         return baseData[phase] || baseData.R;
     };
 
-    // Chart series using the selected floor's phase selection
-    const getCurrentChartSeries = () => [{
-        name: `${cardPhaseSelections[selectedFloor] || ''} Consumption`,
-        data: getPhaseData(cardPhaseSelections[selectedFloor] || 'R')
-    }];
-    
+    // Chart series based on selected chart type
+    const getCurrentChartSeries = () => {
+        if (chartType === 'activePower') {
+            // Use real API data for active power chart
+            const activePowerValues = activePowerData.map(item => item.value);
+            return [{
+                name: `${selectedFloor} Active Power`,
+                data: activePowerValues
+            }];
+        } else if (chartType === 'voltage') {
+            // Use real API data for voltage chart - show all three phases
+            return [
+                {
+                    name: 'R-Voltage',
+                    data: voltageData.map(item => item.rv),
+                    color: '#E34D4D' // Red
+                },
+                {
+                    name: 'Y-Voltage',
+                    data: voltageData.map(item => item.yv),
+                    color: '#F8C537' // Yellow
+                },
+                {
+                    name: 'B-Voltage',
+                    data: voltageData.map(item => item.bv),
+                    color: '#4A90E2' // Blue
+                }
+            ];
+        } else if (chartType === 'current') {
+            // Use real API data for current chart - show all three phases
+            return [
+                {
+                    name: 'R-Current',
+                    data: currentData.map(item => item.i_r),
+                    color: '#E34D4D' // Red
+                },
+                {
+                    name: 'Y-Current',
+                    data: currentData.map(item => item.i_y),
+                    color: '#F8C537' // Yellow
+                },
+                {
+                    name: 'B-Current',
+                    data: currentData.map(item => item.i_b),
+                    color: '#4A90E2' // Blue
+                }
+            ];
+        } else if (chartType === 'powerFactor') {
+            // Use real API data for power factor chart
+            const powerFactorValues = powerFactorData.map(item => item.value);
+            return [{
+                name: `${selectedFloor} Power Factor`,
+                data: powerFactorValues,
+                color: '#9C27B0' // Purple
+            }];
+        } else if (chartType === 'frequency') {
+            // Use real API data for frequency chart
+            const frequencyValues = frequencyData.map(item => item.value);
+            return [{
+                name: `${selectedFloor} Frequency`,
+                data: frequencyValues,
+                color: '#FF9800' // Orange
+            }];
+        } else if (chartType === 'keyParameters') {
+            // Sample data for key parameters
+            return [
+                {
+                    name: 'Voltage',
+                    data: [230, 232, 228, 231, 229, 233, 230, 228, 231, 229, 232, 230]
+                },
+                {
+                    name: 'Current',
+                    data: [10.5, 10.8, 10.2, 10.6, 10.4, 10.9, 10.5, 10.3, 10.7, 10.4, 10.8, 10.6]
+                },
+                {
+                    name: 'Power Factor',
+                    data: [0.95, 0.96, 0.94, 0.95, 0.97, 0.96, 0.95, 0.94, 0.96, 0.95, 0.97, 0.96]
+                }
+            ];
+        }
+        // Default to active power if no chart type is selected
+        const activePowerValues = activePowerData.map(item => item.value);
+        return [{
+            name: `${selectedFloor} Active Power`,
+            data: activePowerValues
+        }];
+    };
+        
     const chartSeries = getCurrentChartSeries();
 
     // Define styles
@@ -358,14 +568,59 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const renderFloorCard = (machine) => {
         if (!machine) return null;
 
-        const isOnline = machine.status === 'online';
+        // Check if the last timestamp is within the last 15 minutes
+        const isWithinTimeLimit = (lastTs) => {
+            if (!lastTs) return false;
+
+            const lastTime = new Date(lastTs);
+            const currentTime = new Date();
+            const timeDiff = (currentTime - lastTime) / (1000 * 60); // Difference in minutes
+
+            return timeDiff <= 15; // Within 15 minutes
+        };
+
+        const isOnline = isWithinTimeLimit(machine.last_ts);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
 
+        // Apply the conditional logic for values
+        const getConditionalValue = (value, isAllowedField = false) => {
+            if (isOnline) {
+                // If online, return the actual value
+                return value;
+            } else {
+                // If offline (more than 15 mins old), only show specific fields
+                if (isAllowedField) {
+                    return value;
+                } else {
+                    return 0; // Return 0 for all other fields
+                }
+            }
+        };
+
+        // Determine which fields are allowed when offline
+        const conditionalLatest = {
+            acte_im: getConditionalValue(latest.acte_im, true), // Allowed when offline
+            rv: getConditionalValue(latest.rv, false),
+            ir: getConditionalValue(latest.ir, false),
+            yv: getConditionalValue(latest.yv, false),
+            iy: getConditionalValue(latest.iy, false),
+            bv: getConditionalValue(latest.bv, false),
+            ib: getConditionalValue(latest.ib, false),
+            actpr_t: getConditionalValue(latest.actpr_t, false),
+            pf_t: getConditionalValue(latest.pf_t, false),
+            fq: getConditionalValue(latest.fq, false),
+        };
+
+        const conditionalEnergy = {
+            today: getConditionalValue(energy.today, true), // Allowed when offline
+            mtd: getConditionalValue(energy.mtd, true), // Allowed when offline
+        };
+
         return (
             <Card style={styles.floorCard}>
-                <CardContent style={{ 
-                    ...styles.commonSection, 
+                <CardContent style={{
+                    ...styles.commonSection,
                     padding: '12px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -382,7 +637,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
                             <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
-                                {latest.acte_im?.toFixed(1)} kWH
+                                {conditionalLatest.acte_im?.toFixed(1)} kWh
                             </Typography>
                         </Box>
                     </Box>
@@ -405,8 +660,8 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             Phase R
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{latest.rv?.toFixed(2)}</TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{latest.ir?.toFixed(1)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.rv?.toFixed(2)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.ir?.toFixed(1)}</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
@@ -415,8 +670,8 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             Phase Y
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{latest.yv?.toFixed(2)}</TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{latest.iy?.toFixed(1)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.yv?.toFixed(2)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.iy?.toFixed(1)}</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
@@ -425,8 +680,8 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             Phase B
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{latest.bv?.toFixed(2)}</TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{latest.ib?.toFixed(1)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.bv?.toFixed(2)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.ib?.toFixed(1)}</TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
@@ -436,42 +691,51 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box style={{ ...styles.metricsRow, marginTop: '0px', display: 'flex', justifyContent: 'space-between' }}>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>Active power</Typography>
-                            <Typography style={styles.metricValue}>{latest.actpr_t?.toFixed(2)} kw</Typography>
+                            <Typography style={styles.metricValue}>{conditionalLatest.actpr_t?.toFixed(2)} kw</Typography>
                         </Box>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>Power factor</Typography>
-                            <Typography style={styles.metricValue}>{latest.pf_t} Pf</Typography>
+                            <Typography style={styles.metricValue}>{conditionalLatest.pf_t} PF</Typography>
                         </Box>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>Frequency</Typography>
-                            <Typography style={styles.metricValue}>{latest.fq} Hz</Typography>
+                            <Typography style={styles.metricValue}>{conditionalLatest.fq} Hz</Typography>
                         </Box>
                     </Box>
 
                     {/* Energy Consumed and MTD */}
-                    <Box style={{ ...styles.metricsRow, marginTop: '8px', display: 'flex', justifyContent: 'space-between'  }}>
+                    <Box style={{ ...styles.metricsRow, marginTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>Today</Typography>
-                            <Typography style={styles.metricValue}>{energy.today?.toFixed(1)} kWH</Typography>
+                            <Typography style={styles.metricValue}>{conditionalEnergy.today?.toFixed(1)} kWh</Typography>
                         </Box>
                         <Box style={styles.metricItem}>
-                            <Typography style={{...styles.metricLabel, marginLeft: '15px'}}>MTD</Typography>
-                            <Typography style={{...styles.metricValue, marginLeft: '15px'}}>{energy.mtd?.toFixed(1)} kWh</Typography>
+                            <Typography style={{ ...styles.metricLabel, marginLeft: '15px' }}>MTD</Typography>
+                            <Typography style={{ ...styles.metricValue, marginLeft: '15px' }}>{conditionalEnergy.mtd?.toFixed(1)} kWh</Typography>
                         </Box>
-                        <Box style={{ marginTop: 'auto'}}>
-                        <Button
-                            variant="contained"
-                            style={styles.chartButton}
-                            onClick={() => {
-                                setSelectedFloor(machine.name);
-                                setChartModalOpen(true);
-                            }}
-                        >
-                            Trend
-                        </Button>
+                        <Box style={{ marginTop: 'auto' }}>
+                            <Button
+                                variant="contained"
+                                style={styles.chartButton}
+                                onClick={async () => {
+                                    setSelectedFloor(machine.name);
+                                    setChartType('activePower');
+                                    setChartModalOpen(true);
+                                    
+                                    // Find the selected machine by name to get its slave_id
+                                    const selectedMachine = machineListData?.data?.machines?.find(
+                                        m => m.name === machine.name
+                                    );
+                                    if (selectedMachine) {
+                                        await fetchActivePowerData(selectedMachine.slave_id);
+                                    }
+                                }}
+                            >
+                                Trend
+                            </Button>
+                        </Box>
                     </Box>
-                    </Box>
-                    
+
                 </CardContent>
             </Card>
         );
@@ -534,9 +798,119 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             >
                 <Box style={styles.modalPaper}>
                     <Box style={styles.modalHeader}>
-                        <Typography id="chart-modal-title" variant="h6" component="h2">
-                            {selectedFloor} - Consumption over last 12 hours
-                        </Typography>
+                        <Box>
+                            <Typography id="chart-modal-title" variant="h6" component="h2">
+                                {selectedFloor} - Last 6 hours power data
+                            </Typography>
+                            <Box style={{ marginTop: '10px' }}>
+                                <Button
+                                    variant={chartType === 'activePower' ? 'contained' : 'outlined'}
+                                    size="small"
+                                    onClick={async () => {
+                                        setChartType('activePower');
+                                        // Find the selected machine by name to get its slave_id
+                                        const selectedMachine = machineListData?.data?.machines?.find(
+                                            machine => machine.name === selectedFloor
+                                        );
+                                        if (selectedMachine) {
+                                            await fetchActivePowerData(selectedMachine.slave_id);
+                                        }
+                                    }}
+                                    style={{
+                                        marginRight: '10px',
+                                        backgroundColor: chartType === 'activePower' ? '#2F6FB0' : 'transparent',
+                                        color: chartType === 'activePower' ? 'white' : '#2F6FB0',
+                                        borderColor: '#2F6FB0'
+                                    }}
+                                >
+                                    Active Power
+                                </Button>
+                                <FormControl size="small" sx={{ minWidth: 180 }}>
+                                    <Select
+                                        value={keyParameter}
+                                        onChange={async (e) => {
+                                            const selectedValue = e.target.value;
+                                            setKeyParameter(selectedValue);
+                                            
+                                            if (selectedValue === 'voltage') {
+                                                setChartType('voltage');
+                                                // Find the selected machine by name to get its slave_id
+                                                const selectedMachine = machineListData?.data?.machines?.find(
+                                                    m => m.name === selectedFloor
+                                                );
+                                                if (selectedMachine) {
+                                                    await fetchVoltageData(selectedMachine.slave_id);
+                                                }
+                                            } else if (selectedValue === 'current') {
+                                                setChartType('current');
+                                                // Find the selected machine by name to get its slave_id
+                                                const selectedMachine = machineListData?.data?.machines?.find(
+                                                    m => m.name === selectedFloor
+                                                );
+                                                if (selectedMachine) {
+                                                    await fetchCurrentData(selectedMachine.slave_id);
+                                                }
+                                            } else if (selectedValue === 'pf') {
+                                                setChartType('powerFactor');
+                                                // Find the selected machine by name to get its slave_id
+                                                const selectedMachine = machineListData?.data?.machines?.find(
+                                                    m => m.name === selectedFloor
+                                                );
+                                                if (selectedMachine) {
+                                                    await fetchPowerFactorData(selectedMachine.slave_id);
+                                                }
+                                            } else if (selectedValue === 'frequency') {
+                                                setChartType('frequency');
+                                                // Find the selected machine by name to get its slave_id
+                                                const selectedMachine = machineListData?.data?.machines?.find(
+                                                    m => m.name === selectedFloor
+                                                );
+                                                if (selectedMachine) {
+                                                    await fetchFrequencyData(selectedMachine.slave_id);
+                                                }
+                                            } else {
+                                                setChartType('keyParameters');
+                                            }
+                                        }}
+                                        displayEmpty
+                                        renderValue={(selected) => {
+                                            if (!selected) {
+                                                return <span style={{ color: '#9CA3AF' }}>Key Parameters</span>;
+                                            }
+                                            return selected === 'voltage'
+                                                ? 'Voltage (V)'
+                                                : selected === 'current'
+                                                    ? 'Current (A)'
+                                                    : selected === 'pf'
+                                                        ? 'Power Factor (PF)'
+                                                        : 'Frequency (Hz)';
+                                        }}
+                                        sx={{
+                                            backgroundColor: '#ffffff',
+                                            borderRadius: '6px',
+                                            '& .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#2F6FB0',
+                                            },
+                                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#2F6FB0',
+                                            },
+                                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#2F6FB0',
+                                            },
+                                        }}
+                                    >
+                                        <MenuItem value="">
+                                            Key Parameters
+                                        </MenuItem>
+                                        <MenuItem value="voltage">Voltage (V)</MenuItem>
+                                        <MenuItem value="current">Current (A)</MenuItem>
+                                        <MenuItem value="pf">Power Factor (PF)</MenuItem>
+                                        <MenuItem value="frequency">Frequency (Hz)</MenuItem>
+                                    </Select>
+                                </FormControl>
+
+                            </Box>
+                        </Box>
                         <IconButton
                             style={styles.closeButton}
                             onClick={() => setChartModalOpen(false)}
