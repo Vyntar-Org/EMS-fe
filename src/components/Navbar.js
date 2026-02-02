@@ -157,51 +157,55 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
 
           {/* APPLICATION ICONS */}
             {userData && userData.applications && (
-              <div className="applications-icons" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '20px' }}>
-                {userData.applications.map((app, index) => (
-                  <div 
-                    key={index}
-                    title={`${app.name} Application`}
-                    style={{
-                      backgroundColor: '#f5d547',
-                      padding: '5px 10px',
-                      borderRadius: '5px',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      textTransform: 'uppercase',
-                      minWidth: '60px',
-                      textAlign: 'center'
-                    }}
-                    onClick={() => {
-                      // Set the active application
-                      setActiveApp(app);
-                      
-                      // Navigate to the application's default landing page
-                      if (app.default_landing_page) {
-                        let route = app.default_landing_page.toLowerCase();
-                        // Convert underscores to hyphens for URL routing
-                        route = route.replace(/_/g, '-');
-                        // For Temperature application, prepend 'temperature/' to the route
-                        if (app.code === 'TEMPERATURE') {
-                          navigate(`/temperature/${route}`);
+              <div className="applications-icons" style={{ display: 'flex', flexDirection: 'row-reverse', alignItems: 'center', gap: '10px', marginRight: '20px' }}>
+                {userData.applications.map((app, index) => {
+                  const isActive = activeApp && activeApp.code === app.code;
+                  return (
+                    <div 
+                      key={index}
+                      title={`${app.name} Application`}
+                      style={{
+                        padding: '5px 10px',
+                        // borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase',
+                        minWidth: '60px',
+                        textAlign: 'center',
+                        borderBottom: isActive ? '2px solid #f5d547' : '2px solid transparent',
+                        // backgroundColor: isActive ? 'rgba(245, 213, 71, 0.1)' : 'transparent', // Optional: light glow for active app
+                      }}
+                      onClick={() => {
+                        // Set the active application
+                        setActiveApp(app);
+                        
+                        // Navigate to the application's default landing page
+                        if (app.default_landing_page) {
+                          let route = app.default_landing_page.toLowerCase();
+                          // Convert underscores to hyphens for URL routing
+                          route = route.replace(/_/g, '-');
+                          // For Temperature application, prepend 'temperature/' to the route
+                          if (app.code === 'TEMPERATURE') {
+                            navigate(`/temperature/${route}`);
+                          } else {
+                            navigate(`/${route}`);
+                          }
                         } else {
-                          navigate(`/${route}`);
+                          // For Temperature application, go to TemperatureMachineList
+                          if (app.code === 'TEMPERATURE') {
+                            navigate('/temperature/machine-list');
+                          } else {
+                            // Default to dashboard if no specific landing page
+                            navigate('/dashboard');
+                          }
                         }
-                      } else {
-                        // For Temperature application, go to TemperatureMachineList
-                        if (app.code === 'TEMPERATURE') {
-                          navigate('/temperature/machine-list');
-                        } else {
-                          // Default to dashboard if no specific landing page
-                          navigate('/dashboard');
-                        }
-                      }
-                    }}
-                  >
-                    {app.code === 'ENERGY' ? 'EMS' : app.code === 'TEMPERATURE' ? 'Temperature' : app.name.substring(0, 4)}
-                  </div>
-                ))}
+                      }}
+                    >
+                      {app.code === 'ENERGY' ? 'EMS' : app.code === 'TEMPERATURE' ? 'Temperature' : app.name.substring(0, 4)}
+                    </div>
+                  );
+                })}
               </div>
             )}
 

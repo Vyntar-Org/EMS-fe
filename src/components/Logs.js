@@ -23,6 +23,8 @@ import {
   Button,
   Grid,
   Pagination,
+  Checkbox, 
+  ListItemText
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -47,57 +49,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
   const [loading, setLoading] = useState(true); // Loading state for devices
   const [error, setError] = useState(null); // Error state for devices
-  const [selectedColumn, setSelectedColumn] = useState(''); // State for selected column in dropdown
-
-  // Generate 25 rows of sample log data matching the image structure
-  const generateLogData = (availableDevices = []) => {
-    const baseDate = new Date('2025-05-27T12:51:32');
-    // Use the actual device names from the API, or fallback to default machines
-    const deviceNames = availableDevices && availableDevices.length > 1 
-      ? availableDevices.filter(device => device !== 'all') // Exclude 'all' from the list of actual devices
-      : ['Machine 1', 'Machine 2', 'Machine 3'];
-    
-    const logs = [];
-
-    for (let i = 0; i < 25; i++) {
-      const date = new Date(baseDate);
-      date.setSeconds(date.getSeconds() - (i * 45));
-
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      const seconds = String(date.getSeconds()).padStart(2, '0');
-
-      const entryDate = `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
-      const device = deviceNames[i % deviceNames.length];
-      const baseConsump = 126730 + (i * 0.1);
-      const status = i % 4 === 2 ? 'Off' : 'On';
-
-      logs.push({
-        id: i + 1,
-        entryDate,
-        timestamp: date, // Store as Date object for easier comparison
-        rPhaseVoY: (254 + Math.random() * 2 - 1).toFixed(2),
-        phaseB1: (253 + Math.random() * 2 - 1).toFixed(2),
-        phaseR: (252 + Math.random() * 2 - 1).toFixed(2),
-        phaseY: (52 + Math.random() * 3 - 1.5).toFixed(2),
-        phaseB2: (54 + Math.random() * 3 - 1.5).toFixed(2),
-        ryVolta: (53 + Math.random() * 3 - 1.5).toFixed(2),
-        ybVolta: (439 + Math.random() * 3 - 1.5).toFixed(2),
-        brVolta: (439 + Math.random() * 3 - 1.5).toFixed(2),
-        frequenc: (50.2 + Math.random() * 0.2 - 0.1).toFixed(2),
-        totalAct: (22 + Math.random() * 3 - 1.5).toFixed(2),
-        totalAct: (22 + Math.random() * 3 - 1.5).toFixed(2),
-        averageKWH: (0.65 + Math.random() * 0.1).toFixed(2),
-        consumpMachines: `${baseConsump.toFixed(1)} ${baseConsump.toFixed(1)} ${status}`,
-        machine: device,
-      });
-    }
-
-    return logs;
-  };
+  const [selectedColumn, setSelectedColumn] = useState([]); // State for selected column in dropdown
 
   const [logs, setLogs] = useState([]); // State for logs
   const [realLogs, setRealLogs] = useState([]); // State for real API logs
@@ -199,14 +151,14 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
     fetchDeviceLogs();
   }, [searchClicked, filterDevice, filterStartDate, filterEndDate, devices]);
   
-  // Regenerate sample logs when devices change (fallback)
-  useEffect(() => {
-    if (!searchClicked && !loading) { // Only regenerate sample logs when not searching
-      const generatedLogs = generateLogData(devices);
-      setLogs(generatedLogs);
-      setRealLogs([]); // Clear real logs when not searching
-    }
-  }, [devices, loading, searchClicked]);
+  // // Regenerate sample logs when devices change (fallback)
+  // useEffect(() => {
+  //   if (!searchClicked && !loading) { // Only regenerate sample logs when not searching
+  //     const generatedLogs = generateLogData(devices);
+  //     setLogs(generatedLogs);
+  //     setRealLogs([]); // Clear real logs when not searching
+  //   }
+  // }, [devices, loading, searchClicked]);
 
   // Fetch slave list from API on component mount
   useEffect(() => {
@@ -510,27 +462,84 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                 </Select>
               </FormControl>
               <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
-                <InputLabel>Select Parameter</InputLabel>
+                <InputLabel>Select Parameters</InputLabel>
                 <Select
+                  multiple
                   value={selectedColumn}
-                  onChange={(e) => setSelectedColumn(e.target.value)}
-                  label="Select Machine Values"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedColumn(typeof value === 'string' ? value.split(',') : value);
+                  }}
+                  label="Select Parameters"
+                  // RENDER LOGIC FOR "+X MORE"
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                      {/* Show the first 2 items as Chips */}
+                      {selected.slice(0, 2).map((value) => (
+                        <Chip 
+                          key={value} 
+                          label={value.replace(/_/g, ' ')} 
+                          size="small" 
+                          sx={{ height: '20px', fontSize: '10px', textTransform: 'capitalize' }} 
+                        />
+                      ))}
+                      
+                      {/* If more than 2 items, show the +X counter */}
+                      {selected.length > 2 && (
+                        <Chip 
+                          label={`+${selected.length - 2} more`} 
+                          size="small" 
+                          sx={{ 
+                            height: '20px', 
+                            fontSize: '10px', 
+                            backgroundColor: '#0156a6', 
+                            color: '#fff',
+                            fontWeight: 'bold'
+                          }} 
+                        />
+                      )}
+                    </Box>
+                  )}
+                  MenuProps={{
+                    PaperProps: {
+                      style: { maxHeight: 300, width: 250 },
+                    },
+                  }}
                 >
-                  <MenuItem value="timestamp">timestamp</MenuItem>
-                  <MenuItem value="active_energy_import">Active Energy Import (kWh)</MenuItem>
-                  <MenuItem value="total_active_power">Total Active Power (kW)</MenuItem>
-                  <MenuItem value="total_apparent_power">Total Apparent Power (kVA)</MenuItem>
-                  <MenuItem value="average_current">Average Current (A)</MenuItem>
-                  <MenuItem value="average_line_to_line_voltage">Average Line-to-Line Voltage (V)</MenuItem>
-                  <MenuItem value="c_a_phase_voltage_rms">C–A Phase Voltage RMS (V)</MenuItem>
-                  <MenuItem value="system_frequency">System Frequency (Hz)</MenuItem>
-                  <MenuItem value="rms_current_phase_c">RMS Current – Phase C (A)</MenuItem>
-                  <MenuItem value="rms_current_phase_a">RMS Current – Phase A (A)</MenuItem>
-                  <MenuItem value="rms_current_phase_b">RMS Current – Phase B (A)</MenuItem>
-                  <MenuItem value="total_power_factor">Total Power Factor</MenuItem>
-                  <MenuItem value="reactive_energy_import">Reactive Energy Import (kVArh)</MenuItem>
-                  <MenuItem value="a_b_phase_voltage_rms">A–B Phase Voltage RMS (V)</MenuItem>
-                  <MenuItem value="b_c_phase_voltage_rms">B–C Phase Voltage RMS (V)</MenuItem>
+                  {[
+                    { val: 'timestamp', label: 'Timestamp' },
+                    { val: 'active_energy_import', label: 'Active Energy Import (kWh)' },
+                    { val: 'total_active_power', label: 'Total Active Power (kW)' },
+                    { val: 'total_apparent_power', label: 'Total Apparent Power (kVA)' },
+                    { val: 'average_current', label: 'Average Current (A)' },
+                    { val: 'average_line_to_line_voltage', label: 'Average Line-to-Line Voltage (V)' },
+                    { val: 'c_a_phase_voltage_rms', label: 'C–A Phase Voltage RMS (V)' },
+                    { val: 'system_frequency', label: 'System Frequency (Hz)' },
+                    { val: 'rms_current_phase_c', label: 'RMS Current – Phase C (A)' },
+                    { val: 'rms_current_phase_a', label: 'RMS Current – Phase A (A)' },
+                    { val: 'rms_current_phase_b', label: 'RMS Current – Phase B (A)' },
+                    { val: 'total_power_factor', label: 'Total Power Factor' },
+                    { val: 'reactive_energy_import', label: 'Reactive Energy Import (kVArh)' },
+                    { val: 'a_b_phase_voltage_rms', label: 'A–B Phase Voltage RMS (V)' },
+                    { val: 'b_c_phase_voltage_rms', label: 'B–C Phase Voltage RMS (V)' }
+                  ].map((item) => (
+                    <MenuItem key={item.val} value={item.val} sx={{ 
+                      py: 0.2, // Tight vertical padding for the list item
+                      px: 1 ,
+                      minHeight: '32px', // Forces a slim row height
+                    }}>
+                      <Checkbox checked={selectedColumn.indexOf(item.val) > -1} sx={{ 
+                        p: 0.5,   // Removes the 9px default padding
+                        mr: 0.5,   // Adds spacing between box and text
+                        transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
+                        '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
+                      }} />
+                      <ListItemText primary={item.label}  primaryTypographyProps={{ 
+                        fontSize: '12px', // Smaller font to match the small checkbox
+                        lineHeight: 1.2
+                      }}/>
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
 
@@ -619,25 +628,12 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
             <Table stickyHeader style={{ tableLayout: 'fixed', width: '100%' }}>
               <TableHead>
                 <TableRow className="log-table-header">
-                  {selectedColumn ? (
-                    // Single column view
-                    <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>
-                      {selectedColumn === 'timestamp' && 'timestamp'}
-                      {selectedColumn === 'active_energy_import' && 'Active Energy Import (kWh)'}
-                      {selectedColumn === 'total_active_power' && 'Total Active Power (kW)'}
-                      {selectedColumn === 'total_apparent_power' && 'Total Apparent Power (kVA)'}
-                      {selectedColumn === 'average_current' && 'Average Current (A)'}
-                      {selectedColumn === 'average_line_to_line_voltage' && 'Average Line-to-Line Voltage (V)'}
-                      {selectedColumn === 'c_a_phase_voltage_rms' && 'C–A Phase Voltage RMS (V)'}
-                      {selectedColumn === 'system_frequency' && 'System Frequency (Hz)'}
-                      {selectedColumn === 'rms_current_phase_c' && 'RMS Current – Phase C (A)'}
-                      {selectedColumn === 'rms_current_phase_a' && 'RMS Current – Phase A (A)'}
-                      {selectedColumn === 'rms_current_phase_b' && 'RMS Current – Phase B (A)'}
-                      {selectedColumn === 'total_power_factor' && 'Total Power Factor'}
-                      {selectedColumn === 'reactive_energy_import' && 'Reactive Energy Import (kVArh)'}
-                      {selectedColumn === 'a_b_phase_voltage_rms' && 'A–B Phase Voltage RMS (V)'}
-                      {selectedColumn === 'b_c_phase_voltage_rms' && 'B–C Phase Voltage RMS (V)'}
-                    </TableCell>
+                  {selectedColumn.length > 0 ? (
+                    selectedColumn.map((col) => (
+                      <TableCell key={col} className="log-header-cell" sx={{ textTransform: 'capitalize' }}>
+                        {col.replace(/_/g, ' ')}
+                      </TableCell>
+                    ))
                   ) : (
                     // All columns view
                     <>
@@ -688,25 +684,26 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                     
                     return (
                       <TableRow key={isAPIData ? log.timestamp : log.id} hover className="log-table-row">
-                        {selectedColumn ? (
-                          // Single column view
-                          <TableCell className="log-table-cell">
-                            {selectedColumn === 'timestamp' && timestamp}
-                            {selectedColumn === 'active_energy_import' && activeEnergyImport}
-                            {selectedColumn === 'total_active_power' && totalActivePower}
-                            {selectedColumn === 'total_apparent_power' && totalApparentPower}
-                            {selectedColumn === 'average_current' && avgCurrent}
-                            {selectedColumn === 'average_line_to_line_voltage' && avgLineToLineVoltage}
-                            {selectedColumn === 'c_a_phase_voltage_rms' && brVoltage}
-                            {selectedColumn === 'system_frequency' && frequency}
-                            {selectedColumn === 'rms_current_phase_c' && ibCurrent}
-                            {selectedColumn === 'rms_current_phase_a' && irCurrent}
-                            {selectedColumn === 'rms_current_phase_b' && iyCurrent}
-                            {selectedColumn === 'total_power_factor' && totalPowerFactor}
-                            {selectedColumn === 'reactive_energy_import' && reactiveEnergyImport}
-                            {selectedColumn === 'a_b_phase_voltage_rms' && ryVoltage}
-                            {selectedColumn === 'b_c_phase_voltage_rms' && ybVoltage}
-                          </TableCell>
+                        {selectedColumn.length > 0 ? (
+                          selectedColumn.map((col) => (
+                            <TableCell key={col} className="log-table-cell">
+                              {col === 'timestamp' && timestamp}
+                              {col === 'active_energy_import' && activeEnergyImport}
+                              {col === 'total_active_power' && totalActivePower}
+                              {col === 'total_apparent_power' && totalApparentPower}
+                              {col === 'average_current' && avgCurrent}
+                              {col === 'average_line_to_line_voltage' && avgLineToLineVoltage}
+                              {col === 'c_a_phase_voltage_rms' && brVoltage}
+                              {col === 'system_frequency' && frequency}
+                              {col === 'rms_current_phase_c' && ibCurrent}
+                              {col === 'rms_current_phase_a' && irCurrent}
+                              {col === 'rms_current_phase_b' && iyCurrent}
+                              {col === 'total_power_factor' && totalPowerFactor}
+                              {col === 'reactive_energy_import' && reactiveEnergyImport}
+                              {col === 'a_b_phase_voltage_rms' && ryVoltage}
+                              {col === 'b_c_phase_voltage_rms' && ybVoltage}
+                            </TableCell>
+                          ))
                         ) : (
                           // All columns view
                           <>

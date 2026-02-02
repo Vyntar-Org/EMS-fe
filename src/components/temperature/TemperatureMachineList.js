@@ -405,10 +405,11 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             backgroundColor: '#E34D4D', // Red
         },
         phaseY: {
-            backgroundColor: '#F8C537', // Yellow
+            backgroundColor: '#4A90E2', // Blue
         },
         phaseB: {
-            backgroundColor: '#4A90E2', // Blue
+            backgroundColor: '#F8C537', // Amber/Yellow (Power)
+            // Note: Use Green (#30B44A) if you want it to look "Healthy"
         },
         modal: {
             display: 'flex',
@@ -461,11 +462,13 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             flexDirection: 'row',
             flexWrap: 'wrap',
-            justifyContent: 'space-around',
-            gap: '20px 0px'
+            justifyContent: 'flex-start', // Changed from space-around
+            gap: '20px',                  // Uniform gap for both rows and columns
+            padding: '10px',              // Optional padding
         },
         gridItem: {
-            width: '30%',
+            // Math: (100% / 3 items) - (total gap space / 3)
+            width: 'calc(33.33% - 14px)',
             marginBottom: '15px',
         },
         tableCell: {
@@ -558,7 +561,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             <TableHead>
                                 <TableRow style={styles.phaseTableHeader}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
-                                    <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}>A</TableCell>
+                                    <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
