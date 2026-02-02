@@ -112,7 +112,16 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
           setLogsLoading(true);
           
           // Find the selected device object to get its ID
-          const selectedDeviceObj = deviceObjects.find(device => device.name === filterDevice);
+          // The filterDevice contains slave_name, but deviceObjects may have different property names
+          const selectedDeviceObj = deviceObjects.find(device => 
+            device.slave_name === filterDevice || 
+            device.name === filterDevice ||
+            device.slave_id === parseInt(filterDevice)
+          );
+          
+          console.log('Selected device filter:', filterDevice);
+          console.log('Available devices:', deviceObjects);
+          console.log('Found device object:', selectedDeviceObj);
           if (!selectedDeviceObj) {
             console.error('Selected device not found in device list');
             return;
@@ -136,7 +145,9 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
           const startDate = filterStartDate ? formatDateTime(filterStartDate) : '2026-01-03 23:03:00';
           const endDate = filterEndDate ? formatDateTime(filterEndDate) : '2026-01-05 23:03:00';
           
-          const slaveId = selectedDeviceObj.id; // Use the actual ID from the device object
+          // Use the actual ID from the device object - could be slave_id or id
+          const slaveId = selectedDeviceObj.slave_id || selectedDeviceObj.id;
+          console.log('Using slave ID for API call:', slaveId);
           
           // Calculate offset based on current page and limit
           const limit = rowsPerPage;
@@ -144,27 +155,31 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
           
           const response = await getDeviceLogs(slaveId, startDate, endDate, limit, offset);
           
-          // Handle the response structure - it should have both data and meta properties
+          // Handle the response structure - API returns {success, message, data, meta}
           let logsData = [];
           let meta = {};
           
           if (response && typeof response === 'object') {
             if (response.data !== undefined) {
-              // Response has the expected structure with data and meta
-              logsData = response.data || [];
+              // Response has the expected structure with data array
+              logsData = Array.isArray(response.data) ? response.data : [];
               meta = response.meta || {};
+              console.log('API response data:', response.data);
+              console.log('API response meta:', response.meta);
+            } else if (Array.isArray(response)) {
+              // Direct array response
+              logsData = response;
+              meta = {};
             } else {
-              // Fallback: if response is just an array, use it as data
-              if (Array.isArray(response)) {
-                logsData = response;
-              } else {
-                logsData = [];
-              }
+              // Unexpected structure
+              console.warn('Unexpected API response structure:', response);
+              logsData = [];
               meta = {};
             }
           } else {
-            // Fallback to response as-is
-            logsData = response || [];
+            // Invalid response
+            console.error('Invalid API response:', response);
+            logsData = [];
             meta = {};
           }
           
@@ -199,10 +214,12 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
       try {
         setLoading(true);
         const slaveList = await getSlaveList();
+        console.log('Raw slave list from API:', slaveList);
         // Store full device objects for ID mapping
         setDeviceObjects(slaveList);
         // Transform the slave list to the format expected by the dropdown
-        const deviceNames = slaveList.map(slave => slave.name);
+        const deviceNames = slaveList.map(slave => slave.slave_name);
+        console.log('Device names for dropdown:', deviceNames);
         setDevices(['all', ...deviceNames]); // Add 'all' as the first option
         setError(null);
       } catch (err) {
@@ -333,7 +350,16 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
         setLogsLoading(true);
         
         // Find the selected device object to get its ID
-        const selectedDeviceObj = deviceObjects.find(device => device.name === filterDevice);
+        // The filterDevice contains slave_name, but deviceObjects may have different property names
+        const selectedDeviceObj = deviceObjects.find(device => 
+          device.slave_name === filterDevice || 
+          device.name === filterDevice ||
+          device.slave_id === parseInt(filterDevice)
+        );
+        
+        console.log('Pagination - Selected device filter:', filterDevice);
+        console.log('Pagination - Available devices:', deviceObjects);
+        console.log('Pagination - Found device object:', selectedDeviceObj);
         if (!selectedDeviceObj) {
           console.error('Selected device not found in device list');
           return;
@@ -357,7 +383,9 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
         const startDate = filterStartDate ? formatDateTime(filterStartDate) : '2026-01-03 23:03:00';
         const endDate = filterEndDate ? formatDateTime(filterEndDate) : '2026-01-05 23:03:00';
         
-        const slaveId = selectedDeviceObj.id; // Use the actual ID from the device object
+        // Use the actual ID from the device object - could be slave_id or id
+        const slaveId = selectedDeviceObj.slave_id || selectedDeviceObj.id;
+        console.log('Pagination - Using slave ID for API call:', slaveId);
         
         // Calculate offset based on page and limit
         const limit = rowsPerPage;
@@ -365,27 +393,31 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
         
         const response = await getDeviceLogs(slaveId, startDate, endDate, limit, offset);
         
-        // Handle the response structure
+        // Handle the response structure - API returns {success, message, data, meta}
         let logsData = [];
         let meta = {};
         
         if (response && typeof response === 'object') {
           if (response.data !== undefined) {
-            // Response has the expected structure with data and meta
-            logsData = response.data || [];
+            // Response has the expected structure with data array
+            logsData = Array.isArray(response.data) ? response.data : [];
             meta = response.meta || {};
+            console.log('Pagination API response data:', response.data);
+            console.log('Pagination API response meta:', response.meta);
+          } else if (Array.isArray(response)) {
+            // Direct array response
+            logsData = response;
+            meta = {};
           } else {
-            // Fallback: if response is just an array, use it as data
-            if (Array.isArray(response)) {
-              logsData = response;
-            } else {
-              logsData = [];
-            }
+            // Unexpected structure
+            console.warn('Unexpected pagination API response structure:', response);
+            logsData = [];
             meta = {};
           }
         } else {
-          // Fallback to response as-is
-          logsData = response || [];
+          // Invalid response
+          console.error('Invalid pagination API response:', response);
+          logsData = [];
           meta = {};
         }
         

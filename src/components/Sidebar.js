@@ -6,7 +6,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import './Sidebar.css';
 import SummarizeIcon from '@mui/icons-material/Summarize';
 
-function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, onSidebarHide, onSidebarToggle }) {
+function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, onSidebarHide, onSidebarToggle, activeApp = null }) {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -35,14 +35,26 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  const menuItems = [
-    // { id: 1, name: '', path: '', icon: 'toggle', isToggle: true },
-    { id: 2, name: 'Dashboard', path: '/dashboard', icon: 'home' },
-    { id: 3, name: 'Machine List', path: '/machine-list', icon: 'list' },
-    // { id: 3, name: 'Equipment Insight', path: '/equipment-insight', icon: 'paper-plane' },
-    { id: 4, name: 'Analytics', path: '/analytics', icon: 'bar-chart' },
-    { id: 5, name: 'Logs', path: '/logs', icon: 'file-text' },
-    { id: 6, name: 'Reports', path: '/reports', icon: 'reports' },
+  // Define menu items based on active application
+  const menuItems = activeApp ? (
+    activeApp.code === 'TEMPERATURE' ? [
+      // { id: 1, name: 'Dashboard', path: '/dashboard', icon: 'home' },
+      { id: 2, name: 'Machine List', path: '/temperature/machine-list', icon: 'list' },
+      { id: 3, name: 'Analytics', path: '/temperature/analytics', icon: 'bar-chart' },
+      { id: 4, name: 'Logs', path: '/temperature/logs', icon: 'file-text' },
+    ] : [
+      { id: 1, name: 'Dashboard', path: '/dashboard', icon: 'home' },
+      { id: 2, name: 'Machine List', path: '/machine-list', icon: 'list' },
+      { id: 3, name: 'Analytics', path: '/analytics', icon: 'bar-chart' },
+      { id: 4, name: 'Logs', path: '/logs', icon: 'file-text' },
+      { id: 5, name: 'Reports', path: '/reports', icon: 'reports' },
+    ]
+  ) : [
+    { id: 1, name: 'Dashboard', path: '/dashboard', icon: 'home' },
+    { id: 2, name: 'Machine List', path: '/machine-list', icon: 'list' },
+    { id: 3, name: 'Analytics', path: '/analytics', icon: 'bar-chart' },
+    { id: 4, name: 'Logs', path: '/logs', icon: 'file-text' },
+    { id: 5, name: 'Reports', path: '/reports', icon: 'reports' },
   ];
 
   const getIcon = (iconName) => {

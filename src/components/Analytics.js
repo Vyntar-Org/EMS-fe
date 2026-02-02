@@ -985,31 +985,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 </Button>
                                             ) : (
                                                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                                                    <FormControl size="small" sx={{ minWidth: 200 }}>
-                                                        <InputLabel>Select Parameter</InputLabel>
-                                                        <Select
-                                                            value={compareParameter}
-                                                            label="Select Parameter"
-                                                            onChange={(e) => setCompareParameter(e.target.value)}
-                                                        >
-                                                            <MenuItem value="">All Parameters</MenuItem>
-                                                            <MenuItem value="timestamp">Timestamp</MenuItem>
-                                                            <MenuItem value="active_energy_import">Active Energy Import (kWh)</MenuItem>
-                                                            <MenuItem value="total_active_power">Total Active Power (kW)</MenuItem>
-                                                            <MenuItem value="total_apparent_power">Total Apparent Power (kVA)</MenuItem>
-                                                            <MenuItem value="average_current">Average Current (A)</MenuItem>
-                                                            <MenuItem value="average_line_to_line_voltage">Average Line-to-Line Voltage (V)</MenuItem>
-                                                            <MenuItem value="c_a_phase_voltage_rms">C–A Phase Voltage RMS (V)</MenuItem>
-                                                            <MenuItem value="system_frequency">System Frequency (Hz)</MenuItem>
-                                                            <MenuItem value="rms_current_phase_c">RMS Current – Phase C (A)</MenuItem>
-                                                            <MenuItem value="rms_current_phase_a">RMS Current – Phase A (A)</MenuItem>
-                                                            <MenuItem value="rms_current_phase_b">RMS Current – Phase B (A)</MenuItem>
-                                                            <MenuItem value="total_power_factor">Total Power Factor</MenuItem>
-                                                            <MenuItem value="reactive_energy_import">Reactive Energy Import (kVArh)</MenuItem>
-                                                            <MenuItem value="a_b_phase_voltage_rms">A–B Phase Voltage RMS (V)</MenuItem>
-                                                            <MenuItem value="b_c_phase_voltage_rms">B–C Phase Voltage RMS (V)</MenuItem>
-                                                        </Select>
-                                                    </FormControl>
                                                     <FormControl size="small" sx={{ minWidth: 300 }}>
                                                         <InputLabel>Select Machine to Compare</InputLabel>
                                                         <Select
@@ -1100,7 +1075,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             </Select>
                                                         </FormControl>
                                                         <FormControl size="small" sx={{ minWidth: 300 }}>
-                                                            <InputLabel>Select Second Machine to Compare</InputLabel>
+                                                            <InputLabel>Select Parameter</InputLabel>
                                                             <Select
                                                                 value={compareDevice2}
                                                                 label="Select Second Machine to Compare"

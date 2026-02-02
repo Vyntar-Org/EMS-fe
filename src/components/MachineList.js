@@ -760,7 +760,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     return (
         <Box style={styles.mainContent} id="main-content">
             {/* Header with Title and Hierarchy Selection */}
-            <Box style={styles.headerContainer}>
+            {/* <Box style={styles.headerContainer}>
                 <Box>
                     <Typography
                         variant="h6"
@@ -791,7 +791,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         Machine List
                     </Typography>
                 </Box>
-            </Box>
+            </Box> */}
 
             {/* Custom Grid Container for 2 cards per row */}
             <Box style={styles.gridContainer}>

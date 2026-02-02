@@ -135,9 +135,24 @@ export const getSlaveList = async () => {
     const response = await apiClient.get('/admin/slaves/');
     console.log('Slave list API response:', response);
     
-    // The API returns data in the format {success: true, message: 'Slave List', data: [...], errors: null, meta: {...}}
+    // The API returns data in multiple possible formats:
+    // Format 1: {success: true, message: 'Slave List', data: [...], errors: null, meta: {...}}
+    // Format 2: {data: {slaves: [...]}}
+    // Format 3: {slaves: [...]}
+    // Format 4: [...] (direct array)
     if (response.data && typeof response.data === 'object') {
-      if (response.data.success === true) {
+      // Check if it's the format with data containing slaves: {data: {slaves: [...]}}
+      if (response.data.data && response.data.data.slaves && Array.isArray(response.data.data.slaves)) {
+        console.log('Using format with data.slaves array');
+        return response.data.data.slaves;
+      }
+      // Check if it's the format with slaves directly in response.data: {slaves: [...]}
+      else if (response.data.slaves && Array.isArray(response.data.slaves)) {
+        console.log('Using format with slaves array directly in response.data');
+        return response.data.slaves;
+      }
+      // Check if it's the standard format with success flag
+      else if (response.data.success === true) {
         // Standard format: {success: true, message: '...', data: [...], ...}
         return response.data.data;
       } else if (Array.isArray(response.data)) {
@@ -156,7 +171,13 @@ export const getSlaveList = async () => {
         } else {
           // Unknown format, return as is
           console.warn('Unknown response format for slave list:', response.data);
-          return response.data;
+          // Check if it has a data property with slaves
+          if (response.data.data && Array.isArray(response.data.data)) {
+            console.log('Using response.data.data as fallback');
+            return response.data.data;
+          }
+          // Ensure we return an array to prevent downstream errors
+          return Array.isArray(response.data) ? response.data : [];
         }
       }
     } else {

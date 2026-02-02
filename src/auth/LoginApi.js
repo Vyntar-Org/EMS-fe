@@ -104,6 +104,43 @@ const loginApi = {
     } catch (error) {
       return null; // User is not authenticated
     }
+  },
+
+  /**
+   * Fetch user data after login
+   * @returns {Promise} - Promise that resolves to user data
+   */
+  getUserData: async () => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      
+      if (!accessToken) {
+        throw new Error('No access token available');
+      }
+      
+      const response = await axios.get(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        withCredentials: false
+      });
+      
+      console.log('User data fetched successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      if (error.response) {
+        // Server responded with error status
+        throw new Error(error.response.data.detail || 'Failed to fetch user data');
+      } else if (error.request) {
+        // Request was made but no response received
+        throw new Error('Network error: Unable to connect to server');
+      } else {
+        // Something else happened
+        throw new Error('An error occurred while fetching user data');
+      }
+    }
   }
 };
 
