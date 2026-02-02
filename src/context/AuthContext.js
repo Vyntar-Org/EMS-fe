@@ -9,13 +9,15 @@ const authReducer = (state, action) => {
       return {
         ...state,
         isLoggedIn: true,
-        user: action.payload.user || null
+        user: action.payload.user || null,
+        userData: action.payload.userData || null
       };
     case 'LOGOUT':
       return {
         ...state,
         isLoggedIn: false,
-        user: null
+        user: null,
+        userData: null
       };
     case 'SET_LOADING':
       return {
@@ -38,6 +40,7 @@ export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, {
     isLoggedIn: false,
     user: null,
+    userData: null,
     loading: true
   });
 
@@ -66,14 +69,20 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login function
-  const login = (userData = null) => {
+  const login = (userData = null, fullUserData = null) => {
     localStorage.setItem('isLoggedIn', 'true');
-    dispatch({ type: 'LOGIN', payload: { user: userData } });
+    dispatch({ type: 'LOGIN', payload: { user: userData, userData: fullUserData } });
   };
 
   // Logout function
   const logout = () => {
-    localStorage.clear();
+    // Clear specific auth items instead of all local storage
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('username');
+    localStorage.removeItem('userData');
+    localStorage.removeItem('fullUserData');
     dispatch({ type: 'LOGOUT' });
   };
 

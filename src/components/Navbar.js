@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IconButton,
   Menu,
@@ -28,7 +28,7 @@ import { useAuth } from '../context/AuthContext';
 import loginApi from '../auth/LoginApi';
 import './Navbar.css';
 
-function Navbar({ onMenuClick }) {
+function Navbar({ onMenuClick, activeApp, setActiveApp }) {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -36,7 +36,52 @@ function Navbar({ onMenuClick }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const { logout } = useAuth();
+  const [userData, setUserData] = useState(null);
+  const { logout, userData: contextUserData } = useAuth();
+  
+  // Load user data from context
+  useEffect(() => {
+    const storedUserData = JSON.parse(localStorage.getItem('fullUserData'));
+    if (storedUserData) {
+      setUserData(storedUserData);
+      // Set default active app if available and not already set
+      if (storedUserData.applications && storedUserData.applications.length > 0 && !activeApp) {
+        // Check if there's a saved active app first
+        const savedApp = localStorage.getItem('activeApp');
+        if (savedApp) {
+          const parsedApp = JSON.parse(savedApp);
+          // Verify the saved app still exists in user's applications
+          const appExists = storedUserData.applications.some(app => app.code === parsedApp.code);
+          if (appExists) {
+            setActiveApp(parsedApp);
+            return;
+          }
+        }
+        // If no saved app or it doesn't exist, set default
+        const energyApp = storedUserData.applications.find(app => app.code === 'ENERGY');
+        setActiveApp(energyApp || storedUserData.applications[0]);
+      }
+    } else {
+      setUserData(contextUserData);
+      // Set default active app if available and not already set
+      if (contextUserData && contextUserData.applications && contextUserData.applications.length > 0 && !activeApp) {
+        // Check if there's a saved active app first
+        const savedApp = localStorage.getItem('activeApp');
+        if (savedApp) {
+          const parsedApp = JSON.parse(savedApp);
+          // Verify the saved app still exists in user's applications
+          const appExists = contextUserData.applications.some(app => app.code === parsedApp.code);
+          if (appExists) {
+            setActiveApp(parsedApp);
+            return;
+          }
+        }
+        // If no saved app or it doesn't exist, set default
+        const energyApp = contextUserData.applications.find(app => app.code === 'ENERGY');
+        setActiveApp(energyApp || contextUserData.applications[0]);
+      }
+    }
+  }, [contextUserData, activeApp, setActiveApp]);
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -69,7 +114,13 @@ function Navbar({ onMenuClick }) {
       console.error('Logout error:', error);
     } finally {
       // Clear auth data
-      localStorage.clear();
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('username');
+      localStorage.removeItem('userData');
+      localStorage.removeItem('fullUserData');
+      localStorage.removeItem('activeApp');
       
       // Update auth context
       logout();
@@ -104,6 +155,56 @@ function Navbar({ onMenuClick }) {
             />
           </div>
 
+          {/* APPLICATION ICONS */}
+            {userData && userData.applications && (
+              <div className="applications-icons" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '20px' }}>
+                {userData.applications.map((app, index) => (
+                  <div 
+                    key={index}
+                    title={`${app.name} Application`}
+                    style={{
+                      backgroundColor: '#f5d547',
+                      padding: '5px 10px',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      minWidth: '60px',
+                      textAlign: 'center'
+                    }}
+                    onClick={() => {
+                      // Set the active application
+                      setActiveApp(app);
+                      
+                      // Navigate to the application's default landing page
+                      if (app.default_landing_page) {
+                        let route = app.default_landing_page.toLowerCase();
+                        // Convert underscores to hyphens for URL routing
+                        route = route.replace(/_/g, '-');
+                        // For Temperature application, prepend 'temperature/' to the route
+                        if (app.code === 'TEMPERATURE') {
+                          navigate(`/temperature/${route}`);
+                        } else {
+                          navigate(`/${route}`);
+                        }
+                      } else {
+                        // For Temperature application, go to TemperatureMachineList
+                        if (app.code === 'TEMPERATURE') {
+                          navigate('/temperature/machine-list');
+                        } else {
+                          // Default to dashboard if no specific landing page
+                          navigate('/dashboard');
+                        }
+                      }
+                    }}
+                  >
+                    {app.code === 'ENERGY' ? 'EMS' : app.code === 'TEMPERATURE' ? 'Temperature' : app.name.substring(0, 4)}
+                  </div>
+                ))}
+              </div>
+            )}
+
           {/* USER ICON */}
           <div className="navbar-menu">
             <IconButton onClick={handleMenuOpen}>
@@ -119,7 +220,7 @@ function Navbar({ onMenuClick }) {
               </Avatar>
             </IconButton>
 
-            {/* DROPDOWN MENU */}
+            {/* USER INFO DROPDOWN */}
             <Menu
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}
@@ -156,6 +257,8 @@ function Navbar({ onMenuClick }) {
                 <Typography color="error">Logout</Typography>
               </MenuItem>
             </Menu>
+
+
           </div>
         </div>  
       </nav>

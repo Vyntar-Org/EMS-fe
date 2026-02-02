@@ -110,7 +110,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
 
     // Transform API data to table rows format
     const transformDataToRows = (data) => {
-
+        console.log(data);
         if (!data || !data.data) return [];
 
         return Object.entries(data.data).map(([station, dailyData]) => {
@@ -133,7 +133,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
 
     // Transform API consumption cost data to table rows format
     const transformConsumptionCostDataToRows = (data) => {
-
+        console.log(data);
         if (!data || !data.data) return [];
 
         return Object.entries(data.data).map(([station, dailyData]) => {
@@ -157,7 +157,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
     // Transform API reading data to table rows format
     const transformReadingDataToRows = (data) => {
         if (!data || !data.data) return [];
-
+        console.log(data);
         return Object.entries(data.data).map(([station, dailyData]) => {
             // Create an array of reading values for all days (1-31)
             const readingValues = days.map(day => {
@@ -763,9 +763,9 @@ const exportToPDF = () => {
                     {/* STATION */}
                     <TextField
                         size="small"
-                        label="Station"
+                        label="Machine"
                         value={selectedStation}
-                        placeholder="Station"
+                        placeholder="Machine"
                         onChange={(e) => {
                             const inputValue = e.target.value;
                             setSelectedStation(inputValue);

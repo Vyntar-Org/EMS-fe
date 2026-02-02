@@ -62,10 +62,27 @@ const Login = () => {
       // Also store tokens that were saved in localStorage by the login API
 
 
-      // Update auth context
-      login({ username });
-
-      navigate('/dashboard');
+      // Fetch full user data after successful login
+      try {
+        const userDataResponse = await loginApi.getUserData();
+        console.log('Full user data:', userDataResponse);
+        
+        // Store user data in localStorage
+        localStorage.setItem('fullUserData', JSON.stringify(userDataResponse.data));
+        
+        // Update auth context with both basic user info and full user data
+        login({ username }, userDataResponse.data);
+        
+        // Navigate to dashboard which will set EMS as default active app
+        navigate('/dashboard');
+      } catch (userDataError) {
+        console.error('Error fetching user data after login:', userDataError);
+        // Still proceed with login even if user data fetch fails
+        login({ username });
+        
+        // Navigate to dashboard which will set EMS as default active app
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {

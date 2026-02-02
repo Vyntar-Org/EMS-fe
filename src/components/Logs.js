@@ -47,6 +47,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
   const [loading, setLoading] = useState(true); // Loading state for devices
   const [error, setError] = useState(null); // Error state for devices
+  const [selectedColumn, setSelectedColumn] = useState(''); // State for selected column in dropdown
 
   // Generate 25 rows of sample log data matching the image structure
   const generateLogData = (availableDevices = []) => {
@@ -102,7 +103,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   const [realLogs, setRealLogs] = useState([]); // State for real API logs
   const [logsLoading, setLogsLoading] = useState(false); // Loading state for logs
   const [paginationMeta, setPaginationMeta] = useState({}); // State for pagination metadata
-
+  
   // Fetch device logs when search is clicked
   useEffect(() => {
     const fetchDeviceLogs = async () => {
@@ -111,7 +112,16 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
           setLogsLoading(true);
           
           // Find the selected device object to get its ID
-          const selectedDeviceObj = deviceObjects.find(device => device.name === filterDevice);
+          // The filterDevice contains slave_name, but deviceObjects may have different property names
+          const selectedDeviceObj = deviceObjects.find(device => 
+            device.slave_name === filterDevice || 
+            device.name === filterDevice ||
+            device.slave_id === parseInt(filterDevice)
+          );
+          
+          console.log('Selected device filter:', filterDevice);
+          console.log('Available devices:', deviceObjects);
+          console.log('Found device object:', selectedDeviceObj);
           if (!selectedDeviceObj) {
             console.error('Selected device not found in device list');
             return;
@@ -135,7 +145,9 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
           const startDate = filterStartDate ? formatDateTime(filterStartDate) : '2026-01-03 23:03:00';
           const endDate = filterEndDate ? formatDateTime(filterEndDate) : '2026-01-05 23:03:00';
           
-          const slaveId = selectedDeviceObj.id; // Use the actual ID from the device object
+          // Use the actual ID from the device object - could be slave_id or id
+          const slaveId = selectedDeviceObj.slave_id || selectedDeviceObj.id;
+          console.log('Using slave ID for API call:', slaveId);
           
           // Calculate offset based on current page and limit
           const limit = rowsPerPage;
@@ -143,27 +155,31 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
           
           const response = await getDeviceLogs(slaveId, startDate, endDate, limit, offset);
           
-          // Handle the response structure - it should have both data and meta properties
+          // Handle the response structure - API returns {success, message, data, meta}
           let logsData = [];
           let meta = {};
           
           if (response && typeof response === 'object') {
             if (response.data !== undefined) {
-              // Response has the expected structure with data and meta
-              logsData = response.data || [];
+              // Response has the expected structure with data array
+              logsData = Array.isArray(response.data) ? response.data : [];
               meta = response.meta || {};
+              console.log('API response data:', response.data);
+              console.log('API response meta:', response.meta);
+            } else if (Array.isArray(response)) {
+              // Direct array response
+              logsData = response;
+              meta = {};
             } else {
-              // Fallback: if response is just an array, use it as data
-              if (Array.isArray(response)) {
-                logsData = response;
-              } else {
-                logsData = [];
-              }
+              // Unexpected structure
+              console.warn('Unexpected API response structure:', response);
+              logsData = [];
               meta = {};
             }
           } else {
-            // Fallback to response as-is
-            logsData = response || [];
+            // Invalid response
+            console.error('Invalid API response:', response);
+            logsData = [];
             meta = {};
           }
           
@@ -198,10 +214,12 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
       try {
         setLoading(true);
         const slaveList = await getSlaveList();
+        console.log('Raw slave list from API:', slaveList);
         // Store full device objects for ID mapping
         setDeviceObjects(slaveList);
         // Transform the slave list to the format expected by the dropdown
-        const deviceNames = slaveList.map(slave => slave.name);
+        const deviceNames = slaveList.map(slave => slave.slave_name);
+        console.log('Device names for dropdown:', deviceNames);
         setDevices(['all', ...deviceNames]); // Add 'all' as the first option
         setError(null);
       } catch (err) {
@@ -262,6 +280,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   let filteredLogs;
   
   if (searchClicked) {
+    // When search is clicked, use real logs from API
     // Since pagination is handled by the API, we use the realLogs directly
     // The search term filtering happens on the backend
     filteredLogs = searchTerm ? 
@@ -295,7 +314,6 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
     });
   }
 
-  // Calculate pagination
   // Calculate pagination based on API metadata
   const count = paginationMeta.count || filteredLogs.length;
   const totalRecords = paginationMeta.total || filteredLogs.length;
@@ -325,14 +343,23 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   // Handle page change
   const handlePageChange = async (event, value) => {
     setPage(value);
-
+    
     // Only fetch new data from API if search has been clicked
     if (searchClicked && filterDevice !== 'all') {
       try {
         setLogsLoading(true);
         
         // Find the selected device object to get its ID
-        const selectedDeviceObj = deviceObjects.find(device => device.name === filterDevice);
+        // The filterDevice contains slave_name, but deviceObjects may have different property names
+        const selectedDeviceObj = deviceObjects.find(device => 
+          device.slave_name === filterDevice || 
+          device.name === filterDevice ||
+          device.slave_id === parseInt(filterDevice)
+        );
+        
+        console.log('Pagination - Selected device filter:', filterDevice);
+        console.log('Pagination - Available devices:', deviceObjects);
+        console.log('Pagination - Found device object:', selectedDeviceObj);
         if (!selectedDeviceObj) {
           console.error('Selected device not found in device list');
           return;
@@ -356,7 +383,9 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
         const startDate = filterStartDate ? formatDateTime(filterStartDate) : '2026-01-03 23:03:00';
         const endDate = filterEndDate ? formatDateTime(filterEndDate) : '2026-01-05 23:03:00';
         
-        const slaveId = selectedDeviceObj.id; // Use the actual ID from the device object
+        // Use the actual ID from the device object - could be slave_id or id
+        const slaveId = selectedDeviceObj.slave_id || selectedDeviceObj.id;
+        console.log('Pagination - Using slave ID for API call:', slaveId);
         
         // Calculate offset based on page and limit
         const limit = rowsPerPage;
@@ -364,27 +393,31 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
         
         const response = await getDeviceLogs(slaveId, startDate, endDate, limit, offset);
         
-        // Handle the response structure
+        // Handle the response structure - API returns {success, message, data, meta}
         let logsData = [];
         let meta = {};
         
         if (response && typeof response === 'object') {
           if (response.data !== undefined) {
-            // Response has the expected structure with data and meta
-            logsData = response.data || [];
+            // Response has the expected structure with data array
+            logsData = Array.isArray(response.data) ? response.data : [];
             meta = response.meta || {};
+            console.log('Pagination API response data:', response.data);
+            console.log('Pagination API response meta:', response.meta);
+          } else if (Array.isArray(response)) {
+            // Direct array response
+            logsData = response;
+            meta = {};
           } else {
-            // Fallback: if response is just an array, use it as data
-            if (Array.isArray(response)) {
-              logsData = response;
-            } else {
-              logsData = [];
-            }
+            // Unexpected structure
+            console.warn('Unexpected pagination API response structure:', response);
+            logsData = [];
             meta = {};
           }
         } else {
-          // Fallback to response as-is
-          logsData = response || [];
+          // Invalid response
+          console.error('Invalid pagination API response:', response);
+          logsData = [];
           meta = {};
         }
         
@@ -458,7 +491,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
         </Grid>
       </Box> */}
 
-      <Card className="logs-card" sx={{marginTop: '0px'}}>
+      <Card className="logs-card" sx={{marginTop: ''}}>
         <CardContent>
           <Box className="logs-header">
             <Box className="logs-filters">
@@ -474,6 +507,30 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                       {device === 'all' ? 'Select Machine' : device}
                     </MenuItem>
                   ))}
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
+                <InputLabel>Select Parameter</InputLabel>
+                <Select
+                  value={selectedColumn}
+                  onChange={(e) => setSelectedColumn(e.target.value)}
+                  label="Select Machine Values"
+                >
+                  <MenuItem value="timestamp">timestamp</MenuItem>
+                  <MenuItem value="active_energy_import">Active Energy Import (kWh)</MenuItem>
+                  <MenuItem value="total_active_power">Total Active Power (kW)</MenuItem>
+                  <MenuItem value="total_apparent_power">Total Apparent Power (kVA)</MenuItem>
+                  <MenuItem value="average_current">Average Current (A)</MenuItem>
+                  <MenuItem value="average_line_to_line_voltage">Average Line-to-Line Voltage (V)</MenuItem>
+                  <MenuItem value="c_a_phase_voltage_rms">C–A Phase Voltage RMS (V)</MenuItem>
+                  <MenuItem value="system_frequency">System Frequency (Hz)</MenuItem>
+                  <MenuItem value="rms_current_phase_c">RMS Current – Phase C (A)</MenuItem>
+                  <MenuItem value="rms_current_phase_a">RMS Current – Phase A (A)</MenuItem>
+                  <MenuItem value="rms_current_phase_b">RMS Current – Phase B (A)</MenuItem>
+                  <MenuItem value="total_power_factor">Total Power Factor</MenuItem>
+                  <MenuItem value="reactive_energy_import">Reactive Energy Import (kVArh)</MenuItem>
+                  <MenuItem value="a_b_phase_voltage_rms">A–B Phase Voltage RMS (V)</MenuItem>
+                  <MenuItem value="b_c_phase_voltage_rms">B–C Phase Voltage RMS (V)</MenuItem>
                 </Select>
               </FormControl>
 
@@ -529,7 +586,10 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
               <Button
                 variant="outlined"
                 startIcon={<RefreshIcon />}
-                onClick={handleResetFilters}
+                onClick={() => {
+                  handleResetFilters();
+                  setSelectedColumn(''); // Reset the column selection dropdown
+                }}
                 sx={{
                   borderColor: '#6c757d',
                   color: '#6c757d',
@@ -559,21 +619,45 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
             <Table stickyHeader style={{ tableLayout: 'fixed', width: '100%' }}>
               <TableHead>
                 <TableRow className="log-table-header">
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>timestamp</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Active Energy Import (kWh)</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Total Active Power (kW)</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Total Apparent Power (kVA)</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Average Current (A)</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Average Line-to-Line Voltage (V)</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>C–A Phase Voltage RMS (V)</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>System Frequency (Hz)</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>RMS Current – Phase C (A)</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>RMS Current – Phase A (A)</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>RMS Current – Phase B (A)</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Total Power Factor</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Reactive Energy Import (kVArh)</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>A–B Phase Voltage RMS (V)</TableCell>
-                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>B–C Phase Voltage RMS (V)</TableCell>
+                  {selectedColumn ? (
+                    // Single column view
+                    <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>
+                      {selectedColumn === 'timestamp' && 'timestamp'}
+                      {selectedColumn === 'active_energy_import' && 'Active Energy Import (kWh)'}
+                      {selectedColumn === 'total_active_power' && 'Total Active Power (kW)'}
+                      {selectedColumn === 'total_apparent_power' && 'Total Apparent Power (kVA)'}
+                      {selectedColumn === 'average_current' && 'Average Current (A)'}
+                      {selectedColumn === 'average_line_to_line_voltage' && 'Average Line-to-Line Voltage (V)'}
+                      {selectedColumn === 'c_a_phase_voltage_rms' && 'C–A Phase Voltage RMS (V)'}
+                      {selectedColumn === 'system_frequency' && 'System Frequency (Hz)'}
+                      {selectedColumn === 'rms_current_phase_c' && 'RMS Current – Phase C (A)'}
+                      {selectedColumn === 'rms_current_phase_a' && 'RMS Current – Phase A (A)'}
+                      {selectedColumn === 'rms_current_phase_b' && 'RMS Current – Phase B (A)'}
+                      {selectedColumn === 'total_power_factor' && 'Total Power Factor'}
+                      {selectedColumn === 'reactive_energy_import' && 'Reactive Energy Import (kVArh)'}
+                      {selectedColumn === 'a_b_phase_voltage_rms' && 'A–B Phase Voltage RMS (V)'}
+                      {selectedColumn === 'b_c_phase_voltage_rms' && 'B–C Phase Voltage RMS (V)'}
+                    </TableCell>
+                  ) : (
+                    // All columns view
+                    <>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>timestamp</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Active Energy Import (kWh)</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Total Active Power (kW)</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Total Apparent Power (kVA)</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Average Current (A)</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Average Line-to-Line Voltage (V)</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>C–A Phase Voltage RMS (V)</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>System Frequency (Hz)</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>RMS Current – Phase C (A)</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>RMS Current – Phase A (A)</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>RMS Current – Phase B (A)</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Total Power Factor</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Reactive Energy Import (kVArh)</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>A–B Phase Voltage RMS (V)</TableCell>
+                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>B–C Phase Voltage RMS (V)</TableCell>
+                    </>
+                  )}
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -604,58 +688,82 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                     
                     return (
                       <TableRow key={isAPIData ? log.timestamp : log.id} hover className="log-table-row">
-                        <TableCell className="log-table-cell" title={timestamp}>
-                          {timestamp}
-                        </TableCell>
-                        <TableCell className="log-table-cell">{activeEnergyImport}</TableCell>
-                        <TableCell className="log-table-cell">{totalActivePower}</TableCell>
-                        <TableCell className="log-table-cell">{totalApparentPower}</TableCell>
-                        <TableCell className="log-table-cell">{avgCurrent}</TableCell>
-                        <TableCell className="log-table-cell">{avgLineToLineVoltage}</TableCell>
-                        <TableCell className="log-table-cell">{brVoltage}</TableCell>
-                        <TableCell className="log-table-cell">{frequency}</TableCell>
-                        <TableCell className="log-table-cell">{ibCurrent}</TableCell>
-                        <TableCell className="log-table-cell">{irCurrent}</TableCell>
-                        <TableCell className="log-table-cell">{iyCurrent}</TableCell>
-                        <TableCell className="log-table-cell">{totalPowerFactor}</TableCell>
-                        <TableCell className="log-table-cell">{reactiveEnergyImport}</TableCell>
-                        <TableCell className="log-table-cell">{ryVoltage}</TableCell>
-                        <TableCell className="log-table-cell">{ybVoltage}</TableCell>
-                        <TableCell className="log-table-cell">
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap' }}>
-                            <Typography
-                              variant="body2"
-                              component="span"
-                              sx={{
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                maxWidth: '100%'
-                              }}
-                              title={`${consumption} ${total}`}
-                            >
-                              {consumption} {total}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell className="log-table-cell">
-                          <Chip
-                            label={status}
-                            size="small"
-                            color={status === 'On' ? 'success' : status === 'N/A' ? 'default' : 'default'}
-                            sx={{
-                              height: '20px',
-                              fontSize: '0.7rem',
-                              fontWeight: 500
-                            }}
-                          />
-                        </TableCell>
+                        {selectedColumn ? (
+                          // Single column view
+                          <TableCell className="log-table-cell">
+                            {selectedColumn === 'timestamp' && timestamp}
+                            {selectedColumn === 'active_energy_import' && activeEnergyImport}
+                            {selectedColumn === 'total_active_power' && totalActivePower}
+                            {selectedColumn === 'total_apparent_power' && totalApparentPower}
+                            {selectedColumn === 'average_current' && avgCurrent}
+                            {selectedColumn === 'average_line_to_line_voltage' && avgLineToLineVoltage}
+                            {selectedColumn === 'c_a_phase_voltage_rms' && brVoltage}
+                            {selectedColumn === 'system_frequency' && frequency}
+                            {selectedColumn === 'rms_current_phase_c' && ibCurrent}
+                            {selectedColumn === 'rms_current_phase_a' && irCurrent}
+                            {selectedColumn === 'rms_current_phase_b' && iyCurrent}
+                            {selectedColumn === 'total_power_factor' && totalPowerFactor}
+                            {selectedColumn === 'reactive_energy_import' && reactiveEnergyImport}
+                            {selectedColumn === 'a_b_phase_voltage_rms' && ryVoltage}
+                            {selectedColumn === 'b_c_phase_voltage_rms' && ybVoltage}
+                          </TableCell>
+                        ) : (
+                          // All columns view
+                          <>
+                            <TableCell className="log-table-cell" title={timestamp}>
+                              {timestamp}
+                            </TableCell>
+                            <TableCell className="log-table-cell">{activeEnergyImport}</TableCell>
+                            <TableCell className="log-table-cell">{totalActivePower}</TableCell>
+                            <TableCell className="log-table-cell">{totalApparentPower}</TableCell>
+                            <TableCell className="log-table-cell">{avgCurrent}</TableCell>
+                            <TableCell className="log-table-cell">{avgLineToLineVoltage}</TableCell>
+                            <TableCell className="log-table-cell">{brVoltage}</TableCell>
+                            <TableCell className="log-table-cell">{frequency}</TableCell>
+                            <TableCell className="log-table-cell">{ibCurrent}</TableCell>
+                            <TableCell className="log-table-cell">{irCurrent}</TableCell>
+                            <TableCell className="log-table-cell">{iyCurrent}</TableCell>
+                            <TableCell className="log-table-cell">{totalPowerFactor}</TableCell>
+                            <TableCell className="log-table-cell">{reactiveEnergyImport}</TableCell>
+                            <TableCell className="log-table-cell">{ryVoltage}</TableCell>
+                            <TableCell className="log-table-cell">{ybVoltage}</TableCell>
+                            <TableCell className="log-table-cell">
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap' }}>
+                                <Typography
+                                  variant="body2"
+                                  component="span"
+                                  sx={{
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    maxWidth: '100%'
+                                  }}
+                                  title={`${consumption} ${total}`}
+                                >
+                                  {consumption} {total}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell className="log-table-cell">
+                              <Chip
+                                label={status}
+                                size="small"
+                                color={status === 'On' ? 'success' : status === 'N/A' ? 'default' : 'default'}
+                                sx={{
+                                  height: '20px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 500
+                                }}
+                              />
+                            </TableCell>
+                          </>
+                        )}
                       </TableRow>
                     );
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={16} align="center">
+                    <TableCell colSpan={selectedColumn ? 1 : 16} align="center">
                       {loading || logsLoading ? 'Loading...' : (paginatedLogs.length === 0 ? 'No logs found matching your filters' : '')}
                     </TableCell>
                   </TableRow>

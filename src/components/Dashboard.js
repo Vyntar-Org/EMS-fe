@@ -67,10 +67,16 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         setSlaveList(slaveResponse);
 
         // Automatically select slave ID 1 if it exists
-        const slaveId1 = slaveResponse.find(slave => slave.id === 1);
-        if (slaveId1) {
-          console.log('Auto-selecting slave ID 1');
-          handleSlaveSelect(slaveId1);
+        // Check if slaveResponse is an array before calling .find()
+        if (Array.isArray(slaveResponse)) {
+          const slaveId1 = slaveResponse.find(slave => slave.slave_id === 1);
+          if (slaveId1) {
+            console.log('Auto-selecting slave ID 1');
+            handleSlaveSelect(slaveId1);
+          }
+        } else {
+          console.log('slaveResponse is not an array, skipping auto-selection');
+          console.log('slaveResponse type:', typeof slaveResponse, ', value:', slaveResponse);
         }
 
       } catch (err) {
@@ -92,21 +98,21 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
       setSlaveLoading(true);
       setSelectedSlave(slave);
-      console.log('Selected slave:', slave.name);
+      console.log('Selected slave:', slave.slave_name);
 
       // Clear previous data to show loading state
       setWeeklyConsumptionData([]);
 
       // Fetch weekly consumption data for the selected slave
-      console.log(`Fetching weekly consumption data for slave ID: ${slave.id}`);
-      const weeklyData = await getSlaveWeeklyConsumption(slave.id);
+      console.log(`Fetching weekly consumption data for slave ID: ${slave.slave_id}`);
+      const weeklyData = await getSlaveWeeklyConsumption(slave.slave_id);
       console.log('Weekly consumption data received:', weeklyData);
 
       // Update the chart data
       setWeeklyConsumptionData(weeklyData);
 
       // Show success feedback
-      console.log(`Successfully loaded data for ${slave.name}`);
+      console.log(`Successfully loaded data for ${slave.slave_name}`);
 
     } catch (error) {
       console.error('Error fetching weekly consumption data:', error);
@@ -225,7 +231,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         return val;
       },
       offsetY: -10,
-      offsetX: 5,
+       offsetX: 5,
       style: {
         fontSize: '12px',
         colors: ["#0a223e"]
@@ -619,7 +625,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   return (
     <Box style={styles.mainContent} id="main-content">
       {/* Header */}
-      {/*<Box style={styles.blockHeader} className="block-header mb-1">
+      {/* <Box style={styles.blockHeader} className="block-header mb-1">
         <Grid container>
           <Grid lg={5} md={8} xs={12}>
             <Typography
@@ -653,7 +659,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
             </Typography>
           </Grid>
         </Grid>
-      </Box>*/}
+      </Box> */}
 
       {/* Top Summary Cards Row */}
       <Box sx={{
@@ -916,7 +922,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box sx={{ marginBottom: '20px' }}>
                       <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                         <Typography sx={titleStyle1}>
-                          {selectedSlave ? `${selectedSlave.name} Energy` : 'Energy Consumption'}
+                          {selectedSlave ? `${selectedSlave.slave_name} Energy` : 'Energy Consumption'}
                         </Typography>
                         <Box display="flex" gap={1}>
                           <button
@@ -964,7 +970,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                       {slaveLoading && selectedSlave ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '150px' }}>
                           <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
-                            Loading {selectedSlave.name} data...
+                            Loading {selectedSlave.slave_name} data...
                           </Typography>
                         </Box>
                       ) : selectedSlave && weeklyConsumptionData.length > 0 ? (
@@ -1107,11 +1113,12 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                   />
 
                   <Box sx={{ maxHeight: "340px", overflowY: "auto", scrollbarWidth: "thin" }}>
-                    {slaveList
-                      .filter(slave => slave.name.toLowerCase().includes(searchTerm))
-                      .map((slave, index) => (
+                    {Array.isArray(slaveList) ? (
+                      slaveList
+                        .filter(slave => slave.slave_name && slave.slave_name.toLowerCase().includes(searchTerm))
+                        .map((slave, index) => (
                         <Box
-                          key={slave.id}
+                          key={slave.slave_id}
                           sx={{
                             height: '20px',
                             padding: '8px 12px',
@@ -1119,8 +1126,8 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                             marginBottom: '6px',
                             display: 'flex',
                             alignItems: 'center',
-                            backgroundColor: selectedSlave?.id === slave.id ? '#E3F2FD' : (index % 2 === 0 ? '#F9FAFB' : '#FFFFFF'),
-                            border: selectedSlave?.id === slave.id ? '2px solid #E5E7EB' : '1px solid #E5E7EB',
+                            backgroundColor: selectedSlave?.slave_id === slave.slave_id ? '#E3F2FD' : (index % 2 === 0 ? '#F9FAFB' : '#FFFFFF'),
+                            border: selectedSlave?.slave_id === slave.slave_id ? '2px solid #E5E7EB' : '1px solid #E5E7EB',
                             transition: 'all 0.3s ease',
                             cursor: 'pointer',
                             '&:hover': {
@@ -1131,7 +1138,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                             }
                           }}
                           onClick={() => {
-                            console.log('Slave list item clicked:', slave.name);
+                            console.log('Slave list item clicked:', slave.slave_name);
                             handleSlaveSelect(slave);
                           }}
                         >
@@ -1140,7 +1147,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                           </Box>
 
                           <Tooltip
-                            title={sidebarVisible ? slave.name : ''}
+                            title={sidebarVisible ? slave.slave_name : ''}
                             placement="right"
                             arrow
                             disableHoverListener={!sidebarVisible} // 👈 tooltip ONLY when sidebarVisible = true
@@ -1164,11 +1171,11 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                               }}
                               onClick={() => handleSlaveSelect(slave)}
                             >
-                              {sidebarVisible ? truncateText(slave.name) : slave.name}
+                              {sidebarVisible ? truncateText(slave.slave_name) : slave.slave_name}
                             </Typography>
                           </Tooltip>
                         </Box>
-                      ))}
+                      ))) : null}
                   </Box>
                 </Grid>
               </Grid>
