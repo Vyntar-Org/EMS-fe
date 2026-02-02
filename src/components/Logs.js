@@ -101,7 +101,8 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   const [logs, setLogs] = useState([]); // State for logs
   const [realLogs, setRealLogs] = useState([]); // State for real API logs
   const [logsLoading, setLogsLoading] = useState(false); // Loading state for logs
-  
+  const [paginationMeta, setPaginationMeta] = useState({}); // State for pagination metadata
+
   // Fetch device logs when search is clicked
   useEffect(() => {
     const fetchDeviceLogs = async () => {
@@ -136,9 +137,39 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
           
           const slaveId = selectedDeviceObj.id; // Use the actual ID from the device object
           
-          const deviceLogs = await getDeviceLogs(slaveId, startDate, endDate);
-          setRealLogs(deviceLogs);
-          setLogs(deviceLogs); // Use real logs instead of generated logs
+          // Calculate offset based on current page and limit
+          const limit = rowsPerPage;
+          const offset = (page - 1) * rowsPerPage;
+          
+          const response = await getDeviceLogs(slaveId, startDate, endDate, limit, offset);
+          
+          // Handle the response structure - it should have both data and meta properties
+          let logsData = [];
+          let meta = {};
+          
+          if (response && typeof response === 'object') {
+            if (response.data !== undefined) {
+              // Response has the expected structure with data and meta
+              logsData = response.data || [];
+              meta = response.meta || {};
+            } else {
+              // Fallback: if response is just an array, use it as data
+              if (Array.isArray(response)) {
+                logsData = response;
+              } else {
+                logsData = [];
+              }
+              meta = {};
+            }
+          } else {
+            // Fallback to response as-is
+            logsData = response || [];
+            meta = {};
+          }
+          
+          setRealLogs(logsData);
+          setLogs(logsData); // Use real logs instead of generated logs
+          setPaginationMeta(meta); // Store pagination metadata
           
         } catch (error) {
           console.error('Error fetching device logs:', error);
@@ -231,18 +262,21 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   let filteredLogs;
   
   if (searchClicked) {
-    // When search is clicked, use real logs from API
-    filteredLogs = realLogs.filter((log) => {
-      const matchesSearch = !searchTerm ||
-        (log.timestamp && log.timestamp.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (log.ry_v !== undefined && log.ry_v.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (log.yb_v !== undefined && log.yb_v.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (log.br_v !== undefined && log.br_v.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (log.acte_im !== undefined && log.acte_im.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (log.actpr_t !== undefined && log.actpr_t.toString().toLowerCase().includes(searchTerm.toLowerCase()));
+    // Since pagination is handled by the API, we use the realLogs directly
+    // The search term filtering happens on the backend
+    filteredLogs = searchTerm ? 
+      realLogs.filter((log) => {
+        const matchesSearch = !searchTerm ||
+          (log.timestamp && log.timestamp.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (log.ry_v !== undefined && log.ry_v.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (log.yb_v !== undefined && log.yb_v.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (log.br_v !== undefined && log.br_v.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (log.acte_im !== undefined && log.acte_im.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (log.actpr_t !== undefined && log.actpr_t.toString().toLowerCase().includes(searchTerm.toLowerCase()));
 
-      return matchesSearch;
-    });
+        return matchesSearch;
+      })
+      : realLogs;
   } else {
     // When not searching, use generated logs
     filteredLogs = logs.filter((log) => {
@@ -262,11 +296,17 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   }
 
   // Calculate pagination
-  const count = filteredLogs.length;
-  const totalPages = Math.ceil(count / rowsPerPage);
+  // Calculate pagination based on API metadata
+  const count = paginationMeta.count || filteredLogs.length;
+  const totalRecords = paginationMeta.total || filteredLogs.length;
+  const totalPages = Math.ceil(totalRecords / rowsPerPage);
+  
+  // Determine if pagination should be shown
+  const shouldShowPagination = searchClicked && totalRecords > 0 && totalRecords > rowsPerPage;
 
   // Get logs for current page
-  const paginatedLogs = filteredLogs.slice(
+  // When using API pagination, the realLogs state already contains the correct page of data
+  const paginatedLogs = searchClicked ? realLogs : filteredLogs.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
@@ -283,8 +323,81 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   };
 
   // Handle page change
-  const handlePageChange = (event, value) => {
+  const handlePageChange = async (event, value) => {
     setPage(value);
+
+    // Only fetch new data from API if search has been clicked
+    if (searchClicked && filterDevice !== 'all') {
+      try {
+        setLogsLoading(true);
+        
+        // Find the selected device object to get its ID
+        const selectedDeviceObj = deviceObjects.find(device => device.name === filterDevice);
+        if (!selectedDeviceObj) {
+          console.error('Selected device not found in device list');
+          return;
+        }
+        
+        // Format dates properly for API request
+        const formatDateTime = (date) => {
+          if (!date) return '';
+          // Check if it's a dayjs object
+          if (typeof date.format === 'function') {
+            return date.format('YYYY-MM-DD HH:mm:ss');
+          }
+          // If it's a regular Date object
+          if (date instanceof Date) {
+            return date.toISOString().slice(0, 19).replace('T', ' ');
+          }
+          // If it's already a string, return as is
+          return date;
+        };
+        
+        const startDate = filterStartDate ? formatDateTime(filterStartDate) : '2026-01-03 23:03:00';
+        const endDate = filterEndDate ? formatDateTime(filterEndDate) : '2026-01-05 23:03:00';
+        
+        const slaveId = selectedDeviceObj.id; // Use the actual ID from the device object
+        
+        // Calculate offset based on page and limit
+        const limit = rowsPerPage;
+        const offset = (value - 1) * rowsPerPage;
+        
+        const response = await getDeviceLogs(slaveId, startDate, endDate, limit, offset);
+        
+        // Handle the response structure
+        let logsData = [];
+        let meta = {};
+        
+        if (response && typeof response === 'object') {
+          if (response.data !== undefined) {
+            // Response has the expected structure with data and meta
+            logsData = response.data || [];
+            meta = response.meta || {};
+          } else {
+            // Fallback: if response is just an array, use it as data
+            if (Array.isArray(response)) {
+              logsData = response;
+            } else {
+              logsData = [];
+            }
+            meta = {};
+          }
+        } else {
+          // Fallback to response as-is
+          logsData = response || [];
+          meta = {};
+        }
+        
+        setRealLogs(logsData);
+        setLogs(logsData); // Update logs with new data
+        setPaginationMeta(meta); // Store pagination metadata
+        
+      } catch (error) {
+        console.error('Error fetching device logs for pagination:', error);
+      } finally {
+        setLogsLoading(false);
+      }
+    }
   };
 
   // Reset page when filters change
@@ -309,7 +422,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   }
   return (
     <Box style={styles.mainContent} id="main-content">
-      <Box  className="block-header mb-1">
+      {/* <Box  className="block-header mb-1">
         <Grid container>
           <Grid item lg={5} md={8} xs={12}>
             <Typography
@@ -343,22 +456,22 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
             </Typography>
           </Grid>
         </Grid>
-      </Box>
+      </Box> */}
 
-      <Card className="logs-card" sx={{marginTop: '10px'}}>
+      <Card className="logs-card" sx={{marginTop: '0px'}}>
         <CardContent>
           <Box className="logs-header">
             <Box className="logs-filters">
               <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
-                <InputLabel>Select Device</InputLabel>
+                <InputLabel>Select Machine</InputLabel>
                 <Select
                   value={filterDevice}
-                  label="Select Device"
+                  label="Select Machine"
                   onChange={(e) => setFilterDevice(e.target.value)}
                 >
                   {devices.map((device) => (
                     <MenuItem key={device} value={device}>
-                      {device === 'all' ? 'Select Device' : device}
+                      {device === 'all' ? 'Select Machine' : device}
                     </MenuItem>
                   ))}
                 </Select>
@@ -446,21 +559,21 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
             <Table stickyHeader style={{ tableLayout: 'fixed', width: '100%' }}>
               <TableHead>
                 <TableRow className="log-table-header">
-                  <TableCell className="log-header-cell">timestamp</TableCell>
-                  <TableCell className="log-header-cell">Active Energy Import (kWh)</TableCell>
-                  <TableCell className="log-header-cell">Total Active Power (kW)</TableCell>
-                  <TableCell className="log-header-cell">Total Apparent Power (kVA)</TableCell>
-                  <TableCell className="log-header-cell">Average Current (A)</TableCell>
-                  <TableCell className="log-header-cell">Average Line-to-Line Voltage (V)</TableCell>
-                  <TableCell className="log-header-cell">C–A Phase Voltage RMS (V)</TableCell>
-                  <TableCell className="log-header-cell">System Frequency (Hz)</TableCell>
-                  <TableCell className="log-header-cell">RMS Current – Phase C (A)</TableCell>
-                  <TableCell className="log-header-cell">RMS Current – Phase A (A)</TableCell>
-                  <TableCell className="log-header-cell">RMS Current – Phase B (A)</TableCell>
-                  <TableCell className="log-header-cell">Total Power Factor</TableCell>
-                  <TableCell className="log-header-cell">Reactive Energy Import (kVArh)</TableCell>
-                  <TableCell className="log-header-cell">A–B Phase Voltage RMS (V)</TableCell>
-                  <TableCell className="log-header-cell">B–C Phase Voltage RMS (V)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>timestamp</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Active Energy Import (kWh)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Total Active Power (kW)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Total Apparent Power (kVA)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Average Current (A)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Average Line-to-Line Voltage (V)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>C–A Phase Voltage RMS (V)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>System Frequency (Hz)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>RMS Current – Phase C (A)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>RMS Current – Phase A (A)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>RMS Current – Phase B (A)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Total Power Factor</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Reactive Energy Import (kVArh)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>A–B Phase Voltage RMS (V)</TableCell>
+                  <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>B–C Phase Voltage RMS (V)</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -553,8 +666,11 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
           )}
 
           {/* Pagination */}
-          {searchClicked && totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'right', mt: 2 }}>
+          {shouldShowPagination && (
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+              <Typography variant="body2" color="textSecondary">
+                Showing {(paginationMeta.offset || 0) + 1} to {Math.min((paginationMeta.offset || 0) + (paginationMeta.limit || rowsPerPage), paginationMeta.total || realLogs.length)} of {paginationMeta.total || realLogs.length} entries
+              </Typography>
               <Pagination
                 count={totalPages}
                 page={page}

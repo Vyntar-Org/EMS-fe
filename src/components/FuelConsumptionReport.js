@@ -56,6 +56,8 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
     const [selectedYear, setSelectedYear] = useState(2026); // Default to 2026
     const [selectedStation, setSelectedStation] = useState(''); // For dropdown filter
     const [searchTrigger, setSearchTrigger] = useState(0); // Used to trigger re-render on search
+    const [isSearchApplied, setIsSearchApplied] = useState(false); // Track if search has been applied
+    const [matchedStation, setMatchedStation] = useState(''); // Store the actual matched station name
 
     const selectStyle = {
         minWidth: 200,
@@ -71,7 +73,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
         const fetchDataForActiveTab = async () => {
             try {
                 setLoading(true);
-                
+
                 if (activeTab === 0) {
                     // Daywise consumption data
                     const response = await fetchConsumptionData(selectedMonth, selectedYear);
@@ -93,7 +95,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                     const response = await fetchMonthlyConsumptionCostData(selectedYear);
                     setMonthlyConsumptionCostData(response);
                 }
-                
+
                 setError(null);
             } catch (err) {
                 setError('Failed to fetch data. Please try again later.');
@@ -108,7 +110,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
 
     // Transform API data to table rows format
     const transformDataToRows = (data) => {
-        console.log(data);
+
         if (!data || !data.data) return [];
 
         return Object.entries(data.data).map(([station, dailyData]) => {
@@ -131,7 +133,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
 
     // Transform API consumption cost data to table rows format
     const transformConsumptionCostDataToRows = (data) => {
-        console.log(data);
+
         if (!data || !data.data) return [];
 
         return Object.entries(data.data).map(([station, dailyData]) => {
@@ -155,7 +157,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
     // Transform API reading data to table rows format
     const transformReadingDataToRows = (data) => {
         if (!data || !data.data) return [];
-        console.log(data);
+
         return Object.entries(data.data).map(([station, dailyData]) => {
             // Create an array of reading values for all days (1-31)
             const readingValues = days.map(day => {
@@ -176,54 +178,54 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
         if (!data || !data.data) return [];
 
         return Object.entries(data.data).map(([station, monthlyData]) => {
-        
-        // 3. Map our 12 months to the data provided by the API
-        const consumptionValues = months.map((_, index) => {
-            const monthNumber = index + 1; // Jan = 1, Feb = 2...
-            
-            // Find the record where the month number matches
-            const monthRecord = monthlyData.find(d => parseInt(d.month) === monthNumber);
-            
-            return monthRecord ? monthRecord.consumption_kwh : 0;
+
+            // 3. Map our 12 months to the data provided by the API
+            const consumptionValues = months.map((_, index) => {
+                const monthNumber = index + 1; // Jan = 1, Feb = 2...
+
+                // Find the record where the month number matches
+                const monthRecord = monthlyData.find(d => parseInt(d.month) === monthNumber);
+
+                return monthRecord ? monthRecord.consumption_kwh : 0;
+            });
+
+            // 4. Calculate total for the station
+            const total = consumptionValues.reduce((sum, val) => sum + val, 0);
+
+            return {
+                station,
+                data: consumptionValues,
+                total: total.toFixed(2)
+            };
         });
-
-        // 4. Calculate total for the station
-        const total = consumptionValues.reduce((sum, val) => sum + val, 0);
-
-        return {
-            station,
-            data: consumptionValues,
-            total: total.toFixed(2)
-        };
-    });
-};
+    };
 
     // Transform API monthly consumption cost data to table rows format
     const transformMonthlyConsumptionCostDataToRows = (data) => {
         if (!data || !data.data) return [];
 
         return Object.entries(data.data).map(([station, monthlyData]) => {
-        
-        // 3. Map our 12 months to the data provided by the API
-        const consumptionValues = months.map((_, index) => {
-            const monthNumber = index + 1; // Jan = 1, Feb = 2...
-            
-            // Find the record where the month number matches
-            const monthRecord = monthlyData.find(d => parseInt(d.month) === monthNumber);
-            
-            return monthRecord ? monthRecord.cost : 0;
+
+            // 3. Map our 12 months to the data provided by the API
+            const consumptionValues = months.map((_, index) => {
+                const monthNumber = index + 1; // Jan = 1, Feb = 2...
+
+                // Find the record where the month number matches
+                const monthRecord = monthlyData.find(d => parseInt(d.month) === monthNumber);
+
+                return monthRecord ? monthRecord.cost : 0;
+            });
+
+            // 4. Calculate total for the station
+            const total = consumptionValues.reduce((sum, val) => sum + val, 0);
+
+            return {
+                station,
+                data: consumptionValues,
+                total: total.toFixed(2)
+            };
         });
-
-        // 4. Calculate total for the station
-        const total = consumptionValues.reduce((sum, val) => sum + val, 0);
-
-        return {
-            station,
-            data: consumptionValues,
-            total: total.toFixed(2)
-        };
-    });
-};
+    };
 
     // Get current data based on active tab
     const getCurrentData = () => {
@@ -288,6 +290,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
 
     // Search functionality
     const handleSearch = () => {
+        setIsSearchApplied(true);
         alert('Search functionality would be activated here');
     };
 
@@ -375,36 +378,105 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
     };
 
     // Export to PDF functionality
-    const exportToPDF = () => {
-        const { headers, data, title } = getCurrentData();
+const exportToPDF = () => {
+    const { headers, data, title } = getCurrentData();
 
-        // 🔑 Format numbers to 2 decimals
-        const formattedData = data.map(row =>
-            row.map(cell =>
-                typeof cell === "number"
-                    ? cell.toFixed(2)
-                    : cell
-            )
-        );
+    // Remove TOTAL column from headers and data
+    const totalIndex = headers.indexOf("TOTAL");
+    const filteredHeaders = totalIndex >= 0 ? headers.filter((_, index) => index !== totalIndex) : headers;
+    
+    // Filter out TOTAL column from each row of data
+    const filteredData = data.map(row => 
+        totalIndex >= 0 ? row.filter((_, index) => index !== totalIndex) : row
+    );
 
-        import("jspdf").then(({ default: jsPDF }) => {
-            import("jspdf-autotable").then(({ default: autoTable }) => {
+    // Format numbers to 2 decimals
+    const formattedData = filteredData.map(row =>
+        row.map(cell =>
+            typeof cell === "number"
+                ? cell.toFixed(2)
+                : cell
+        )
+    );
 
-                const doc = new jsPDF("landscape", "mm", "a4");
+    import("jspdf").then(({ default: jsPDF }) => {
+        import("jspdf-autotable").then(({ default: autoTable }) => {
+            const doc = new jsPDF("portrait", "mm", "a4");
 
-                doc.setFontSize(16);
-                doc.text(title, 14, 15);
+            // Get page dimensions
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const usableWidth = pageWidth - 16; // Accounting for margins (8mm on each side)
 
-                doc.setFontSize(10);
-                doc.text(
-                    `Generated on: ${new Date().toLocaleDateString()}`,
-                    14,
-                    22
-                );
+            // Set up the title and date on the first page
+            doc.setFontSize(16);
+            doc.text(title, 14, 15);
 
+            doc.setFontSize(10);
+            doc.text(
+                `Generated on: ${new Date().toLocaleDateString()}`,
+                14,
+                22
+            );
+
+            // Split into chunks of 11 columns
+            const columnsPerPage = 11;
+            const totalPages = Math.ceil(filteredHeaders.length / columnsPerPage);
+
+            // Create a table for each chunk of columns
+            for (let page = 0; page < totalPages; page++) {
+                // Add new page for all pages except the first one
+                if (page > 0) {
+                    doc.addPage();
+
+                    // Add title and date to each new page
+                    doc.setFontSize(16);
+                    doc.text(title, 14, 15);
+
+                    doc.setFontSize(10);
+                    doc.text(
+                        `Generated on: ${new Date().toLocaleDateString()} - Part ${page + 1} of ${totalPages}`,
+                        14,
+                        22
+                    );
+                }
+
+                // Calculate the start and end indices for this chunk
+                const startIdx = page * columnsPerPage;
+                const endIdx = Math.min(startIdx + columnsPerPage, filteredHeaders.length);
+
+                // Extract the headers for this chunk
+                const chunkHeaders = filteredHeaders.slice(startIdx, endIdx);
+
+                // Extract the data for this chunk
+                const chunkData = formattedData.map(row => row.slice(startIdx, endIdx));
+
+                // Calculate column widths for this chunk
+                // Station column gets 30% of available width
+                const stationWidth = usableWidth * 0.3;
+
+                // Remaining width is distributed among date columns (no TOTAL column)
+                const remainingWidth = usableWidth - stationWidth;
+                const dateColumnCount = chunkHeaders.length - (chunkHeaders[0] === "STATION" ? 1 : 0);
+                const dateColumnWidth = dateColumnCount > 0 ? remainingWidth / dateColumnCount : 0;
+
+                // Build column styles object
+                const columnStyles = {};
+
+                // Set width for Station column (first column)
+                if (chunkHeaders[0] === "STATION" || chunkHeaders[0] === "Station") {
+                    columnStyles[0] = { cellWidth: stationWidth };
+                }
+
+                // Set width for date columns (all columns after Station)
+                for (let i = 1; i < chunkHeaders.length; i++) {
+                    columnStyles[i] = { cellWidth: dateColumnWidth };
+                }
+
+                // Add the table for this chunk
                 autoTable(doc, {
-                    head: [headers],
-                    body: formattedData, // ✅ use formatted data
+                    head: [chunkHeaders],
+                    body: chunkData,
                     startY: 28,
                     theme: "grid",
 
@@ -413,6 +485,8 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                         cellPadding: 2,
                         halign: "center",
                         valign: "middle",
+                        overflow: 'linebreak', // Ensure content fits
+                        cellWidth: 'auto' // Auto-adjust content
                     },
 
                     headStyles: {
@@ -421,23 +495,27 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                         fontSize: 7,
                     },
 
-                    columnStyles: {
-                        0: { cellWidth: 30 },
-                        ...Object.fromEntries(
-                            headers.slice(1, -1).map((_, i) => [i + 1, { cellWidth: 7 }])
-                        ),
-                        [headers.length - 1]: { cellWidth: 14 },
-                    },
+                    columnStyles: columnStyles,
 
                     margin: { left: 8, right: 8 },
                     showHead: "everyPage",
+                    tableWidth: 'auto', // Use full available width
                 });
 
-                doc.save(`${title.replace(/\s+/g, "_")}_Export.pdf`);
-            });
-        });
-    };
+                // Add page number at the bottom
+                doc.setFontSize(8);
+                doc.text(
+                    `Page ${page + 1} of ${totalPages}`,
+                    pageWidth / 2,
+                    pageHeight - 10,
+                    { align: "center" }
+                );
+            }
 
+            doc.save(`${title.replace(/\s+/g, "_")}_Export.pdf`);
+        });
+    });
+};
     // Get all unique station names from current data
     const getAllStations = () => {
         let stations = [];
@@ -461,14 +539,53 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
         return [...new Set(stations)].sort();
     };
 
+    // Helper function for fuzzy matching station names
+    const findMatchingStation = (inputValue) => {
+        if (!inputValue.trim()) return '';
+
+        const stations = getAllStations();
+        const normalizedInput = inputValue.toLowerCase().replace(/\s+/g, '');
+
+        // Exact match first
+        const exactMatch = stations.find(station =>
+            station.toLowerCase() === normalizedInput ||
+            station.toLowerCase().replace(/\s+/g, '') === normalizedInput
+        );
+
+        if (exactMatch) return exactMatch;
+
+        // Partial match (contains the input)
+        const partialMatch = stations.find(station =>
+            station.toLowerCase().includes(normalizedInput) ||
+            station.toLowerCase().replace(/\s+/g, '').includes(normalizedInput)
+        );
+
+        if (partialMatch) return partialMatch;
+
+        // Fuzzy match (check each word)
+        const inputWords = normalizedInput.split(/[^a-z0-9]/).filter(word => word.length > 0);
+        if (inputWords.length > 0) {
+            const fuzzyMatch = stations.find(station => {
+                const stationWords = station.toLowerCase().replace(/\s+/g, '').split(/[^a-z0-9]/).filter(word => word.length > 0);
+                return inputWords.some(inputWord =>
+                    stationWords.some(stationWord => stationWord.includes(inputWord))
+                );
+            });
+
+            if (fuzzyMatch) return fuzzyMatch;
+        }
+
+        return '';
+    };
+
     // Get rows for the current view
     const getRows = () => {
         let rows = [];
-        if ((activeTab === 0 ) && consumptionData) {
+        if ((activeTab === 0) && consumptionData) {
             rows = transformDataToRows(consumptionData);
-        } else if ((activeTab === 1 ) && monthlyConsumptionData) {
+        } else if ((activeTab === 1) && monthlyConsumptionData) {
             rows = transformMonthlyConsumptionDataToRows(monthlyConsumptionData);
-        } else if ((activeTab === 2 ) && readingData) {
+        } else if ((activeTab === 2) && readingData) {
             rows = transformReadingDataToRows(readingData);
         } else if ((activeTab === 3) && consumptionCostData) {
             rows = transformConsumptionCostDataToRows(consumptionCostData);
@@ -480,10 +597,10 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
 
         // Apply filters if they exist
         let filteredRows = rows;
-        
-        // Apply station filter if selectedStation exists
-        if (selectedStation) {
-            filteredRows = filteredRows.filter(row => row.station === selectedStation);
+
+        // Apply station filter if matchedStation exists
+        if (matchedStation) {
+            filteredRows = filteredRows.filter(row => row.station === matchedStation);
         }
 
         return filteredRows;
@@ -499,10 +616,10 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
 
         // Apply filters if they exist
         let filteredRows = rows;
-        
-        // Apply station filter if selectedStation exists
-        if (selectedStation) {
-            filteredRows = filteredRows.filter(row => row.station === selectedStation);
+
+        // Apply station filter if matchedStation exists
+        if (matchedStation) {
+            filteredRows = filteredRows.filter(row => row.station === matchedStation);
         }
 
         return filteredRows;
@@ -533,7 +650,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                 color: '#0F2A44',
                                 fontWeight: 600,
                                 fontFamily: 'sans-serif',
-                                marginLeft: '5px',
+                                // marginLeft: '5px',
                                 backgroundColor: '#fff',
                                 width: '150%'
                             }}
@@ -553,21 +670,21 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                     fontWeight: '400',
                                     display: 'inline-block',
                                     cursor: 'pointer',
-                                    marginRight: '8px',
+                                    // marginRight: '8px',
                                     userSelect: 'none',
                                     color: '#007bff',
                                     zIndex: 10,
                                     position: 'relative'
                                 }}
                             >
-                                <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
+                                {/* <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i> */}
                             </span>
-                            <Tabs value={activeTab} onChange={handleTabChange} centered={false} sx={{ mb: 2, marginTop: '-37px'}}>
-                                <Tab sx={{fontWeight: 600, textTransform: 'capitalize'}} label="Daywise Consumption" />
-                                <Tab sx={{fontWeight: 600, textTransform: 'capitalize'}} label="Monthwise Consumption" />
-                                <Tab sx={{fontWeight: 600, textTransform: 'capitalize'}} label="Daily Meter Reading" />
-                                <Tab sx={{fontWeight: 600, textTransform: 'capitalize'}} label="Daywise Cost Consumption" />
-                                <Tab sx={{fontWeight: 600, textTransform: 'capitalize'}} label="Monthwise Cost Consumption" />
+                            <Tabs value={activeTab} onChange={handleTabChange} centered={false} sx={{ mb: 2, marginTop: '-37px' }}>
+                                <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Daywise Consumption" />
+                                <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Monthwise Consumption" />
+                                <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Daily Meter Reading" />
+                                <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Daywise Cost Consumption" />
+                                <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Monthwise Cost Consumption" />
                             </Tabs>
                         </Typography>
                     </Grid>
@@ -645,11 +762,19 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
 
                     {/* STATION */}
                     <TextField
-                        select
                         size="small"
                         label="Station"
                         value={selectedStation}
-                        onChange={(e) => setSelectedStation(e.target.value)}
+                        placeholder="Station"
+                        onChange={(e) => {
+                            const inputValue = e.target.value;
+                            setSelectedStation(inputValue);
+                            setIsSearchApplied(false);
+
+                            // Find matching station
+                            const matched = findMatchingStation(inputValue);
+                            setMatchedStation(matched);
+                        }}
                         sx={{ minWidth: 200, height: '30px' }}
                         InputProps={{
                             sx: { height: '30px', padding: '6px 14px' },
@@ -659,15 +784,9 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                 </InputAdornment>
                             )
                         }}
-                    >
-                        <MenuItem value="">All</MenuItem>
-                        {getAllStations().map((s) => (
-                            <MenuItem key={s} value={s}>
-                                {s}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                    
+                    // helperText={matchedStation ? `Matches: ${matchedStation}` : (selectedStation ? 'No matching station found' : '')}
+                    />
+
                     {/* SEARCH BUTTON */}
                     <IconButton
                         onClick={() => {
@@ -789,22 +908,22 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                             key={idx}
                                             align="center"
                                             style={{ cursor: 'pointer' }}
-                                            // onClick={() => {
-                                            //     if (activeTab === 0 || activeTab === 3) {
-                                            //         // Daywise report click handler
-                                            //         if (val !== 0) {
-                                            //             alert(`Clicked on ${row.station} for Day ${days[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
-                                            //         }
-                                            //     } else {
-                                            //         // Monthwise report click handler
-                                            //         if (val !== "--") {
-                                            //             alert(`Clicked on ${row.station} for ${months[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
-                                            //         } else {
-                                            //             // Placeholder for handling clicks on empty cells in monthwise view
-                                            //             console.log(`${row.station} - ${months[idx]} is not configured yet`);
-                                            //         }
-                                            //     }
-                                            // }}
+                                        // onClick={() => {
+                                        //     if (activeTab === 0 || activeTab === 3) {
+                                        //         // Daywise report click handler
+                                        //         if (val !== 0) {
+                                        //             alert(`Clicked on ${row.station} for Day ${days[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
+                                        //         }
+                                        //     } else {
+                                        //         // Monthwise report click handler
+                                        //         if (val !== "--") {
+                                        //             alert(`Clicked on ${row.station} for ${months[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
+                                        //         } else {
+                                        //             // Placeholder for handling clicks on empty cells in monthwise view
+                                        //             console.log(`${row.station} - ${months[idx]} is not configured yet`);
+                                        //         }
+                                        //     }
+                                        // }}
                                         >
                                             {typeof val === 'number' ? val.toFixed(2) : val}
                                         </TableCell>
@@ -849,14 +968,14 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                                             key={idx}
                                             align="center"
                                             style={{ cursor: 'pointer' }}
-                                            // onClick={() => {
-                                            //     if (activeTab === 2) {
-                                            //         // Daywise report click handler
-                                            //         if (val !== 0 && val !== "--") {
-                                            //             alert(`Clicked on ${row.station} for Day ${days[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
-                                            //         }
-                                            //     }
-                                            // }}
+                                        // onClick={() => {
+                                        //     if (activeTab === 2) {
+                                        //         // Daywise report click handler
+                                        //         if (val !== 0 && val !== "--") {
+                                        //             alert(`Clicked on ${row.station} for Day ${days[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
+                                        //         }
+                                        //     }
+                                        // }}
                                         >
                                             {typeof val === 'number' ? val.toFixed(2) : val}
                                         </TableCell>

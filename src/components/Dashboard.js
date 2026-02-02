@@ -44,7 +44,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const [selectedSlave, setSelectedSlave] = useState(null);
   const [weeklyConsumptionData, setWeeklyConsumptionData] = useState([]);
   const [slaveLoading, setSlaveLoading] = useState(false);
-  const [activeChart, setActiveChart] = useState('line'); // 'line' or 'bar'
+  const [activeChart, setActiveChart] = useState('bar'); // 'line' or 'bar'
 
   // Fetch dashboard data
   useEffect(() => {
@@ -511,7 +511,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     mainContent: {
       width: sidebarVisible ? 'calc(100% - 0px)' : 'calc(100% - 0px)', // Adjust width based on sidebar visibility
       maxWidth: sidebarVisible ? '1600px' : '1800px', // Adjust max width
-      minHeight: 'auto',
+      minHeight: '89vh',
       // backgroundColor: '#F8FAFC',
       fontFamily: 'sans-serif',
       fontSize: '14px',
@@ -619,7 +619,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   return (
     <Box style={styles.mainContent} id="main-content">
       {/* Header */}
-      <Box style={styles.blockHeader} className="block-header mb-1">
+      {/*<Box style={styles.blockHeader} className="block-header mb-1">
         <Grid container>
           <Grid lg={5} md={8} xs={12}>
             <Typography
@@ -653,12 +653,14 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
             </Typography>
           </Grid>
         </Grid>
-      </Box>
+      </Box>*/}
 
       {/* Top Summary Cards Row */}
       <Box sx={{
         // backgroundColor: '#FFFFFF', 
-        padding: '10px',
+        paddingLeft: '10px',
+        paddingRight: '10px',
+        paddingBottom: '10px',
         display: 'flex',
         justifyContent: 'center',
         width: '100%',
@@ -918,25 +920,6 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                         </Typography>
                         <Box display="flex" gap={1}>
                           <button
-                            onClick={() => setActiveChart('line')}
-                            style={
-                              {
-                                padding: '4px 12px',
-                                backgroundColor: activeChart === 'line' ? '#0156a6' : '#e0e0e0',
-                                color: activeChart === 'line' ? 'white' : '#333',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontWeight: activeChart === 'line' ? 'bold' : 'normal',
-                                fontSize: '12px'
-                              }
-                            }
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-                            </svg>
-                          </button>
-                          <button
                             onClick={() => setActiveChart('bar')}
                             style={
                               {
@@ -955,6 +938,25 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                               <line x1="18" y1="20" x2="18" y2="10"></line>
                               <line x1="12" y1="20" x2="12" y2="4"></line>
                               <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => setActiveChart('line')}
+                            style={
+                              {
+                                padding: '4px 12px',
+                                backgroundColor: activeChart === 'line' ? '#0156a6' : '#e0e0e0',
+                                color: activeChart === 'line' ? 'white' : '#333',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: activeChart === 'line' ? 'bold' : 'normal',
+                                fontSize: '12px'
+                              }
+                            }
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
                             </svg>
                           </button>
                         </Box>
@@ -1023,25 +1025,6 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                         <Typography sx={titleStyle1}>Machine Power Consumption</Typography>
                         <Box display="flex" gap={1}>
                           <button
-                            onClick={() => setActiveChart('line')}
-                            style={
-                              {
-                                padding: '4px 12px',
-                                backgroundColor: activeChart === 'line' ? '#0156a6' : '#e0e0e0',
-                                color: activeChart === 'line' ? 'white' : '#333',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontWeight: activeChart === 'line' ? 'bold' : 'normal',
-                                fontSize: '12px'
-                              }
-                            }
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-                            </svg>
-                          </button>
-                          <button
                             onClick={() => setActiveChart('bar')}
                             style={
                               {
@@ -1060,6 +1043,25 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                               <line x1="18" y1="20" x2="18" y2="10"></line>
                               <line x1="12" y1="20" x2="12" y2="4"></line>
                               <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => setActiveChart('line')}
+                            style={
+                              {
+                                padding: '4px 12px',
+                                backgroundColor: activeChart === 'line' ? '#0156a6' : '#e0e0e0',
+                                color: activeChart === 'line' ? 'white' : '#333',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontWeight: activeChart === 'line' ? 'bold' : 'normal',
+                                fontSize: '12px'
+                              }
+                            }
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
                             </svg>
                           </button>
                         </Box>
