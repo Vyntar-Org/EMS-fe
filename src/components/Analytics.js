@@ -33,8 +33,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { getTotalActiveEnergy7Days, getConsumption7Days } from '../auth/AnalyticsApi';
-import { getSlaveList, getDeviceLogs } from '../auth/LogsApi';
+// import { getTotalActiveEnergy7Days, getConsumption7Days } from '../auth/AnalyticsApi';
+// import { getSlaveList, getDeviceLogs } from '../auth/LogsApi';
 
 const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     // State for filters
@@ -45,6 +45,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
     const [devices, setDevices] = useState(['all']); // Initialize with 'all' as default
     const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
+    const [selectedParameter, setSelectedParameter] = useState(''); // State for main chart parameter selection
+    const [compareParameter, setCompareParameter] = useState(''); // State for first comparison chart parameter selection
+    const [compareParameter2, setCompareParameter2] = useState(''); // State for second comparison chart parameter selection
 
     const styles = {
         mainContent: {
@@ -101,24 +104,22 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Fetch device list from API on component mount
+    // Use dummy device list instead of API
     useEffect(() => {
-        const fetchDevices = async () => {
-            try {
-                const slaveList = await getSlaveList();
-                // Store full device objects for ID mapping
-                setDeviceObjects(slaveList);
-                // Transform the slave list to the format expected by the dropdown
-                const deviceNames = slaveList.map(slave => slave.name);
-                setDevices(['all', ...deviceNames]); // Add 'all' as the first option
-            } catch (err) {
-                console.error('Error fetching devices:', err);
-                // Keep the default 'all' option if there's an error
-                setDevices(['all']);
-            }
-        };
-
-        fetchDevices();
+        const dummyDevices = [
+            { id: 1, name: 'Common' },
+            { id: 2, name: 'Terrace' },
+            { id: 3, name: 'Ground Floor' },
+            { id: 4, name: 'Third Floor' },
+            { id: 5, name: 'Second Floor' },
+            { id: 6, name: 'First Floor' }
+        ];
+        
+        // Store full device objects for ID mapping
+        setDeviceObjects(dummyDevices);
+        // Transform the slave list to the format expected by the dropdown
+        const deviceNames = dummyDevices.map(slave => slave.name);
+        setDevices(['all', ...deviceNames]); // Add 'all' as the first option
     }, []);
 
     // Handle search button click
@@ -159,167 +160,207 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [compareDevice2, setCompareDevice2] = useState(''); // Selected device for second comparison
     const [compareChartData2, setCompareChartData2] = useState([]); // Chart data for second comparison device
 
-    // Fetch analytics data on component mount
+    // Use dummy analytics data instead of API
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchDummyData = () => {
             try {
                 setLoading(true);
-                const [energyData, consumption] = await Promise.all([
-                    getTotalActiveEnergy7Days(),
-                    getConsumption7Days()
-                ]);
-                setTotalActiveEnergyData(energyData);
-                setConsumptionData(consumption);
+                
+                // Dummy total active energy data (last 7 days)
+                const dummyEnergyData = [
+                    {
+                        slave_id: 1,
+                        slave_name: "Common",
+                        data: [
+                            { date: "2026-01-23", value: 63.33 },
+                            { date: "2026-01-24", value: 56.2 },
+                            { date: "2026-01-25", value: 44.57 },
+                            { date: "2026-01-26", value: 54.86 },
+                            { date: "2026-01-27", value: 52.4 },
+                            { date: "2026-01-28", value: 50.93 },
+                            { date: "2026-01-29", value: 42.12 }
+                        ]
+                    },
+                    {
+                        slave_id: 2,
+                        slave_name: "Terrace",
+                        data: [
+                            { date: "2026-01-23", value: 5.68 },
+                            { date: "2026-01-24", value: 5.61 },
+                            { date: "2026-01-25", value: 5.79 },
+                            { date: "2026-01-26", value: 0.0 },
+                            { date: "2026-01-27", value: 5.45 },
+                            { date: "2026-01-28", value: 5.73 },
+                            { date: "2026-01-29", value: 0.0 }
+                        ]
+                    },
+                    {
+                        slave_id: 3,
+                        slave_name: "Ground Floor",
+                        data: [
+                            { date: "2026-01-23", value: 115.56 },
+                            { date: "2026-01-24", value: 99.48 },
+                            { date: "2026-01-25", value: 79.2 },
+                            { date: "2026-01-26", value: 89.66 },
+                            { date: "2026-01-27", value: 101.52 },
+                            { date: "2026-01-28", value: 112.56 },
+                            { date: "2026-01-29", value: 65.42 }
+                        ]
+                    }
+                ];
+                
+                // Dummy consumption data
+                const dummyConsumptionData = [
+                    {
+                        slave_id: 1,
+                        slave_name: "Common",
+                        data: [
+                            { date: "2026-01-23", value: 45.2 },
+                            { date: "2026-01-24", value: 38.7 },
+                            { date: "2026-01-25", value: 32.1 },
+                            { date: "2026-01-26", value: 41.3 },
+                            { date: "2026-01-27", value: 39.8 },
+                            { date: "2026-01-28", value: 37.5 },
+                            { date: "2026-01-29", value: 31.2 }
+                        ]
+                    },
+                    {
+                        slave_id: 2,
+                        slave_name: "Terrace",
+                        data: [
+                            { date: "2026-01-23", value: 3.2 },
+                            { date: "2026-01-24", value: 3.1 },
+                            { date: "2026-01-25", value: 3.3 },
+                            { date: "2026-01-26", value: 0.0 },
+                            { date: "2026-01-27", value: 3.0 },
+                            { date: "2026-01-28", value: 3.2 },
+                            { date: "2026-01-29", value: 0.0 }
+                        ]
+                    }
+                ];
+                
+                setTotalActiveEnergyData(dummyEnergyData);
+                setConsumptionData(dummyConsumptionData);
                 setError(null);
             } catch (err) {
-                console.error('Error fetching analytics data:', err);
+                console.error('Error setting dummy data:', err);
                 setError(err.message);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchData();
+        fetchDummyData();
     }, []);
 
-    // Fetch filtered chart data when search is clicked
+    // Use dummy filtered data instead of API
     useEffect(() => {
-        const fetchFilteredData = async () => {
+        const generateDummyFilteredData = () => {
             if (searchClicked && filterDevice && filterDevice !== 'all' && filterStartDate && filterEndDate) {
                 try {
                     setLoading(true);
+                    
+                    // Generate dummy data for the selected device and date range
+                    const startDate = new Date(filterStartDate);
+                    const endDate = new Date(filterEndDate);
+                    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+                    
+                    // Create dummy data points
+                    const dummyData = [];
+                    for (let i = 0; i <= daysDiff; i++) {
+                        const currentDate = new Date(startDate);
+                        currentDate.setDate(startDate.getDate() + i);
                         
-                    // Find the selected device object to get its ID
-                    const selectedDeviceObj = deviceObjects.find(device => device.name === filterDevice);
-                    if (!selectedDeviceObj) {
-                        console.error('Selected device not found in device list');
-                        setError('Selected device not found');
-                        return;
+                        dummyData.push({
+                            timestamp: currentDate.toISOString(),
+                            acte_im: Math.random() * 100 + 20, // Random values between 20-120
+                            value: Math.random() * 50 + 10,    // Random values between 10-60
+                            total_act_energy: Math.random() * 80 + 15, // Random values between 15-95
+                            energy_value: Math.random() * 40 + 5   // Random values between 5-45
+                        });
                     }
-                        
-                    // Format dates properly for API request
-                    const formatDateTime = (date) => {
-                        if (!date) return '';
-                        // Check if it's a dayjs object
-                        if (typeof date.format === 'function') {
-                            return date.format('YYYY-MM-DD HH:mm:ss');
-                        }
-                        // If it's a regular Date object
-                        if (date instanceof Date) {
-                            return date.toISOString().slice(0, 19).replace('T', ' ');
-                        }
-                        // If it's already a string, return as is
-                        return date;
-                    };
-                        
-                    const startDate = formatDateTime(filterStartDate);
-                    const endDate = formatDateTime(filterEndDate);
-                        
-                    const slaveId = selectedDeviceObj.id; // Use the actual ID from the device object
-                        
-                    // Fetch filtered data based on selected device and date range
-                    const deviceLogs = await getDeviceLogs(slaveId, startDate, endDate);
-                    setFilteredChartData(deviceLogs);
+                    
+                    setFilteredChartData(dummyData);
                     setError(null);
                 } catch (err) {
-                    console.error('Error fetching filtered analytics data:', err);
+                    console.error('Error generating dummy filtered data:', err);
                     setError(err.message);
                 } finally {
                     setLoading(false);
                 }
             }
         };
-            
-        fetchFilteredData();
-    }, [searchClicked, filterDevice, filterStartDate, filterEndDate, deviceObjects]);
+        
+        generateDummyFilteredData();
+    }, [searchClicked, filterDevice, filterStartDate, filterEndDate]);
     
-    // Fetch comparison chart data when compare device is selected
+    // Use dummy comparison data instead of API
     useEffect(() => {
-        const fetchCompareData = async () => {
+        const generateDummyCompareData = () => {
             if (compareMode && compareDevice && filterStartDate && filterEndDate) {
                 try {
-                    // Find the selected compare device object to get its ID
-                    const selectedDeviceObj = deviceObjects.find(device => device.name === compareDevice);
-                    if (!selectedDeviceObj) {
-                        console.error('Selected compare device not found in device list');
-                        return;
+                    // Generate dummy comparison data
+                    const startDate = new Date(filterStartDate);
+                    const endDate = new Date(filterEndDate);
+                    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+                    
+                    const dummyData = [];
+                    for (let i = 0; i <= daysDiff; i++) {
+                        const currentDate = new Date(startDate);
+                        currentDate.setDate(startDate.getDate() + i);
+                        
+                        dummyData.push({
+                            timestamp: currentDate.toISOString(),
+                            acte_im: Math.random() * 90 + 25, // Different range for comparison
+                            value: Math.random() * 45 + 12,
+                            total_act_energy: Math.random() * 75 + 18,
+                            energy_value: Math.random() * 35 + 8
+                        });
                     }
-                        
-                    // Format dates properly for API request
-                    const formatDateTime = (date) => {
-                        if (!date) return '';
-                        // Check if it's a dayjs object
-                        if (typeof date.format === 'function') {
-                            return date.format('YYYY-MM-DD HH:mm:ss');
-                        }
-                        // If it's a regular Date object
-                        if (date instanceof Date) {
-                            return date.toISOString().slice(0, 19).replace('T', ' ');
-                        }
-                        // If it's already a string, return as is
-                        return date;
-                    };
-                        
-                    const startDate = formatDateTime(filterStartDate);
-                    const endDate = formatDateTime(filterEndDate);
-                        
-                    const slaveId = selectedDeviceObj.id; // Use the actual ID from the device object
-                        
-                    // Fetch filtered data based on selected device and date range
-                    const deviceLogs = await getDeviceLogs(slaveId, startDate, endDate);
-                    setCompareChartData(deviceLogs);
+                    
+                    setCompareChartData(dummyData);
                 } catch (err) {
-                    console.error('Error fetching comparison analytics data:', err);
+                    console.error('Error generating dummy comparison data:', err);
                 }
             }
         };
-            
-        fetchCompareData();
-    }, [compareMode, compareDevice, filterStartDate, filterEndDate, deviceObjects]);
+        
+        generateDummyCompareData();
+    }, [compareMode, compareDevice, filterStartDate, filterEndDate]);
     
-    // Fetch second comparison chart data when second compare device is selected
+    // Use dummy second comparison data instead of API
     useEffect(() => {
-        const fetchCompareData2 = async () => {
+        const generateDummyCompareData2 = () => {
             if (compareMode2 && compareDevice2 && filterStartDate && filterEndDate) {
                 try {
-                    // Find the selected compare device object to get its ID
-                    const selectedDeviceObj = deviceObjects.find(device => device.name === compareDevice2);
-                    if (!selectedDeviceObj) {
-                        console.error('Selected second compare device not found in device list');
-                        return;
+                    // Generate dummy second comparison data
+                    const startDate = new Date(filterStartDate);
+                    const endDate = new Date(filterEndDate);
+                    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+                    
+                    const dummyData = [];
+                    for (let i = 0; i <= daysDiff; i++) {
+                        const currentDate = new Date(startDate);
+                        currentDate.setDate(startDate.getDate() + i);
+                        
+                        dummyData.push({
+                            timestamp: currentDate.toISOString(),
+                            acte_im: Math.random() * 85 + 30, // Different range for second comparison
+                            value: Math.random() * 40 + 15,
+                            total_act_energy: Math.random() * 70 + 20,
+                            energy_value: Math.random() * 30 + 10
+                        });
                     }
-                        
-                    // Format dates properly for API request
-                    const formatDateTime = (date) => {
-                        if (!date) return '';
-                        // Check if it's a dayjs object
-                        if (typeof date.format === 'function') {
-                            return date.format('YYYY-MM-DD HH:mm:ss');
-                        }
-                        // If it's a regular Date object
-                        if (date instanceof Date) {
-                            return date.toISOString().slice(0, 19).replace('T', ' ');
-                        }
-                        // If it's already a string, return as is
-                        return date;
-                    };
-                        
-                    const startDate = formatDateTime(filterStartDate);
-                    const endDate = formatDateTime(filterEndDate);
-                        
-                    const slaveId = selectedDeviceObj.id; // Use the actual ID from the device object
-                        
-                    // Fetch filtered data based on selected device and date range
-                    const deviceLogs = await getDeviceLogs(slaveId, startDate, endDate);
-                    setCompareChartData2(deviceLogs);
+                    
+                    setCompareChartData2(dummyData);
                 } catch (err) {
-                    console.error('Error fetching second comparison analytics data:', err);
+                    console.error('Error generating dummy second comparison data:', err);
                 }
             }
         };
-            
-        fetchCompareData2();
-    }, [compareMode2, compareDevice2, filterStartDate, filterEndDate, deviceObjects]);
+        
+        generateDummyCompareData2();
+    }, [compareMode2, compareDevice2, filterStartDate, filterEndDate]);
 
     // Process the total active energy data to create chart series and categories
     const processedEnergyData = React.useMemo(() => {
@@ -335,11 +376,14 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
         });
 
-        // Create series for each slave
+        // Create series for each slave with 2 decimal place formatting
         const series = totalActiveEnergyData.map(slave => {
             return {
                 name: slave.slave_name,
-                data: slave.data.map(item => item.value)
+                data: slave.data.map(item => {
+                    const value = parseFloat(item.value);
+                    return parseFloat(value.toFixed(2));
+                })
             };
         });
 
@@ -360,11 +404,14 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
         });
 
-        // Create series for each slave
+        // Create series for each slave with 2 decimal place formatting
         const series = consumptionData.map(slave => {
             return {
                 name: slave.slave_name,
-                data: slave.data.map(item => item.value)
+                data: slave.data.map(item => {
+                    const value = parseFloat(item.value);
+                    return parseFloat(value.toFixed(2));
+                })
             };
         });
 
@@ -391,24 +438,58 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Create series for the filtered data
         const series = [];
             
-        // Extract values from the filtered data
-        const values = filteredChartData.map(item => {
-            if (item.acte_im !== undefined) return parseFloat(item.acte_im) || 0;
-            if (item.value !== undefined) return parseFloat(item.value) || 0;
-            if (item.total_act_energy !== undefined) return parseFloat(item.total_act_energy) || 0;
-            if (item.energy_value !== undefined) return parseFloat(item.energy_value) || 0;
-            return 0;
+        // Extract values from the filtered data based on selected parameter and format to 2 decimal places
+        const values = filteredChartData.map((item, index) => {
+            let value = 0;
+            
+            // If a specific parameter is selected, use that field
+            if (selectedParameter) {
+                switch (selectedParameter) {
+                    case 'timestamp':
+                        // For timestamp, we'll show a sequential number or index
+                        value = index + 1;
+                        break;
+                    case 'active_energy_import':
+                        value = parseFloat(item.acte_im) || 0;
+                        break;
+                    case 'total_active_power':
+                        value = parseFloat(item.value) || 0;
+                        break;
+                    case 'total_apparent_power':
+                        value = parseFloat(item.total_act_energy) || 0;
+                        break;
+                    case 'average_current':
+                        value = parseFloat(item.energy_value) || 0;
+                        break;
+                    // Add more cases for other parameters as needed
+                    default:
+                        value = 0;
+                }
+            } else {
+                // If no parameter selected, use the default logic (first available value)
+                if (item.acte_im !== undefined) value = parseFloat(item.acte_im) || 0;
+                else if (item.value !== undefined) value = parseFloat(item.value) || 0;
+                else if (item.total_act_energy !== undefined) value = parseFloat(item.total_act_energy) || 0;
+                else if (item.energy_value !== undefined) value = parseFloat(item.energy_value) || 0;
+            }
+            
+            // Format to 2 decimal places
+            return parseFloat(value.toFixed(2));
         });
             
-        if (values.some(val => val !== 0)) {
+        // Always create a series if we have data, even if all values are 0
+        if (filteredChartData.length > 0) {
+            const parameterLabel = selectedParameter 
+                ? selectedParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                : filterDevice;
             series.push({
-                name: filterDevice,
+                name: parameterLabel,
                 data: values
             });
         }
             
         return { series, categories };
-    }, [filteredChartData, filterDevice]);
+    }, [filteredChartData, filterDevice, selectedParameter]);
     
     // Process the comparison chart data to create chart series and categories
     const processedCompareData = React.useMemo(() => {
@@ -430,24 +511,58 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Create series for the comparison data
         const series = [];
             
-        // Extract values from the comparison data
-        const values = compareChartData.map(item => {
-            if (item.acte_im !== undefined) return parseFloat(item.acte_im) || 0;
-            if (item.value !== undefined) return parseFloat(item.value) || 0;
-            if (item.total_act_energy !== undefined) return parseFloat(item.total_act_energy) || 0;
-            if (item.energy_value !== undefined) return parseFloat(item.energy_value) || 0;
-            return 0;
+        // Extract values from the comparison data based on selected parameter and format to 2 decimal places
+        const values = compareChartData.map((item, index) => {
+            let value = 0;
+            
+            // If a specific parameter is selected, use that field
+            if (selectedParameter) {
+                switch (selectedParameter) {
+                    case 'timestamp':
+                        // For timestamp, we'll show a sequential number or index
+                        value = index + 1;
+                        break;
+                    case 'active_energy_import':
+                        value = parseFloat(item.acte_im) || 0;
+                        break;
+                    case 'total_active_power':
+                        value = parseFloat(item.value) || 0;
+                        break;
+                    case 'total_apparent_power':
+                        value = parseFloat(item.total_act_energy) || 0;
+                        break;
+                    case 'average_current':
+                        value = parseFloat(item.energy_value) || 0;
+                        break;
+                    // Add more cases for other parameters as needed
+                    default:
+                        value = 0;
+                }
+            } else {
+                // If no parameter selected, use the default logic (first available value)
+                if (item.acte_im !== undefined) value = parseFloat(item.acte_im) || 0;
+                else if (item.value !== undefined) value = parseFloat(item.value) || 0;
+                else if (item.total_act_energy !== undefined) value = parseFloat(item.total_act_energy) || 0;
+                else if (item.energy_value !== undefined) value = parseFloat(item.energy_value) || 0;
+            }
+            
+            // Format to 2 decimal places
+            return parseFloat(value.toFixed(2));
         });
             
-        if (values.some(val => val !== 0)) {
+        // Always create a series if we have data, even if all values are 0
+        if (compareChartData.length > 0) {
+            const parameterLabel = selectedParameter 
+                ? selectedParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                : compareDevice;
             series.push({
-                name: compareDevice,
+                name: parameterLabel,
                 data: values
             });
         }
             
         return { series, categories };
-    }, [compareChartData, compareDevice]);
+    }, [compareChartData, compareDevice, selectedParameter]);
     
     // Process the second comparison chart data to create chart series and categories
     const processedCompareData2 = React.useMemo(() => {
@@ -469,24 +584,58 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Create series for the second comparison data
         const series = [];
             
-        // Extract values from the second comparison data
-        const values = compareChartData2.map(item => {
-            if (item.acte_im !== undefined) return parseFloat(item.acte_im) || 0;
-            if (item.value !== undefined) return parseFloat(item.value) || 0;
-            if (item.total_act_energy !== undefined) return parseFloat(item.total_act_energy) || 0;
-            if (item.energy_value !== undefined) return parseFloat(item.energy_value) || 0;
-            return 0;
+        // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
+        const values = compareChartData2.map((item, index) => {
+            let value = 0;
+            
+            // If a specific parameter is selected, use that field
+            if (compareParameter2) {
+                switch (compareParameter2) {
+                    case 'timestamp':
+                        // For timestamp, we'll show a sequential number or index
+                        value = index + 1;
+                        break;
+                    case 'active_energy_import':
+                        value = parseFloat(item.acte_im) || 0;
+                        break;
+                    case 'total_active_power':
+                        value = parseFloat(item.value) || 0;
+                        break;
+                    case 'total_apparent_power':
+                        value = parseFloat(item.total_act_energy) || 0;
+                        break;
+                    case 'average_current':
+                        value = parseFloat(item.energy_value) || 0;
+                        break;
+                    // Add more cases for other parameters as needed
+                    default:
+                        value = 0;
+                }
+            } else {
+                // If no parameter selected, use the default logic (first available value)
+                if (item.acte_im !== undefined) value = parseFloat(item.acte_im) || 0;
+                else if (item.value !== undefined) value = parseFloat(item.value) || 0;
+                else if (item.total_act_energy !== undefined) value = parseFloat(item.total_act_energy) || 0;
+                else if (item.energy_value !== undefined) value = parseFloat(item.energy_value) || 0;
+            }
+            
+            // Format to 2 decimal places
+            return parseFloat(value.toFixed(2));
         });
             
-        if (values.some(val => val !== 0)) {
+        // Always create a series if we have data, even if all values are 0
+        if (compareChartData2.length > 0) {
+            const parameterLabel = compareParameter2 
+                ? compareParameter2.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                : compareDevice2;
             series.push({
-                name: compareDevice2,
+                name: parameterLabel,
                 data: values
             });
         }
             
         return { series, categories };
-    }, [compareChartData2, compareDevice2]);
+    }, [compareChartData2, compareDevice2, selectedParameter]);
 
     // Define colors for each series to match the dots in the image
     const seriesColors = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'];
@@ -539,6 +688,13 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                         colors: '#6B7280',
                         fontSize: '12px',
                     },
+                    formatter: function (value) {
+                        // Format y-axis values to 2 decimal places
+                        if (value !== undefined && value !== null && !isNaN(value)) {
+                            return parseFloat(value).toFixed(2);
+                        }
+                        return value;
+                    }
                 },
                 axisBorder: {
                     show: false
@@ -689,6 +845,31 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         ))}
                                     </Select>
                                 </FormControl>
+                                <FormControl size="small" sx={{ minWidth: 200, mr: 1 }}>
+                                    <InputLabel>Select Parameter</InputLabel>
+                                    <Select
+                                        value={selectedParameter}
+                                        label="Select Parameter"
+                                        onChange={(e) => setSelectedParameter(e.target.value)}
+                                    >
+                                        <MenuItem value="">All Parameters</MenuItem>
+                                        <MenuItem value="timestamp">Timestamp</MenuItem>
+                                        <MenuItem value="active_energy_import">Active Energy Import (kWh)</MenuItem>
+                                        <MenuItem value="total_active_power">Total Active Power (kW)</MenuItem>
+                                        <MenuItem value="total_apparent_power">Total Apparent Power (kVA)</MenuItem>
+                                        <MenuItem value="average_current">Average Current (A)</MenuItem>
+                                        <MenuItem value="average_line_to_line_voltage">Average Line-to-Line Voltage (V)</MenuItem>
+                                        <MenuItem value="c_a_phase_voltage_rms">C–A Phase Voltage RMS (V)</MenuItem>
+                                        <MenuItem value="system_frequency">System Frequency (Hz)</MenuItem>
+                                        <MenuItem value="rms_current_phase_c">RMS Current – Phase C (A)</MenuItem>
+                                        <MenuItem value="rms_current_phase_a">RMS Current – Phase A (A)</MenuItem>
+                                        <MenuItem value="rms_current_phase_b">RMS Current – Phase B (A)</MenuItem>
+                                        <MenuItem value="total_power_factor">Total Power Factor</MenuItem>
+                                        <MenuItem value="reactive_energy_import">Reactive Energy Import (kVArh)</MenuItem>
+                                        <MenuItem value="a_b_phase_voltage_rms">A–B Phase Voltage RMS (V)</MenuItem>
+                                        <MenuItem value="b_c_phase_voltage_rms">B–C Phase Voltage RMS (V)</MenuItem>
+                                    </Select>
+                                </FormControl>
 
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DateTimePicker
@@ -740,10 +921,17 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 >
                                 </Button>
 
+                                
+
                                 <Button
                                     variant="outlined"
                                     startIcon={<RefreshIcon />}
-                                    onClick={handleResetFilters}
+                                    onClick={() => {
+                                        handleResetFilters();
+                                        setSelectedParameter(''); // Reset main chart parameter
+                                        setCompareParameter(''); // Reset first comparison parameter
+                                        setCompareParameter2(''); // Reset second comparison parameter
+                                    }}
                                     sx={{
                                         borderColor: '#6c757d',
                                         color: '#6c757d',
@@ -773,7 +961,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 mb: 0
                                             }}
                                         >
-                                            {filterDevice !== 'all' ? `${filterDevice}` : 'Total Active Energy (Last 7 Days)'}
+                                            {selectedParameter 
+                                                ? `${filterDevice} - ${selectedParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                : (filterDevice !== 'all' ? `${filterDevice}` : 'Total Active Energy (Last 7 Days)')}
                                         </Typography>
                                         <Box>
                                             {compareMode ? (
@@ -794,23 +984,50 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     Cancel Compare
                                                 </Button>
                                             ) : (
-                                                <FormControl size="small" sx={{ minWidth: 300 }}>
-                                                    <InputLabel>Select Machine to Compare</InputLabel>
-                                                    <Select
-                                                        value={compareDevice}
-                                                        label="Select Machine to Compare"
-                                                        onChange={(e) => {
-                                                            setCompareDevice(e.target.value);
-                                                            setCompareMode(true);
-                                                        }}
-                                                    >
-                                                        {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice2).map((device) => (
-                                                            <MenuItem key={device} value={device}>
-                                                                {device}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
+                                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                                                        <InputLabel>Select Parameter</InputLabel>
+                                                        <Select
+                                                            value={compareParameter}
+                                                            label="Select Parameter"
+                                                            onChange={(e) => setCompareParameter(e.target.value)}
+                                                        >
+                                                            <MenuItem value="">All Parameters</MenuItem>
+                                                            <MenuItem value="timestamp">Timestamp</MenuItem>
+                                                            <MenuItem value="active_energy_import">Active Energy Import (kWh)</MenuItem>
+                                                            <MenuItem value="total_active_power">Total Active Power (kW)</MenuItem>
+                                                            <MenuItem value="total_apparent_power">Total Apparent Power (kVA)</MenuItem>
+                                                            <MenuItem value="average_current">Average Current (A)</MenuItem>
+                                                            <MenuItem value="average_line_to_line_voltage">Average Line-to-Line Voltage (V)</MenuItem>
+                                                            <MenuItem value="c_a_phase_voltage_rms">C–A Phase Voltage RMS (V)</MenuItem>
+                                                            <MenuItem value="system_frequency">System Frequency (Hz)</MenuItem>
+                                                            <MenuItem value="rms_current_phase_c">RMS Current – Phase C (A)</MenuItem>
+                                                            <MenuItem value="rms_current_phase_a">RMS Current – Phase A (A)</MenuItem>
+                                                            <MenuItem value="rms_current_phase_b">RMS Current – Phase B (A)</MenuItem>
+                                                            <MenuItem value="total_power_factor">Total Power Factor</MenuItem>
+                                                            <MenuItem value="reactive_energy_import">Reactive Energy Import (kVArh)</MenuItem>
+                                                            <MenuItem value="a_b_phase_voltage_rms">A–B Phase Voltage RMS (V)</MenuItem>
+                                                            <MenuItem value="b_c_phase_voltage_rms">B–C Phase Voltage RMS (V)</MenuItem>
+                                                        </Select>
+                                                    </FormControl>
+                                                    <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                        <InputLabel>Select Machine to Compare</InputLabel>
+                                                        <Select
+                                                            value={compareDevice}
+                                                            label="Select Machine to Compare"
+                                                            onChange={(e) => {
+                                                                setCompareDevice(e.target.value);
+                                                                setCompareMode(true);
+                                                            }}
+                                                        >
+                                                            {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice2).map((device) => (
+                                                                <MenuItem key={device} value={device}>
+                                                                    {device}
+                                                                </MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                    </FormControl>
+                                                </Box>
                                             )}
                                         </Box>
                                     </Box>
@@ -834,7 +1051,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     mb: 1
                                                 }}
                                             >
-                                                {compareDevice}
+                                                {compareParameter 
+                                                    ? `${compareDevice} - ${compareParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                    : compareDevice}
                                             </Typography>
                                             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                                                 {compareMode2 ? (
@@ -854,23 +1073,50 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                         Cancel Compare
                                                     </Button>
                                                 ) : (
-                                                    <FormControl size="small" sx={{ minWidth: 300 }}>
-                                                        <InputLabel>Select Second Machine to Compare</InputLabel>
-                                                        <Select
-                                                            value={compareDevice2}
-                                                            label="Select Second Machine to Compare"
-                                                            onChange={(e) => {
-                                                                setCompareDevice2(e.target.value);
-                                                                setCompareMode2(true);
-                                                            }}
-                                                        >
-                                                            {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice).map((device) => (
-                                                                <MenuItem key={device} value={device}>
-                                                                    {device}
-                                                                </MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                    </FormControl>
+                                                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                                        <FormControl size="small" sx={{ minWidth: 200 }}>
+                                                            <InputLabel>Select Parameter</InputLabel>
+                                                            <Select
+                                                                value={compareParameter2}
+                                                                label="Select Parameter"
+                                                                onChange={(e) => setCompareParameter2(e.target.value)}
+                                                            >
+                                                                <MenuItem value="">All Parameters</MenuItem>
+                                                                <MenuItem value="timestamp">Timestamp</MenuItem>
+                                                                <MenuItem value="active_energy_import">Active Energy Import (kWh)</MenuItem>
+                                                                <MenuItem value="total_active_power">Total Active Power (kW)</MenuItem>
+                                                                <MenuItem value="total_apparent_power">Total Apparent Power (kVA)</MenuItem>
+                                                                <MenuItem value="average_current">Average Current (A)</MenuItem>
+                                                                <MenuItem value="average_line_to_line_voltage">Average Line-to-Line Voltage (V)</MenuItem>
+                                                                <MenuItem value="c_a_phase_voltage_rms">C–A Phase Voltage RMS (V)</MenuItem>
+                                                                <MenuItem value="system_frequency">System Frequency (Hz)</MenuItem>
+                                                                <MenuItem value="rms_current_phase_c">RMS Current – Phase C (A)</MenuItem>
+                                                                <MenuItem value="rms_current_phase_a">RMS Current – Phase A (A)</MenuItem>
+                                                                <MenuItem value="rms_current_phase_b">RMS Current – Phase B (A)</MenuItem>
+                                                                <MenuItem value="total_power_factor">Total Power Factor</MenuItem>
+                                                                <MenuItem value="reactive_energy_import">Reactive Energy Import (kVArh)</MenuItem>
+                                                                <MenuItem value="a_b_phase_voltage_rms">A–B Phase Voltage RMS (V)</MenuItem>
+                                                                <MenuItem value="b_c_phase_voltage_rms">B–C Phase Voltage RMS (V)</MenuItem>
+                                                            </Select>
+                                                        </FormControl>
+                                                        <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                            <InputLabel>Select Second Machine to Compare</InputLabel>
+                                                            <Select
+                                                                value={compareDevice2}
+                                                                label="Select Second Machine to Compare"
+                                                                onChange={(e) => {
+                                                                    setCompareDevice2(e.target.value);
+                                                                    setCompareMode2(true);
+                                                                }}
+                                                            >
+                                                                {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice).map((device) => (
+                                                                    <MenuItem key={device} value={device}>
+                                                                        {device}
+                                                                    </MenuItem>
+                                                                ))}
+                                                            </Select>
+                                                        </FormControl>
+                                                    </Box>
                                                 )}
                                             </Box>
                                             <Chart
@@ -895,7 +1141,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     mb: 1
                                                 }}
                                             >
-                                                {compareDevice2}
+                                                {compareParameter2 
+                                                    ? `${compareDevice2} - ${compareParameter2.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                    : compareDevice2}
                                             </Typography>
                                             <Chart
                                                 options={getChartOptions(

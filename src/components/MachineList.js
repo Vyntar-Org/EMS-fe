@@ -19,6 +19,8 @@ import {
     Button,
     Modal,
     IconButton,
+    Tabs,
+    Tab,
 } from '@mui/material';
 import axios from 'axios';
 import Chart from 'react-apexcharts';
@@ -126,31 +128,45 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             },
         },
         xaxis: {
-            title: {
-                text: 'Time',
-                style: {
-                    color: '#6B7280',
-                    fontSize: '12px',
-                },
-            },
-            categories: chartType === 'voltage' ? 
-                voltageData.map(item => new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) :
-                chartType === 'current' ?
-                    currentData.map(item => new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) :
-                chartType === 'powerFactor' ?
-                    powerFactorData.map(item => new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) :
-                chartType === 'frequency' ?
-                    frequencyData.map(item => new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) :
-                    activePowerData.map(item => new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
-            labels: {
-                style: {
-                    colors: '#6B7280',
-                    fontSize: '11px',
-                },
-                rotate: -45,
-                rotateAlways: true,
-            },
+    title: {
+        text: 'Time',
+        style: {
+            color: '#6B7280',
+            fontSize: '12px',
         },
+    },
+    categories: chartType === 'voltage' ? 
+        voltageData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
+        chartType === 'current' ?
+            currentData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
+        chartType === 'powerFactor' ?
+            powerFactorData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
+        chartType === 'frequency' ?
+            frequencyData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
+            activePowerData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })),
+    labels: {
+        style: {
+            colors: '#6B7280',
+            fontSize: '11px',
+        },
+        rotate: -45,
+        formatter: function(val) {
+            // Format to match the image style (e.g., "05:49 AM")
+            return val;
+        },
+    },
+    tickAmount: 6, // Increased to show more time points across the 6-hour period
+    tooltip: {
+        enabled: true,
+        formatter: function(val) {
+            return new Date(val).toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: true 
+            });
+        }
+    }
+},
         yaxis: {
             title: {
                 text: chartType === 'voltage' ? 'V' : (chartType === 'current' ? 'A' : (chartType === 'powerFactor' ? 'PF' : (chartType === 'frequency' ? 'Hz' : 'kW'))),
@@ -803,35 +819,66 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 {selectedFloor} - Last 6 hours power data
                             </Typography>
                             <Box style={{ marginTop: '10px' }}>
-                                <Button
-                                    variant={chartType === 'activePower' ? 'contained' : 'outlined'}
-                                    size="small"
-                                    onClick={async () => {
-                                        setChartType('activePower');
-                                        // Find the selected machine by name to get its slave_id
-                                        const selectedMachine = machineListData?.data?.machines?.find(
-                                            machine => machine.name === selectedFloor
-                                        );
-                                        if (selectedMachine) {
-                                            await fetchActivePowerData(selectedMachine.slave_id);
+                                <Tabs 
+                                    value={chartType === 'activePower' ? 0 : 1}
+                                    onChange={async (event, newValue) => {
+                                        if (newValue === 0) {
+                                            setChartType('activePower');
+                                            // Find the selected machine by name to get its slave_id
+                                            const selectedMachine = machineListData?.data?.machines?.find(
+                                                machine => machine.name === selectedFloor
+                                            );
+                                            if (selectedMachine) {
+                                                await fetchActivePowerData(selectedMachine.slave_id);
+                                            }
                                         }
                                     }}
-                                    style={{
-                                        marginRight: '10px',
-                                        backgroundColor: chartType === 'activePower' ? '#2F6FB0' : 'transparent',
-                                        color: chartType === 'activePower' ? 'white' : '#2F6FB0',
-                                        borderColor: '#2F6FB0'
+                                    sx={{
+                                        minHeight: '36px',
+                                        '& .MuiTabs-indicator': {
+                                            backgroundColor: '#2F6FB0',
+                                        },
+                                        '& .MuiTab-root': {
+                                            minHeight: '36px',
+                                            fontSize: '14px',
+                                            textTransform: 'none',
+                                            fontWeight: chartType === 'activePower' ? 600 : 400,
+                                        }
                                     }}
                                 >
-                                    Active Power
-                                </Button>
-                                <FormControl size="small" sx={{ minWidth: 180 }}>
+                                    <Tab 
+                                        label="Active Power" 
+                                        sx={{
+                                            color: chartType === 'activePower' ? '#2F6FB0' : '#6B7280',
+                                            '&.Mui-selected': {
+                                                color: '#2F6FB0',
+                                            }
+                                        }}
+                                    />
+                                    <Tab 
+                                        label="Key Parameters" 
+                                        onClick={async () => {
+                                            setChartType('keyParameters');
+                                        }}
+                                        sx={{
+                                            color: chartType === 'keyParameters' ? '#2F6FB0' : '#6B7280',
+                                            '&.Mui-selected': {
+                                                color: '#2F6FB0',
+                                            }
+                                        }}
+                                    />
+                                </Tabs>
+                            </Box>
+                        </Box>
+                        {['keyParameters', 'voltage', 'current', 'powerFactor', 'frequency'].includes(chartType) && (
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <FormControl size="small" sx={{ minWidth: 120, height: '32px' }}>
                                     <Select
                                         value={keyParameter}
                                         onChange={async (e) => {
                                             const selectedValue = e.target.value;
                                             setKeyParameter(selectedValue);
-                                            
+                                                                    
                                             if (selectedValue === 'voltage') {
                                                 setChartType('voltage');
                                                 // Find the selected machine by name to get its slave_id
@@ -868,8 +915,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                                 if (selectedMachine) {
                                                     await fetchFrequencyData(selectedMachine.slave_id);
                                                 }
-                                            } else {
-                                                setChartType('keyParameters');
                                             }
                                         }}
                                         displayEmpty
@@ -886,8 +931,10 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                                         : 'Frequency (Hz)';
                                         }}
                                         sx={{
+                                            height: '32px',
                                             backgroundColor: '#ffffff',
-                                            borderRadius: '6px',
+                                            borderRadius: '4px',
+                                            fontSize: '13px',
                                             '& .MuiOutlinedInput-notchedOutline': {
                                                 borderColor: '#2F6FB0',
                                             },
@@ -897,20 +944,22 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
                                                 borderColor: '#2F6FB0',
                                             },
+                                            '& .MuiSelect-select': {
+                                                padding: '4px 12px',
+                                            }
                                         }}
                                     >
-                                        <MenuItem value="">
+                                        <MenuItem value="" sx={{ fontSize: '13px', minHeight: '32px' }}>
                                             Key Parameters
                                         </MenuItem>
-                                        <MenuItem value="voltage">Voltage (V)</MenuItem>
-                                        <MenuItem value="current">Current (A)</MenuItem>
-                                        <MenuItem value="pf">Power Factor (PF)</MenuItem>
-                                        <MenuItem value="frequency">Frequency (Hz)</MenuItem>
+                                        <MenuItem value="voltage" sx={{ fontSize: '13px', minHeight: '32px' }}>Voltage (V)</MenuItem>
+                                        <MenuItem value="current" sx={{ fontSize: '13px', minHeight: '32px' }}>Current (A)</MenuItem>
+                                        <MenuItem value="pf" sx={{ fontSize: '13px', minHeight: '32px' }}>Power Factor (PF)</MenuItem>
+                                        <MenuItem value="frequency" sx={{ fontSize: '13px', minHeight: '32px' }}>Frequency (Hz)</MenuItem>
                                     </Select>
                                 </FormControl>
-
                             </Box>
-                        </Box>
+                        )}
                         <IconButton
                             style={styles.closeButton}
                             onClick={() => setChartModalOpen(false)}
@@ -919,12 +968,17 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </IconButton>
                     </Box>
                     <Box id="chart-modal-description">
-                        <Chart
-                            options={chartOptions}
-                            series={chartSeries}
-                            type="line"
-                            height={350}
-                        />
+                        {chartType === 'keyParameters' ? (
+                            <Box sx={{ textAlign: 'center', padding: '100px' }}>
+                            </Box>
+                        ) : (
+                            <Chart
+                                options={chartOptions}
+                                series={chartSeries}
+                                type="line"
+                                height={350}
+                            />
+                        )}
                     </Box>
                 </Box>
             </Modal>

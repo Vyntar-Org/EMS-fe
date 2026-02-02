@@ -763,9 +763,9 @@ const exportToPDF = () => {
                     {/* STATION */}
                     <TextField
                         size="small"
-                        label="Station"
+                        label="Machine"
                         value={selectedStation}
-                        placeholder="Station"
+                        placeholder="Machine"
                         onChange={(e) => {
                             const inputValue = e.target.value;
                             setSelectedStation(inputValue);
