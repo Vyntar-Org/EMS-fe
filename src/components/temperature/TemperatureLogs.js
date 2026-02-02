@@ -22,6 +22,8 @@ import {
   Button,
   Grid,
   Pagination,
+  Checkbox,
+  ListItemText,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -50,7 +52,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
   const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(1, 'hour'));
   const [filterEndDate, setFilterEndDate] = useState(dayjs());
   const [searchClicked, setSearchClicked] = useState(false);
-  const [selectedColumn, setSelectedColumn] = useState('');
+  const [selectedColumn, setSelectedColumn] = useState([]);
 
   // Load devices on component mount
   useEffect(() => {
@@ -117,6 +119,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
         if (firstSlaveName) {
           const logsData = await getTemperatureLogsWithNames(1, startDateTime, endDateTime);
           if (logsData.success && logsData.data && logsData.data.logs) {
+            console.log(logsData.data.logs);
             setLogs(logsData.data.logs);
           } else {
             setLogs([]);
@@ -138,6 +141,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
         
         const logsData = await getTemperatureLogsWithNames(slaveId, startDateTime, endDateTime);
         if (logsData.success && logsData.data && logsData.data.logs) {
+          console.log(logsData.data.logs);
           setLogs(logsData.data.logs);
         } else {
           setLogs([]);
@@ -254,16 +258,78 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                 </Select>
               </FormControl>
               <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
-                <InputLabel>Select Parameter</InputLabel>
+                <InputLabel id="param-select-label">Select Parameter</InputLabel>
                 <Select
-                  value={selectedColumn}
-                  onChange={(e) => setSelectedColumn(e.target.value)}
-                  label="Select Machine Values"
+                  labelId="param-select-label"
+                  multiple
+                  value={selectedColumn} // Ensure this state is an array: []
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSelectedColumn(typeof value === 'string' ? value.split(',') : value);
+                  }}
+                  label="Select Parameter"
+                  // RENDER LOGIC: Keeps input box height fixed
+                  renderValue={(selected) => (
+                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
+                      {selected.slice(0, 2).map((value) => (
+                        <Chip 
+                          key={value} 
+                          label={value.replace(/_/g, ' ')} 
+                          size="small" 
+                          sx={{ 
+                            height: '20px', 
+                            fontSize: '10px', 
+                            textTransform: 'capitalize' 
+                          }} 
+                        />
+                      ))}
+                      {selected.length > 2 && (
+                        <Chip 
+                          label={`+${selected.length - 2} more`} 
+                          size="small" 
+                          sx={{ 
+                            height: '20px', 
+                            fontSize: '10px', 
+                            backgroundColor: '#0156a6', 
+                            color: '#fff', 
+                            fontWeight: 'bold' 
+                          }} 
+                        />
+                      )}
+                    </Box>
+                  )}
+                  MenuProps={{
+                    PaperProps: {
+                      style: { maxHeight: 300, width: 250 },
+                    },
+                  }}
                 >
-                  <MenuItem value="timestamp">timestamp</MenuItem>
-                  <MenuItem value="temperature">Temperature (°C)</MenuItem>
-                  <MenuItem value="humidity">Humidity (%)</MenuItem>
-                  <MenuItem value="battery">Battery (V)</MenuItem>
+                  {[
+                    { val: 'timestamp', label: 'Timestamp' },
+                    { val: 'temperature', label: 'Temperature' },
+                    { val: 'humidity', label: 'Humidity' },
+                    { val: 'battery', label: 'Battery' }
+                  ].map((item) => (
+                    <MenuItem 
+                      key={item.val} 
+                      value={item.val}
+                      sx={{ py: 0, minHeight: '32px', px: 1 }}
+                    >
+                      <Checkbox 
+                        checked={selectedColumn.indexOf(item.val) > -1} 
+                        sx={{ 
+                          p: 0.5, 
+                          mr: 0.5, 
+                          transform: "scale(0.8)", // Shrunk checkbox
+                          '& .MuiSvgIcon-root': { fontSize: 20 } 
+                        }} 
+                      />
+                      <ListItemText 
+                        primary={item.label} 
+                        primaryTypographyProps={{ fontSize: '12px' }} 
+                      />
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
 
@@ -341,21 +407,18 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
             <Table stickyHeader style={{ tableLayout: 'fixed', width: '100%' }}>
               <TableHead>
                 <TableRow className="log-table-header">
-                  {selectedColumn ? (
-                    // Single column view
-                    <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>
-                      {selectedColumn === 'timestamp' && 'timestamp'}
-                      {selectedColumn === 'temperature' && 'Temperature (°C)'}
-                      {selectedColumn === 'humidity' && 'Humidity (%)'}
-                      {selectedColumn === 'battery' && 'Battery (V)'}
-                    </TableCell>
+                  {selectedColumn.length > 0 ? (
+                    selectedColumn.map((col) => (
+                      <TableCell key={col} className="log-header-cell" sx={{ textTransform: 'capitalize' }}>
+                        {col.replace(/_/g, ' ')}
+                      </TableCell>
+                    ))
                   ) : (
-                    // All columns view
                     <>
-                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>timestamp</TableCell>
-                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Temperature (°C)</TableCell>
-                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Humidity (%)</TableCell>
-                      <TableCell className="log-header-cell" sx={{textTransform: 'capitalize'}}>Battery (V)</TableCell>
+                      <TableCell className="log-header-cell">Timestamp</TableCell>
+                      <TableCell className="log-header-cell">Temperature (°C)</TableCell>
+                      <TableCell className="log-header-cell">Humidity (%)</TableCell>
+                      <TableCell className="log-header-cell">Battery (V)</TableCell>
                     </>
                   )}
                 </TableRow>
@@ -367,26 +430,36 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                     const temperature = log.temperature;
                     const humidity = log.humidity;
                     const battery = log.battery;
+                    console.log(log);
                     
                     return (
                       <TableRow key={log.id} hover className="log-table-row">
-                        {selectedColumn ? (
-                          // Single column view
-                          <TableCell className="log-table-cell">
-                            {selectedColumn === 'timestamp' && timestamp}
-                            {selectedColumn === 'temperature' && temperature}
-                            {selectedColumn === 'humidity' && humidity}
-                            {selectedColumn === 'battery' && battery}
-                          </TableCell>
+                        {selectedColumn.length > 0 ? (
+                          // DYNAMIC MULTI-COLUMN VIEW
+                          // This loops through whatever you checked in the dropdown
+                          selectedColumn.map((col) => (
+                            <TableCell key={col} className="log-table-cell">
+                              {col === 'timestamp' && timestamp}
+                              {col === 'temperature' && (typeof temperature === 'number' ? temperature.toFixed(2) : temperature)}
+                              {col === 'humidity' && (typeof humidity === 'number' ? humidity.toFixed(2) : humidity)}
+                              {col === 'battery' && (typeof battery === 'number' ? battery.toFixed(2) : battery)}
+                            </TableCell>
+                          ))
                         ) : (
-                          // All columns view
+                          // DEFAULT "ALL COLUMNS" VIEW (When nothing is selected)
                           <>
                             <TableCell className="log-table-cell" title={timestamp}>
                               {timestamp}
                             </TableCell>
-                            <TableCell className="log-table-cell">{temperature?.toFixed(2)}</TableCell>
-                            <TableCell className="log-table-cell">{humidity?.toFixed(2)}</TableCell>
-                            <TableCell className="log-table-cell">{battery?.toFixed(2)}</TableCell>
+                            <TableCell className="log-table-cell">
+                              {typeof temperature === 'number' ? temperature.toFixed(2) : temperature}
+                            </TableCell>
+                            <TableCell className="log-table-cell">
+                              {typeof humidity === 'number' ? humidity.toFixed(2) : humidity}
+                            </TableCell>
+                            <TableCell className="log-table-cell">
+                              {typeof battery === 'number' ? battery.toFixed(2) : battery}
+                            </TableCell>
                           </>
                         )}
                       </TableRow>
