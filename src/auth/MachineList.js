@@ -67,31 +67,47 @@ export const getMachineList = async () => {
     console.log('Making machine list API call with token:', token.substring(0, 20) + '...');
     console.log('API Base URL:', apiClient.defaults.baseURL);
     
-    const response = await apiClient.get('/admin/machine-list/');
-    console.log('Machine list API response:', response);
+    // Fetch both APIs to get complete machine information
+    const [slavesResponse, machinesResponse] = await Promise.all([
+      apiClient.get('/admin/slaves/'),
+      apiClient.get('/admin/machine-list/')
+    ]);
     
-    // Log the structure of the response data to understand it better
-    console.log('Response data keys:', Object.keys(response.data));
-    console.log('Success field:', response.data.success);
+    console.log('Slaves API response:', slavesResponse);
+    console.log('Machines API response:', machinesResponse);
     
-    // The API should return data in the format {success: true, message: 'Dashboard Overview', data: {...}, errors: null, meta: {...}}
-    // But let's handle different possible structures
-    if (response.data) {
-      if (response.data.success === true) {
-        // Standard format: {success: true, message: '...', data: {...}, ...}
-        return response.data;
-      } else if (response.data.hasOwnProperty('machines') ) {
-        // Direct format: {machines: {...}, acte_im_total: ..., ...}
-        console.log('Using direct data format');
-        return response.data;
-      } else {
-        console.warn('Unexpected response format:', response.data);
-        // Still try to return whatever data we got
-        return response.data;
-      }
-    } else {
-      throw new Error(response.data?.message || 'API returned unexpected response format');
+    // Extract slave IDs from the slaves API
+    let slaveIds = [];
+    if (slavesResponse.data.success === true && slavesResponse.data.data && slavesResponse.data.data.slaves) {
+      slaveIds = slavesResponse.data.data.slaves.map(slave => slave.slave_id);
+    } else if (Array.isArray(slavesResponse.data)) {
+      slaveIds = slavesResponse.data.map(slave => slave.slave_id);
+    } else if (slavesResponse.data.slaves && Array.isArray(slavesResponse.data.slaves)) {
+      slaveIds = slavesResponse.data.slaves.map(slave => slave.slave_id);
     }
+    
+    // Filter machines from machine-list API that match slave IDs from slaves API
+    let filteredMachines = [];
+    if (machinesResponse.data.success === true && machinesResponse.data.data && machinesResponse.data.data.machines) {
+      filteredMachines = machinesResponse.data.data.machines.filter(machine => 
+        slaveIds.includes(machine.slave_id)
+      );
+    }
+    
+    // Return the filtered response with only machines that exist in both APIs
+    const result = {
+      success: machinesResponse.data.success,
+      message: machinesResponse.data.message || 'Filtered Machine List',
+      data: {
+        machines: filteredMachines
+      },
+      errors: machinesResponse.data.errors,
+      meta: machinesResponse.data.meta
+    };
+    
+    console.log('Final enriched machine list:', result);
+    return result;
+  
   } catch (error) {
     console.error('Error fetching machine list:', error);
     // More detailed error reporting

@@ -61,9 +61,25 @@ export const getSlaveList = async () => {
     console.log('Slave list API response:', response);
 
     if (response.data && typeof response.data === 'object') {
-      if (response.data.success === true) {
+      // Check if it's the new format with slaves directly in response.data
+      if (response.data.slaves && Array.isArray(response.data.slaves)) {
+        console.log('Using new format with slaves array directly in response.data');
+        return response.data.slaves;
+      }
+      // Check if it's the standard format with success flag
+      else if (response.data.success === true) {
         console.log('Using standard format for slave list');
-        return response.data.data;
+        // Extract the slaves array from the nested data structure
+        if (response.data.data && Array.isArray(response.data.data.slaves)) {
+          console.log('Found slaves array in response.data.data.slaves');
+          return response.data.data.slaves;
+        } else if (Array.isArray(response.data.data)) {
+          console.log('Using direct data array format for slave list');
+          return response.data.data;
+        } else {
+          console.warn('Unknown data structure in slave list response:', response.data.data);
+          throw new Error('API returned unexpected data structure');
+        }
       } else if (response.data.hasOwnProperty('data') && Array.isArray(response.data.data)) {
         console.log('Using direct format with data field for slave list');
         return response.data.data;
@@ -117,18 +133,21 @@ export const getDeviceLogs = async (slaveId, startDatetime, endDatetime, limit =
     if (response.data && typeof response.data === 'object') {
       if (response.data.success === true) {
         console.log('Using standard format for device logs');
+        // Return both data and meta information
         return {
           data: response.data.data,
           meta: response.data.meta || {}
         };
       } else if (response.data.hasOwnProperty('data') && Array.isArray(response.data.data)) {
         console.log('Using direct format with data field for device logs');
+        // Return both data and meta information
         return {
           data: response.data.data,
           meta: response.data.meta || {}
         };
       } else if (Array.isArray(response.data)) {
         console.log('Using direct array format for device logs');
+        // Return data in expected format
         return {
           data: response.data,
           meta: {}

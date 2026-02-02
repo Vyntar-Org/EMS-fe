@@ -10,6 +10,9 @@ import EquipmentInsight from './components/EquipmentInsight';
 import Analytics from './components/Analytics';
 import FuelConsumptionReport from './components/FuelConsumptionReport';
 import Login from './components/Login';
+import TemperatureMachineList from './components/temperature/TemperatureMachineList';
+import TemperatureAnalytics from './components/temperature/TemperatureAnalytics';
+import TemperatureLogs from './components/temperature/TemperatureLogs';
 import './App.css';
 
 function App() {
@@ -23,7 +26,12 @@ function App() {
 function AppContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false); // Sidebar hidden by default
-  const { isLoggedIn, loading } = useAuth();
+  const [activeApp, setActiveApp] = useState(() => {
+    // Initialize from localStorage if available
+    const savedApp = localStorage.getItem('activeApp');
+    return savedApp ? JSON.parse(savedApp) : null;
+  });
+  const { isLoggedIn, loading, userData } = useAuth();
 
   const handleMenuToggle = useCallback(() => {
     setMobileMenuOpen(prev => !prev);
@@ -38,6 +46,15 @@ function AppContent() {
   }, []);
 
   const handleSidebarHide = useCallback(() => setSidebarVisible(false), []);
+
+  // Persist activeApp to localStorage whenever it changes
+  useEffect(() => {
+    if (activeApp) {
+      localStorage.setItem('activeApp', JSON.stringify(activeApp));
+    } else {
+      localStorage.removeItem('activeApp');
+    }
+  }, [activeApp]);
 
   // Component wrapper for protected routes
   const ProtectedRoute = ({ children }) => {
@@ -93,12 +110,14 @@ function AppContent() {
           {/* Protected routes */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} />
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
                 visible={sidebarVisible}
-                onSidebarHide={handleSidebarToggle}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <Dashboard onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
@@ -107,12 +126,14 @@ function AppContent() {
           } />
           <Route path="/logs" element={
             <ProtectedRoute>
-              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} />
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
                 visible={sidebarVisible}
-                onSidebarHide={handleSidebarToggle}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <Logs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
@@ -121,12 +142,14 @@ function AppContent() {
           } />
           <Route path="/machine-list" element={
             <ProtectedRoute>
-              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} />
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
                 visible={sidebarVisible}
-                onSidebarHide={handleSidebarToggle}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <MachineList onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
@@ -135,12 +158,14 @@ function AppContent() {
           } />
           <Route path="/equipment-insight" element={
             <ProtectedRoute>
-              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} />
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
                 visible={sidebarVisible}
-                onSidebarHide={handleSidebarToggle}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <EquipmentInsight onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
@@ -149,12 +174,14 @@ function AppContent() {
           } />
           <Route path="/analytics" element={
             <ProtectedRoute>
-              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} />
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
                 visible={sidebarVisible}
-                onSidebarHide={handleSidebarToggle}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <Analytics onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
@@ -163,15 +190,69 @@ function AppContent() {
           } />
           <Route path="/reports" element={
             <ProtectedRoute>
-              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} />
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
                 onClose={handleMenuClose}
                 visible={sidebarVisible}
-                onSidebarHide={handleSidebarToggle}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <FuelConsumptionReport onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          {/* Temperature application routes */}
+          <Route path="/temperature/machine-list" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <TemperatureMachineList onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/temperature/analytics" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <TemperatureAnalytics onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/temperature/logs" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <TemperatureLogs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
               </main>
             </ProtectedRoute>
           } />
