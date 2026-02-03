@@ -180,7 +180,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                             { date: "2026-01-28", value: 50.93 },
                             { date: "2026-01-29", value: 42.12 },
                             { date: "2026-01-29", value: 42.12 },
+                            { date: "2026-01-29", value: 42.12 },
                             { date: "2026-01-29", value: 42.12 }
+
 
                         ]
                     },
