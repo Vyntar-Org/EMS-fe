@@ -1,4 +1,5 @@
 import axios from 'axios';
+import tokenUtils from './tokenUtils';
 
 // Create an axios instance with base configuration
 const apiClient = axios.create({
@@ -11,17 +12,20 @@ const apiClient = axios.create({
 
 // Add a request interceptor to include the auth token
 apiClient.interceptors.request.use(
-  (config) => {
-    let token = localStorage.getItem('token');
-    if (!token) {
-      token = localStorage.getItem('accessToken');
-    }
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('Added authorization header to request:', config.url);
-    } else {
-      console.warn('No authentication token found for request:', config.url);
+  async (config) => {
+    try {
+      // Get a valid access token (will refresh if expired)
+      const validToken = await tokenUtils.getValidAccessToken();
+      
+      if (validToken) {
+        config.headers.Authorization = `Bearer ${validToken}`;
+        console.log('Added authorization header to request:', config.url);
+      } else {
+        console.warn('No authentication token found for request:', config.url);
+      }
+    } catch (error) {
+      console.error('Error getting valid token:', error);
+      throw error;
     }
     
     return config;
@@ -37,7 +41,29 @@ apiClient.interceptors.response.use(
     console.log(`API Response for ${response.config.url}:`, response.status, response.data);
     return response;
   },
-  (error) => {
+  async (error) => {
+    if (error.response?.status === 401) {
+      try {
+        // Attempt to refresh the token
+        await tokenUtils.refreshAccessToken();
+        
+        // Retry the original request with the new token
+        const newToken = localStorage.getItem('accessToken');
+        error.config.headers.Authorization = `Bearer ${newToken}`;
+        return apiClient.request(error.config);
+      } catch (refreshError) {
+        // If token refresh fails, clear tokens and redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('username');
+        localStorage.removeItem('userData');
+        localStorage.removeItem('fullUserData');
+        localStorage.removeItem('activeApp');
+        window.location.href = '/login';
+      }
+    }
     console.error(`API Error for ${error.config?.url}:`, error.response?.status, error.response?.data || error.message);
     return Promise.reject(error);
   }
@@ -45,16 +71,15 @@ apiClient.interceptors.response.use(
 
 export const getSlaveList = async () => {
   try {
-    let token = localStorage.getItem('token');
-    if (!token) {
-      token = localStorage.getItem('accessToken');
-    }
-    if (!token) {
+    // Get a valid access token (will refresh if expired)
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
       console.warn('No authentication token found. Please log in first.');
       throw new Error('Authentication token not found. Please log in first.');
     }
 
-    console.log('Making slave list API call with token:', token.substring(0, 20) + '...');
+    console.log('Making slave list API call with token:', validToken.substring(0, 20) + '...');
     console.log('API Base URL:', apiClient.defaults.baseURL);
 
     const response = await apiClient.get('/admin/slaves/');
@@ -112,16 +137,15 @@ export const getSlaveList = async () => {
 
 export const getDeviceLogs = async (slaveId, startDatetime, endDatetime, limit = 30, offset = 0) => {
   try {
-    let token = localStorage.getItem('token');
-    if (!token) {
-      token = localStorage.getItem('accessToken');
-    }
-    if (!token) {
+    // Get a valid access token (will refresh if expired)
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
       console.warn('No authentication token found. Please log in first.');
       throw new Error('Authentication token not found. Please log in first.');
     }
 
-    console.log('Making device logs API call with token:', token.substring(0, 20) + '...');
+    console.log('Making device logs API call with token:', validToken.substring(0, 20) + '...');
     console.log('API Base URL:', apiClient.defaults.baseURL);
     
     // Format the URL with query parameters

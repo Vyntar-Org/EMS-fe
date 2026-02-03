@@ -1,4 +1,5 @@
 import axios from 'axios';
+import tokenUtils from './tokenUtils';
 
 // Create an axios instance with base configuration
 const apiClient = axios.create({
@@ -10,17 +11,20 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use(
-  (config) => {
-    let token = localStorage.getItem('token');
-    if (!token) {
-      token = localStorage.getItem('accessToken');
-    }
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('Added authorization header to request:', config.url);
-    } else {
-      console.warn('No authentication token found for request:', config.url);
+  async (config) => {
+    try {
+      // Get a valid access token (will refresh if expired)
+      const validToken = await tokenUtils.getValidAccessToken();
+      
+      if (validToken) {
+        config.headers.Authorization = `Bearer ${validToken}`;
+        console.log('Added authorization header to request:', config.url);
+      } else {
+        console.warn('No authentication token found for request:', config.url);
+      }
+    } catch (error) {
+      console.error('Error getting valid token:', error);
+      throw error;
     }
     
     return config;
@@ -36,7 +40,29 @@ apiClient.interceptors.response.use(
     console.log(`API Response for ${response.config.url}:`, response.status, response.data);
     return response;
   },
-  (error) => {
+  async (error) => {
+    if (error.response?.status === 401) {
+      try {
+        // Attempt to refresh the token
+        await tokenUtils.refreshAccessToken();
+        
+        // Retry the original request with the new token
+        const newToken = localStorage.getItem('accessToken');
+        error.config.headers.Authorization = `Bearer ${newToken}`;
+        return apiClient.request(error.config);
+      } catch (refreshError) {
+        // If token refresh fails, clear tokens and redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('username');
+        localStorage.removeItem('userData');
+        localStorage.removeItem('fullUserData');
+        localStorage.removeItem('activeApp');
+        window.location.href = '/login';
+      }
+    }
     console.error(`API Error for ${error.config?.url}:`, error.response?.status, error.response?.data || error.message);
     return Promise.reject(error);
   }
@@ -45,11 +71,10 @@ apiClient.interceptors.response.use(
 // Using the specific endpoint you provided
 export const fetchConsumptionData = async (month, year) => {
   try {
-    let token = localStorage.getItem('token');
-    if (!token) {
-      token = localStorage.getItem('accessToken');
-    }
-    if (!token) {
+    // Get a valid access token (will refresh if expired)
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
       console.warn('No authentication token found. Please log in first.');
       throw new Error('Authentication token not found. Please log in first.');
     }
@@ -76,11 +101,10 @@ export const fetchConsumptionData = async (month, year) => {
 export const fetchReadingData = async (month, year) => {
   try {
     console.log(`Fetching reading data from: https://bms.api.v1.vyntar.in/api/reports/date-wise/reading?month=${month}&year=${year}`);
-    let token = localStorage.getItem('token');
-    if (!token) {
-      token = localStorage.getItem('accessToken');
-    }
-    if (!token) {
+    // Get a valid access token (will refresh if expired)
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
       console.warn('No authentication token found. Please log in first.');
       throw new Error('Authentication token not found. Please log in first.');
     }
@@ -105,11 +129,10 @@ export const fetchReadingData = async (month, year) => {
 // Using the specific endpoint you provided
 export const fetchConsumptionCostData = async (month, year) => {
   try {
-    let token = localStorage.getItem('token');
-    if (!token) {
-      token = localStorage.getItem('accessToken');
-    }
-    if (!token) {
+    // Get a valid access token (will refresh if expired)
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
       console.warn('No authentication token found. Please log in first.');
       throw new Error('Authentication token not found. Please log in first.');
     }
@@ -136,11 +159,10 @@ export const fetchConsumptionCostData = async (month, year) => {
 export const fetchMonthlyConsumptionCostData = async (year) => {
   try {
     console.log(`Fetching monthly reading data from: https://bms.api.v1.vyntar.in/api/reports/month-wise/reading?year=${year}`);
-    let token = localStorage.getItem('token');
-    if (!token) {
-      token = localStorage.getItem('accessToken');
-    }
-    if (!token) {
+    // Get a valid access token (will refresh if expired)
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
       console.warn('No authentication token found. Please log in first.');
       throw new Error('Authentication token not found. Please log in first.');
     }
@@ -167,11 +189,10 @@ export const fetchMonthlyConsumptionCostData = async (year) => {
 export const fetchMonthlyConsumptionData = async (year) => {
   try {
     console.log(`Fetching monthly consumption data from: https://bms.api.v1.vyntar.in/api/reports/month-wise/consumption?year=${year}`);
-    let token = localStorage.getItem('token');
-    if (!token) {
-      token = localStorage.getItem('accessToken');
-    }
-    if (!token) {
+    // Get a valid access token (will refresh if expired)
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
       console.warn('No authentication token found. Please log in first.');
       throw new Error('Authentication token not found. Please log in first.');
     }

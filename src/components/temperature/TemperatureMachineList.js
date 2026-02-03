@@ -8,6 +8,7 @@ import {
     Select,
     MenuItem,
     FormControl,
+    InputLabel,
     Chip,
     Table,
     TableBody,
@@ -22,62 +23,57 @@ import {
     Tabs,
     Tab,
 } from '@mui/material';
+import axios from 'axios';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
-import { getTemperatureMachineList } from '../../auth/temperature/TemperatureMachineListApi';
+import { getTemperatureMachineList, getTemperatureMachineTrend } from '../../auth/temperature/TemperatureMachineListApi';
+import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import BatteryStdIcon from '@mui/icons-material/BatteryStd';
+
 
 const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    // Mock chart data
-    const generateMockChartData = (type, hours = 6) => {
-        const data = [];
-        const now = new Date();
-        
-        for (let i = hours; i >= 0; i--) {
-            const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000);
-            const entry = { timestamp: timestamp.toISOString() };
-            
-            if (type === 'activePower') {
-                entry.value = 8 + Math.random() * 8; // 8-16 kW
-            } else if (type === 'voltage') {
-                entry.rv = 228 + Math.random() * 6; // 228-234 V
-                entry.yv = 228 + Math.random() * 6;
-                entry.bv = 228 + Math.random() * 6;
-            } else if (type === 'current') {
-                entry.i_r = 8 + Math.random() * 8; // 8-16 A
-                entry.i_y = 8 + Math.random() * 8;
-                entry.i_b = 8 + Math.random() * 8;
-            } else if (type === 'powerFactor') {
-                entry.value = 0.9 + Math.random() * 0.09; // 0.9-0.99 PF
-            } else if (type === 'frequency') {
-                entry.value = 49.8 + Math.random() * 0.4; // 49.8-50.2 Hz
-            }
-            
-            data.push(entry);
+    // Get parameter unit
+    const getParameterUnit = (parameter) => {
+        switch (parameter) {
+            case 'temperature':
+                return '°C';
+            case 'humidity':
+                return '%';
+            case 'battery':
+                return 'V';
+            default:
+                return '';
         }
-        
-        return data;
     };
 
-    // Fetch temperature machine list data
+    // State variables
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [machineListData, setMachineListData] = useState(null);
+    const [chartModalOpen, setChartModalOpen] = useState(false);
+    const [selectedFloor, setSelectedFloor] = useState('Common');
+    const [chartType, setChartType] = useState('temperature');
+    const [trendData, setTrendData] = useState([]);
+    const [selectedParameter, setSelectedParameter] = useState('temperature');
+    const [trendLoading, setTrendLoading] = useState(false);
+    const [trendError, setTrendError] = useState(null);
+
+    // Fetch machine list data
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                setError(null); // Clear any previous errors
+                setError(null);
 
-                const response = await getTemperatureMachineList();
-                console.log('Temperature machine list API response:', response);
+                const machineListResponse = await getTemperatureMachineList();
+                console.log('Machine list API response:', machineListResponse);
 
-                // Set the data
-                setMachineListData(response);
-                console.log('Temperature machine list data set:', response);
+                setMachineListData(machineListResponse);
 
             } catch (err) {
-                console.error('Error fetching temperature machine list data:', err);
-                setError(err.message || 'An error occurred while fetching temperature machine list data');
+                console.error('Error fetching machine list data:', err);
+                setError(err.message || 'An error occurred while fetching machine list data');
             } finally {
                 setLoading(false);
             }
@@ -86,197 +82,28 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         fetchData();
     }, []);
 
-    // State variables
-    const [machineListData, setMachineListData] = useState(null);
-    const [keyParameter, setKeyParameter] = useState('');
-    const [chartModalOpen, setChartModalOpen] = useState(false);
-    const [selectedFloor, setSelectedFloor] = useState('Common');
-    const [chartType, setChartType] = useState('activePower');
-    const [activePowerData, setActivePowerData] = useState(generateMockChartData('activePower'));
-    const [voltageData, setVoltageData] = useState(generateMockChartData('voltage'));
-    const [currentData, setCurrentData] = useState(generateMockChartData('current'));
-    const [powerFactorData, setPowerFactorData] = useState(generateMockChartData('powerFactor'));
-    const [frequencyData, setFrequencyData] = useState(generateMockChartData('frequency'));
+    // Function to fetch trend data
+    const fetchTrendData = async (slaveId, parameter) => {
+        try {
+            setTrendLoading(true);
+            setTrendError(null);
 
-    // Chart options
-    const chartOptions = {
-        chart: {
-            type: 'line',
-            height: 350,
-            toolbar: { show: true },
-            zoom: { enabled: true },
-            background: '#FFFFFF',
-        },
-        stroke: {
-            curve: 'smooth',
-            width: 2,
-        },
-        markers: {
-            size: 4,
-        },
-        grid: {
-            borderColor: '#E5E7EB',
-            strokeDashArray: 4,
-            xaxis: {
-                lines: {
-                    show: true,
-                },
-            },
-            yaxis: {
-                lines: {
-                    show: true,
-                },
-            },
-        },
-        xaxis: {
-            title: {
-                text: 'Time',
-                style: {
-                    color: '#6B7280',
-                    fontSize: '12px',
-                },
-            },
-            categories: chartType === 'voltage' ? 
-                voltageData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
-                chartType === 'current' ?
-                    currentData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
-                chartType === 'powerFactor' ?
-                    powerFactorData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
-                chartType === 'frequency' ?
-                    frequencyData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
-                    activePowerData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })),
-            labels: {
-                style: {
-                    colors: '#6B7280',
-                    fontSize: '11px',
-                },
-                rotate: -45,
-                formatter: function(val) {
-                    return val;
-                },
-            },
-            tickAmount: 6,
-            tooltip: {
-                enabled: true,
-                formatter: function(val) {
-                    return new Date(val).toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit', 
-                        hour12: true 
-                    });
-                }
+            const response = await getTemperatureMachineTrend(slaveId, parameter);
+
+            if (response.success) {
+                setTrendData(response.data.data || []);
+                return response.data.data || [];
+            } else {
+                throw new Error(response.message || 'Failed to fetch trend data');
             }
-        },
-        yaxis: {
-            title: {
-                text: chartType === 'voltage' ? 'V' : (chartType === 'current' ? 'A' : (chartType === 'powerFactor' ? 'PF' : (chartType === 'frequency' ? 'Hz' : 'kW'))),
-                style: {
-                    color: '#6B7280',
-                    fontSize: '12px',
-                },
-            },
-            labels: {
-                style: {
-                    colors: '#6B7280',
-                    fontSize: '11px',
-                },
-            },
-        },
-        tooltip: {
-            enabled: true,
-            theme: 'light',
-            x: {
-                format: 'dd/MM/yyyy HH:mm',
-            },
-        },
-        legend: {
-            show: true,
-        },
-    };
-
-    // Chart series based on selected chart type
-    const getCurrentChartSeries = () => {
-        if (chartType === 'activePower') {
-            const activePowerValues = activePowerData.map(item => item.value);
-            return [{
-                name: `${selectedFloor} Active Power`,
-                data: activePowerValues
-            }];
-        } else if (chartType === 'voltage') {
-            return [
-                {
-                    name: 'R-Voltage',
-                    data: voltageData.map(item => item.rv),
-                    color: '#E34D4D' // Red
-                },
-                {
-                    name: 'Y-Voltage',
-                    data: voltageData.map(item => item.yv),
-                    color: '#F8C537' // Yellow
-                },
-                {
-                    name: 'B-Voltage',
-                    data: voltageData.map(item => item.bv),
-                    color: '#4A90E2' // Blue
-                }
-            ];
-        } else if (chartType === 'current') {
-            return [
-                {
-                    name: 'R-Current',
-                    data: currentData.map(item => item.i_r),
-                    color: '#E34D4D' // Red
-                },
-                {
-                    name: 'Y-Current',
-                    data: currentData.map(item => item.i_y),
-                    color: '#F8C537' // Yellow
-                },
-                {
-                    name: 'B-Current',
-                    data: currentData.map(item => item.i_b),
-                    color: '#4A90E2' // Blue
-                }
-            ];
-        } else if (chartType === 'powerFactor') {
-            const powerFactorValues = powerFactorData.map(item => item.value);
-            return [{
-                name: `${selectedFloor} Power Factor`,
-                data: powerFactorValues,
-                color: '#9C27B0' // Purple
-            }];
-        } else if (chartType === 'frequency') {
-            const frequencyValues = frequencyData.map(item => item.value);
-            return [{
-                name: `${selectedFloor} Frequency`,
-                data: frequencyValues,
-                color: '#FF9800' // Orange
-            }];
-        } else if (chartType === 'keyParameters') {
-            return [
-                {
-                    name: 'Voltage',
-                    data: [230, 232, 228, 231, 229, 233, 230, 228, 231, 229, 232, 230]
-                },
-                {
-                    name: 'Current',
-                    data: [10.5, 10.8, 10.2, 10.6, 10.4, 10.9, 10.5, 10.3, 10.7, 10.4, 10.8, 10.6]
-                },
-                {
-                    name: 'Power Factor',
-                    data: [0.95, 0.96, 0.94, 0.95, 0.97, 0.96, 0.95, 0.94, 0.96, 0.95, 0.97, 0.96]
-                }
-            ];
+        } catch (err) {
+            console.error('Error fetching trend data:', err);
+            setTrendError(err.message || 'An error occurred while fetching trend data');
+            return [];
+        } finally {
+            setTrendLoading(false);
         }
-        
-        const activePowerValues = activePowerData.map(item => item.value);
-        return [{
-            name: `${selectedFloor} Active Power`,
-            data: activePowerValues
-        }];
     };
-        
-    const chartSeries = getCurrentChartSeries();
 
     // Define styles
     const styles = {
@@ -300,19 +127,6 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontWeight: 600,
             color: '#0F2A44',
             fontFamily: 'sans-serif',
-        },
-        hierarchyContainer: {
-            display: 'flex',
-            gap: '10px',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-        },
-        hierarchyBox: {
-            padding: '8px 16px',
-            backgroundColor: '#FFFFFF',
-            borderRadius: '4px',
-            border: '1px solid #E5E7EB',
-            minWidth: '120px',
         },
         commonSection: {
             backgroundColor: '#FFFFFF',
@@ -405,11 +219,10 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             backgroundColor: '#E34D4D', // Red
         },
         phaseY: {
-            backgroundColor: '#4A90E2', // Blue
+            backgroundColor: '#F8C537', // Yellow
         },
         phaseB: {
-            backgroundColor: '#F8C537', // Amber/Yellow (Power)
-            // Note: Use Green (#30B44A) if you want it to look "Healthy"
+            backgroundColor: '#4A90E2', // Blue
         },
         modal: {
             display: 'flex',
@@ -462,13 +275,12 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             flexDirection: 'row',
             flexWrap: 'wrap',
-            justifyContent: 'flex-start', // Changed from space-around
-            gap: '20px',                  // Uniform gap for both rows and columns
-            padding: '10px',              // Optional padding
+            justifyContent: 'left',
+            gap: '20px 50px',
+            marginLeft: '30px'
         },
         gridItem: {
-            // Math: (100% / 3 items) - (total gap space / 3)
-            width: 'calc(33.33% - 14px)',
+            width: '30%',
             marginBottom: '15px',
         },
         tableCell: {
@@ -476,6 +288,130 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '12px',
         },
     };
+
+    // Chart data for trend
+    const chartOptions = {
+        chart: {
+            type: 'line',
+            height: 350,
+            toolbar: { show: true },
+            zoom: { enabled: true },
+            background: '#FFFFFF',
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 2,
+        },
+        markers: {
+            size: 4,
+        },
+        grid: {
+            borderColor: '#ebe5e5',
+            strokeDashArray: 0,
+            xaxis: {
+                lines: {
+                    show: false,
+                },
+            },
+            yaxis: {
+                lines: {
+                    show: false,
+                },
+            },
+        },
+        xaxis: {
+            title: {
+                text: 'Time',
+                style: {
+                    color: '#6B7280',
+                    fontSize: '12px',
+                },
+            },
+            categories: trendData.map(item => {
+                const date = new Date(item.timestamp);
+                return date.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            }),
+            labels: {
+                style: {
+                    colors: '#6B7280',
+                    fontSize: '11px',
+                },
+                rotate: -45,
+                formatter: function (val) {
+                    return val;
+                },
+            },
+            tickAmount: 6,
+        },
+        yaxis: {
+            title: {
+                text: getParameterUnit(selectedParameter),
+                style: {
+                    color: '#6B7280',
+                    fontSize: '12px',
+                },
+            },
+            labels: {
+                style: {
+                    colors: '#6B7280',
+                    fontSize: '11px',
+                },
+                formatter: function (val) {
+                    return parseFloat(val).toFixed(2);
+                }
+            },
+        },
+        tooltip: {
+            enabled: true,
+            theme: 'light',
+            x: {
+                format: 'dd/MM/yyyy HH:mm',
+            },
+            custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+                const item = trendData[dataPointIndex];
+                const date = new Date(item.timestamp);
+                const formattedDate = date.toLocaleString();
+                const value = series[0][dataPointIndex];
+
+                return `<div style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                    <div style="font-weight: bold; margin-bottom: 8px; color: #333; font-size: 12px;">${formattedDate}</div>
+                    <div style="display: flex; align-items: center;">
+                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #2F6FB0; margin-right: 8px;"></span>
+                        <span style="flex: 1; color: #333; font-size: 12px;">${getParameterLabel(selectedParameter)}:</span>
+                        <span style="font-weight: bold; color: #333; margin-left: 5px; font-size: 12px;">${value} ${getParameterUnit(selectedParameter)}</span>
+                    </div>
+                </div>`;
+            }
+        },
+        legend: {
+            show: true,
+        },
+    };
+
+    // Get parameter label
+    const getParameterLabel = (parameter) => {
+        switch (parameter) {
+            case 'temperature':
+                return 'Temperature';
+            case 'humidity':
+                return 'Humidity';
+            case 'battery':
+                return 'Battery';
+            default:
+                return 'Value';
+        }
+    };
+
+    // Chart series
+
+    const chartSeries = [{
+        name: getParameterLabel(selectedParameter),
+        data: trendData.map(item => item.value)
+    }];
 
     // Function to render a floor card
     const renderFloorCard = (machine) => {
@@ -495,6 +431,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
+
         console.log(latest);
         // Apply the conditional logic for values
         const getConditionalValue = (value, isAllowedField = false) => {
@@ -506,22 +443,21 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 if (isAllowedField) {
                     return value;
                 } else {
-                    return '-'; // Return dash for all other fields when offline
+                    return 0; // Return 0 for all other fields
                 }
             }
         };
 
         // Determine which fields are allowed when offline
-        // For temperature sensors, we'll use the actual temperature, humidity, and battery values
         const conditionalLatest = {
-            acte_im: getConditionalValue(latest.acte_im, true), // Temperature value - allowed when offline
-            rv: getConditionalValue(latest.rv, true),       // Temperature value - allowed when offline
-            ir: getConditionalValue(latest.ir, true),       // Humidity value - allowed when offline
-            yv: getConditionalValue(latest.yv, true),       // Another temperature value - allowed when offline
-            iy: getConditionalValue(latest.iy, true),       // Another humidity value - allowed when offline
-            bv: getConditionalValue(latest.bv, true),       // Battery value - allowed when offline
-            ib: getConditionalValue(latest.ib, true),       // Battery value - allowed when offline
-            actpr_t: getConditionalValue(latest.actpr_t, true), // Temperature value - allowed when offline
+            acte_im: getConditionalValue(latest.acte_im, true), // Allowed when offline
+            rv: getConditionalValue(latest.rv, false),
+            ir: getConditionalValue(latest.ir, false),
+            yv: getConditionalValue(latest.yv, false),
+            iy: getConditionalValue(latest.iy, false),
+            bv: getConditionalValue(latest.bv, false),
+            ib: getConditionalValue(latest.ib, false),
+            actpr_t: getConditionalValue(latest.actpr_t, false),
             pf_t: getConditionalValue(latest.pf_t, false),
             fq: getConditionalValue(latest.fq, false),
         };
@@ -550,7 +486,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
                             <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
-                                {machine.last_ts 
+                                {machine.last_ts
                                     ? new Date(machine.last_ts).toLocaleString('en-GB', {
                                         day: '2-digit',
                                         month: 'short',
@@ -558,87 +494,102 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         hour: '2-digit',
                                         minute: '2-digit',
                                         hour12: true
-                                    }) 
+                                    })
                                     : 'N/A'}
                             </Typography>
                         </Box>
                     </Box>
 
-                    {/* Phase Data Table */}
+                    {/* Temperature/Humidity/Battery Data Table */}
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
                                 <TableRow style={styles.phaseTableHeader}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
+                                    <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
+                                {/* Temperature */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
-                                        <Box style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <Box style={{ ...styles.phaseDot, ...styles.phaseR }}></Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <DeviceThermostatIcon fontSize="10px" color="error" />
                                             Temperature
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.rv?.toFixed(2)} °C</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                        {conditionalLatest.rv?.toFixed(2)} °C
+                                    </TableCell>
                                 </TableRow>
+
+                                {/* Humidity */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
-                                        <Box style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <Box style={{ ...styles.phaseDot, ...styles.phaseY }}></Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <WaterDropIcon fontSize="10px" color="primary" />
                                             Humidity
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.iy?.toFixed(1)} H</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                        {conditionalLatest.iy?.toFixed(1)} %
+                                    </TableCell>
                                 </TableRow>
+
+                                {/* Battery */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
-                                        <Box style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <Box style={{ ...styles.phaseDot, ...styles.phaseB }}></Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <BatteryStdIcon fontSize="10px" color="success" />
                                             Battery
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.bv?.toFixed(2)} V</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                        {conditionalLatest.bv?.toFixed(2)} V
+                                    </TableCell>
                                 </TableRow>
                             </TableBody>
+
                         </Table>
                     </TableContainer>
+                    <Box style={{ ...styles.metricsRow, marginTop: '8px', display: 'flex', justifyContent: 'right' }}>
+                        <Box style={{ marginTop: 'auto' }}>
+                            <Button
+                                variant="contained"
+                                style={styles.chartButton}
+                                onClick={async () => {
+                                    setSelectedFloor(machine.name);
+                                    setChartType('temperature');
+                                    setChartModalOpen(true);
+
+                                    // Find the selected machine by name to get its slave_id
+                                    const selectedMachine = machineListData?.data?.machines?.find(
+                                        m => m.name === machine.name
+                                    );
+                                    if (selectedMachine) {
+                                        await fetchTrendData(selectedMachine.slave_id, selectedParameter);
+                                    }
+                                }}
+                                sx={{ height: '30px', width: '30px' }}
+                            >
+                                Trend
+                            </Button>
+                        </Box>
+                    </Box>
+
                 </CardContent>
             </Card>
         );
     };
 
-    // Render loading or error state
-    if (loading) {
-        return (
-            <Box style={{...styles.mainContent, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-                <Typography>Loading temperature data...</Typography>
-            </Box>
-        );
-    }
-
-    if (error) {
-        return (
-            <Box style={{...styles.mainContent, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-                <Typography color="error">Error: {error}</Typography>
-            </Box>
-        );
-    }
-
-    if (!machineListData || !machineListData.data || !machineListData.data.machines) {
-        return (
-            <Box style={{...styles.mainContent, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-                <Typography>No temperature data available.</Typography>
-            </Box>
-        );
-    }
-
     return (
         <Box style={styles.mainContent} id="main-content">
             {/* Custom Grid Container for 2 cards per row */}
             <Box style={styles.gridContainer}>
-                {machineListData?.data?.machines?.map((machine, index) => (
+                {loading && <Typography>Loading...</Typography>}
+                {error && <Typography color="error">{error}</Typography>}
+                {!loading && !error && machineListData?.data?.machines?.map((machine, index) => (
                     <Box style={styles.gridItem} key={machine.slave_id || index}>
                         {renderFloorCard(machine)}
                     </Box>
@@ -657,120 +608,34 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box style={styles.modalHeader}>
                         <Box>
                             <Typography id="chart-modal-title" variant="h6" component="h2">
-                                {selectedFloor} - Last 6 hours power data
+                                {selectedFloor} - Last 6 hours {getParameterLabel(selectedParameter)} data
                             </Typography>
                             <Box style={{ marginTop: '10px' }}>
-                                <Tabs 
-                                    value={chartType === 'activePower' ? 0 : 1}
-                                    onChange={(event, newValue) => {
-                                        if (newValue === 0) {
-                                            setChartType('activePower');
-                                            setActivePowerData(generateMockChartData('activePower'));
-                                        }
-                                    }}
-                                    sx={{
-                                        minHeight: '36px',
-                                        '& .MuiTabs-indicator': {
-                                            backgroundColor: '#2F6FB0',
-                                        },
-                                        '& .MuiTab-root': {
-                                            minHeight: '36px',
-                                            fontSize: '14px',
-                                            textTransform: 'none',
-                                            fontWeight: chartType === 'activePower' ? 600 : 400,
-                                        }
-                                    }}
-                                >
-                                    <Tab 
-                                        label="Active Power" 
-                                        sx={{
-                                            color: chartType === 'activePower' ? '#2F6FB0' : '#6B7280',
-                                            '&.Mui-selected': {
-                                                color: '#2F6FB0',
-                                            }
-                                        }}
-                                    />
-                                    <Tab 
-                                        label="Key Parameters" 
-                                        onClick={() => {
-                                            setChartType('keyParameters');
-                                        }}
-                                        sx={{
-                                            color: chartType === 'keyParameters' ? '#2F6FB0' : '#6B7280',
-                                            '&.Mui-selected': {
-                                                color: '#2F6FB0',
-                                            }
-                                        }}
-                                    />
-                                </Tabs>
-                            </Box>
-                        </Box>
-                        {['keyParameters', 'voltage', 'current', 'powerFactor', 'frequency'].includes(chartType) && (
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <FormControl size="small" sx={{ minWidth: 120, height: '32px' }}>
+                                <FormControl size="small" sx={{ minWidth: 200, marginBottom: 2 }}>
+                                    <InputLabel>Parameter</InputLabel>
                                     <Select
-                                        value={keyParameter}
-                                        onChange={(e) => {
-                                            const selectedValue = e.target.value;
-                                            setKeyParameter(selectedValue);
-                                                                    
-                                            if (selectedValue === 'voltage') {
-                                                setChartType('voltage');
-                                                setVoltageData(generateMockChartData('voltage'));
-                                            } else if (selectedValue === 'current') {
-                                                setChartType('current');
-                                                setCurrentData(generateMockChartData('current'));
-                                            } else if (selectedValue === 'pf') {
-                                                setChartType('powerFactor');
-                                                setPowerFactorData(generateMockChartData('powerFactor'));
-                                            } else if (selectedValue === 'frequency') {
-                                                setChartType('frequency');
-                                                setFrequencyData(generateMockChartData('frequency'));
+                                        value={selectedParameter}
+                                        onChange={async (e) => {
+                                            const newParameter = e.target.value;
+                                            setSelectedParameter(newParameter);
+
+                                            // Find the selected machine by name to get its slave_id
+                                            const selectedMachine = machineListData?.data?.machines?.find(
+                                                m => m.name === selectedFloor
+                                            );
+                                            if (selectedMachine) {
+                                                await fetchTrendData(selectedMachine.slave_id, newParameter);
                                             }
                                         }}
-                                        displayEmpty
-                                        renderValue={(selected) => {
-                                            if (!selected) {
-                                                return <span style={{ color: '#9CA3AF' }}>Key Parameters</span>;
-                                            }
-                                            return selected === 'voltage'
-                                                ? 'Voltage (V)'
-                                                : selected === 'current'
-                                                    ? 'Current (A)'
-                                                    : selected === 'pf'
-                                                        ? 'Power Factor (PF)'
-                                                        : 'Frequency (Hz)';
-                                        }}
-                                        sx={{
-                                            height: '32px',
-                                            backgroundColor: '#ffffff',
-                                            borderRadius: '4px',
-                                            fontSize: '13px',
-                                            '& .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#2F6FB0',
-                                            },
-                                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#2F6FB0',
-                                            },
-                                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                                borderColor: '#2F6FB0',
-                                            },
-                                            '& .MuiSelect-select': {
-                                                padding: '4px 12px',
-                                            }
-                                        }}
+                                        label="Parameter"
                                     >
-                                        <MenuItem value="" sx={{ fontSize: '13px', minHeight: '32px' }}>
-                                            Key Parameters
-                                        </MenuItem>
-                                        <MenuItem value="voltage" sx={{ fontSize: '13px', minHeight: '32px' }}>Voltage (V)</MenuItem>
-                                        <MenuItem value="current" sx={{ fontSize: '13px', minHeight: '32px' }}>Current (A)</MenuItem>
-                                        <MenuItem value="pf" sx={{ fontSize: '13px', minHeight: '32px' }}>Power Factor (PF)</MenuItem>
-                                        <MenuItem value="frequency" sx={{ fontSize: '13px', minHeight: '32px' }}>Frequency (Hz)</MenuItem>
+                                        <MenuItem value="temperature">Temperature</MenuItem>
+                                        <MenuItem value="humidity">Humidity</MenuItem>
+                                        <MenuItem value="battery">Battery</MenuItem>
                                     </Select>
                                 </FormControl>
                             </Box>
-                        )}
+                        </Box>
                         <IconButton
                             style={styles.closeButton}
                             onClick={() => setChartModalOpen(false)}
@@ -779,17 +644,12 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </IconButton>
                     </Box>
                     <Box id="chart-modal-description">
-                        {chartType === 'keyParameters' ? (
-                            <Box sx={{ textAlign: 'center', padding: '100px' }}>
-                            </Box>
-                        ) : (
-                            <Chart
-                                options={chartOptions}
-                                series={chartSeries}
-                                type="line"
-                                height={350}
-                            />
-                        )}
+                        <Chart
+                            options={chartOptions}
+                            series={chartSeries}
+                            type="line"
+                            height={350}
+                        />
                     </Box>
                 </Box>
             </Modal>

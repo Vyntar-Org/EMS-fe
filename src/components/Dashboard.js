@@ -681,11 +681,11 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 <Typography sx={titleStyle}>Devices</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" mt="auto">
-                <Box sx={{ ...miniBoxStyle, backgroundColor: '#E9F7E7', flex: 1, mr: 1, minHeight: '80px' }}>
+                <Box sx={{ ...miniBoxStyle, flex: 1, mr: 1, minHeight: '80px' }}>
                   <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Online</Typography>
                   <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#16A34A' }}>{slavesData.online}</Typography>
                 </Box>
-                <Box sx={{ ...miniBoxStyle, backgroundColor: '#FDECEC', flex: 1, ml: 1, minHeight: '80px' }}>
+                <Box sx={{ ...miniBoxStyle, flex: 1, ml: 1, minHeight: '80px' }}>
                   <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Offline</Typography>
                   <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#EF4444' }}>{slavesData.offline}</Typography>
                 </Box>

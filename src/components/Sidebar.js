@@ -171,7 +171,7 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
             return (
               <li key={item.id} className="sidebar-item">
                 {!isMobile && !visible ? (
-                  <Tooltip title={visible ? 'Hide sidebar' : 'Show sidebar'} placement="right" arrow>
+                  <Tooltip title={item.name} placement="right" arrow>
                     {linkContent}
                   </Tooltip>
                 ) : (
