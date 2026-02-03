@@ -595,10 +595,10 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             return timeDiff <= 15; // Within 15 minutes
         };
 
-        const isOnline = isWithinTimeLimit(machine.last_ts);
+        const isOnline = isWithinTimeLimit(machine.latest.last_ts);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
-
+        
         // Apply the conditional logic for values
         const getConditionalValue = (value, isAllowedField = false) => {
             if (isOnline) {
@@ -613,7 +613,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 }
             }
         };
-
+        
         // Determine which fields are allowed when offline
         const conditionalLatest = {
             acte_im: getConditionalValue(latest.acte_im, true), // Allowed when offline
@@ -627,6 +627,15 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             pf_t: getConditionalValue(latest.pf_t, false),
             fq: getConditionalValue(latest.fq, false),
         };
+
+        const getConditionalStatus = (isOnline) => {
+            if (conditionalLatest.pf_t > 1 && isOnline) {
+                return 'Online';
+            } else {
+                return 'Offline';
+            }
+        };
+
 
         const conditionalEnergy = {
             today: getConditionalValue(energy.today, true), // Allowed when offline
@@ -649,8 +658,8 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </Typography>
                         <Box style={styles.onlineStatus}>
                             {/* <Box style={isOnline ? styles.onlineIndicator : styles.offlineIndicator}></Box> */}
-                            <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
-                                {isOnline ? 'Online' : 'Offline'}
+                            <Typography style={{ fontSize: '11px', color: getConditionalStatus(isOnline) === 'Online' ? '#30b44a' : '#e34d4d', border: '1px solid ' + (getConditionalStatus(isOnline) === 'Online' ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
+                                {getConditionalStatus(isOnline)}
                             </Typography>
                             <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
                                 {conditionalLatest.acte_im?.toFixed(1)} kWh
