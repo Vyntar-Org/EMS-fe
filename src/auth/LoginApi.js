@@ -1,4 +1,5 @@
 import axios from 'axios';
+import tokenUtils from './tokenUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://bms.api.v1.vyntar.in/api'; // Default to production URL, can be overridden with environment variable
 
@@ -63,12 +64,15 @@ const loginApi = {
   logout: async (refreshToken) => {
     console.log('Sending logout request with refresh token:', refreshToken);
     try {
+      // Use the access token for logout (we won't refresh here as we're logging out)
+      const accessToken = localStorage.getItem('accessToken');
+      
       const response = await axios.post(`${API_BASE_URL}/auth/logout/`, {
         refresh: refreshToken
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+          'Authorization': `Bearer ${accessToken}`
         },
         withCredentials: false
       });
@@ -87,15 +91,13 @@ const loginApi = {
    */
   isAuthenticated: async () => {
     try {
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) {
-        return null; // No token available
-      }
+      // Get a valid access token (will refresh if expired)
+      const validToken = await tokenUtils.getValidAccessToken();
       
       const response = await axios.get(`${API_BASE_URL}/auth/user/`, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+          'Authorization': `Bearer ${validToken}`
         },
         withCredentials: false
       });
@@ -112,16 +114,13 @@ const loginApi = {
    */
   getUserData: async () => {
     try {
-      const accessToken = localStorage.getItem('accessToken');
-      
-      if (!accessToken) {
-        throw new Error('No access token available');
-      }
+      // Get a valid access token (will refresh if expired)
+      const validToken = await tokenUtils.getValidAccessToken();
       
       const response = await axios.get(`${API_BASE_URL}/auth/me`, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+          'Authorization': `Bearer ${validToken}`
         },
         withCredentials: false
       });

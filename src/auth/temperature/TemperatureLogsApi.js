@@ -1,4 +1,5 @@
 import axios from 'axios';
+import tokenUtils from '../tokenUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://bms.api.v1.vyntar.in/api';
 
@@ -13,17 +14,20 @@ const apiClient = axios.create({
 
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
-  (config) => {
-    // Check for different token names that might be stored
-    let token = localStorage.getItem('token');
-    if (!token) {
-      token = localStorage.getItem('accessToken');
-    }
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('Added authorization header to request:', config.url);
-    } else {
-      console.warn('No token found for request:', config.url);
+  async (config) => {
+    try {
+      // Get a valid access token (will refresh if expired)
+      const validToken = await tokenUtils.getValidAccessToken();
+      
+      if (validToken) {
+        config.headers.Authorization = `Bearer ${validToken}`;
+        console.log('Added authorization header to request:', config.url);
+      } else {
+        console.warn('No token found for request:', config.url);
+      }
+    } catch (error) {
+      console.error('Error getting valid token:', error);
+      throw error;
     }
     return config;
   },
@@ -35,14 +39,28 @@ apiClient.interceptors.request.use(
 // Response interceptor to handle errors globally
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem('token');
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('isLoggedIn');
-      window.location.href = '/login';
+      try {
+        // Attempt to refresh the token
+        await tokenUtils.refreshAccessToken();
+        
+        // Retry the original request with the new token
+        const newToken = localStorage.getItem('accessToken');
+        error.config.headers.Authorization = `Bearer ${newToken}`;
+        return apiClient.request(error.config);
+      } catch (refreshError) {
+        // If token refresh fails, clear tokens and redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('username');
+        localStorage.removeItem('userData');
+        localStorage.removeItem('fullUserData');
+        localStorage.removeItem('activeApp');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -59,17 +77,15 @@ apiClient.interceptors.response.use(
  */
 export const getTemperatureLogs = async (slaveId, startDatetime, endDatetime, limit = 30, offset = 0) => {
   try {
-    // Check for different token names that might be stored
-    let token = localStorage.getItem('token');
-    if (!token) {
-      token = localStorage.getItem('accessToken');
-    }
-    if (!token) {
+    // Get a valid access token (will refresh if expired)
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
       console.warn('No authentication token found. Please log in first.');
       throw new Error('Authentication token not found. Please log in first.');
     }
     
-    console.log(`Making temperature logs API call for slave ${slaveId} with token:`, token.substring(0, 20) + '...');
+    console.log(`Making temperature logs API call for slave ${slaveId} with token:`, validToken.substring(0, 20) + '...');
     console.log('API Base URL:', apiClient.defaults.baseURL);
     
     // Format the API URL with query parameters
@@ -114,17 +130,15 @@ export const getTemperatureLogs = async (slaveId, startDatetime, endDatetime, li
  */
 export const getTemperatureSlaves = async () => {
   try {
-    // Check for different token names that might be stored
-    let token = localStorage.getItem('token');
-    if (!token) {
-      token = localStorage.getItem('accessToken');
-    }
-    if (!token) {
+    // Get a valid access token (will refresh if expired)
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
       console.warn('No authentication token found. Please log in first.');
       throw new Error('Authentication token not found. Please log in first.');
     }
     
-    console.log('Making temperature slaves API call with token:', token.substring(0, 20) + '...');
+    console.log('Making temperature slaves API call with token:', validToken.substring(0, 20) + '...');
     console.log('API Base URL:', apiClient.defaults.baseURL);
     
     const response = await apiClient.get('/applications/TEMPERATURE/slaves/');

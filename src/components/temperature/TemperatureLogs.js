@@ -53,6 +53,9 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
   const [filterEndDate, setFilterEndDate] = useState(dayjs());
   const [searchClicked, setSearchClicked] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState([]);
+  const [openStart, setOpenStart] = React.useState(false);
+  const [openEnd, setOpenEnd] = React.useState(false);
+
 
   // Load devices on component mount
   useEffect(() => {
@@ -60,12 +63,12 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
       try {
         setLoading(true);
         const slavesData = await getTemperatureSlaves();
-        
+
         if (slavesData.success && slavesData.data && slavesData.data.slaves) {
           // Transform slave data to device list
           const deviceList = ['all', ...slavesData.data.slaves.map(slave => slave.slave_name)];
           setDevices(deviceList);
-          
+
           // Set the first device as default if available
           if (slavesData.data.slaves.length > 0) {
             setFilterDevice(slavesData.data.slaves[0].slave_name);
@@ -100,17 +103,17 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
       alert('Please select an end date');
       return;
     }
-    
+
     setSearchClicked(true);
     setPage(1);
-    
+
     try {
       setLoading(true);
-      
+
       // Convert dayjs objects to proper datetime strings
       const startDateTime = filterStartDate.format('YYYY-MM-DD HH:mm:ss');
       const endDateTime = filterEndDate.format('YYYY-MM-DD HH:mm:ss');
-      
+
       // If 'all' is selected, we'll need to fetch logs for each device
       if (filterDevice === 'all') {
         // For simplicity, we'll fetch from the first device if 'all' is selected
@@ -138,7 +141,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
           'IT Cabin': 10
         };
         const slaveId = slaveIdMap[slaveName] || 1; // Default to 1 if not found
-        
+
         const logsData = await getTemperatureLogsWithNames(slaveId, startDateTime, endDateTime);
         if (logsData.success && logsData.data && logsData.data.logs) {
           console.log(logsData.data.logs);
@@ -156,10 +159,10 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
     }
   };
 
-// Filter logs based on search term only (date and device filters are handled by API)
+  // Filter logs based on search term only (date and device filters are handled by API)
   const filteredLogs = logs.filter((log) => {
     if (!searchTerm) return true;
-    
+
     return (
       log.timestamp.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.slave_name && log.slave_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -186,7 +189,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
     setFilterEndDate(dayjs());
     setPage(1);
     setSearchClicked(false);
-    setSelectedColumn('');
+    setSelectedColumn([]);
     setLogs([]);
   };
 
@@ -211,7 +214,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
   if (loading && !searchClicked) {
     return (
       <Box style={styles.mainContent} id="main-content">
-        <Card className="logs-card" sx={{marginTop: ''}}>
+        <Card className="logs-card" sx={{ marginTop: '' }}>
           <CardContent>
             <Typography variant="h6" align="center">Loading devices...</Typography>
           </CardContent>
@@ -222,7 +225,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
 
   return (
     <Box style={styles.mainContent} id="main-content">
-      <Card className="logs-card" sx={{marginTop: ''}}>
+      <Card className="logs-card" sx={{ marginTop: '' }}>
         <CardContent>
           {loading && searchClicked && (
             <Typography variant="body2" align="center" gutterBottom>
@@ -247,7 +250,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                   {devices.length > 0 ? (
                     devices.map((device) => (
                       <MenuItem key={device} value={device}>
-                        {device === 'all' ? 'All Devices' : device}
+                        {device === 'all' ? '' : device}
                       </MenuItem>
                     ))
                   ) : (
@@ -272,28 +275,28 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
                       {selected.slice(0, 2).map((value) => (
-                        <Chip 
-                          key={value} 
-                          label={value.replace(/_/g, ' ')} 
-                          size="small" 
-                          sx={{ 
-                            height: '20px', 
-                            fontSize: '10px', 
-                            textTransform: 'capitalize' 
-                          }} 
+                        <Chip
+                          key={value}
+                          label={value.replace(/_/g, ' ')}
+                          size="small"
+                          sx={{
+                            height: '20px',
+                            fontSize: '10px',
+                            textTransform: 'capitalize'
+                          }}
                         />
                       ))}
                       {selected.length > 2 && (
-                        <Chip 
-                          label={`+${selected.length - 2} more`} 
-                          size="small" 
-                          sx={{ 
-                            height: '20px', 
-                            fontSize: '10px', 
-                            backgroundColor: '#0156a6', 
-                            color: '#fff', 
-                            fontWeight: 'bold' 
-                          }} 
+                        <Chip
+                          label={`+${selected.length - 2} more`}
+                          size="small"
+                          sx={{
+                            height: '20px',
+                            fontSize: '10px',
+                            backgroundColor: '#0156a6',
+                            color: '#fff',
+                            fontWeight: 'bold'
+                          }}
                         />
                       )}
                     </Box>
@@ -310,62 +313,72 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                     { val: 'humidity', label: 'Humidity' },
                     { val: 'battery', label: 'Battery' }
                   ].map((item) => (
-                    <MenuItem 
-                      key={item.val} 
+                    <MenuItem
+                      key={item.val}
                       value={item.val}
                       sx={{ py: 0, minHeight: '32px', px: 1 }}
                     >
-                      <Checkbox 
-                        checked={selectedColumn.indexOf(item.val) > -1} 
-                        sx={{ 
-                          p: 0.5, 
-                          mr: 0.5, 
+                      <Checkbox
+                        checked={selectedColumn.indexOf(item.val) > -1}
+                        sx={{
+                          p: 0.5,
+                          mr: 0.5,
                           transform: "scale(0.8)", // Shrunk checkbox
-                          '& .MuiSvgIcon-root': { fontSize: 20 } 
-                        }} 
+                          '& .MuiSvgIcon-root': { fontSize: 20 }
+                        }}
                       />
-                      <ListItemText 
-                        primary={item.label} 
-                        primaryTypographyProps={{ fontSize: '12px' }} 
+                      <ListItemText
+                        primary={item.label}
+                        primaryTypographyProps={{ fontSize: '12px' }}
                       />
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
 
-               <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateTimePicker
+                  open={openStart}
+                  onOpen={() => setOpenStart(true)}
+                  onClose={() => setOpenStart(false)}
                   value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
                   onChange={(newValue) => setFilterStartDate(newValue)}
                   slotProps={{
                     textField: {
                       size: 'small',
-                      sx: {
-                        minWidth: 220,
-                        mr: 2,
-                        borderRadius: 2,
-                      },
+                      sx: { minWidth: 220, mr: 2, borderRadius: 2 },
+                      onClick: () => setOpenStart(true), // 🔥 input click opens picker
                     },
                   }}
+                  format="DD/MM/YYYY hh:mm A"
                 />
               </LocalizationProvider>
 
+
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateTimePicker
-                  value={filterEndDate ? (dayjs.isDayjs(filterEndDate) ? filterEndDate : dayjs(filterEndDate)) : null}
+                  open={openEnd}
+                  onOpen={() => setOpenEnd(true)}
+                  onClose={() => setOpenEnd(false)}
+                  value={
+                    filterEndDate
+                      ? dayjs.isDayjs(filterEndDate)
+                        ? filterEndDate
+                        : dayjs(filterEndDate)
+                      : null
+                  }
                   onChange={(newValue) => setFilterEndDate(newValue)}
                   slotProps={{
                     textField: {
                       size: 'small',
-                      sx: {
-                        minWidth: 220,
-                        mr: 2,
-                        borderRadius: 2,
-                      },
+                      sx: { minWidth: 220, mr: 2, borderRadius: 2 },
+                      onClick: () => setOpenEnd(true), // 🔥 input click opens picker
                     },
                   }}
+                  format="DD/MM/YYYY hh:mm A"
                 />
               </LocalizationProvider>
+
 
               <Button
                 variant="contained"
@@ -376,7 +389,14 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                   '&:hover': {
                     backgroundColor: '#166aa0',
                   },
-                  mr: 1
+                  minWidth: 'auto',
+                  width: '32px', // Smaller width
+                  height: '32px', // Smaller height
+                  padding: '6px', // Even smaller padding
+                  borderRadius: '4px', // Square with rounded corners
+                  '& .MuiButton-startIcon': {
+                    margin: 0,
+                  }
                 }}
               >
               </Button>
@@ -391,6 +411,14 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                   '&:hover': {
                     borderColor: '#5a6268',
                     color: '#5a6268',
+                  },
+                  minWidth: 'auto',
+                  width: '32px', // Smaller width
+                  height: '32px', // Smaller height
+                  padding: '4px', // Even smaller padding
+                  borderRadius: '4px',
+                  '& .MuiButton-startIcon': {
+                    margin: 0,
                   }
                 }}
               >
@@ -399,82 +427,82 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
           </Box>
 
           {searchClicked && (
-          <TableContainer
-            component={Paper}
-            className="logs-table-container"
-            style={{ overflow: 'auto' }}
-          >
-            <Table stickyHeader style={{ tableLayout: 'fixed', width: '100%' }}>
-              <TableHead>
-                <TableRow className="log-table-header">
-                  {selectedColumn.length > 0 ? (
-                    selectedColumn.map((col) => (
-                      <TableCell key={col} className="log-header-cell" sx={{ textTransform: 'capitalize' }}>
-                        {col.replace(/_/g, ' ')}
-                      </TableCell>
-                    ))
-                  ) : (
-                    <>
-                      <TableCell className="log-header-cell">Timestamp</TableCell>
-                      <TableCell className="log-header-cell">Temperature (°C)</TableCell>
-                      <TableCell className="log-header-cell">Humidity (%)</TableCell>
-                      <TableCell className="log-header-cell">Battery (V)</TableCell>
-                    </>
-                  )}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginatedLogs.length > 0 ? (
-                  paginatedLogs.map((log) => {
-                    const timestamp = new Date(log.timestamp).toLocaleString();
-                    const temperature = log.temperature;
-                    const humidity = log.humidity;
-                    const battery = log.battery;
-                    console.log(log);
-                    
-                    return (
-                      <TableRow key={log.id} hover className="log-table-row">
-                        {selectedColumn.length > 0 ? (
-                          // DYNAMIC MULTI-COLUMN VIEW
-                          // This loops through whatever you checked in the dropdown
-                          selectedColumn.map((col) => (
-                            <TableCell key={col} className="log-table-cell">
-                              {col === 'timestamp' && timestamp}
-                              {col === 'temperature' && (typeof temperature === 'number' ? temperature.toFixed(2) : temperature)}
-                              {col === 'humidity' && (typeof humidity === 'number' ? humidity.toFixed(2) : humidity)}
-                              {col === 'battery' && (typeof battery === 'number' ? battery.toFixed(2) : battery)}
-                            </TableCell>
-                          ))
-                        ) : (
-                          // DEFAULT "ALL COLUMNS" VIEW (When nothing is selected)
-                          <>
-                            <TableCell className="log-table-cell" title={timestamp}>
-                              {timestamp}
-                            </TableCell>
-                            <TableCell className="log-table-cell">
-                              {typeof temperature === 'number' ? temperature.toFixed(2) : temperature}
-                            </TableCell>
-                            <TableCell className="log-table-cell">
-                              {typeof humidity === 'number' ? humidity.toFixed(2) : humidity}
-                            </TableCell>
-                            <TableCell className="log-table-cell">
-                              {typeof battery === 'number' ? battery.toFixed(2) : battery}
-                            </TableCell>
-                          </>
-                        )}
-                      </TableRow>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={selectedColumn ? 1 : 4} align="center">
-                      {paginatedLogs.length === 0 ? 'No logs found matching your filters' : ''}
-                    </TableCell>
+            <TableContainer
+              component={Paper}
+              className="logs-table-container"
+              style={{ overflow: 'auto' }}
+            >
+              <Table stickyHeader style={{ tableLayout: 'fixed', width: '100%' }}>
+                <TableHead>
+                  <TableRow className="log-table-header">
+                    {selectedColumn.length > 0 ? (
+                      selectedColumn.map((col) => (
+                        <TableCell key={col} className="log-header-cell" sx={{ textTransform: 'capitalize' }}>
+                          {col.replace(/_/g, ' ')}
+                        </TableCell>
+                      ))
+                    ) : (
+                      <>
+                        <TableCell className="log-header-cell">Timestamp</TableCell>
+                        <TableCell className="log-header-cell">Temperature (°C)</TableCell>
+                        <TableCell className="log-header-cell">Humidity (%)</TableCell>
+                        <TableCell className="log-header-cell">Battery (V)</TableCell>
+                      </>
+                    )}
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {paginatedLogs.length > 0 ? (
+                    paginatedLogs.map((log) => {
+                      const timestamp = new Date(log.timestamp).toLocaleString();
+                      const temperature = log.temperature;
+                      const humidity = log.humidity;
+                      const battery = log.battery;
+                      console.log(log);
+
+                      return (
+                        <TableRow key={log.id} hover className="log-table-row">
+                          {selectedColumn.length > 0 ? (
+                            // DYNAMIC MULTI-COLUMN VIEW
+                            // This loops through whatever you checked in the dropdown
+                            selectedColumn.map((col) => (
+                              <TableCell key={col} className="log-table-cell">
+                                {col === 'timestamp' && timestamp}
+                                {col === 'temperature' && (typeof temperature === 'number' ? temperature.toFixed(2) : temperature)}
+                                {col === 'humidity' && (typeof humidity === 'number' ? humidity.toFixed(2) : humidity)}
+                                {col === 'battery' && (typeof battery === 'number' ? battery.toFixed(2) : battery)}
+                              </TableCell>
+                            ))
+                          ) : (
+                            // DEFAULT "ALL COLUMNS" VIEW (When nothing is selected)
+                            <>
+                              <TableCell className="log-table-cell" title={timestamp}>
+                                {timestamp}
+                              </TableCell>
+                              <TableCell className="log-table-cell">
+                                {typeof temperature === 'number' ? temperature.toFixed(2) : temperature}
+                              </TableCell>
+                              <TableCell className="log-table-cell">
+                                {typeof humidity === 'number' ? humidity.toFixed(2) : humidity}
+                              </TableCell>
+                              <TableCell className="log-table-cell">
+                                {typeof battery === 'number' ? battery.toFixed(2) : battery}
+                              </TableCell>
+                            </>
+                          )}
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={selectedColumn ? 1 : 4} align="center">
+                        {paginatedLogs.length === 0 ? 'No logs found matching your filters' : ''}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
 
           {/* Pagination */}
@@ -494,7 +522,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
               />
             </Box>
           )}
-          
+
         </CardContent>
       </Card>
     </Box>

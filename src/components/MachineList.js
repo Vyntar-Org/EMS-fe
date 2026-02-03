@@ -98,101 +98,101 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [frequencyData, setFrequencyData] = useState([]);
 
     // Chart data for Kw Consumption over last 8/12 hours
-    const chartOptions = {
-        chart: {
-            type: 'line',
-            height: 350,
-            toolbar: { show: true },
-            zoom: { enabled: true },
-            background: '#FFFFFF',
-        },
-        stroke: {
-            curve: 'smooth',
-            width: 2,
-        },
-        markers: {
-            size: 4,
-        },
-        grid: {
-            borderColor: '#E5E7EB',
-            strokeDashArray: 4,
-            xaxis: {
-                lines: {
-                    show: true,
-                },
-            },
-            yaxis: {
-                lines: {
-                    show: true,
-                },
-            },
-        },
+const chartOptions = {
+    chart: {
+        type: 'line',
+        height: 350,
+        toolbar: { show: true },
+        zoom: { enabled: true },
+        background: '#FFFFFF',
+    },
+    stroke: {
+        curve: 'smooth',
+        width: 2,
+    },
+    markers: {
+        size: 4,
+    },
+    grid: {
+        borderColor: '#ebe5e5',
+        strokeDashArray: 0, // Changed from 4 to 0 for solid lines (if you want to keep the lines)
         xaxis: {
-    title: {
-        text: 'Time',
-        style: {
-            color: '#6B7280',
-            fontSize: '12px',
+            lines: {
+                show: false, // Set to false to remove x-axis grid lines
+            },
         },
-    },
-    categories: chartType === 'voltage' ? 
-        voltageData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
-        chartType === 'current' ?
-            currentData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
-        chartType === 'powerFactor' ?
-            powerFactorData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
-        chartType === 'frequency' ?
-            frequencyData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
-            activePowerData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })),
-    labels: {
-        style: {
-            colors: '#6B7280',
-            fontSize: '11px',
-        },
-        rotate: -45,
-        formatter: function(val) {
-            // Format to match the image style (e.g., "05:49 AM")
-            return val;
-        },
-    },
-    tickAmount: 6, // Increased to show more time points across the 6-hour period
-    tooltip: {
-        enabled: true,
-        formatter: function(val) {
-            return new Date(val).toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                hour12: true 
-            });
-        }
-    }
-},
         yaxis: {
-            title: {
-                text: chartType === 'voltage' ? 'V' : (chartType === 'current' ? 'A' : (chartType === 'powerFactor' ? 'PF' : (chartType === 'frequency' ? 'Hz' : 'kW'))),
-                style: {
-                    color: '#6B7280',
-                    fontSize: '12px',
-                },
-            },
-            labels: {
-                style: {
-                    colors: '#6B7280',
-                    fontSize: '11px',
-                },
+            lines: {
+                show: false, // Set to false to remove y-axis grid lines
             },
         },
+    },
+    xaxis: {
+        title: {
+            text: 'Time',
+            style: {
+                color: '#6B7280',
+                fontSize: '12px',
+            },
+        },
+        categories: chartType === 'voltage' ? 
+            voltageData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
+            chartType === 'current' ?
+                currentData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
+            chartType === 'powerFactor' ?
+                powerFactorData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
+            chartType === 'frequency' ?
+                frequencyData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
+                activePowerData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })),
+        labels: {
+            style: {
+                colors: '#6B7280',
+                fontSize: '11px',
+            },
+            rotate: -45,
+            formatter: function(val) {
+                // Format to match the image style (e.g., "05:49 AM")
+                return val;
+            },
+        },
+        tickAmount: 6, // Increased to show more time points across the 6-hour period
         tooltip: {
             enabled: true,
-            theme: 'light',
-            x: {
-                format: 'dd/MM/yyyy HH:mm',
+            formatter: function(val) {
+                return new Date(val).toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    hour12: true 
+                });
+            }
+        }
+    },
+    yaxis: {
+        title: {
+            text: chartType === 'voltage' ? 'V' : (chartType === 'current' ? 'A' : (chartType === 'powerFactor' ? 'PF' : (chartType === 'frequency' ? 'Hz' : 'kW'))),
+            style: {
+                color: '#6B7280',
+                fontSize: '12px',
             },
         },
-        legend: {
-            show: true,
+        labels: {
+            style: {
+                colors: '#6B7280',
+                fontSize: '11px',
+            },
         },
-    };
+    },
+    tooltip: {
+        enabled: true,
+        theme: 'light',
+        x: {
+            format: 'dd/MM/yyyy HH:mm',
+        },
+    },
+    legend: {
+        show: true,
+    },
+};
 
     // Function to fetch active power chart data
     const fetchActivePowerData = async (slaveId) => {
@@ -580,6 +580,17 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         },
     };
 
+    const chartNameMapping = {
+        activePower: 'Active Power',
+        voltage: 'Voltage',
+        current: 'Current',
+        powerFactor: 'Power Factor',
+        frequency: 'Frequency',
+        keyParameters: 'Key Parameters',
+    };
+    const chartName = chartNameMapping[chartType] || 'Active Power';
+
+
     // Function to render a floor card
     const renderFloorCard = (machine) => {
         if (!machine) return null;
@@ -825,7 +836,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box style={styles.modalHeader}>
                         <Box>
                             <Typography id="chart-modal-title" variant="h6" component="h2">
-                                {selectedFloor} - Last 6 hours power data
+                                {selectedFloor} - {chartType === 'keyParameters' ? chartName : `Last 6 hours ${chartName} data`}
                             </Typography>
                             <Box style={{ marginTop: '10px' }}>
                                 <Tabs 
@@ -881,7 +892,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </Box>
                         {['keyParameters', 'voltage', 'current', 'powerFactor', 'frequency'].includes(chartType) && (
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <FormControl size="small" sx={{ minWidth: 120, height: '32px' }}>
+                                <FormControl size="small" sx={{ minWidth: 120, height: '32px', marginTop: "40px" }}>
                                     <Select
                                         value={keyParameter}
                                         onChange={async (e) => {
@@ -958,9 +969,9 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             }
                                         }}
                                     >
-                                        <MenuItem value="" sx={{ fontSize: '13px', minHeight: '32px' }}>
+                                        {/* <MenuItem value="" sx={{ fontSize: '13px', minHeight: '32px' }}>
                                             Key Parameters
-                                        </MenuItem>
+                                        </MenuItem> */}
                                         <MenuItem value="voltage" sx={{ fontSize: '13px', minHeight: '32px' }}>Voltage (V)</MenuItem>
                                         <MenuItem value="current" sx={{ fontSize: '13px', minHeight: '32px' }}>Current (A)</MenuItem>
                                         <MenuItem value="pf" sx={{ fontSize: '13px', minHeight: '32px' }}>Power Factor (PF)</MenuItem>

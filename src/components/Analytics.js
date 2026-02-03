@@ -36,6 +36,24 @@ import dayjs from 'dayjs';
 // import { getTotalActiveEnergy7Days, getConsumption7Days } from '../auth/AnalyticsApi';
 // import { getSlaveList, getDeviceLogs } from '../auth/LogsApi';
 
+const parameterOptions = [
+    { value: "timestamp", label: "Timestamp" },
+    { value: "active_energy_import", label: "Active Energy Import (kWh)" },
+    { value: "total_active_power", label: "Total Active Power (kW)" },
+    { value: "total_apparent_power", label: "Total Apparent Power (kVA)" },
+    { value: "average_current", label: "Average Current (A)" },
+    { value: "average_line_to_line_voltage", label: "Average Line-to-Line Voltage (V)" },
+    { value: "c_a_phase_voltage_rms", label: "C–A Phase Voltage RMS (V)" },
+    { value: "system_frequency", label: "System Frequency (Hz)" },
+    { value: "rms_current_phase_c", label: "RMS Current – Phase C (A)" },
+    { value: "rms_current_phase_a", label: "RMS Current – Phase A (A)" },
+    { value: "rms_current_phase_b", label: "RMS Current – Phase B (A)" },
+    { value: "total_power_factor", label: "Total Power Factor" },
+    { value: "reactive_energy_import", label: "Reactive Energy Import (kVArh)" },
+    { value: "a_b_phase_voltage_rms", label: "A–B Phase Voltage RMS (V)" },
+    { value: "b_c_phase_voltage_rms", label: "B–C Phase Voltage RMS (V)" },
+];
+
 const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     // State for filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -45,9 +63,11 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
     const [devices, setDevices] = useState(['all']); // Initialize with 'all' as default
     const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
-    const [selectedParameter, setSelectedParameter] = useState(''); // State for main chart parameter selection
+    const [selectedParameter, setSelectedParameter] = useState([]); // State for main chart parameter selection (array for multi-select)
     const [compareParameter, setCompareParameter] = useState(''); // State for first comparison chart parameter selection
     const [compareParameter2, setCompareParameter2] = useState(''); // State for second comparison chart parameter selection
+    const [openStart, setOpenStart] = React.useState(false);
+    const [openEnd, setOpenEnd] = React.useState(false);
 
     const styles = {
         mainContent: {
@@ -114,7 +134,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             { id: 5, name: 'Second Floor' },
             { id: 6, name: 'First Floor' }
         ];
-        
+
         // Store full device objects for ID mapping
         setDeviceObjects(dummyDevices);
         // Transform the slave list to the format expected by the dropdown
@@ -146,6 +166,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         setFilterStartDate('');
         setFilterEndDate('');
         setSearchClicked(false); // Reset search state
+        setSelectedParameter([]); // Reset main chart parameter
+        setCompareParameter(''); // Reset first comparison parameter
+        setCompareParameter2(''); // Reset second comparison parameter
     };
     const [parameters, setParameters] = React.useState([]);
     const [totalActiveEnergyData, setTotalActiveEnergyData] = useState([]);
@@ -165,7 +188,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         const fetchDummyData = () => {
             try {
                 setLoading(true);
-                
+
                 // Dummy total active energy data (last 7 days)
                 const dummyEnergyData = [
                     {
@@ -213,7 +236,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                         ]
                     }
                 ];
-                
+
                 // Dummy consumption data
                 const dummyConsumptionData = [
                     {
@@ -243,7 +266,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                         ]
                     }
                 ];
-                
+
                 setTotalActiveEnergyData(dummyEnergyData);
                 setConsumptionData(dummyConsumptionData);
                 setError(null);
@@ -264,18 +287,18 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             if (searchClicked && filterDevice && filterDevice !== 'all' && filterStartDate && filterEndDate) {
                 try {
                     setLoading(true);
-                    
+
                     // Generate dummy data for the selected device and date range
                     const startDate = new Date(filterStartDate);
                     const endDate = new Date(filterEndDate);
                     const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-                    
+
                     // Create dummy data points
                     const dummyData = [];
                     for (let i = 0; i <= daysDiff; i++) {
                         const currentDate = new Date(startDate);
                         currentDate.setDate(startDate.getDate() + i);
-                        
+
                         dummyData.push({
                             timestamp: currentDate.toISOString(),
                             acte_im: Math.random() * 100 + 20, // Random values between 20-120
@@ -284,7 +307,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                             energy_value: Math.random() * 40 + 5   // Random values between 5-45
                         });
                     }
-                    
+
                     setFilteredChartData(dummyData);
                     setError(null);
                 } catch (err) {
@@ -295,10 +318,10 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 }
             }
         };
-        
+
         generateDummyFilteredData();
     }, [searchClicked, filterDevice, filterStartDate, filterEndDate]);
-    
+
     // Use dummy comparison data instead of API
     useEffect(() => {
         const generateDummyCompareData = () => {
@@ -308,12 +331,12 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                     const startDate = new Date(filterStartDate);
                     const endDate = new Date(filterEndDate);
                     const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-                    
+
                     const dummyData = [];
                     for (let i = 0; i <= daysDiff; i++) {
                         const currentDate = new Date(startDate);
                         currentDate.setDate(startDate.getDate() + i);
-                        
+
                         dummyData.push({
                             timestamp: currentDate.toISOString(),
                             acte_im: Math.random() * 90 + 25, // Different range for comparison
@@ -322,17 +345,17 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                             energy_value: Math.random() * 35 + 8
                         });
                     }
-                    
+
                     setCompareChartData(dummyData);
                 } catch (err) {
                     console.error('Error generating dummy comparison data:', err);
                 }
             }
         };
-        
+
         generateDummyCompareData();
     }, [compareMode, compareDevice, filterStartDate, filterEndDate]);
-    
+
     // Use dummy second comparison data instead of API
     useEffect(() => {
         const generateDummyCompareData2 = () => {
@@ -342,12 +365,12 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                     const startDate = new Date(filterStartDate);
                     const endDate = new Date(filterEndDate);
                     const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-                    
+
                     const dummyData = [];
                     for (let i = 0; i <= daysDiff; i++) {
                         const currentDate = new Date(startDate);
                         currentDate.setDate(startDate.getDate() + i);
-                        
+
                         dummyData.push({
                             timestamp: currentDate.toISOString(),
                             acte_im: Math.random() * 85 + 30, // Different range for second comparison
@@ -356,14 +379,14 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                             energy_value: Math.random() * 30 + 10
                         });
                     }
-                    
+
                     setCompareChartData2(dummyData);
                 } catch (err) {
                     console.error('Error generating dummy second comparison data:', err);
                 }
             }
         };
-        
+
         generateDummyCompareData2();
     }, [compareMode2, compareDevice2, filterStartDate, filterEndDate]);
 
@@ -428,7 +451,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         if (!filteredChartData || !Array.isArray(filteredChartData) || filteredChartData.length === 0) {
             return { series: [], categories: [] };
         }
-            
+
         // Process the filtered data to extract timestamps and values
         const categories = filteredChartData.map(item => {
             // Format timestamp for x-axis - date and month only
@@ -439,69 +462,106 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
             return 'N/A';
         });
-            
+
         // Create series for the filtered data
         const series = [];
-            
-        // Extract values from the filtered data based on selected parameter and format to 2 decimal places
-        const values = filteredChartData.map((item, index) => {
-            let value = 0;
-            
-            // If a specific parameter is selected, use that field
-            if (selectedParameter) {
-                switch (selectedParameter) {
-                    case 'timestamp':
-                        // For timestamp, we'll show a sequential number or index
-                        value = index + 1;
-                        break;
-                    case 'active_energy_import':
-                        value = parseFloat(item.acte_im) || 0;
-                        break;
-                    case 'total_active_power':
-                        value = parseFloat(item.value) || 0;
-                        break;
-                    case 'total_apparent_power':
-                        value = parseFloat(item.total_act_energy) || 0;
-                        break;
-                    case 'average_current':
-                        value = parseFloat(item.energy_value) || 0;
-                        break;
-                    // Add more cases for other parameters as needed
-                    default:
-                        value = 0;
+
+        // Handle multiple selected parameters
+        const parametersToProcess = Array.isArray(selectedParameter) && selectedParameter.length > 0
+            ? selectedParameter
+            : ['']; // Default to empty string to use original logic
+
+        parametersToProcess.forEach(param => {
+            // Extract values from the filtered data based on selected parameter and format to 2 decimal places
+            const values = filteredChartData.map((item, index) => {
+                let value = 0;
+
+                // If a specific parameter is selected, use that field
+                if (param) {
+                    switch (param) {
+                        case 'timestamp':
+                            // For timestamp, we'll show a sequential number or index
+                            value = index + 1;
+                            break;
+                        case 'active_energy_import':
+                            value = parseFloat(item.acte_im) || 0;
+                            break;
+                        case 'total_active_power':
+                            value = parseFloat(item.value) || 0;
+                            break;
+                        case 'total_apparent_power':
+                            value = parseFloat(item.total_act_energy) || 0;
+                            break;
+                        case 'average_current':
+                            value = parseFloat(item.energy_value) || 0;
+                            break;
+                        case 'average_line_to_line_voltage':
+                            value = parseFloat(item.average_line_to_line_voltage) || 0;
+                            break;
+                        case 'c_a_phase_voltage_rms':
+                            value = parseFloat(item.c_a_phase_voltage_rms) || 0;
+                            break;
+                        case 'system_frequency':
+                            value = parseFloat(item.system_frequency) || 0;
+                            break;
+                        case 'rms_current_phase_c':
+                            value = parseFloat(item.rms_current_phase_c) || 0;
+                            break;
+                        case 'rms_current_phase_a':
+                            value = parseFloat(item.rms_current_phase_a) || 0;
+                            break;
+                        case 'rms_current_phase_b':
+                            value = parseFloat(item.rms_current_phase_b) || 0;
+                            break;
+                        case 'total_power_factor':
+                            value = parseFloat(item.total_power_factor) || 0;
+                            break;
+                        case 'reactive_energy_import':
+                            value = parseFloat(item.reactive_energy_import) || 0;
+                            break;
+                        case 'a_b_phase_voltage_rms':
+                            value = parseFloat(item.a_b_phase_voltage_rms) || 0;
+                            break;
+                        case 'b_c_phase_voltage_rms':
+                            value = parseFloat(item.b_c_phase_voltage_rms) || 0;
+                            break;
+                        // Add more cases for other parameters as needed
+                        default:
+                            value = 0;
+                    }
+                } else {
+                    // If no parameter selected, use the default logic (first available value)
+                    if (item.acte_im !== undefined) value = parseFloat(item.acte_im) || 0;
+                    else if (item.value !== undefined) value = parseFloat(item.value) || 0;
+                    else if (item.total_act_energy !== undefined) value = parseFloat(item.total_act_energy) || 0;
+                    else if (item.energy_value !== undefined) value = parseFloat(item.energy_value) || 0;
                 }
-            } else {
-                // If no parameter selected, use the default logic (first available value)
-                if (item.acte_im !== undefined) value = parseFloat(item.acte_im) || 0;
-                else if (item.value !== undefined) value = parseFloat(item.value) || 0;
-                else if (item.total_act_energy !== undefined) value = parseFloat(item.total_act_energy) || 0;
-                else if (item.energy_value !== undefined) value = parseFloat(item.energy_value) || 0;
-            }
-            
-            // Format to 2 decimal places
-            return parseFloat(value.toFixed(2));
-        });
-            
-        // Always create a series if we have data, even if all values are 0
-        if (filteredChartData.length > 0) {
-            const parameterLabel = selectedParameter 
-                ? selectedParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                : filterDevice;
-            series.push({
-                name: parameterLabel,
-                data: values
+
+                // Format to 2 decimal places
+                return parseFloat(value.toFixed(2));
             });
-        }
-            
+
+            // Always create a series if we have data, even if all values are 0
+            if (filteredChartData.length > 0) {
+                const parameterLabel = param
+                    ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    : filterDevice;
+                series.push({
+                    name: parameterLabel,
+                    data: values
+                });
+            }
+        });
+
         return { series, categories };
     }, [filteredChartData, filterDevice, selectedParameter]);
-    
+
     // Process the comparison chart data to create chart series and categories
     const processedCompareData = React.useMemo(() => {
         if (!compareChartData || !Array.isArray(compareChartData) || compareChartData.length === 0) {
             return { series: [], categories: [] };
         }
-            
+
         // Process the comparison data to extract timestamps and values
         const categories = compareChartData.map(item => {
             // Format timestamp for x-axis - date and month only
@@ -512,14 +572,14 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
             return 'N/A';
         });
-            
+
         // Create series for the comparison data
         const series = [];
-            
+
         // Extract values from the comparison data based on selected parameter and format to 2 decimal places
         const values = compareChartData.map((item, index) => {
             let value = 0;
-            
+
             // If a specific parameter is selected, use that field
             if (selectedParameter) {
                 switch (selectedParameter) {
@@ -539,6 +599,36 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                     case 'average_current':
                         value = parseFloat(item.energy_value) || 0;
                         break;
+                    case 'average_line_to_line_voltage':
+                        value = parseFloat(item.average_line_to_line_voltage) || 0;
+                        break;
+                    case 'c_a_phase_voltage_rms':
+                        value = parseFloat(item.c_a_phase_voltage_rms) || 0;
+                        break;
+                    case 'system_frequency':
+                        value = parseFloat(item.system_frequency) || 0;
+                        break;
+                    case 'rms_current_phase_c':
+                        value = parseFloat(item.rms_current_phase_c) || 0;
+                        break;
+                    case 'rms_current_phase_a':
+                        value = parseFloat(item.rms_current_phase_a) || 0;
+                        break;
+                    case 'rms_current_phase_b':
+                        value = parseFloat(item.rms_current_phase_b) || 0;
+                        break;
+                    case 'total_power_factor':
+                        value = parseFloat(item.total_power_factor) || 0;
+                        break;
+                    case 'reactive_energy_import':
+                        value = parseFloat(item.reactive_energy_import) || 0;
+                        break;
+                    case 'a_b_phase_voltage_rms':
+                        value = parseFloat(item.a_b_phase_voltage_rms) || 0;
+                        break;
+                    case 'b_c_phase_voltage_rms':
+                        value = parseFloat(item.b_c_phase_voltage_rms) || 0;
+                        break;
                     // Add more cases for other parameters as needed
                     default:
                         value = 0;
@@ -550,31 +640,31 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 else if (item.total_act_energy !== undefined) value = parseFloat(item.total_act_energy) || 0;
                 else if (item.energy_value !== undefined) value = parseFloat(item.energy_value) || 0;
             }
-            
+
             // Format to 2 decimal places
             return parseFloat(value.toFixed(2));
         });
-            
+
         // Always create a series if we have data, even if all values are 0
         if (compareChartData.length > 0) {
-            const parameterLabel = selectedParameter 
-                ? selectedParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+            const parameterLabel = selectedParameter
+                ? parameterOptions.find(opt => opt.value === selectedParameter)?.label || selectedParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
                 : compareDevice;
             series.push({
                 name: parameterLabel,
                 data: values
             });
         }
-            
+
         return { series, categories };
     }, [compareChartData, compareDevice, selectedParameter]);
-    
+
     // Process the second comparison chart data to create chart series and categories
     const processedCompareData2 = React.useMemo(() => {
         if (!compareChartData2 || !Array.isArray(compareChartData2) || compareChartData2.length === 0) {
             return { series: [], categories: [] };
         }
-            
+
         // Process the second comparison data to extract timestamps and values
         const categories = compareChartData2.map(item => {
             // Format timestamp for x-axis - date and month only
@@ -585,14 +675,14 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
             return 'N/A';
         });
-            
+
         // Create series for the second comparison data
         const series = [];
-            
+
         // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
         const values = compareChartData2.map((item, index) => {
             let value = 0;
-            
+
             // If a specific parameter is selected, use that field
             if (compareParameter2) {
                 switch (compareParameter2) {
@@ -612,6 +702,36 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                     case 'average_current':
                         value = parseFloat(item.energy_value) || 0;
                         break;
+                    case 'average_line_to_line_voltage':
+                        value = parseFloat(item.average_line_to_line_voltage) || 0;
+                        break;
+                    case 'c_a_phase_voltage_rms':
+                        value = parseFloat(item.c_a_phase_voltage_rms) || 0;
+                        break;
+                    case 'system_frequency':
+                        value = parseFloat(item.system_frequency) || 0;
+                        break;
+                    case 'rms_current_phase_c':
+                        value = parseFloat(item.rms_current_phase_c) || 0;
+                        break;
+                    case 'rms_current_phase_a':
+                        value = parseFloat(item.rms_current_phase_a) || 0;
+                        break;
+                    case 'rms_current_phase_b':
+                        value = parseFloat(item.rms_current_phase_b) || 0;
+                        break;
+                    case 'total_power_factor':
+                        value = parseFloat(item.total_power_factor) || 0;
+                        break;
+                    case 'reactive_energy_import':
+                        value = parseFloat(item.reactive_energy_import) || 0;
+                        break;
+                    case 'a_b_phase_voltage_rms':
+                        value = parseFloat(item.a_b_phase_voltage_rms) || 0;
+                        break;
+                    case 'b_c_phase_voltage_rms':
+                        value = parseFloat(item.b_c_phase_voltage_rms) || 0;
+                        break;
                     // Add more cases for other parameters as needed
                     default:
                         value = 0;
@@ -623,24 +743,24 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 else if (item.total_act_energy !== undefined) value = parseFloat(item.total_act_energy) || 0;
                 else if (item.energy_value !== undefined) value = parseFloat(item.energy_value) || 0;
             }
-            
+
             // Format to 2 decimal places
             return parseFloat(value.toFixed(2));
         });
-            
+
         // Always create a series if we have data, even if all values are 0
         if (compareChartData2.length > 0) {
-            const parameterLabel = compareParameter2 
-                ? compareParameter2.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+            const parameterLabel = compareParameter2
+                ? parameterOptions.find(opt => opt.value === compareParameter2)?.label || compareParameter2.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
                 : compareDevice2;
             series.push({
                 name: parameterLabel,
                 data: values
             });
         }
-            
+
         return { series, categories };
-    }, [compareChartData2, compareDevice2, selectedParameter]);
+    }, [compareChartData2, compareDevice2, compareParameter2]);
 
     // Define colors for each series to match the dots in the image
     const seriesColors = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'];
@@ -851,35 +971,53 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                     </Select>
                                 </FormControl>
                                 <FormControl size="small" sx={{ minWidth: 200, mr: 1 }}>
-                                    <InputLabel>Select Parameter</InputLabel>
+                                    <InputLabel>Select Parameter(s)</InputLabel>
                                     <Select
+                                        multiple
                                         value={selectedParameter}
-                                        label="Select Parameter"
-                                        onChange={(e) => setSelectedParameter(e.target.value)}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            // Ensure value is always an array for multiple select
+                                            const newValue = Array.isArray(value) ? value : [value];
+                                            // If "All Parameters" is selected, clear all other selections
+                                            if (newValue.includes('all')) {
+                                                setSelectedParameter([]);
+                                            } else {
+                                                // Remove "all" from selection if other items are selected
+                                                const filteredValue = newValue.filter(item => item !== 'all');
+                                                setSelectedParameter(filteredValue);
+                                            }
+                                        }}
+                                        label="Select Parameter(s)"
+                                        renderValue={(selected) => {
+                                            const selectedArray = Array.isArray(selected) ? selected : [];
+                                            if (selectedArray.length === 0) return 'Select Parameter(s)';
+                                            if (selectedArray.length === 1) return parameterOptions.find(p => p.value === selectedArray[0])?.label || selectedArray[0];
+                                            return `${selectedArray.length} parameters selected`;
+                                        }}
                                     >
-                                        <MenuItem value="">All Parameters</MenuItem>
-                                        <MenuItem value="timestamp">Timestamp</MenuItem>
-                                        <MenuItem value="active_energy_import">Active Energy Import (kWh)</MenuItem>
-                                        <MenuItem value="total_active_power">Total Active Power (kW)</MenuItem>
-                                        <MenuItem value="total_apparent_power">Total Apparent Power (kVA)</MenuItem>
-                                        <MenuItem value="average_current">Average Current (A)</MenuItem>
-                                        <MenuItem value="average_line_to_line_voltage">Average Line-to-Line Voltage (V)</MenuItem>
-                                        <MenuItem value="c_a_phase_voltage_rms">C–A Phase Voltage RMS (V)</MenuItem>
-                                        <MenuItem value="system_frequency">System Frequency (Hz)</MenuItem>
-                                        <MenuItem value="rms_current_phase_c">RMS Current – Phase C (A)</MenuItem>
-                                        <MenuItem value="rms_current_phase_a">RMS Current – Phase A (A)</MenuItem>
-                                        <MenuItem value="rms_current_phase_b">RMS Current – Phase B (A)</MenuItem>
-                                        <MenuItem value="total_power_factor">Total Power Factor</MenuItem>
-                                        <MenuItem value="reactive_energy_import">Reactive Energy Import (kVArh)</MenuItem>
-                                        <MenuItem value="a_b_phase_voltage_rms">A–B Phase Voltage RMS (V)</MenuItem>
-                                        <MenuItem value="b_c_phase_voltage_rms">B–C Phase Voltage RMS (V)</MenuItem>
+                                        <MenuItem value="all">
+                                            <Checkbox checked={selectedParameter.length === 0} />
+                                            <ListItemText primary="All Parameters" />
+                                        </MenuItem>
+                                        {parameterOptions.map((option) => (
+                                            <MenuItem key={option.value} value={option.value}>
+                                                <Checkbox checked={selectedParameter.indexOf(option.value) > -1} />
+                                                <ListItemText primary={option.label} />
+                                            </MenuItem>
+                                        ))}
                                     </Select>
                                 </FormControl>
 
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DateTimePicker
+                                        open={openStart}
+                                        onOpen={() => setOpenStart(true)}
+                                        onClose={() => setOpenStart(false)}
+                                        // disableOpenPicker   
                                         value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
                                         onChange={(newValue) => setFilterStartDate(newValue)}
+                                        format="DD/MM/YYYY hh:mm A"
                                         slotProps={{
                                             textField: {
                                                 size: 'small',
@@ -888,16 +1026,28 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     mr: 2,
                                                     borderRadius: 2,
                                                 },
+                                                onClick: () => setOpenStart(true), // 👈 click input opens picker
+                                                readOnly: true, // 👈 optional but recommended
                                             },
                                         }}
-                                        format="DD/MM/YYYY hh:mm A"
                                     />
                                 </LocalizationProvider>
 
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DateTimePicker
-                                        value={filterEndDate ? (dayjs.isDayjs(filterEndDate) ? filterEndDate : dayjs(filterEndDate)) : null}
+                                        open={openEnd}
+                                        onOpen={() => setOpenEnd(true)}
+                                        onClose={() => setOpenEnd(false)}
+                                        // disableOpenPicker   
+                                        value={
+                                            filterEndDate
+                                                ? dayjs.isDayjs(filterEndDate)
+                                                    ? filterEndDate
+                                                    : dayjs(filterEndDate)
+                                                : null
+                                        }
                                         onChange={(newValue) => setFilterEndDate(newValue)}
+                                        format="DD/MM/YYYY hh:mm A"
                                         slotProps={{
                                             textField: {
                                                 size: 'small',
@@ -906,9 +1056,10 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     mr: 2,
                                                     borderRadius: 2,
                                                 },
+                                                onClick: () => setOpenEnd(true),
+                                                readOnly: true,
                                             },
                                         }}
-                                        format="DD/MM/YYYY hh:mm A"
                                     />
                                 </LocalizationProvider>
 
@@ -921,19 +1072,26 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         '&:hover': {
                                             backgroundColor: '#166aa0', // Darker blue on hover
                                         },
-                                        mr: 1
+                                        minWidth: 'auto',
+                                        width: '32px', // Smaller width
+                                        height: '32px', // Smaller height
+                                        padding: '6px', // Even smaller padding
+                                        borderRadius: '4px', // Square with rounded corners
+                                        '& .MuiButton-startIcon': {
+                                            margin: 0,
+                                        }
                                     }}
                                 >
                                 </Button>
 
-                                
+
 
                                 <Button
                                     variant="outlined"
                                     startIcon={<RefreshIcon />}
                                     onClick={() => {
                                         handleResetFilters();
-                                        setSelectedParameter(''); // Reset main chart parameter
+                                        setSelectedParameter([]); // Reset main chart parameter
                                         setCompareParameter(''); // Reset first comparison parameter
                                         setCompareParameter2(''); // Reset second comparison parameter
                                     }}
@@ -943,6 +1101,14 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         '&:hover': {
                                             borderColor: '#5a6268',
                                             color: '#5a6268',
+                                        },
+                                        minWidth: 'auto',
+                                        width: '32px', // Smaller width
+                                        height: '32px', // Smaller height
+                                        padding: '4px', // Even smaller padding
+                                        borderRadius: '4px',
+                                        '& .MuiButton-startIcon': {
+                                            margin: 0,
                                         }
                                     }}
                                 >
@@ -966,8 +1132,10 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 mb: 0
                                             }}
                                         >
-                                            {selectedParameter 
-                                                ? `${filterDevice} - ${selectedParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                            {Array.isArray(selectedParameter) && selectedParameter.length > 0
+                                                ? `${filterDevice} - ${selectedParameter.length > 1
+                                                    ? `${selectedParameter.length} Parameters Selected`
+                                                    : parameterOptions.find(opt => opt.value === selectedParameter[0])?.label || selectedParameter[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                 : (filterDevice !== 'all' ? `${filterDevice}` : 'Total Active Energy (Last 7 Days)')}
                                         </Typography>
                                         <Box>
@@ -1031,8 +1199,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     mb: 1
                                                 }}
                                             >
-                                                {compareParameter 
-                                                    ? `${compareDevice} - ${compareParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                {compareParameter
+                                                    ? `${compareDevice} - ${parameterOptions.find(opt => opt.value === compareParameter)?.label || compareParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                     : compareDevice}
                                             </Typography>
                                             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -1121,8 +1289,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     mb: 1
                                                 }}
                                             >
-                                                {compareParameter2 
-                                                    ? `${compareDevice2} - ${compareParameter2.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                {compareParameter2
+                                                    ? `${compareDevice2} - ${parameterOptions.find(opt => opt.value === compareParameter2)?.label || compareParameter2.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                     : compareDevice2}
                                             </Typography>
                                             <Chart
