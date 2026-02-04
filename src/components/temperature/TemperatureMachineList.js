@@ -169,8 +169,8 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         },
         metricsRow: {
             marginTop: '12px',
-            paddingTop: '10px',
-            borderTop: '1px solid #E5E7EB',
+            // paddingTop: '10px',  
+            // borderTop: '1px solid #E5E7EB',
             display: 'flex',
             gap: '20px',
             flexWrap: 'wrap',
@@ -520,6 +520,8 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         </Box>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
                                         {conditionalLatest.rv?.toFixed(2)} °C
                                     </TableCell>
                                 </TableRow>
@@ -533,6 +535,8 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         </Box>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
                                         {conditionalLatest.iy?.toFixed(1)} %
                                     </TableCell>
                                 </TableRow>
@@ -544,6 +548,8 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             <BatteryStdIcon fontSize="10px" color="success" />
                                             Battery
                                         </Box>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
                                         {conditionalLatest.bv?.toFixed(2)} V

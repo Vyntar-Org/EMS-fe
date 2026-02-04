@@ -212,7 +212,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         }
       },
       axisBorder: { show: false },
-      axisTicks: { show: false }
+      axisTicks: { show: false },
     },
     yaxis: {
       min: hourlyValues.length > 0 ? Math.min(...hourlyValues, 0) : 0,
@@ -229,7 +229,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         return val;
       },
       offsetY: -10,
-       offsetX: 5,
+       offsetX: 4,
       style: {
         fontSize: '12px',
         colors: ["#0a223e"]
@@ -735,12 +735,12 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               </Box>
               <Box display="flex" justifyContent="space-between" mt="auto">
                 <Box sx={{ ...miniBoxStyle, flex: 1, mr: 1, minHeight: '80px' }}>
-                  <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Online</Typography>
-                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#16A34A' }}>{slavesData.online}</Typography>
+                  <Typography sx={{ fontSize: '14px', color: '#6B7280' }}>Online</Typography>
+                  <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#16A34A' }}>{slavesData.online}</Typography>
                 </Box>
                 <Box sx={{ ...miniBoxStyle, flex: 1, ml: 1, minHeight: '80px' }}>
-                  <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>Offline</Typography>
-                  <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#EF4444' }}>{slavesData.offline}</Typography>
+                  <Typography sx={{ fontSize: '14px', color: '#6B7280' }}>Offline</Typography>
+                  <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#EF4444' }}>{slavesData.offline}</Typography>
                 </Box>
               </Box>
             </CardContent>

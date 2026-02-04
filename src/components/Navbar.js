@@ -125,10 +125,13 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
       // Update auth context
       logout();
       
-      // Close dialog and redirect to login page
+      // Close dialog
       setLogoutOpen(false);
       setLoggingOut(false);
+      
+      // Navigate to login page and reload to ensure clean state
       navigate('/login');
+      window.location.reload();
     }
   };
 

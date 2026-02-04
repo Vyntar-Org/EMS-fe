@@ -529,6 +529,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                     },
                     show: true
                 },
+                tickAmount: 6,
                 axisBorder: {
                     show: false
                 },

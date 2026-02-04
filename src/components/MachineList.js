@@ -157,7 +157,7 @@ const chartOptions = {
         },
         tickAmount: 6, // Increased to show more time points across the 6-hour period
         tooltip: {
-            enabled: true,
+            enabled: false,
             formatter: function(val) {
                 return new Date(val).toLocaleTimeString('en-US', { 
                     hour: '2-digit', 
@@ -185,9 +185,56 @@ const chartOptions = {
     tooltip: {
         enabled: true,
         theme: 'light',
-        x: {
-            format: 'dd/MM/yyyy HH:mm',
+        style: {
+            fontSize: '12px',
         },
+        shared: true, // Enable shared tooltip to show all series at once
+        intersect: false, // Show tooltip when hovering anywhere on the x-axis
+        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+            // Get the original date from the data based on chart type
+            let originalDate = '';
+            let currentData = [];
+            
+            if (chartType === 'voltage') {
+                currentData = voltageData;
+            } else if (chartType === 'current') {
+                currentData = currentData;
+            } else if (chartType === 'powerFactor') {
+                currentData = powerFactorData;
+            } else if (chartType === 'frequency') {
+                currentData = frequencyData;
+            } else {
+                currentData = activePowerData;
+            }
+            
+            if (currentData && currentData.length > 0 && currentData[dataPointIndex]) {
+                const item = currentData[dataPointIndex];
+                const timestamp = item?.timestamp || '';
+                if (timestamp) {
+                    const date = new Date(timestamp);
+                    originalDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                }
+            }
+            
+            // Build the tooltip content
+            let tooltipContent = `<div class="apexcharts-tooltip-custom" style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                <div style="font-weight: bold; margin-bottom: 8px; color: lightgray; font-size: 14px; padding: 10px; background-color: #f4f7f6">${originalDate}</div>`;
+            
+            // Add each series with its color dot and value
+            w.globals.seriesNames.forEach((name, index) => {
+                const value = series[index][dataPointIndex];
+                const color = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'][index % 6];
+                tooltipContent += `
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${color}; margin-right: 8px;"></span>
+                        <span style="flex: 1; color: #333; font-size: 12px;">${name}:</span>
+                        <span style="font-weight: bold; color: #333; margin-left: 5px; font-size: 12px;">${value}</span>
+                    </div>`;
+            });
+            
+            tooltipContent += '</div>';
+            return tooltipContent;
+        }
     },
     legend: {
         show: true,
