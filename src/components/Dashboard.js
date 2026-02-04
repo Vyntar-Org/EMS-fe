@@ -27,7 +27,7 @@ import {
 } from '@mui/icons-material';
 import Chart from 'react-apexcharts';
 import SearchIcon from '@mui/icons-material/Search';
-import { getDashboardOverview, getSlaveList, getSlaveWeeklyConsumption } from '../auth/DashboardApi';
+import { getDashboardOverview, getSlaveList, getSlaveWeeklyConsumption, getHourlyEnergyConsumptionTrend, getPeakDemandTrend } from '../auth/DashboardApi';
 import './Dashboard.css';
 import Tooltip from '@mui/material/Tooltip';
 
@@ -45,26 +45,37 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const [weeklyConsumptionData, setWeeklyConsumptionData] = useState([]);
   const [slaveLoading, setSlaveLoading] = useState(false);
   const [activeChart, setActiveChart] = useState('bar'); // 'line' or 'bar'
+  const [hourlyEnergyData, setHourlyEnergyData] = useState({ hours: [], consumption: [] });
+  const [hourlyLoading, setHourlyLoading] = useState(false);
+  const [peakDemandData, setPeakDemandData] = useState({ timestamps: [], values: [] });
+  const [peakDemandLoading, setPeakDemandLoading] = useState(false);
 
   // Fetch dashboard data
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setHourlyLoading(true); // Set loading for hourly data
         setError(null); // Clear any previous errors
 
-        // Fetch both dashboard overview and slave list concurrently
-        const [dashboardResponse, slaveResponse] = await Promise.all([
+        // Fetch dashboard overview, slave list, and hourly energy consumption data concurrently
+        const [dashboardResponse, slaveResponse, hourlyResponse] = await Promise.all([
           getDashboardOverview(),
-          getSlaveList()
+          getSlaveList(),
+          getHourlyEnergyConsumptionTrend().catch(err => {
+            console.error('Error fetching hourly energy consumption:', err);
+            return { hours: [], consumption: [], meta: {} }; // Return default data on error
+          })
         ]);
 
         console.log('Dashboard API response in useEffect:', dashboardResponse);
         console.log('Slave list API response:', slaveResponse);
+        console.log('Hourly energy consumption API response:', hourlyResponse);
 
         // Set the data
         setDashboardData(dashboardResponse);
         setSlaveList(slaveResponse);
+        setHourlyEnergyData(hourlyResponse);
 
         // Automatically select slave ID 1 if it exists
         // Check if slaveResponse is an array before calling .find()
@@ -84,6 +95,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         setError(err.message || 'An error occurred while fetching dashboard data');
       } finally {
         setLoading(false);
+        setHourlyLoading(false);
       }
     };
 
@@ -97,19 +109,30 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       if (slaveLoading) return;
 
       setSlaveLoading(true);
+      setPeakDemandLoading(true);
       setSelectedSlave(slave);
       console.log('Selected slave:', slave.slave_name);
 
       // Clear previous data to show loading state
       setWeeklyConsumptionData([]);
+      setPeakDemandData({ timestamps: [], values: [] });
 
       // Fetch weekly consumption data for the selected slave
       console.log(`Fetching weekly consumption data for slave ID: ${slave.slave_id}`);
       const weeklyData = await getSlaveWeeklyConsumption(slave.slave_id);
       console.log('Weekly consumption data received:', weeklyData);
 
+      // Fetch peak demand trend data for the selected slave
+      console.log(`Fetching peak demand trend data for slave ID: ${slave.slave_id}`);
+      const peakDemandResponse = await getPeakDemandTrend(slave.slave_id).catch(err => {
+        console.error('Error fetching peak demand trend:', err);
+        return { timestamps: [], values: [], meta: {} }; // Return default data on error
+      });
+      console.log('Peak demand trend data received:', peakDemandResponse);
+
       // Update the chart data
       setWeeklyConsumptionData(weeklyData);
+      setPeakDemandData(peakDemandResponse);
 
       // Show success feedback
       console.log(`Successfully loaded data for ${slave.slave_name}`);
@@ -121,6 +144,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       setSelectedSlave(null);
     } finally {
       setSlaveLoading(false);
+      setPeakDemandLoading(false);
     }
   };
 
@@ -131,12 +155,15 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const slavesData = dashboardData?.devices || { total: 0, online: 0, offline: 0 };
   const energyConsumption = dashboardData?.energy_consumption || 0;
   const energyConsumptionUnit = dashboardData?.energy_consumption?.unit || 'kWh';
-  const hourlyData = dashboardData?.acte_im_hourly_24h?.data || [];
-
+  
   console.log('Slaves data:', slavesData);
   console.log('Energy consumption:', energyConsumption);
-  console.log('Hourly data length:', hourlyData.length);
-
+  console.log('Hourly energy data:', hourlyEnergyData);
+  
+  // Use the new hourly energy data from API
+  const hourlyData = hourlyEnergyData.hours;
+  const hourlyValues = hourlyEnergyData.consumption;
+  
   // Helper function to format as 'HH.MM'
   const formatDateTime = (hourString) => {
     if (!hourString) return '';
@@ -147,39 +174,10 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     return `${hours}.${minutes}`;
   };
 
-  // Transform hourly data for charts - Sample only 6 data points
-  const totalDataPoints = hourlyData.length;
-  let hourlyCategories = [];
-  let hourlyValues = [];
-
-  if (totalDataPoints > 0) {
-    if (totalDataPoints <= 8) {
-      // If we have 6 or fewer points, use all of them
-      hourlyCategories = hourlyData.map(item => {
-        return formatDateTime(item.hour);
-      });
-      hourlyValues = hourlyData.map(item => item.value);
-    } else {
-      // If we have more than 6 points, sample 6 evenly spaced points
-      const step = Math.floor((totalDataPoints - 1) / 7); // To get 6 points including first and last
-      for (let i = 0; i < totalDataPoints; i += step) {
-        if (hourlyCategories.length < 8) {
-          const item = hourlyData[i];
-          hourlyCategories.push(formatDateTime(item.hour));
-          hourlyValues.push(item.value);
-        } else {
-          break; // Stop once we have 6 points
-        }
-      }
-      // Ensure we have exactly 6 points by adding the last point if needed
-      if (hourlyCategories.length < 8 && hourlyData.length >= 8) {
-        const lastItem = hourlyData[hourlyData.length - 1];
-        const lastIndex = hourlyCategories.length - 1;
-        hourlyCategories[lastIndex] = formatDateTime(lastItem.hour);
-        hourlyValues[lastIndex] = lastItem.value;
-      }
-    }
-  }
+  // Format hours for x-axis categories
+  const hourlyCategories = hourlyData.map(hourString => {
+    return formatDateTime(hourString);
+  });
 
   // Chart configurations remain the same
   const energyConsumptionOptions = {
@@ -217,9 +215,9 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       axisTicks: { show: false }
     },
     yaxis: {
-      min: Math.min(...hourlyValues, 0),
-      max: Math.max(...hourlyValues, 1),
-      tickAmount: 2,
+      min: hourlyValues.length > 0 ? Math.min(...hourlyValues, 0) : 0,
+      max: hourlyValues.length > 0 ? Math.max(...hourlyValues, 1) : 1,
+      tickAmount: 4,
       labels: {
         style: { colors: '#6B7280', fontSize: '12px' }
       },
@@ -250,7 +248,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
           const index = opts.dataPointIndex;
           // Get the original hour string from hourlyData
           if (hourlyData[index]) {
-            return formatDateTime(hourlyData[index].hour);
+            return formatDateTime(hourlyData[index]);
           }
           return val;
         }
@@ -269,6 +267,56 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     name: '(kWh)',
     data: hourlyValues
   }];
+
+  // Helper function to format timestamp as HH:MM
+  const formatTimestamp = (timestampString) => {
+    if (!timestampString) return '';
+    const date = new Date(timestampString);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
+  // Sample peak demand data to show only 6-7 points for better display
+  const samplePeakDemandData = () => {
+    const totalPoints = peakDemandData.timestamps.length;
+    if (totalPoints <= 7) {
+      // If we have 7 or fewer points, use all of them
+      return {
+        categories: peakDemandData.timestamps.map(timestamp => formatTimestamp(timestamp)),
+        values: [...peakDemandData.values]
+      };
+    } else {
+      // Sample 7 evenly spaced points
+      const sampledCategories = [];
+      const sampledValues = [];
+      const step = Math.floor((totalPoints - 1) / 6); // To get 7 points including first and last
+      
+      for (let i = 0; i < totalPoints; i += step) {
+        if (sampledCategories.length < 7) {
+          sampledCategories.push(formatTimestamp(peakDemandData.timestamps[i]));
+          sampledValues.push(peakDemandData.values[i]);
+        } else {
+          break;
+        }
+      }
+      
+      // Ensure we have exactly 7 points by adding the last point if needed
+      if (sampledCategories.length < 7 && totalPoints >= 7) {
+        const lastIndex = sampledCategories.length - 1;
+        sampledCategories[lastIndex] = formatTimestamp(peakDemandData.timestamps[totalPoints - 1]);
+        sampledValues[lastIndex] = peakDemandData.values[totalPoints - 1];
+      }
+      
+      return {
+        categories: sampledCategories,
+        values: sampledValues
+      };
+    }
+  };
+  
+  // Get sampled peak demand data
+  const sampledPeakDemand = samplePeakDemandData();
 
   // Chart 2: Peak Demand Indicator
   const peakDemandOptions = {
@@ -298,7 +346,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       yaxis: { lines: { show: true, color: '#E5E7EB' } }
     },
     xaxis: {
-      categories: ['Day1', 'Day2', 'Day3', 'Day4', 'Day5', 'Day6', 'Day7'],
+      categories: sampledPeakDemand.categories.length > 0 ? sampledPeakDemand.categories : ['-'],
       labels: {
         style: { colors: '#6B7280', fontSize: '12px' }
       },
@@ -306,8 +354,8 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       axisTicks: { show: false }
     },
     yaxis: {
-      min: 100,
-      max: 150,
+      min: peakDemandData.values.length > 0 ? Math.min(...peakDemandData.values, 0) : 0,
+      max: peakDemandData.values.length > 0 ? Math.max(...peakDemandData.values, 10) : 10,
       tickAmount: 5,
       labels: {
         style: { colors: '#6B7280', fontSize: '12px' }
@@ -316,9 +364,14 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     },
     dataLabels: { enabled: false },
     tooltip: {
-      enabled: true,
+      enabled: peakDemandData.values.length > 0,
       theme: 'light',
-      style: { fontSize: '12px' }
+      style: { fontSize: '12px' },
+      y: {
+        formatter: function (val) {
+          return val + ' kW';
+        }
+      }
     },
     legend: { show: false },
     colors: ['#0a223e']
@@ -326,7 +379,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
   const peakDemandSeries = [{
     name: 'Peak Demand',
-    data: [120, 135, 125, 140, 130, 145, 135]
+    data: sampledPeakDemand.values.length > 0 ? sampledPeakDemand.values : [0]
   }];
 
   // Chart 3: Machine Power Consumption
@@ -867,12 +920,20 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 <Typography sx={titleStyle1}>Energy Consumption (Last 24 Hours)</Typography>
                 <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>kWh</Typography>
               </Box>
-              <Chart
-                options={energyConsumptionOptions}
-                series={energyConsumptionSeries}
-                type="line"
-                height={150}  // Reduced to fit within 150px card
-              />
+              {hourlyLoading ? (
+                <Box>
+                  {/* <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
+                    Loading hourly energy consumption data...
+                  </Typography> */}
+                </Box>
+              ) : (
+                <Chart
+                  options={energyConsumptionOptions}
+                  series={energyConsumptionSeries}
+                  type="line"
+                  height={150}  // Reduced to fit within 150px card
+                />
+              )}
             </Card>
 
             {/* Card 2: Peak Demand Indicator */}
@@ -890,12 +951,20 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               }
             }}>
               <Typography sx={titleStyle1}>Peak Demand Indicator</Typography>
-              <Chart
-                options={peakDemandOptions}
-                series={peakDemandSeries}
-                type="line"
-                height={165}  // Reduced to fit within 150px card
-              />
+              {peakDemandLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '165px' }}>
+                  <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
+                    Loading peak demand data...
+                  </Typography>
+                </Box>
+              ) : (
+                <Chart
+                  options={peakDemandOptions}
+                  series={peakDemandSeries}
+                  type="line"
+                  height={165}  // Reduced to fit within 150px card
+                />
+              )}
             </Card>
           </Grid>
 

@@ -33,25 +33,13 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-// import { getTotalActiveEnergy7Days, getConsumption7Days } from '../auth/AnalyticsApi';
-// import { getSlaveList, getDeviceLogs } from '../auth/LogsApi';
+import { getEnergyAnalytics, getDevices } from '../auth/AnalyticsApi';
 
+// Updated parameter options to match the API response
 const parameterOptions = [
-    { value: "timestamp", label: "Timestamp" },
-    { value: "active_energy_import", label: "Active Energy Import (kWh)" },
-    { value: "total_active_power", label: "Total Active Power (kW)" },
-    { value: "total_apparent_power", label: "Total Apparent Power (kVA)" },
-    { value: "average_current", label: "Average Current (A)" },
-    { value: "average_line_to_line_voltage", label: "Average Line-to-Line Voltage (V)" },
-    { value: "c_a_phase_voltage_rms", label: "C–A Phase Voltage RMS (V)" },
-    { value: "system_frequency", label: "System Frequency (Hz)" },
-    { value: "rms_current_phase_c", label: "RMS Current – Phase C (A)" },
-    { value: "rms_current_phase_a", label: "RMS Current – Phase A (A)" },
-    { value: "rms_current_phase_b", label: "RMS Current – Phase B (A)" },
-    { value: "total_power_factor", label: "Total Power Factor" },
-    { value: "reactive_energy_import", label: "Reactive Energy Import (kVArh)" },
-    { value: "a_b_phase_voltage_rms", label: "A–B Phase Voltage RMS (V)" },
-    { value: "b_c_phase_voltage_rms", label: "B–C Phase Voltage RMS (V)" },
+    { value: "acte_im", label: "Active Energy (kWh)" },
+    { value: "actpr_t", label: "Active Power (kW)" },
+    { value: "ry_v", label: "Voltage (V)" },
 ];
 
 const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
@@ -64,10 +52,19 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [devices, setDevices] = useState(['all']); // Initialize with 'all' as default
     const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
     const [selectedParameter, setSelectedParameter] = useState([]); // State for main chart parameter selection (array for multi-select)
-    const [compareParameter, setCompareParameter] = useState(''); // State for first comparison chart parameter selection
-    const [compareParameter2, setCompareParameter2] = useState(''); // State for second comparison chart parameter selection
-    const [openStart, setOpenStart] = React.useState(false);
-    const [openEnd, setOpenEnd] = React.useState(false);
+    const [selectedParameter2, setSelectedParameter2] = useState([]); // State for first comparison chart parameter selection (array for multi-select)
+    const [selectedParameter3, setSelectedParameter3] = useState([]); // State for second comparison chart parameter selection (array for multi-select)
+    const [compareDevice, setCompareDevice] = useState(''); // Selected device for comparison
+    const [compareDevice2, setCompareDevice2] = useState(''); // Selected device for second comparison
+    const [openStart, setOpenStart] = useState(false);
+    const [openEnd, setOpenEnd] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [compareMode, setCompareMode] = useState(false); // Track if compare mode is active
+    const [compareChartData, setCompareChartData] = useState([]); // Chart data for comparison device
+    const [compareMode2, setCompareMode2] = useState(false); // Track if second compare mode is active
+    const [compareChartData2, setCompareChartData2] = useState([]); // Chart data for second comparison device
+    const [filteredChartData, setFilteredChartData] = useState([]); // State for filtered chart data
 
     const styles = {
         mainContent: {
@@ -124,39 +121,84 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Use dummy device list instead of API
+    // Fetch devices from API
     useEffect(() => {
-        const dummyDevices = [
-            { id: 1, name: 'Common' },
-            { id: 2, name: 'Terrace' },
-            { id: 3, name: 'Ground Floor' },
-            { id: 4, name: 'Third Floor' },
-            { id: 5, name: 'Second Floor' },
-            { id: 6, name: 'First Floor' }
-        ];
+        const fetchDevices = async () => {
+            try {
+                const slaves = await getDevices();
+                setDeviceObjects(slaves);
+                const deviceNames = slaves.map(slave => slave.slave_name);
+                setDevices(['all', ...deviceNames]);
+            } catch (error) {
+                console.error('Error fetching devices:', error);
+                setError('Failed to fetch devices');
+            }
+        };
 
-        // Store full device objects for ID mapping
-        setDeviceObjects(dummyDevices);
-        // Transform the slave list to the format expected by the dropdown
-        const deviceNames = dummyDevices.map(slave => slave.name);
-        setDevices(['all', ...deviceNames]); // Add 'all' as the first option
+        fetchDevices();
     }, []);
 
+    // Fetch analytics data when search is clicked
+    const fetchAnalyticsData = async (slaveId, parameters, startDate, endDate) => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            // Format dates to API expected format
+            const fromDatetime = dayjs(startDate).format('YYYY-MM-DD HH:mm:ss');
+            const toDatetime = dayjs(endDate).format('YYYY-MM-DD HH:mm:ss');
+            
+            // Fetch analytics data using API function
+            const data = await getEnergyAnalytics(slaveId, parameters, fromDatetime, toDatetime);
+            return data;
+        } catch (error) {
+            console.error('Error fetching analytics data:', error);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Handle search button click
-    const handleSearch = () => {
+    const handleSearch = async () => {
         if (!filterDevice || filterDevice === 'all') {
-            alert('Please select a device');
+            setError('Please select a device');
             return;
         }
         if (!filterStartDate) {
-            alert('Please select a start date');
+            setError('Please select a start date');
             return;
         }
         if (!filterEndDate) {
-            alert('Please select an end date');
+            setError('Please select an end date');
             return;
         }
-        setSearchClicked(true);
+
+        try {
+            setSearchClicked(true);
+            
+            // Find the device ID based on the device name
+            const selectedDevice = deviceObjects.find(device => device.slave_name === filterDevice);
+            if (!selectedDevice) {
+                setError(`Device '${filterDevice}' not found`);
+                return;
+            }
+            
+            // Default to all parameters if none selected
+            const params = selectedParameter.length > 0 ? selectedParameter : ['ry_v', 'acte_im', 'actpr_t'];
+            
+            // Fetch analytics data
+            const data = await fetchAnalyticsData(
+                selectedDevice.slave_id,
+                params,
+                filterStartDate,
+                filterEndDate
+            );
+            
+            setFilteredChartData(data);
+        } catch (error) {
+            setError(error.message || 'Failed to fetch analytics data');
+        }
     };
 
     // Function to reset all filters
@@ -167,284 +209,82 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         setFilterEndDate('');
         setSearchClicked(false); // Reset search state
         setSelectedParameter([]); // Reset main chart parameter
-        setCompareParameter(''); // Reset first comparison parameter
-        setCompareParameter2(''); // Reset second comparison parameter
+        setSelectedParameter2([]); // Reset first comparison parameter
+        setSelectedParameter3([]); // Reset second comparison parameter
+        setCompareDevice(''); // Reset first comparison machine
+        setCompareDevice2(''); // Reset second comparison machine
+        setCompareMode(false); // Reset first compare mode
+        setCompareMode2(false); // Reset second compare mode
+        setFilteredChartData([]); // Clear chart data
+        setCompareChartData([]); // Clear comparison chart data
+        setCompareChartData2([]); // Clear second comparison chart data
     };
-    const [parameters, setParameters] = React.useState([]);
-    const [totalActiveEnergyData, setTotalActiveEnergyData] = useState([]);
-    const [consumptionData, setConsumptionData] = useState([]);
-    const [filteredChartData, setFilteredChartData] = useState([]); // State for filtered chart data
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [compareMode, setCompareMode] = useState(false); // Track if compare mode is active
-    const [compareDevice, setCompareDevice] = useState(''); // Selected device for comparison
-    const [compareChartData, setCompareChartData] = useState([]); // Chart data for comparison device
-    const [compareMode2, setCompareMode2] = useState(false); // Track if second compare mode is active
-    const [compareDevice2, setCompareDevice2] = useState(''); // Selected device for second comparison
-    const [compareChartData2, setCompareChartData2] = useState([]); // Chart data for second comparison device
 
-    // Use dummy analytics data instead of API
+    // Fetch comparison data when compare mode is active
     useEffect(() => {
-        const fetchDummyData = () => {
-            try {
-                setLoading(true);
-
-                // Dummy total active energy data (last 7 days)
-                const dummyEnergyData = [
-                    {
-                        slave_id: 1,
-                        slave_name: "Common",
-                        data: [
-                            { date: "2026-01-23", value: 63.33 },
-                            { date: "2026-01-24", value: 56.2 },
-                            { date: "2026-01-25", value: 44.57 },
-                            { date: "2026-01-26", value: 54.86 },
-                            { date: "2026-01-27", value: 52.4 },
-                            { date: "2026-01-28", value: 50.93 },
-                            { date: "2026-01-29", value: 42.12 },
-                            { date: "2026-01-29", value: 42.12 },
-                            { date: "2026-01-29", value: 42.12 },
-                            { date: "2026-01-29", value: 42.12 }
-
-
-                        ]
-                    },
-                    {
-                        slave_id: 2,
-                        slave_name: "Terrace",
-                        data: [
-                            { date: "2026-01-23", value: 5.68 },
-                            { date: "2026-01-24", value: 5.61 },
-                            { date: "2026-01-25", value: 5.79 },
-                            { date: "2026-01-26", value: 0.0 },
-                            { date: "2026-01-27", value: 5.45 },
-                            { date: "2026-01-28", value: 5.73 },
-                            { date: "2026-01-29", value: 0.0 }
-                        ]
-                    },
-                    {
-                        slave_id: 3,
-                        slave_name: "Ground Floor",
-                        data: [
-                            { date: "2026-01-23", value: 115.56 },
-                            { date: "2026-01-24", value: 99.48 },
-                            { date: "2026-01-25", value: 79.2 },
-                            { date: "2026-01-26", value: 89.66 },
-                            { date: "2026-01-27", value: 101.52 },
-                            { date: "2026-01-28", value: 112.56 },
-                            { date: "2026-01-29", value: 65.42 }
-                        ]
-                    }
-                ];
-
-                // Dummy consumption data
-                const dummyConsumptionData = [
-                    {
-                        slave_id: 1,
-                        slave_name: "Common",
-                        data: [
-                            { date: "2026-01-23", value: 45.2 },
-                            { date: "2026-01-24", value: 38.7 },
-                            { date: "2026-01-25", value: 32.1 },
-                            { date: "2026-01-26", value: 41.3 },
-                            { date: "2026-01-27", value: 39.8 },
-                            { date: "2026-01-28", value: 37.5 },
-                            { date: "2026-01-29", value: 31.2 }
-                        ]
-                    },
-                    {
-                        slave_id: 2,
-                        slave_name: "Terrace",
-                        data: [
-                            { date: "2026-01-23", value: 3.2 },
-                            { date: "2026-01-24", value: 3.1 },
-                            { date: "2026-01-25", value: 3.3 },
-                            { date: "2026-01-26", value: 0.0 },
-                            { date: "2026-01-27", value: 3.0 },
-                            { date: "2026-01-28", value: 3.2 },
-                            { date: "2026-01-29", value: 0.0 }
-                        ]
-                    }
-                ];
-
-                setTotalActiveEnergyData(dummyEnergyData);
-                setConsumptionData(dummyConsumptionData);
-                setError(null);
-            } catch (err) {
-                console.error('Error setting dummy data:', err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDummyData();
-    }, []);
-
-    // Use dummy filtered data instead of API
-    useEffect(() => {
-        const generateDummyFilteredData = () => {
-            if (searchClicked && filterDevice && filterDevice !== 'all' && filterStartDate && filterEndDate) {
+        if (compareMode && compareDevice && filterStartDate && filterEndDate) {
+            const fetchComparisonData = async () => {
                 try {
-                    setLoading(true);
-
-                    // Generate dummy data for the selected device and date range
-                    const startDate = new Date(filterStartDate);
-                    const endDate = new Date(filterEndDate);
-                    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-
-                    // Create dummy data points
-                    const dummyData = [];
-                    for (let i = 0; i <= daysDiff; i++) {
-                        const currentDate = new Date(startDate);
-                        currentDate.setDate(startDate.getDate() + i);
-
-                        dummyData.push({
-                            timestamp: currentDate.toISOString(),
-                            acte_im: Math.random() * 100 + 20, // Random values between 20-120
-                            value: Math.random() * 50 + 10,    // Random values between 10-60
-                            total_act_energy: Math.random() * 80 + 15, // Random values between 15-95
-                            energy_value: Math.random() * 40 + 5   // Random values between 5-45
-                        });
+                    // Find the device ID based on the device name
+                    const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice);
+                    if (!selectedDevice) {
+                        console.error('Comparison device not found');
+                        return;
                     }
 
-                    setFilteredChartData(dummyData);
-                    setError(null);
-                } catch (err) {
-                    console.error('Error generating dummy filtered data:', err);
-                    setError(err.message);
-                } finally {
-                    setLoading(false);
+                    // Default to all parameters if none selected
+                    const params = selectedParameter2.length > 0 ? selectedParameter2 : ['ry_v', 'acte_im', 'actpr_t'];
+
+                    // Fetch analytics data
+                    const data = await fetchAnalyticsData(
+                        selectedDevice.slave_id,
+                        params,
+                        filterStartDate,
+                        filterEndDate
+                    );
+
+                    setCompareChartData(data);
+                } catch (error) {
+                    console.error('Error fetching comparison data:', error);
                 }
-            }
-        };
-
-        generateDummyFilteredData();
-    }, [searchClicked, filterDevice, filterStartDate, filterEndDate]);
-
-    // Use dummy comparison data instead of API
-    useEffect(() => {
-        const generateDummyCompareData = () => {
-            if (compareMode && compareDevice && filterStartDate && filterEndDate) {
-                try {
-                    // Generate dummy comparison data
-                    const startDate = new Date(filterStartDate);
-                    const endDate = new Date(filterEndDate);
-                    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-
-                    const dummyData = [];
-                    for (let i = 0; i <= daysDiff; i++) {
-                        const currentDate = new Date(startDate);
-                        currentDate.setDate(startDate.getDate() + i);
-
-                        dummyData.push({
-                            timestamp: currentDate.toISOString(),
-                            acte_im: Math.random() * 90 + 25, // Different range for comparison
-                            value: Math.random() * 45 + 12,
-                            total_act_energy: Math.random() * 75 + 18,
-                            energy_value: Math.random() * 35 + 8
-                        });
-                    }
-
-                    setCompareChartData(dummyData);
-                } catch (err) {
-                    console.error('Error generating dummy comparison data:', err);
-                }
-            }
-        };
-
-        generateDummyCompareData();
-    }, [compareMode, compareDevice, filterStartDate, filterEndDate]);
-
-    // Use dummy second comparison data instead of API
-    useEffect(() => {
-        const generateDummyCompareData2 = () => {
-            if (compareMode2 && compareDevice2 && filterStartDate && filterEndDate) {
-                try {
-                    // Generate dummy second comparison data
-                    const startDate = new Date(filterStartDate);
-                    const endDate = new Date(filterEndDate);
-                    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-
-                    const dummyData = [];
-                    for (let i = 0; i <= daysDiff; i++) {
-                        const currentDate = new Date(startDate);
-                        currentDate.setDate(startDate.getDate() + i);
-
-                        dummyData.push({
-                            timestamp: currentDate.toISOString(),
-                            acte_im: Math.random() * 85 + 30, // Different range for second comparison
-                            value: Math.random() * 40 + 15,
-                            total_act_energy: Math.random() * 70 + 20,
-                            energy_value: Math.random() * 30 + 10
-                        });
-                    }
-
-                    setCompareChartData2(dummyData);
-                } catch (err) {
-                    console.error('Error generating dummy second comparison data:', err);
-                }
-            }
-        };
-
-        generateDummyCompareData2();
-    }, [compareMode2, compareDevice2, filterStartDate, filterEndDate]);
-
-    // Process the total active energy data to create chart series and categories
-    const processedEnergyData = React.useMemo(() => {
-        if (!totalActiveEnergyData || !Array.isArray(totalActiveEnergyData) || totalActiveEnergyData.length === 0) {
-            return { series: [], categories: [] };
-        }
-
-        // Extract the first item's data to get the dates
-        const firstSlaveData = totalActiveEnergyData[0]?.data || [];
-        const categories = firstSlaveData.map(item => {
-            // Format date as 'DD MMM' (e.g., '01 Jan')
-            const date = new Date(item.date);
-            return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
-        });
-
-        // Create series for each slave with 2 decimal place formatting
-        const series = totalActiveEnergyData.map(slave => {
-            return {
-                name: slave.slave_name,
-                data: slave.data.map(item => {
-                    const value = parseFloat(item.value);
-                    return parseFloat(value.toFixed(2));
-                })
             };
-        });
 
-        return { series, categories };
-    }, [totalActiveEnergyData]);
-
-    // Process the consumption data to create chart series and categories
-    const processedConsumptionData = React.useMemo(() => {
-        if (!consumptionData || !Array.isArray(consumptionData) || consumptionData.length === 0) {
-            return { series: [], categories: [] };
+            fetchComparisonData();
         }
+    }, [compareMode, compareDevice, filterStartDate, filterEndDate, selectedParameter2, deviceObjects]);
 
-        // Extract the first item's data to get the dates
-        const firstSlaveData = consumptionData[0]?.data || [];
-        const categories = firstSlaveData.map(item => {
-            // Format date as 'DD MMM' (e.g., '01 Jan')
-            const date = new Date(item.date);
-            return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
-        });
+    // Fetch second comparison data when second compare mode is active
+    useEffect(() => {
+        if (compareMode2 && compareDevice2 && filterStartDate && filterEndDate) {
+            const fetchSecondComparisonData = async () => {
+                try {
+                    // Find the device ID based on the device name
+                    const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice2);
+                    if (!selectedDevice) {
+                        console.error('Second comparison device not found');
+                        return;
+                    }
 
-        // Create series for each slave with 2 decimal place formatting
-        const series = consumptionData.map(slave => {
-            return {
-                name: slave.slave_name,
-                data: slave.data.map(item => {
-                    const value = parseFloat(item.value);
-                    return parseFloat(value.toFixed(2));
-                })
+                    // Default to all parameters if none selected
+                    const params = selectedParameter3.length > 0 ? selectedParameter3 : ['ry_v', 'acte_im', 'actpr_t'];
+
+                    // Fetch analytics data
+                    const data = await fetchAnalyticsData(
+                        selectedDevice.slave_id,
+                        params,
+                        filterStartDate,
+                        filterEndDate
+                    );
+
+                    setCompareChartData2(data);
+                } catch (error) {
+                    console.error('Error fetching second comparison data:', error);
+                }
             };
-        });
 
-        return { series, categories };
-    }, [consumptionData]);
+            fetchSecondComparisonData();
+        }
+    }, [compareMode2, compareDevice2, filterStartDate, filterEndDate, selectedParameter3, deviceObjects]);
 
     // Process the filtered chart data to create chart series and categories
     const processedFilteredData = React.useMemo(() => {
@@ -455,7 +295,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Process the filtered data to extract timestamps and values
         const categories = filteredChartData.map(item => {
             // Format timestamp for x-axis - date and month only
-            const timestamp = item.timestamp || item.created_at || item.date;
+            const timestamp = item.timestamp;
             if (timestamp) {
                 const date = new Date(timestamp);
                 return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
@@ -469,7 +309,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter) && selectedParameter.length > 0
             ? selectedParameter
-            : ['']; // Default to empty string to use original logic
+            : ['ry_v', 'acte_im', 'actpr_t']; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the filtered data based on selected parameter and format to 2 decimal places
@@ -479,62 +319,21 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 // If a specific parameter is selected, use that field
                 if (param) {
                     switch (param) {
-                        case 'timestamp':
-                            // For timestamp, we'll show a sequential number or index
-                            value = index + 1;
+                        case 'ry_v':
+                            value = parseFloat(item.ry_v) || 0;
                             break;
-                        case 'active_energy_import':
+                        case 'acte_im':
                             value = parseFloat(item.acte_im) || 0;
                             break;
-                        case 'total_active_power':
-                            value = parseFloat(item.value) || 0;
+                        case 'actpr_t':
+                            value = parseFloat(item.actpr_t) || 0;
                             break;
-                        case 'total_apparent_power':
-                            value = parseFloat(item.total_act_energy) || 0;
-                            break;
-                        case 'average_current':
-                            value = parseFloat(item.energy_value) || 0;
-                            break;
-                        case 'average_line_to_line_voltage':
-                            value = parseFloat(item.average_line_to_line_voltage) || 0;
-                            break;
-                        case 'c_a_phase_voltage_rms':
-                            value = parseFloat(item.c_a_phase_voltage_rms) || 0;
-                            break;
-                        case 'system_frequency':
-                            value = parseFloat(item.system_frequency) || 0;
-                            break;
-                        case 'rms_current_phase_c':
-                            value = parseFloat(item.rms_current_phase_c) || 0;
-                            break;
-                        case 'rms_current_phase_a':
-                            value = parseFloat(item.rms_current_phase_a) || 0;
-                            break;
-                        case 'rms_current_phase_b':
-                            value = parseFloat(item.rms_current_phase_b) || 0;
-                            break;
-                        case 'total_power_factor':
-                            value = parseFloat(item.total_power_factor) || 0;
-                            break;
-                        case 'reactive_energy_import':
-                            value = parseFloat(item.reactive_energy_import) || 0;
-                            break;
-                        case 'a_b_phase_voltage_rms':
-                            value = parseFloat(item.a_b_phase_voltage_rms) || 0;
-                            break;
-                        case 'b_c_phase_voltage_rms':
-                            value = parseFloat(item.b_c_phase_voltage_rms) || 0;
-                            break;
-                        // Add more cases for other parameters as needed
                         default:
                             value = 0;
                     }
                 } else {
-                    // If no parameter selected, use the default logic (first available value)
-                    if (item.acte_im !== undefined) value = parseFloat(item.acte_im) || 0;
-                    else if (item.value !== undefined) value = parseFloat(item.value) || 0;
-                    else if (item.total_act_energy !== undefined) value = parseFloat(item.total_act_energy) || 0;
-                    else if (item.energy_value !== undefined) value = parseFloat(item.energy_value) || 0;
+                    // If no parameter selected, use the default logic (ry_v)
+                    value = parseFloat(item.ry_v) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -565,7 +364,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Process the comparison data to extract timestamps and values
         const categories = compareChartData.map(item => {
             // Format timestamp for x-axis - date and month only
-            const timestamp = item.timestamp || item.created_at || item.date;
+            const timestamp = item.timestamp;
             if (timestamp) {
                 const date = new Date(timestamp);
                 return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
@@ -576,88 +375,54 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Create series for the comparison data
         const series = [];
 
-        // Extract values from the comparison data based on selected parameter and format to 2 decimal places
-        const values = compareChartData.map((item, index) => {
-            let value = 0;
+        // Handle multiple selected parameters
+        const parametersToProcess = Array.isArray(selectedParameter2) && selectedParameter2.length > 0
+            ? selectedParameter2
+            : ['ry_v', 'acte_im', 'actpr_t']; // Default to all parameters
 
-            // If a specific parameter is selected, use that field
-            if (selectedParameter) {
-                switch (selectedParameter) {
-                    case 'timestamp':
-                        // For timestamp, we'll show a sequential number or index
-                        value = index + 1;
-                        break;
-                    case 'active_energy_import':
-                        value = parseFloat(item.acte_im) || 0;
-                        break;
-                    case 'total_active_power':
-                        value = parseFloat(item.value) || 0;
-                        break;
-                    case 'total_apparent_power':
-                        value = parseFloat(item.total_act_energy) || 0;
-                        break;
-                    case 'average_current':
-                        value = parseFloat(item.energy_value) || 0;
-                        break;
-                    case 'average_line_to_line_voltage':
-                        value = parseFloat(item.average_line_to_line_voltage) || 0;
-                        break;
-                    case 'c_a_phase_voltage_rms':
-                        value = parseFloat(item.c_a_phase_voltage_rms) || 0;
-                        break;
-                    case 'system_frequency':
-                        value = parseFloat(item.system_frequency) || 0;
-                        break;
-                    case 'rms_current_phase_c':
-                        value = parseFloat(item.rms_current_phase_c) || 0;
-                        break;
-                    case 'rms_current_phase_a':
-                        value = parseFloat(item.rms_current_phase_a) || 0;
-                        break;
-                    case 'rms_current_phase_b':
-                        value = parseFloat(item.rms_current_phase_b) || 0;
-                        break;
-                    case 'total_power_factor':
-                        value = parseFloat(item.total_power_factor) || 0;
-                        break;
-                    case 'reactive_energy_import':
-                        value = parseFloat(item.reactive_energy_import) || 0;
-                        break;
-                    case 'a_b_phase_voltage_rms':
-                        value = parseFloat(item.a_b_phase_voltage_rms) || 0;
-                        break;
-                    case 'b_c_phase_voltage_rms':
-                        value = parseFloat(item.b_c_phase_voltage_rms) || 0;
-                        break;
-                    // Add more cases for other parameters as needed
-                    default:
-                        value = 0;
+        parametersToProcess.forEach(param => {
+            // Extract values from the comparison data based on selected parameter and format to 2 decimal places
+            const values = compareChartData.map((item, index) => {
+                let value = 0;
+
+                // If a specific parameter is selected, use that field
+                if (param) {
+                    switch (param) {
+                        case 'ry_v':
+                            value = parseFloat(item.ry_v) || 0;
+                            break;
+                        case 'acte_im':
+                            value = parseFloat(item.acte_im) || 0;
+                            break;
+                        case 'actpr_t':
+                            value = parseFloat(item.actpr_t) || 0;
+                            break;
+                        default:
+                            value = 0;
+                    }
+                } else {
+                    // If no parameter selected, use the default logic (ry_v)
+                    value = parseFloat(item.ry_v) || 0;
                 }
-            } else {
-                // If no parameter selected, use the default logic (first available value)
-                if (item.acte_im !== undefined) value = parseFloat(item.acte_im) || 0;
-                else if (item.value !== undefined) value = parseFloat(item.value) || 0;
-                else if (item.total_act_energy !== undefined) value = parseFloat(item.total_act_energy) || 0;
-                else if (item.energy_value !== undefined) value = parseFloat(item.energy_value) || 0;
-            }
 
-            // Format to 2 decimal places
-            return parseFloat(value.toFixed(2));
+                // Format to 2 decimal places
+                return parseFloat(value.toFixed(2));
+            });
+
+            // Always create a series if we have data, even if all values are 0
+            if (compareChartData.length > 0) {
+                const parameterLabel = param
+                    ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    : compareDevice;
+                series.push({
+                    name: parameterLabel,
+                    data: values
+                });
+            }
         });
 
-        // Always create a series if we have data, even if all values are 0
-        if (compareChartData.length > 0) {
-            const parameterLabel = selectedParameter
-                ? parameterOptions.find(opt => opt.value === selectedParameter)?.label || selectedParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                : compareDevice;
-            series.push({
-                name: parameterLabel,
-                data: values
-            });
-        }
-
         return { series, categories };
-    }, [compareChartData, compareDevice, selectedParameter]);
+    }, [compareChartData, compareDevice, selectedParameter2]);
 
     // Process the second comparison chart data to create chart series and categories
     const processedCompareData2 = React.useMemo(() => {
@@ -668,7 +433,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Process the second comparison data to extract timestamps and values
         const categories = compareChartData2.map(item => {
             // Format timestamp for x-axis - date and month only
-            const timestamp = item.timestamp || item.created_at || item.date;
+            const timestamp = item.timestamp;
             if (timestamp) {
                 const date = new Date(timestamp);
                 return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
@@ -679,88 +444,54 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Create series for the second comparison data
         const series = [];
 
-        // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
-        const values = compareChartData2.map((item, index) => {
-            let value = 0;
+        // Handle multiple selected parameters
+        const parametersToProcess = Array.isArray(selectedParameter3) && selectedParameter3.length > 0
+            ? selectedParameter3
+            : ['ry_v', 'acte_im', 'actpr_t']; // Default to all parameters
 
-            // If a specific parameter is selected, use that field
-            if (compareParameter2) {
-                switch (compareParameter2) {
-                    case 'timestamp':
-                        // For timestamp, we'll show a sequential number or index
-                        value = index + 1;
-                        break;
-                    case 'active_energy_import':
-                        value = parseFloat(item.acte_im) || 0;
-                        break;
-                    case 'total_active_power':
-                        value = parseFloat(item.value) || 0;
-                        break;
-                    case 'total_apparent_power':
-                        value = parseFloat(item.total_act_energy) || 0;
-                        break;
-                    case 'average_current':
-                        value = parseFloat(item.energy_value) || 0;
-                        break;
-                    case 'average_line_to_line_voltage':
-                        value = parseFloat(item.average_line_to_line_voltage) || 0;
-                        break;
-                    case 'c_a_phase_voltage_rms':
-                        value = parseFloat(item.c_a_phase_voltage_rms) || 0;
-                        break;
-                    case 'system_frequency':
-                        value = parseFloat(item.system_frequency) || 0;
-                        break;
-                    case 'rms_current_phase_c':
-                        value = parseFloat(item.rms_current_phase_c) || 0;
-                        break;
-                    case 'rms_current_phase_a':
-                        value = parseFloat(item.rms_current_phase_a) || 0;
-                        break;
-                    case 'rms_current_phase_b':
-                        value = parseFloat(item.rms_current_phase_b) || 0;
-                        break;
-                    case 'total_power_factor':
-                        value = parseFloat(item.total_power_factor) || 0;
-                        break;
-                    case 'reactive_energy_import':
-                        value = parseFloat(item.reactive_energy_import) || 0;
-                        break;
-                    case 'a_b_phase_voltage_rms':
-                        value = parseFloat(item.a_b_phase_voltage_rms) || 0;
-                        break;
-                    case 'b_c_phase_voltage_rms':
-                        value = parseFloat(item.b_c_phase_voltage_rms) || 0;
-                        break;
-                    // Add more cases for other parameters as needed
-                    default:
-                        value = 0;
+        parametersToProcess.forEach(param => {
+            // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
+            const values = compareChartData2.map((item, index) => {
+                let value = 0;
+
+                // If a specific parameter is selected, use that field
+                if (param) {
+                    switch (param) {
+                        case 'ry_v':
+                            value = parseFloat(item.ry_v) || 0;
+                            break;
+                        case 'acte_im':
+                            value = parseFloat(item.acte_im) || 0;
+                            break;
+                        case 'actpr_t':
+                            value = parseFloat(item.actpr_t) || 0;
+                            break;
+                        default:
+                            value = 0;
+                    }
+                } else {
+                    // If no parameter selected, use the default logic (ry_v)
+                    value = parseFloat(item.ry_v) || 0;
                 }
-            } else {
-                // If no parameter selected, use the default logic (first available value)
-                if (item.acte_im !== undefined) value = parseFloat(item.acte_im) || 0;
-                else if (item.value !== undefined) value = parseFloat(item.value) || 0;
-                else if (item.total_act_energy !== undefined) value = parseFloat(item.total_act_energy) || 0;
-                else if (item.energy_value !== undefined) value = parseFloat(item.energy_value) || 0;
-            }
 
-            // Format to 2 decimal places
-            return parseFloat(value.toFixed(2));
+                // Format to 2 decimal places
+                return parseFloat(value.toFixed(2));
+            });
+
+            // Always create a series if we have data, even if all values are 0
+            if (compareChartData2.length > 0) {
+                const parameterLabel = param
+                    ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    : compareDevice2;
+                series.push({
+                    name: parameterLabel,
+                    data: values
+                });
+            }
         });
 
-        // Always create a series if we have data, even if all values are 0
-        if (compareChartData2.length > 0) {
-            const parameterLabel = compareParameter2
-                ? parameterOptions.find(opt => opt.value === compareParameter2)?.label || compareParameter2.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                : compareDevice2;
-            series.push({
-                name: parameterLabel,
-                data: values
-            });
-        }
-
         return { series, categories };
-    }, [compareChartData2, compareDevice2, compareParameter2]);
+    }, [compareChartData2, compareDevice2, selectedParameter3]);
 
     // Define colors for each series to match the dots in the image
     const seriesColors = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'];
@@ -835,7 +566,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 },
                 yaxis: {
                     lines: {
-                        show: true
+                        show: false
                     }
                 },
                 padding: {
@@ -856,21 +587,15 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 shared: true, // Enable shared tooltip to show all series at once
                 intersect: false, // Show tooltip when hovering anywhere on the x-axis
                 custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-                    // Get the original date from the data based on search state
+                    // Get the original date from the data
                     let originalDate = '';
 
                     if (currentData && currentData.length > 0) {
-                        if (searchClicked) {
-                            // For filtered data, use timestamp from filteredChartData
-                            const item = currentData[dataPointIndex];
-                            const timestamp = item?.timestamp || item?.created_at || item?.date || '';
-                            if (timestamp) {
-                                const date = new Date(timestamp);
-                                originalDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
-                            }
-                        } else {
-                            // For default data, use the original logic
-                            originalDate = currentData[0]?.data[dataPointIndex]?.date || '';
+                        const item = currentData[dataPointIndex];
+                        const timestamp = item?.timestamp || '';
+                        if (timestamp) {
+                            const date = new Date(timestamp);
+                            originalDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
                         }
                     }
 
@@ -912,45 +637,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         };
     };
 
-
     return (
         <Box style={styles.mainContent} id="main-content">
-            {/* <Box style={styles.blockHeader} className="block-header mb-1">
-                <Grid container>
-                    <Grid item lg={5} md={8} xs={12}>
-                        <Typography
-                            variant="h6"
-                            className="logs-title"
-                            style={{
-                                // marginBottom: '-10px',
-                                color: '#0F2A44',
-                                fontWeight: 600,
-                                fontFamily: 'sans-serif',
-                                 marginLeft: '5px',
-                            }}
-                        >
-                            <span
-                                onClick={onSidebarToggle}
-                                style={{
-                                    fontSize: '14px',
-                                    lineHeight: 1,
-                                    marginLeft: '-2px',
-                                    fontWeight: '400',
-                                    display: 'inline-block',
-                                    cursor: 'pointer',
-                                    marginRight: '8px',
-                                    userSelect: 'none',
-                                    color: '#007bff'
-                                }}
-                            >
-                                <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
-                            </span>
-                            Analytics
-                        </Typography>
-                    </Grid>
-                </Grid>
-            </Box> */}
-
             <Box style={styles.container}>
                 <Card style={styles.tableCard}>
                     <CardContent sx={{ p: 1 }}>
@@ -971,30 +659,58 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                     </Select>
                                 </FormControl>
                                 <FormControl size="small" sx={{ minWidth: 200, mr: 1 }}>
-                                    <InputLabel>Select Parameter(s)</InputLabel>
+                                    <InputLabel>Select Parameters</InputLabel>
                                     <Select
                                         multiple
                                         value={selectedParameter}
                                         onChange={(e) => {
                                             const value = e.target.value;
-                                            // Ensure value is always an array for multiple select
-                                            const newValue = Array.isArray(value) ? value : [value];
                                             // If "All Parameters" is selected, clear all other selections
-                                            if (newValue.includes('all')) {
+                                            if (value.includes('all')) {
                                                 setSelectedParameter([]);
                                             } else {
                                                 // Remove "all" from selection if other items are selected
-                                                const filteredValue = newValue.filter(item => item !== 'all');
+                                                const filteredValue = value.filter(item => item !== 'all');
                                                 setSelectedParameter(filteredValue);
                                             }
                                         }}
-                                        label="Select Parameter(s)"
-                                        renderValue={(selected) => {
-                                            const selectedArray = Array.isArray(selected) ? selected : [];
-                                            if (selectedArray.length === 0) return 'Select Parameter(s)';
-                                            if (selectedArray.length === 1) return parameterOptions.find(p => p.value === selectedArray[0])?.label || selectedArray[0];
-                                            return `${selectedArray.length} parameters selected`;
-                                        }}
+                                        label="Select Parameters"
+                                        renderValue={(selected) => (
+                                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
+                                                {selected.slice(0, 2).map((value) => (
+                                                    <Chip
+                                                        key={value}
+                                                        label={parameterOptions.find(p => p.value === value)?.label || value.replace(/_/g, ' ')}
+                                                        size="small"
+                                                        sx={{
+                                                            height: '20px',
+                                                            fontSize: '10px',
+                                                            textTransform: 'capitalize'
+                                                        }}
+                                                    />
+                                                ))}
+                                                {selected.length > 2 && (
+                                                    <Chip
+                                                        label={`+${selected.length - 2} more`}
+                                                        size="small"
+                                                        sx={{
+                                                            height: '20px',
+                                                            fontSize: '10px',
+                                                            backgroundColor: '#0156a6',
+                                                            color: '#fff',
+                                                            fontWeight: 'bold'
+                                                        }}
+                                                    />
+                                                )}
+                                            </Box>
+                                        )}
+                                        MenuProps={
+                                            {
+                                                PaperProps: {
+                                                    style: { maxHeight: 300, width: 250 },
+                                                },
+                                            }
+                                        }
                                     >
                                         <MenuItem value="all">
                                             <Checkbox checked={selectedParameter.length === 0} />
@@ -1014,20 +730,14 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         open={openStart}
                                         onOpen={() => setOpenStart(true)}
                                         onClose={() => setOpenStart(false)}
-                                        // disableOpenPicker   
-                                        value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
+                                        value={filterStartDate ? dayjs(filterStartDate) : null}
                                         onChange={(newValue) => setFilterStartDate(newValue)}
                                         format="DD/MM/YYYY hh:mm A"
                                         slotProps={{
                                             textField: {
                                                 size: 'small',
-                                                sx: {
-                                                    minWidth: 220,
-                                                    mr: 2,
-                                                    borderRadius: 2,
-                                                },
-                                                onClick: () => setOpenStart(true), // 👈 click input opens picker
-                                                readOnly: true, // 👈 optional but recommended
+                                                sx: { minWidth: 220, mr: 2, borderRadius: 2 },
+                                                onClick: () => setOpenStart(true), // 🔥 input click opens picker
                                             },
                                         }}
                                     />
@@ -1038,26 +748,14 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         open={openEnd}
                                         onOpen={() => setOpenEnd(true)}
                                         onClose={() => setOpenEnd(false)}
-                                        // disableOpenPicker   
-                                        value={
-                                            filterEndDate
-                                                ? dayjs.isDayjs(filterEndDate)
-                                                    ? filterEndDate
-                                                    : dayjs(filterEndDate)
-                                                : null
-                                        }
+                                        value={filterEndDate ? dayjs(filterEndDate) : null}
                                         onChange={(newValue) => setFilterEndDate(newValue)}
                                         format="DD/MM/YYYY hh:mm A"
                                         slotProps={{
                                             textField: {
                                                 size: 'small',
-                                                sx: {
-                                                    minWidth: 220,
-                                                    mr: 2,
-                                                    borderRadius: 2,
-                                                },
-                                                onClick: () => setOpenEnd(true),
-                                                readOnly: true,
+                                                sx: { minWidth: 220, mr: 2, borderRadius: 2 },
+                                                onClick: () => setOpenEnd(true), // 🔥 input click opens picker
                                             },
                                         }}
                                     />
@@ -1068,9 +766,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                     startIcon={<SearchIcon />}
                                     onClick={handleSearch}
                                     sx={{
-                                        backgroundColor: '#0156a6', // Blue color to match the image
+                                        backgroundColor: '#0156a6',
                                         '&:hover': {
-                                            backgroundColor: '#166aa0', // Darker blue on hover
+                                            backgroundColor: '#166aa0',
                                         },
                                         minWidth: 'auto',
                                         width: '32px', // Smaller width
@@ -1084,17 +782,10 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 >
                                 </Button>
 
-
-
                                 <Button
                                     variant="outlined"
                                     startIcon={<RefreshIcon />}
-                                    onClick={() => {
-                                        handleResetFilters();
-                                        setSelectedParameter([]); // Reset main chart parameter
-                                        setCompareParameter(''); // Reset first comparison parameter
-                                        setCompareParameter2(''); // Reset second comparison parameter
-                                    }}
+                                    onClick={handleResetFilters}
                                     sx={{
                                         borderColor: '#6c757d',
                                         color: '#6c757d',
@@ -1136,28 +827,28 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 ? `${filterDevice} - ${selectedParameter.length > 1
                                                     ? `${selectedParameter.length} Parameters Selected`
                                                     : parameterOptions.find(opt => opt.value === selectedParameter[0])?.label || selectedParameter[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
-                                                : (filterDevice !== 'all' ? `${filterDevice}` : 'Total Active Energy (Last 7 Days)')}
+                                                : (filterDevice !== 'all' ? `${filterDevice}` : 'Energy Analytics')}
                                         </Typography>
                                         <Box>
-                                            {compareMode ? (
-                                                <Button
-                                                    variant="outlined"
-                                                    size="small"
-                                                    onClick={() => setCompareMode(false)}
-                                                    sx={{
-                                                        borderColor: '#0156a6',
-                                                        color: '#0156a6',
-                                                        '&:hover': {
-                                                            borderColor: '#166aa0',
-                                                            color: '#166aa0',
-                                                        },
-                                                        mr: 1
-                                                    }}
-                                                >
-                                                    Cancel Compare
-                                                </Button>
-                                            ) : (
-                                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                                {compareMode ? (
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="small"
+                                                        onClick={() => setCompareMode(false)}
+                                                        sx={{
+                                                            borderColor: '#0156a6',
+                                                            color: '#0156a6',
+                                                            '&:hover': {
+                                                                borderColor: '#166aa0',
+                                                                color: '#166aa0',
+                                                            },
+                                                            mr: 1
+                                                        }}
+                                                    >
+                                                        Cancel Compare
+                                                    </Button>
+                                                ) : (
                                                     <FormControl size="small" sx={{ minWidth: 300 }}>
                                                         <InputLabel>Select Machine to Compare</InputLabel>
                                                         <Select
@@ -1175,8 +866,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             ))}
                                                         </Select>
                                                     </FormControl>
-                                                </Box>
-                                            )}
+                                                )}
+                                            </Box>
+                                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}></Box>
                                         </Box>
                                     </Box>
                                     <Chart
@@ -1199,56 +891,118 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     mb: 1
                                                 }}
                                             >
-                                                {compareParameter
-                                                    ? `${compareDevice} - ${parameterOptions.find(opt => opt.value === compareParameter)?.label || compareParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                {Array.isArray(selectedParameter2) && selectedParameter2.length > 0
+                                                    ? `${compareDevice} - ${selectedParameter2.length > 1
+                                                        ? `${selectedParameter2.length} Parameters Selected`
+                                                        : parameterOptions.find(opt => opt.value === selectedParameter2[0])?.label || selectedParameter2[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                     : compareDevice}
                                             </Typography>
                                             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                {compareMode2 ? (
-                                                    <Button
-                                                        variant="outlined"
-                                                        size="small"
-                                                        onClick={() => setCompareMode2(false)}
-                                                        sx={{
-                                                            borderColor: '#0156a6',
-                                                            color: '#0156a6',
-                                                            '&:hover': {
-                                                                borderColor: '#166aa0',
-                                                                color: '#166aa0',
+                                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                                    <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                        <InputLabel>Select Machine</InputLabel>
+                                                        <Select
+                                                            value={compareDevice}
+                                                            label="Select Machine"
+                                                            onChange={(e) => {
+                                                                setCompareDevice(e.target.value);
+                                                                // Set compare mode to true when machine is selected
+                                                                setCompareMode(true);
+                                                            }}
+                                                        >
+                                                            {devices.map((device) => (
+                                                                <MenuItem key={device} value={device}>
+                                                                    {device === 'all' ? 'Select Machine' : device}
+                                                                </MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                    </FormControl>
+                                                    <FormControl size="small" sx={{ minWidth: 200, mr: 1 }}>
+                                                        <InputLabel>Select Parameters</InputLabel>
+                                                        <Select
+                                                            multiple
+                                                            value={selectedParameter2}
+                                                            onChange={(e) => {
+                                                                const value = e.target.value;
+                                                                // If "All Parameters" is selected, clear all other selections
+                                                                if (value.includes('all')) {
+                                                                    setSelectedParameter2([]);
+                                                                } else {
+                                                                    // Remove "all" from selection if other items are selected
+                                                                    const filteredValue = value.filter(item => item !== 'all');
+                                                                    setSelectedParameter2(filteredValue);
+                                                                }
+                                                            }}
+                                                            label="Select Parameters"
+                                                            renderValue={(selected) => (
+                                                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
+                                                                    {selected.slice(0, 2).map((value) => (
+                                                                        <Chip
+                                                                            key={value}
+                                                                            label={parameterOptions.find(p => p.value === value)?.label || value.replace(/_/g, ' ')}
+                                                                            size="small"
+                                                                            sx={{
+                                                                                height: '20px',
+                                                                                fontSize: '10px',
+                                                                                textTransform: 'capitalize'
+                                                                            }}
+                                                                        />
+                                                                    ))}
+                                                                    {selected.length > 2 && (
+                                                                        <Chip
+                                                                            label={`+${selected.length - 2} more`}
+                                                                            size="small"
+                                                                            sx={{
+                                                                                height: '20px',
+                                                                                fontSize: '10px',
+                                                                                backgroundColor: '#0156a6',
+                                                                                color: '#fff',
+                                                                                fontWeight: 'bold'
+                                                                            }}
+                                                                        />
+                                                                    )}
+                                                                </Box>
+                                                            )}
+                                                            MenuProps={
+                                                                {
+                                                                    PaperProps: {
+                                                                        style: { maxHeight: 300, width: 250 },
+                                                                    },
+                                                                }
                                                             }
-                                                        }}
-                                                    >
-                                                        Cancel Compare
-                                                    </Button>
-                                                ) : (
-                                                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                                                        <FormControl size="small" sx={{ minWidth: 200 }}>
-                                                            <InputLabel>Select Parameter</InputLabel>
-                                                            <Select
-                                                                value={compareParameter2}
-                                                                label="Select Parameter"
-                                                                onChange={(e) => setCompareParameter2(e.target.value)}
-                                                            >
-                                                                <MenuItem value="">All Parameters</MenuItem>
-                                                                <MenuItem value="timestamp">Timestamp</MenuItem>
-                                                                <MenuItem value="active_energy_import">Active Energy Import (kWh)</MenuItem>
-                                                                <MenuItem value="total_active_power">Total Active Power (kW)</MenuItem>
-                                                                <MenuItem value="total_apparent_power">Total Apparent Power (kVA)</MenuItem>
-                                                                <MenuItem value="average_current">Average Current (A)</MenuItem>
-                                                                <MenuItem value="average_line_to_line_voltage">Average Line-to-Line Voltage (V)</MenuItem>
-                                                                <MenuItem value="c_a_phase_voltage_rms">C–A Phase Voltage RMS (V)</MenuItem>
-                                                                <MenuItem value="system_frequency">System Frequency (Hz)</MenuItem>
-                                                                <MenuItem value="rms_current_phase_c">RMS Current – Phase C (A)</MenuItem>
-                                                                <MenuItem value="rms_current_phase_a">RMS Current – Phase A (A)</MenuItem>
-                                                                <MenuItem value="rms_current_phase_b">RMS Current – Phase B (A)</MenuItem>
-                                                                <MenuItem value="total_power_factor">Total Power Factor</MenuItem>
-                                                                <MenuItem value="reactive_energy_import">Reactive Energy Import (kVArh)</MenuItem>
-                                                                <MenuItem value="a_b_phase_voltage_rms">A–B Phase Voltage RMS (V)</MenuItem>
-                                                                <MenuItem value="b_c_phase_voltage_rms">B–C Phase Voltage RMS (V)</MenuItem>
-                                                            </Select>
-                                                        </FormControl>
+                                                        >
+                                                            <MenuItem value="all">
+                                                                <Checkbox checked={selectedParameter2.length === 0} />
+                                                                <ListItemText primary="All Parameters" />
+                                                            </MenuItem>
+                                                            {parameterOptions.map((option) => (
+                                                                <MenuItem key={option.value} value={option.value}>
+                                                                    <Checkbox checked={selectedParameter2.indexOf(option.value) > -1} />
+                                                                    <ListItemText primary={option.label} />
+                                                                </MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                    </FormControl>
+
+                                                    {compareMode2 ? (
+                                                        <Button
+                                                            variant="outlined"
+                                                            size="small"
+                                                            onClick={() => setCompareMode2(false)}
+                                                            sx={{
+                                                                borderColor: '#0156a6',
+                                                                color: '#0156a6',
+                                                                '&:hover': {
+                                                                    borderColor: '#166aa0',
+                                                                    color: '#166aa0',
+                                                                }
+                                                            }}
+                                                        >
+                                                            Cancel Compare
+                                                        </Button>
+                                                    ) : (
                                                         <FormControl size="small" sx={{ minWidth: 300 }}>
-                                                            <InputLabel>Select Parameter</InputLabel>
+                                                            <InputLabel>Select Second Machine to Compare</InputLabel>
                                                             <Select
                                                                 value={compareDevice2}
                                                                 label="Select Second Machine to Compare"
@@ -1264,8 +1018,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 ))}
                                                             </Select>
                                                         </FormControl>
-                                                    </Box>
-                                                )}
+                                                    )}
+                                                </Box>
                                             </Box>
                                             <Chart
                                                 options={getChartOptions(
@@ -1289,10 +1043,98 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     mb: 1
                                                 }}
                                             >
-                                                {compareParameter2
-                                                    ? `${compareDevice2} - ${parameterOptions.find(opt => opt.value === compareParameter2)?.label || compareParameter2.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                {Array.isArray(selectedParameter3) && selectedParameter3.length > 0
+                                                    ? `${compareDevice2} - ${selectedParameter3.length > 1
+                                                        ? `${selectedParameter3.length} Parameters Selected`
+                                                        : parameterOptions.find(opt => opt.value === selectedParameter3[0])?.label || selectedParameter3[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                     : compareDevice2}
                                             </Typography>
+                                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                                                <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                    <InputLabel>Select Machine</InputLabel>
+                                                    <Select
+                                                        value={compareDevice2}
+                                                        label="Select Machine"
+                                                        onChange={(e) => {
+                                                            setCompareDevice2(e.target.value);
+                                                            // Set compare mode to true when machine is selected
+                                                            setCompareMode2(true);
+                                                        }}
+                                                    >
+                                                        {devices.map((device) => (
+                                                            <MenuItem key={device} value={device}>
+                                                                {device === 'all' ? 'Select Machine' : device}
+                                                            </MenuItem>
+                                                        ))}
+                                                    </Select>
+                                                </FormControl>
+                                                <FormControl size="small" sx={{ minWidth: 200 }}>
+                                                    <InputLabel>Select Parameters</InputLabel>
+                                                    <Select
+                                                        multiple
+                                                        value={selectedParameter3}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value;
+                                                            // If "All Parameters" is selected, clear all other selections
+                                                            if (value.includes('all')) {
+                                                                setSelectedParameter3([]);
+                                                            } else {
+                                                                // Remove "all" from selection if other items are selected
+                                                                const filteredValue = value.filter(item => item !== 'all');
+                                                                setSelectedParameter3(filteredValue);
+                                                            }
+                                                        }}
+                                                        label="Select Parameters"
+                                                        renderValue={(selected) => (
+                                                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
+                                                                {selected.slice(0, 2).map((value) => (
+                                                                    <Chip
+                                                                        key={value}
+                                                                        label={parameterOptions.find(p => p.value === value)?.label || value.replace(/_/g, ' ')}
+                                                                        size="small"
+                                                                        sx={{
+                                                                            height: '20px',
+                                                                            fontSize: '10px',
+                                                                            textTransform: 'capitalize'
+                                                                        }}
+                                                                    />
+                                                                ))}
+                                                                {selected.length > 2 && (
+                                                                    <Chip
+                                                                        label={`+${selected.length - 2} more`}
+                                                                        size="small"
+                                                                        sx={{
+                                                                            height: '20px',
+                                                                            fontSize: '10px',
+                                                                            backgroundColor: '#0156a6',
+                                                                            color: '#fff',
+                                                                            fontWeight: 'bold'
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            </Box>
+                                                        )}
+                                                        MenuProps={
+                                                            {
+                                                                PaperProps: {
+                                                                    style: { maxHeight: 300, width: 250 },
+                                                                },
+                                                            }
+                                                        }
+                                                    >
+                                                        <MenuItem value="all">
+                                                            <Checkbox checked={selectedParameter3.length === 0} />
+                                                            <ListItemText primary="All Parameters" />
+                                                        </MenuItem>
+                                                        {parameterOptions.map((option) => (
+                                                            <MenuItem key={option.value} value={option.value}>
+                                                                <Checkbox checked={selectedParameter3.indexOf(option.value) > -1} />
+                                                                <ListItemText primary={option.label} />
+                                                            </MenuItem>
+                                                        ))}
+                                                    </Select>
+                                                </FormControl>
+                                            </Box>
                                             <Chart
                                                 options={getChartOptions(
                                                     processedCompareData2,
@@ -1312,37 +1154,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                     </CardContent>
                 </Card>
             </Box>
-            {/* <Box style={styles.container}>
-                <Card style={styles.tableCard}>
-                    <CardContent sx={{ p: 1 }}>
-                        <Typography
-                            gutterBottom
-                            sx={{
-                                fontSize: '14px',
-                                fontWeight: 'bold',
-                                color: '#50342c',
-                                mb: 1
-                            }}
-                        >
-                            Consumption (Last 7 Days)
-                        </Typography>
-                        {loading ? (
-                            <div>Loading...</div>
-                        ) : error ? (
-                            <div>Error: {error}</div>
-                        ) : (
-                            <Chart
-                                options={chartOptions}
-                                series={processedConsumptionData.series}
-                                type="line"
-                                height={420}
-                            />
-                        )}
-                    </CardContent>
-                </Card>
-            </Box> */}
         </Box>
     )
 }
 
-export default Analytics
+export default Analytics;

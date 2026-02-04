@@ -69,7 +69,8 @@ apiClient.interceptors.response.use(
   }
 );
 
-export const getTotalActiveEnergy7Days = async () => {
+// API function for energy analytics
+export const getEnergyAnalytics = async (slaveId, parameters, fromDatetime, toDatetime) => {
   try {
     // Get a valid access token (will refresh if expired)
     const validToken = await tokenUtils.getValidAccessToken();
@@ -79,35 +80,43 @@ export const getTotalActiveEnergy7Days = async () => {
       throw new Error('Authentication token not found. Please log in first.');
     }
 
-    console.log('Making total active energy 7 days API call with token:', validToken.substring(0, 20) + '...');
+    // Build parameters string
+    const paramsString = Array.isArray(parameters) && parameters.length > 0 
+      ? parameters.join(',') 
+      : 'ry_v,acte_im,actpr_t'; // Default to all parameters
+    
+    console.log('Making energy analytics API call with params:', {
+      slave_id: slaveId,
+      parameters: paramsString,
+      from_datetime: fromDatetime,
+      to_datetime: toDatetime
+    });
     console.log('API Base URL:', apiClient.defaults.baseURL);
 
-    const response = await apiClient.get('/admin/charts/acte-im-7days/');
-    console.log('Total active energy 7 days API response:', response);
+    const response = await apiClient.get('/applications/energy/analytics/', {
+      params: {
+        slave_id: slaveId,
+        parameters: paramsString,
+        from_datetime: fromDatetime,
+        to_datetime: toDatetime
+      }
+    });
+    
+    console.log('Energy analytics API response:', response);
 
     if (response.data && typeof response.data === 'object') {
       if (response.data.success === true) {
-        console.log('Using standard format for total active energy 7 days');
-        return response.data.data;
-      } else if (response.data.hasOwnProperty('series') && Array.isArray(response.data.series)) {
-        console.log('Using response format with series field for total active energy 7 days');
-        return response.data.series;
-      } else if (response.data.hasOwnProperty('data') && Array.isArray(response.data.data)) {
-        console.log('Using direct format with data field for total active energy 7 days');
-        return response.data.data;
-      } else if (Array.isArray(response.data)) {
-        console.log('Using direct array format for total active energy 7 days');
-        return response.data;
+        console.log('Energy analytics API success:', response.data.message);
+        return response.data.data.data || response.data.data;
       } else {
-        console.warn('Unknown response format for total active energy 7 days:', response.data);
-        console.log('Available keys in response:', Object.keys(response.data));
-        throw new Error('API returned unexpected response format');
+        console.warn('Energy analytics API returned unsuccessful response:', response.data);
+        throw new Error(response.data.message || 'API returned unsuccessful response');
       }
     } else {
       throw new Error(response.data?.message || 'API returned unexpected response format');
     }
   } catch (error) {
-    console.error('Error fetching total active energy 7 days:', error);
+    console.error('Error fetching energy analytics:', error);
     if (error.response) {
       console.error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
       console.error('Response data:', error.response.data);
@@ -123,7 +132,8 @@ export const getTotalActiveEnergy7Days = async () => {
   }
 };
 
-export const getConsumption7Days = async () => {
+// API function to fetch devices/slaves
+export const getDevices = async () => {
   try {
     // Get a valid access token (will refresh if expired)
     const validToken = await tokenUtils.getValidAccessToken();
@@ -133,35 +143,25 @@ export const getConsumption7Days = async () => {
       throw new Error('Authentication token not found. Please log in first.');
     }
 
-    console.log('Making consumption 7 days API call with token:', validToken.substring(0, 20) + '...');
+    console.log('Fetching devices with token:', validToken.substring(0, 20) + '...');
     console.log('API Base URL:', apiClient.defaults.baseURL);
 
-    const response = await apiClient.get('/admin/charts/acte-im-consumption-7days/');
-    console.log('Consumption 7 days API response:', response);
+    const response = await apiClient.get('/admin/slaves/');
+    console.log('Devices API response:', response);
 
     if (response.data && typeof response.data === 'object') {
       if (response.data.success === true) {
-        console.log('Using standard format for consumption 7 days');
-        return response.data.data;
-      } else if (response.data.hasOwnProperty('series') && Array.isArray(response.data.series)) {
-        console.log('Using response format with series field for consumption 7 days');
-        return response.data.series;
-      } else if (response.data.hasOwnProperty('data') && Array.isArray(response.data.data)) {
-        console.log('Using direct format with data field for consumption 7 days');
-        return response.data.data;
-      } else if (Array.isArray(response.data)) {
-        console.log('Using direct array format for consumption 7 days');
-        return response.data;
+        console.log('Devices API success:', response.data.message);
+        return response.data.data.slaves || [];
       } else {
-        console.warn('Unknown response format for consumption 7 days:', response.data);
-        console.log('Available keys in response:', Object.keys(response.data));
-        throw new Error('API returned unexpected response format');
+        console.warn('Devices API returned unsuccessful response:', response.data);
+        throw new Error(response.data.message || 'API returned unsuccessful response');
       }
     } else {
       throw new Error(response.data?.message || 'API returned unexpected response format');
     }
   } catch (error) {
-    console.error('Error fetching consumption 7 days:', error);
+    console.error('Error fetching devices:', error);
     if (error.response) {
       console.error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
       console.error('Response data:', error.response.data);

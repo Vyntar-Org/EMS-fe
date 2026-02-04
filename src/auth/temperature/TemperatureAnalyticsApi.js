@@ -52,7 +52,7 @@ apiClient.interceptors.response.use(
 // Get all temperature slaves/devices
 export const getTemperatureSlaves = async () => {
   try {
-    const response = await apiClient.get('/applications/TEMPERATURE/slaves/');
+    const response = await apiClient.get('/applications/temperature/slaves/');
     return response.data;
   } catch (error) {
     console.error('Error fetching temperature slaves:', error);

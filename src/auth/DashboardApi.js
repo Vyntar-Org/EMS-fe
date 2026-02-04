@@ -285,4 +285,121 @@ export const getSlaveWeeklyConsumption = async (slaveId) => {
   }
 };
 
+
+/**
+ * Get hourly energy consumption trend data
+ * @returns {Promise} Promise object represents the hourly energy consumption data
+ */
+export const getHourlyEnergyConsumptionTrend = async () => {
+  try {
+    // Get a valid access token (will refresh if expired)
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
+      console.warn('No authentication token found. Please log in first.');
+      throw new Error('Authentication token not found. Please log in first.');
+    }
+    
+    console.log('Making hourly energy consumption trend API call with token:', validToken.substring(0, 20) + '...');
+    console.log('API Base URL:', apiClient.defaults.baseURL);
+    
+    const response = await apiClient.get('/applications/energy/hourly-consumption-trend/');
+    console.log('Hourly energy consumption trend API response:', response);
+    
+    // Process the response data to extract the series for chart
+    if (response.data && response.data.success === true && response.data.data && response.data.data.data) {
+      const consumptionData = response.data.data.data;
+      
+      // Extract hours and consumption values
+      const hours = consumptionData.map(item => item.hour);
+      const consumptionValues = consumptionData.map(item => item.consumption);
+      
+      return {
+        hours,
+        consumption: consumptionValues,
+        meta: response.data.meta
+      };
+    } else {
+      throw new Error(response.data?.message || 'API returned unexpected response format');
+    }
+  } catch (error) {
+    console.error('Error fetching hourly energy consumption trend:', error);
+    // More detailed error reporting
+    if (error.response) {
+      // Server responded with error status
+      console.error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
+      console.error('Response data:', error.response.data);
+      throw new Error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
+    } else if (error.request) {
+      // Request was made but no response received
+      console.error('Network Error: No response received from server');
+      console.error('Request details:', error.request);
+      throw new Error('Network Error: Unable to connect to server');
+    } else {
+      // Something else happened
+      console.error('Request Error:', error.message);
+      throw new Error(`Request Error: ${error.message}`);
+    }
+  }
+};
+
+
+/**
+ * Get peak demand trend data for a specific slave
+ * @param {number} slaveId - The ID of the slave
+ * @returns {Promise} Promise object represents the peak demand trend data
+ */
+export const getPeakDemandTrend = async (slaveId) => {
+  try {
+    // Get a valid access token (will refresh if expired)
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
+      console.warn('No authentication token found. Please log in first.');
+      throw new Error('Authentication token not found. Please log in first.');
+    }
+    
+    console.log('Making peak demand trend API call with slaveId:', slaveId, 'and token:', validToken.substring(0, 20) + '...');
+    console.log('API Base URL:', apiClient.defaults.baseURL);
+    
+    const response = await apiClient.get(`/applications/energy/peak-demand-trend/?slave_id=${slaveId}`);
+    console.log('Peak demand trend API response:', response);
+    
+    // Process the response data to extract the series for chart
+    if (response.data && response.data.success === true && response.data.data && response.data.data.data) {
+      const trendData = response.data.data.data;
+      
+      // Extract timestamps and values
+      const timestamps = trendData.map(item => item.timestamp);
+      const values = trendData.map(item => item.value);
+      
+      return {
+        timestamps,
+        values,
+        meta: response.data.meta
+      };
+    } else {
+      throw new Error(response.data?.message || 'API returned unexpected response format');
+    }
+  } catch (error) {
+    console.error('Error fetching peak demand trend:', error);
+    // More detailed error reporting
+    if (error.response) {
+      // Server responded with error status
+      console.error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
+      console.error('Response data:', error.response.data);
+      throw new Error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
+    } else if (error.request) {
+      // Request was made but no response received
+      console.error('Network Error: No response received from server');
+      console.error('Request details:', error.request);
+      throw new Error('Network Error: Unable to connect to server');
+    } else {
+      // Something else happened
+      console.error('Request Error:', error.message);
+      throw new Error(`Request Error: ${error.message}`);
+    }
+  }
+};
+
 export default apiClient;
