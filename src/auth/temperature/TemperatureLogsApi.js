@@ -97,7 +97,7 @@ export const getTemperatureLogs = async (slaveId, startDatetime, endDatetime, li
       offset: offset
     });
     
-    const logsResponse = await apiClient.get(`/applications/TEMPERATURE/logs/?${params.toString()}`);
+    const logsResponse = await apiClient.get(`/applications/temperature/logs/?${params.toString()}`);
     
     console.log('Temperature logs API response:', logsResponse);
     
@@ -141,7 +141,7 @@ export const getTemperatureSlaves = async () => {
     console.log('Making temperature slaves API call with token:', validToken.substring(0, 20) + '...');
     console.log('API Base URL:', apiClient.defaults.baseURL);
     
-    const response = await apiClient.get('/applications/TEMPERATURE/slaves/');
+    const response = await apiClient.get('/applications/temperature/slaves/');
     
     console.log('Temperature slaves API response:', response);
     

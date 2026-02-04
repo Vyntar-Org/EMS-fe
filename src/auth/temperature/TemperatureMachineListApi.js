@@ -85,8 +85,8 @@ export const getTemperatureMachineList = async () => {
     
     // Fetch both slave list and machine list concurrently
     const [slavesResponse, machinesResponse] = await Promise.all([
-      apiClient.get('/applications/TEMPERATURE/slaves/'),
-      apiClient.get('/applications/TEMPERATURE/machine-list/')
+      apiClient.get('/applications/temperature/slaves/'),
+      apiClient.get('/applications/temperature/machine-list/')
     ]);
     
     console.log('Temperature slaves API response:', slavesResponse);
@@ -188,7 +188,7 @@ export const getTemperatureMachineTrend = async (slaveId, parameter, hours = 6) 
     console.log(`Making temperature trend API call for slave ${slaveId}, parameter: ${parameter}, hours: ${hours}`);
     
     const response = await apiClient.get(
-      `/applications/TEMPERATURE/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}&hours=${hours}`
+      `/applications/temperature/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}&hours=${hours}`
     );
     
     console.log('Temperature trend API response:', response);
