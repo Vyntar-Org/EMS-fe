@@ -22,7 +22,8 @@ import {
     Select,
     MenuItem,
     Checkbox,
-    ListItemText
+    ListItemText,
+    Divider
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -34,13 +35,6 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { getEnergyAnalytics, getDevices } from '../auth/AnalyticsApi';
-
-// Updated parameter options to match the API response
-const parameterOptions = [
-    { value: "acte_im", label: "Active Energy (kWh)" },
-    { value: "actpr_t", label: "Active Power (kW)" },
-    { value: "ry_v", label: "Voltage (V)" },
-];
 
 const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     // State for filters
@@ -65,6 +59,71 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [compareMode2, setCompareMode2] = useState(false); // Track if second compare mode is active
     const [compareChartData2, setCompareChartData2] = useState([]); // Chart data for second comparison device
     const [filteredChartData, setFilteredChartData] = useState([]); // State for filtered chart data
+
+    // Define parameter categories with their associated parameters
+    const parameterCategories = {
+        'Timestamp': {
+            parameters: ['timestamp'],
+            label: 'Timestamp'
+        },
+        'Active power': {
+            parameters: ['actpr_t'],
+            label: 'Active Power (kW)'
+        },
+        'Apparent power': {
+            parameters: ['apppr_t'],
+            label: 'Apparent Power (kVA)'
+        },
+        'Energy': {
+            parameters: ['acte_im', 'reacte_im'],
+            label: 'Energy'
+        },
+        'Power factor': {
+            parameters: ['pf_t'],
+            label: 'Power Factor'
+        },
+        'Frequency': {
+            parameters: ['fq'],
+            label: 'Frequency (Hz)'
+        },
+        'Voltage (Line to Neutral)': {
+            parameters: ['rv', 'yv', 'bv'],
+            label: 'Voltage (Line to Neutral)'
+        },
+        'Voltage (Line to Line)': {
+            parameters: ['ry_v', 'yb_v', 'br_v', 'avg_l_l_v'],
+            label: 'Voltage (Line to Line)'
+        },
+        'Current': {
+            parameters: ['i_b', 'i_r', 'i_y', 'avg_i'],
+            label: 'Current (A)'
+        }
+    };
+
+    // Get all available parameters for easy reference
+    const allParameters = Object.values(parameterCategories).flatMap(category => category.parameters);
+
+    // Parameter label mapping for display
+    const parameterLabels = {
+        'timestamp': 'Timestamp',
+        'actpr_t': 'Active Power (kW)',
+        'apppr_t': 'Apparent Power (kVA)',
+        'acte_im': 'Active Energy Import (kWh)',
+        'reacte_im': 'Reactive Energy Import (kVArh)',
+        'pf_t': 'Power Factor',
+        'fq': 'Frequency (Hz)',
+        'rv': 'R Phase Voltage (V)',
+        'yv': 'Y Phase Voltage (V)',
+        'bv': 'B Phase Voltage (V)',
+        'ry_v': 'R-Y Voltage (V)',
+        'yb_v': 'Y-B Voltage (V)',
+        'br_v': 'B-R Voltage (V)',
+        'avg_l_l_v': 'Avg Line-to-Line Voltage (V)',
+        'i_b': 'B Phase Current (A)',
+        'i_r': 'R Phase Current (A)',
+        'i_y': 'Y Phase Current (A)',
+        'avg_i': 'Average Current (A)'
+    };
 
     const styles = {
         mainContent: {
@@ -185,7 +244,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
             
             // Default to all parameters if none selected
-            const params = selectedParameter.length > 0 ? selectedParameter : ['ry_v', 'acte_im', 'actpr_t'];
+            const params = selectedParameter.length > 0 ? selectedParameter : allParameters;
             
             // Fetch analytics data
             const data = await fetchAnalyticsData(
@@ -233,7 +292,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                     }
 
                     // Default to all parameters if none selected
-                    const params = selectedParameter2.length > 0 ? selectedParameter2 : ['ry_v', 'acte_im', 'actpr_t'];
+                    const params = selectedParameter2.length > 0 ? selectedParameter2 : allParameters;
 
                     // Fetch analytics data
                     const data = await fetchAnalyticsData(
@@ -266,7 +325,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                     }
 
                     // Default to all parameters if none selected
-                    const params = selectedParameter3.length > 0 ? selectedParameter3 : ['ry_v', 'acte_im', 'actpr_t'];
+                    const params = selectedParameter3.length > 0 ? selectedParameter3 : allParameters;
 
                     // Fetch analytics data
                     const data = await fetchAnalyticsData(
@@ -309,7 +368,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter) && selectedParameter.length > 0
             ? selectedParameter
-            : ['ry_v', 'acte_im', 'actpr_t']; // Default to all parameters
+            : allParameters; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the filtered data based on selected parameter and format to 2 decimal places
@@ -318,19 +377,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
                 // If a specific parameter is selected, use that field
                 if (param) {
-                    switch (param) {
-                        case 'ry_v':
-                            value = parseFloat(item.ry_v) || 0;
-                            break;
-                        case 'acte_im':
-                            value = parseFloat(item.acte_im) || 0;
-                            break;
-                        case 'actpr_t':
-                            value = parseFloat(item.actpr_t) || 0;
-                            break;
-                        default:
-                            value = 0;
-                    }
+                    value = parseFloat(item[param]) || 0;
                 } else {
                     // If no parameter selected, use the default logic (ry_v)
                     value = parseFloat(item.ry_v) || 0;
@@ -342,9 +389,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
             // Always create a series if we have data, even if all values are 0
             if (filteredChartData.length > 0) {
-                const parameterLabel = param
-                    ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                    : filterDevice;
+                const parameterLabel = parameterLabels[param] || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 series.push({
                     name: parameterLabel,
                     data: values
@@ -378,7 +423,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter2) && selectedParameter2.length > 0
             ? selectedParameter2
-            : ['ry_v', 'acte_im', 'actpr_t']; // Default to all parameters
+            : allParameters; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the comparison data based on selected parameter and format to 2 decimal places
@@ -387,19 +432,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
                 // If a specific parameter is selected, use that field
                 if (param) {
-                    switch (param) {
-                        case 'ry_v':
-                            value = parseFloat(item.ry_v) || 0;
-                            break;
-                        case 'acte_im':
-                            value = parseFloat(item.acte_im) || 0;
-                            break;
-                        case 'actpr_t':
-                            value = parseFloat(item.actpr_t) || 0;
-                            break;
-                        default:
-                            value = 0;
-                    }
+                    value = parseFloat(item[param]) || 0;
                 } else {
                     // If no parameter selected, use the default logic (ry_v)
                     value = parseFloat(item.ry_v) || 0;
@@ -411,9 +444,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
             // Always create a series if we have data, even if all values are 0
             if (compareChartData.length > 0) {
-                const parameterLabel = param
-                    ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                    : compareDevice;
+                const parameterLabel = parameterLabels[param] || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 series.push({
                     name: parameterLabel,
                     data: values
@@ -447,7 +478,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter3) && selectedParameter3.length > 0
             ? selectedParameter3
-            : ['ry_v', 'acte_im', 'actpr_t']; // Default to all parameters
+            : allParameters; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
@@ -456,19 +487,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
                 // If a specific parameter is selected, use that field
                 if (param) {
-                    switch (param) {
-                        case 'ry_v':
-                            value = parseFloat(item.ry_v) || 0;
-                            break;
-                        case 'acte_im':
-                            value = parseFloat(item.acte_im) || 0;
-                            break;
-                        case 'actpr_t':
-                            value = parseFloat(item.actpr_t) || 0;
-                            break;
-                        default:
-                            value = 0;
-                    }
+                    value = parseFloat(item[param]) || 0;
                 } else {
                     // If no parameter selected, use the default logic (ry_v)
                     value = parseFloat(item.ry_v) || 0;
@@ -480,9 +499,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
             // Always create a series if we have data, even if all values are 0
             if (compareChartData2.length > 0) {
-                const parameterLabel = param
-                    ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                    : compareDevice2;
+                const parameterLabel = parameterLabels[param] || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 series.push({
                     name: parameterLabel,
                     data: values
@@ -638,6 +655,51 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         };
     };
 
+    // Handle parameter category selection
+    const handleParameterChange = (event, setSelectedParam) => {
+        const value = event.target.value;
+        
+        // Check if "All Categories" was selected
+        if (value.includes('all_categories')) {
+            if (selectedParameter.length === allParameters.length) {
+                // If all are already selected, deselect all
+                setSelectedParam([]);
+            } else {
+                // Select all parameters from all categories
+                setSelectedParam([...allParameters]);
+            }
+        } else {
+            // Get all parameters from the selected categories
+            const selectedParameters = [];
+            value.forEach(category => {
+                if (parameterCategories[category]) {
+                    selectedParameters.push(...parameterCategories[category].parameters);
+                }
+            });
+            
+            setSelectedParam(selectedParameters);
+        }
+    };
+
+    // Check if all parameters from all categories are selected
+    const isAllParametersSelected = (selectedParam) => {
+        return selectedParam.length === allParameters.length;
+    };
+
+    // Get selected categories based on selected parameters
+    const getSelectedCategories = (selectedParam) => {
+        const categories = [];
+        Object.entries(parameterCategories).forEach(([categoryName, categoryData]) => {
+            const allCategoryParamsSelected = categoryData.parameters.every(param => 
+                selectedParam.includes(param)
+            );
+            if (allCategoryParamsSelected) {
+                categories.push(categoryName);
+            }
+        });
+        return categories;
+    };
+
     return (
         <Box style={styles.mainContent} id="main-content">
             <Box style={styles.container}>
@@ -659,38 +721,39 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         ))}
                                     </Select>
                                 </FormControl>
-                                <FormControl size="small" sx={{ minWidth: 200, mr: 1 }}>
+                                <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
                                     <InputLabel>Select Parameters</InputLabel>
                                     <Select
                                         multiple
-                                        value={selectedParameter}
-                                        onChange={(e) => {
-                                            const value = e.target.value;
-                                            // If "All Parameters" is selected, clear all other selections
-                                            if (value.includes('all')) {
-                                                setSelectedParameter([]);
-                                            } else {
-                                                // Remove "all" from selection if other items are selected
-                                                const filteredValue = value.filter(item => item !== 'all');
-                                                setSelectedParameter(filteredValue);
-                                            }
-                                        }}
+                                        value={getSelectedCategories(selectedParameter)}
+                                        onChange={(e) => handleParameterChange(e, setSelectedParameter)}
                                         label="Select Parameters"
                                         renderValue={(selected) => (
                                             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                {selected.slice(0, 2).map((value) => (
+                                                {/* Show "All Categories" if all are selected */}
+                                                {isAllParametersSelected(selectedParameter) ? (
                                                     <Chip
-                                                        key={value}
-                                                        label={parameterOptions.find(p => p.value === value)?.label || value.replace(/_/g, ' ')}
+                                                        label="All Categories"
                                                         size="small"
-                                                        sx={{
-                                                            height: '20px',
-                                                            fontSize: '10px',
-                                                            textTransform: 'capitalize'
-                                                        }}
+                                                        sx={{ height: '20px', fontSize: '10px' }}
                                                     />
-                                                ))}
-                                                {selected.length > 2 && (
+                                                ) : (
+                                                    /* Show the first 2 items as Chips */
+                                                    selected.slice(0, 2).map((value) => (
+                                                        <Chip
+                                                            key={value}
+                                                            label={parameterCategories[value]?.label || value}
+                                                            size="small"
+                                                            sx={{
+                                                                height: '20px',
+                                                                fontSize: '10px'
+                                                            }}
+                                                        />
+                                                    ))
+                                                )}
+
+                                                {/* If more than 2 items and not all selected, show the +X counter */}
+                                                {!isAllParametersSelected(selectedParameter) && selected.length > 2 && (
                                                     <Chip
                                                         label={`+${selected.length - 2} more`}
                                                         size="small"
@@ -713,14 +776,34 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             }
                                         }
                                     >
-                                        <MenuItem value="all">
-                                            <Checkbox checked={selectedParameter.length === 0} />
-                                            <ListItemText primary="All Parameters" />
-                                        </MenuItem>
-                                        {parameterOptions.map((option) => (
-                                            <MenuItem key={option.value} value={option.value}>
-                                                <Checkbox checked={selectedParameter.indexOf(option.value) > -1} />
-                                                <ListItemText primary={option.label} />
+                                       
+                                        {/* Category options */}
+                                        {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
+                                            <MenuItem key={categoryKey} value={categoryKey} sx={{
+                                                py: 0.2, // Tight vertical padding for the list item
+                                                px: 1,
+                                                minHeight: '32px', // Forces a slim row height
+                                            }}>
+                                                <Checkbox 
+                                                    checked={categoryData.parameters.every(param => selectedParameter.includes(param))} 
+                                                    sx={{
+                                                        p: 0.5,   // Removes the 9px default padding
+                                                        mr: 0.5,   // Adds spacing between box and text
+                                                        transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
+                                                        '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
+                                                    }} 
+                                                />
+                                                <ListItemText 
+                                                    primary={categoryData.label} 
+                                                    primaryTypographyProps={{
+                                                        fontSize: '12px', // Smaller font to match the small checkbox
+                                                        lineHeight: 1.2
+                                                    }}
+                                                    secondaryTypographyProps={{
+                                                        fontSize: '10px',
+                                                        color: 'text.secondary'
+                                                    }}
+                                                />
                                             </MenuItem>
                                         ))}
                                     </Select>
@@ -827,7 +910,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             {Array.isArray(selectedParameter) && selectedParameter.length > 0
                                                 ? `${filterDevice} - ${selectedParameter.length > 1
                                                     ? `${selectedParameter.length} Parameters Selected`
-                                                    : parameterOptions.find(opt => opt.value === selectedParameter[0])?.label || selectedParameter[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                    : parameterLabels[selectedParameter[0]] || selectedParameter[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                 : (filterDevice !== 'all' ? `${filterDevice}` : 'Energy Analytics')}
                                         </Typography>
                                         <Box>
@@ -895,7 +978,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 {Array.isArray(selectedParameter2) && selectedParameter2.length > 0
                                                     ? `${compareDevice} - ${selectedParameter2.length > 1
                                                         ? `${selectedParameter2.length} Parameters Selected`
-                                                        : parameterOptions.find(opt => opt.value === selectedParameter2[0])?.label || selectedParameter2[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                        : parameterLabels[selectedParameter2[0]] || selectedParameter2[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                     : compareDevice}
                                             </Typography>
                                             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -918,38 +1001,39 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             ))}
                                                         </Select>
                                                     </FormControl>
-                                                    <FormControl size="small" sx={{ minWidth: 200, mr: 1 }}>
+                                                    <FormControl size="small" sx={{ minWidth: 300, mr: 1 }}>
                                                         <InputLabel>Select Parameters</InputLabel>
                                                         <Select
                                                             multiple
-                                                            value={selectedParameter2}
-                                                            onChange={(e) => {
-                                                                const value = e.target.value;
-                                                                // If "All Parameters" is selected, clear all other selections
-                                                                if (value.includes('all')) {
-                                                                    setSelectedParameter2([]);
-                                                                } else {
-                                                                    // Remove "all" from selection if other items are selected
-                                                                    const filteredValue = value.filter(item => item !== 'all');
-                                                                    setSelectedParameter2(filteredValue);
-                                                                }
-                                                            }}
+                                                            value={getSelectedCategories(selectedParameter2)}
+                                                            onChange={(e) => handleParameterChange(e, setSelectedParameter2)}
                                                             label="Select Parameters"
                                                             renderValue={(selected) => (
                                                                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                                    {selected.slice(0, 2).map((value) => (
+                                                                    {/* Show "All Categories" if all are selected */}
+                                                                    {isAllParametersSelected(selectedParameter2) ? (
                                                                         <Chip
-                                                                            key={value}
-                                                                            label={parameterOptions.find(p => p.value === value)?.label || value.replace(/_/g, ' ')}
+                                                                            label="All Categories"
                                                                             size="small"
-                                                                            sx={{
-                                                                                height: '20px',
-                                                                                fontSize: '10px',
-                                                                                textTransform: 'capitalize'
-                                                                            }}
+                                                                            sx={{ height: '20px', fontSize: '10px' }}
                                                                         />
-                                                                    ))}
-                                                                    {selected.length > 2 && (
+                                                                    ) : (
+                                                                        /* Show the first 2 items as Chips */
+                                                                        selected.slice(0, 2).map((value) => (
+                                                                            <Chip
+                                                                                key={value}
+                                                                                label={parameterCategories[value]?.label || value}
+                                                                                size="small"
+                                                                                sx={{
+                                                                                    height: '20px',
+                                                                                    fontSize: '10px'
+                                                                                }}
+                                                                            />
+                                                                        ))
+                                                                    )}
+
+                                                                    {/* If more than 2 items and not all selected, show the +X counter */}
+                                                                    {!isAllParametersSelected(selectedParameter2) && selected.length > 2 && (
                                                                         <Chip
                                                                             label={`+${selected.length - 2} more`}
                                                                             size="small"
@@ -972,14 +1056,34 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 }
                                                             }
                                                         >
-                                                            <MenuItem value="all">
-                                                                <Checkbox checked={selectedParameter2.length === 0} />
-                                                                <ListItemText primary="All Parameters" />
-                                                            </MenuItem>
-                                                            {parameterOptions.map((option) => (
-                                                                <MenuItem key={option.value} value={option.value}>
-                                                                    <Checkbox checked={selectedParameter2.indexOf(option.value) > -1} />
-                                                                    <ListItemText primary={option.label} />
+                                                            
+                                                            {/* Category options */}
+                                                            {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
+                                                                <MenuItem key={categoryKey} value={categoryKey} sx={{
+                                                                    py: 0.2, // Tight vertical padding for the list item
+                                                                    px: 1,
+                                                                    minHeight: '32px', // Forces a slim row height
+                                                                }}>
+                                                                    <Checkbox 
+                                                                        checked={categoryData.parameters.every(param => selectedParameter2.includes(param))} 
+                                                                        sx={{
+                                                                            p: 0.5,   // Removes the 9px default padding
+                                                                            mr: 0.5,   // Adds spacing between box and text
+                                                                            transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
+                                                                            '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
+                                                                        }} 
+                                                                    />
+                                                                    <ListItemText 
+                                                                        primary={categoryData.label} 
+                                                                        primaryTypographyProps={{
+                                                                            fontSize: '12px', // Smaller font to match the small checkbox
+                                                                            lineHeight: 1.2
+                                                                        }}
+                                                                        secondaryTypographyProps={{
+                                                                            fontSize: '10px',
+                                                                            color: 'text.secondary'
+                                                                        }}
+                                                                    />
                                                                 </MenuItem>
                                                             ))}
                                                         </Select>
@@ -1047,7 +1151,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 {Array.isArray(selectedParameter3) && selectedParameter3.length > 0
                                                     ? `${compareDevice2} - ${selectedParameter3.length > 1
                                                         ? `${selectedParameter3.length} Parameters Selected`
-                                                        : parameterOptions.find(opt => opt.value === selectedParameter3[0])?.label || selectedParameter3[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                        : parameterLabels[selectedParameter3[0]] || selectedParameter3[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                     : compareDevice2}
                                             </Typography>
                                             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
@@ -1069,38 +1173,39 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                         ))}
                                                     </Select>
                                                 </FormControl>
-                                                <FormControl size="small" sx={{ minWidth: 200 }}>
+                                                <FormControl size="small" sx={{ minWidth: 300 }}>
                                                     <InputLabel>Select Parameters</InputLabel>
                                                     <Select
                                                         multiple
-                                                        value={selectedParameter3}
-                                                        onChange={(e) => {
-                                                            const value = e.target.value;
-                                                            // If "All Parameters" is selected, clear all other selections
-                                                            if (value.includes('all')) {
-                                                                setSelectedParameter3([]);
-                                                            } else {
-                                                                // Remove "all" from selection if other items are selected
-                                                                const filteredValue = value.filter(item => item !== 'all');
-                                                                setSelectedParameter3(filteredValue);
-                                                            }
-                                                        }}
+                                                        value={getSelectedCategories(selectedParameter3)}
+                                                        onChange={(e) => handleParameterChange(e, setSelectedParameter3)}
                                                         label="Select Parameters"
                                                         renderValue={(selected) => (
                                                             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                                {selected.slice(0, 2).map((value) => (
+                                                                {/* Show "All Categories" if all are selected */}
+                                                                {isAllParametersSelected(selectedParameter3) ? (
                                                                     <Chip
-                                                                        key={value}
-                                                                        label={parameterOptions.find(p => p.value === value)?.label || value.replace(/_/g, ' ')}
+                                                                        label="All Categories"
                                                                         size="small"
-                                                                        sx={{
-                                                                            height: '20px',
-                                                                            fontSize: '10px',
-                                                                            textTransform: 'capitalize'
-                                                                        }}
+                                                                        sx={{ height: '20px', fontSize: '10px' }}
                                                                     />
-                                                                ))}
-                                                                {selected.length > 2 && (
+                                                                ) : (
+                                                                    /* Show the first 2 items as Chips */
+                                                                    selected.slice(0, 2).map((value) => (
+                                                                        <Chip
+                                                                            key={value}
+                                                                            label={parameterCategories[value]?.label || value}
+                                                                            size="small"
+                                                                            sx={{
+                                                                                height: '20px',
+                                                                                fontSize: '10px'
+                                                                            }}
+                                                                        />
+                                                                    ))
+                                                                )}
+
+                                                                {/* If more than 2 items and not all selected, show the +X counter */}
+                                                                {!isAllParametersSelected(selectedParameter3) && selected.length > 2 && (
                                                                     <Chip
                                                                         label={`+${selected.length - 2} more`}
                                                                         size="small"
@@ -1123,14 +1228,34 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             }
                                                         }
                                                     >
-                                                        <MenuItem value="all">
-                                                            <Checkbox checked={selectedParameter3.length === 0} />
-                                                            <ListItemText primary="All Parameters" />
-                                                        </MenuItem>
-                                                        {parameterOptions.map((option) => (
-                                                            <MenuItem key={option.value} value={option.value}>
-                                                                <Checkbox checked={selectedParameter3.indexOf(option.value) > -1} />
-                                                                <ListItemText primary={option.label} />
+                                                        
+                                                        {/* Category options */}
+                                                        {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
+                                                            <MenuItem key={categoryKey} value={categoryKey} sx={{
+                                                                py: 0.2, // Tight vertical padding for the list item
+                                                                px: 1,
+                                                                minHeight: '32px', // Forces a slim row height
+                                                            }}>
+                                                                <Checkbox 
+                                                                    checked={categoryData.parameters.every(param => selectedParameter3.includes(param))} 
+                                                                    sx={{
+                                                                        p: 0.5,   // Removes the 9px default padding
+                                                                        mr: 0.5,   // Adds spacing between box and text
+                                                                        transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
+                                                                        '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
+                                                                    }} 
+                                                                />
+                                                                <ListItemText 
+                                                                    primary={categoryData.label} 
+                                                                    primaryTypographyProps={{
+                                                                        fontSize: '12px', // Smaller font to match the small checkbox
+                                                                        lineHeight: 1.2
+                                                                    }}
+                                                                    secondaryTypographyProps={{
+                                                                        fontSize: '10px',
+                                                                        color: 'text.secondary'
+                                                                    }}
+                                                                />
                                                             </MenuItem>
                                                         ))}
                                                     </Select>

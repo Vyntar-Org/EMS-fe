@@ -24,6 +24,7 @@ import {
   Pagination,
   Checkbox,
   ListItemText,
+  Divider
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -56,6 +57,16 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
   const [openStart, setOpenStart] = React.useState(false);
   const [openEnd, setOpenEnd] = React.useState(false);
 
+  // Define all available parameters
+  const allParameters = [
+    { val: 'timestamp', label: 'Timestamp' },
+    { val: 'temperature', label: 'Temperature' },
+    { val: 'humidity', label: 'Humidity' },
+    { val: 'battery', label: 'Battery' }
+  ];
+
+  // Get all parameter values for easy reference
+  const allParameterValues = allParameters.map(param => param.val);
 
   // Load devices on component mount
   useEffect(() => {
@@ -86,8 +97,6 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
 
     fetchDevices();
   }, []);
-
-
 
   // Handle search button click
   const handleSearch = async () => {
@@ -198,6 +207,28 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
     setPage(value);
   };
 
+  // Handle parameter selection
+  const handleParameterChange = (event) => {
+    const value = event.target.value;
+    
+    // Check if "All Parameters" was selected
+    if (value.includes('all_parameters')) {
+      if (selectedColumn.length === allParameterValues.length) {
+        // If all are already selected, deselect all
+        setSelectedColumn([]);
+      } else {
+        // Select all parameters
+        setSelectedColumn([...allParameterValues]);
+      }
+    } else {
+      // Normal selection behavior
+      setSelectedColumn(typeof value === 'string' ? value.split(',') : value);
+    }
+  };
+
+  // Check if all parameters are selected
+  const isAllParametersSelected = selectedColumn.length === allParameterValues.length;
+
   const styles = {
     mainContent: {
       width: sidebarVisible ? 'calc(100% - 0px)' : 'calc(100% - 0px)',
@@ -266,27 +297,36 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                   labelId="param-select-label"
                   multiple
                   value={selectedColumn} // Ensure this state is an array: []
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSelectedColumn(typeof value === 'string' ? value.split(',') : value);
-                  }}
+                  onChange={handleParameterChange}
                   label="Select Parameter"
                   // RENDER LOGIC: Keeps input box height fixed
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                      {selected.slice(0, 2).map((value) => (
+                      {/* Show "All Parameters" if all are selected */}
+                      {isAllParametersSelected ? (
                         <Chip
-                          key={value}
-                          label={value.replace(/_/g, ' ')}
+                          label="All Parameters"
                           size="small"
-                          sx={{
-                            height: '20px',
-                            fontSize: '10px',
-                            textTransform: 'capitalize'
-                          }}
+                          sx={{ height: '20px', fontSize: '10px' }}
                         />
-                      ))}
-                      {selected.length > 2 && (
+                      ) : (
+                        /* Show the first 2 items as Chips */
+                        selected.slice(0, 2).map((value) => (
+                          <Chip
+                            key={value}
+                            label={allParameters.find(p => p.val === value)?.label || value.replace(/_/g, ' ')}
+                            size="small"
+                            sx={{
+                              height: '20px',
+                              fontSize: '10px',
+                              textTransform: 'capitalize'
+                            }}
+                          />
+                        ))
+                      )}
+
+                      {/* If more than 2 items and not all selected, show the +X counter */}
+                      {!isAllParametersSelected && selected.length > 2 && (
                         <Chip
                           label={`+${selected.length - 2} more`}
                           size="small"
@@ -307,12 +347,35 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                     },
                   }}
                 >
-                  {[
-                    { val: 'timestamp', label: 'Timestamp' },
-                    { val: 'temperature', label: 'Temperature' },
-                    { val: 'humidity', label: 'Humidity' },
-                    { val: 'battery', label: 'Battery' }
-                  ].map((item) => (
+                  {/* "All Parameters" option */}
+                  <MenuItem 
+                    value="all_parameters" 
+                    sx={{
+                      py: 0.5,
+                      px: 1,
+                      fontWeight: isAllParametersSelected ? 'bold' : 'normal',
+                      backgroundColor: isAllParametersSelected ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
+                    }}
+                  >
+                    <Checkbox 
+                      checked={isAllParametersSelected} 
+                      indeterminate={selectedColumn.length > 0 && !isAllParametersSelected}
+                      sx={{
+                        p: 0.5,
+                        mr: 0.5,
+                        transform: "scale(0.8)",
+                        '& .MuiSvgIcon-root': { fontSize: 20 }
+                      }} 
+                    />
+                    <ListItemText primary="All Parameters" primaryTypographyProps={{
+                      fontSize: '12px',
+                      lineHeight: 1.2,
+                      fontWeight: isAllParametersSelected ? 'bold' : 'normal'
+                    }} />
+                  </MenuItem>
+                  
+                  {/* Individual parameter options */}
+                  {allParameters.map((item) => (
                     <MenuItem
                       key={item.val}
                       value={item.val}
@@ -438,15 +501,15 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                     {selectedColumn.length > 0 ? (
                       selectedColumn.map((col) => (
                         <TableCell key={col} className="log-header-cell" sx={{ textTransform: 'capitalize' }}>
-                          {col.replace(/_/g, ' ')}
+                          {allParameters.find(p => p.val === col)?.label || col.replace(/_/g, ' ')}
                         </TableCell>
                       ))
                     ) : (
                       <>
-                        <TableCell className="log-header-cell">Timestamp</TableCell>
-                        <TableCell className="log-header-cell">Temperature (°C)</TableCell>
-                        <TableCell className="log-header-cell">Humidity (%)</TableCell>
-                        <TableCell className="log-header-cell">Battery (V)</TableCell>
+                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Timestamp</TableCell>
+                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Temperature (°C)</TableCell>
+                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Humidity (%)</TableCell>
+                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Battery (V)</TableCell>
                       </>
                     )}
                   </TableRow>
@@ -495,7 +558,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={selectedColumn ? 1 : 4} align="center">
+                      <TableCell colSpan={selectedColumn ? selectedColumn.length : 4} align="center">
                         {paginatedLogs.length === 0 ? 'No logs found matching your filters' : ''}
                       </TableCell>
                     </TableRow>

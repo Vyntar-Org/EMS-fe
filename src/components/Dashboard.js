@@ -917,7 +917,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               }
             }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography sx={titleStyle1}>Energy Consumption (Last 24 Hours)</Typography>
+                <Typography sx={titleStyle1}>Energy Consumption (Last 6 Hours)</Typography>
                 <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>kWh</Typography>
               </Box>
               {hourlyLoading ? (
