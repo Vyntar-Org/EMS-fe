@@ -787,10 +787,6 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             }
                                         }
                                     >
-                                        <MenuItem value="all">
-                                            <Checkbox checked={selectedParameter.length === 0} />
-                                            <ListItemText primary="All Parameters" />
-                                        </MenuItem>
                                         {parameterOptions.map((option) => (
                                             <MenuItem key={option.value} value={option.value}>
                                                 <Checkbox checked={selectedParameter.indexOf(option.value) > -1} />
@@ -1063,10 +1059,6 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 }
                                                             }
                                                         >
-                                                            <MenuItem value="all">
-                                                                <Checkbox checked={selectedParameter2.length === 0} />
-                                                                <ListItemText primary="All Parameters" />
-                                                            </MenuItem>
                                                             {parameterOptions.map((option) => (
                                                                 <MenuItem key={option.value} value={option.value}>
                                                                     <Checkbox checked={selectedParameter2.indexOf(option.value) > -1} />
@@ -1214,10 +1206,6 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             }
                                                         }
                                                     >
-                                                        <MenuItem value="all">
-                                                            <Checkbox checked={selectedParameter3.length === 0} />
-                                                            <ListItemText primary="All Parameters" />
-                                                        </MenuItem>
                                                         {parameterOptions.map((option) => (
                                                             <MenuItem key={option.value} value={option.value}>
                                                                 <Checkbox checked={selectedParameter3.indexOf(option.value) > -1} />
