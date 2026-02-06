@@ -179,89 +179,102 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
     return formatDateTime(hourString);
   });
 
+  const shortNumber = (value) => {
+  if (value >= 1e12) return (value / 1e12).toFixed(2) + "T";
+  if (value >= 1e9) return (value / 1e9).toFixed(0) + "B";
+  if (value >= 1e6) return (value / 1e6).toFixed(0) + "M";
+  // if (value >= 1e3) return (value / 1e3).toFixed(0) + "K";
+  return value.toFixed(0);
+};
+
+
   // Chart configurations remain the same
-  const energyConsumptionOptions = {
-    chart: {
-      type: 'line',
-      height: 140,
-      toolbar: { show: false },
-      zoom: { enabled: false },
-      background: 'transparent'
+const energyConsumptionOptions = {
+  chart: {
+    type: 'line',
+    height: 140,
+    toolbar: { show: false },
+    zoom: { enabled: false },
+    background: 'transparent'
+  },
+
+  stroke: {
+    curve: 'smooth',
+    width: 2
+  },
+
+  markers: {
+    size: 0
+  },
+
+  grid: {
+    strokeDashArray: 4,
+    borderColor: 'transparent',
+    position: 'back',
+    xaxis: { lines: { show: false } },
+    yaxis: { lines: { show: true, color: '#E5E7EB' } }
+  },
+
+  xaxis: {
+    categories: hourlyCategories,
+    labels: {
+      style: { colors: '#6B7280', fontSize: '12px' },
+      formatter: (val) => val
     },
-    stroke: {
-      curve: 'smooth',
-      width: 2
+    axisBorder: { show: false },
+    axisTicks: { show: false }
+  },
+
+  yaxis: {
+    min: hourlyValues.length > 0 ? Math.min(...hourlyValues, 0) : 0,
+    max: hourlyValues.length > 0 ? Math.max(...hourlyValues, 1) : 1,
+    tickAmount: 4,
+    labels: {
+      formatter: (val) => shortNumber(val),   // 🔥 SHORT VALUES
+      style: { colors: '#6B7280', fontSize: '12px' }
     },
-    markers: { size: 0 },
-    grid: {
-      strokeDashArray: 4,
-      borderColor: 'transparent',
-      position: 'back',
-      xaxis: { lines: { show: false } },
-      yaxis: { lines: { show: true, color: '#E5E7EB' } }
+    axisBorder: { show: false }
+  },
+
+  dataLabels: {
+    enabled: true,
+    formatter: (val) => shortNumber(val),     // 🔥 SHORT VALUES ON LINE
+    offsetY: -10,
+    offsetX: 4,
+    style: {
+      fontSize: '12px',
+      colors: ['#0a223e']
     },
-    xaxis: {
-      categories: hourlyCategories,
-      labels: {
-        style: { colors: '#6B7280', fontSize: '12px' },
-        // rotate: -45,
-        // rotateAlways: true,
-        hideOverlappingLabels: false,
-        formatter: function (val) {
-          return val; // Return the full formatted value
+    background: {
+      enabled: false
+    }
+  },
+
+  tooltip: {
+    enabled: true,
+    theme: 'light',
+    style: { fontSize: '12px' },
+    x: {
+      formatter: function (val, opts) {
+        const index = opts.dataPointIndex;
+        if (hourlyData[index]) {
+          return formatDateTime(hourlyData[index]);
         }
-      },
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-    },
-    yaxis: {
-      min: hourlyValues.length > 0 ? Math.min(...hourlyValues, 0) : 0,
-      max: hourlyValues.length > 0 ? Math.max(...hourlyValues, 1) : 1,
-      tickAmount: 4,
-      labels: {
-        style: { colors: '#6B7280', fontSize: '12px' }
-      },
-      axisBorder: { show: false }
-    },
-    dataLabels: {
-      enabled: true,
-      formatter: function (val) {
         return val;
-      },
-      offsetY: -10,
-       offsetX: 4,
-      style: {
-        fontSize: '12px',
-        colors: ["#0a223e"]
-      },
-      background: {
-        enabled: false, // 👈 this removes the blue background
-      },
-    },
-    tooltip: {
-      enabled: true,
-      theme: 'light',
-      style: { fontSize: '12px' },
-      x: {
-        formatter: function (val, opts) {
-          // Get the original data point index
-          const index = opts.dataPointIndex;
-          // Get the original hour string from hourlyData
-          if (hourlyData[index]) {
-            return formatDateTime(hourlyData[index]);
-          }
-          return val;
-        }
-      },
-      y: {
-        formatter: function (val) {
-          return val + ' kWh';
-        }
       }
     },
-    legend: { show: false },
-    colors: ['#0a223e']
-  };
+    y: {
+      formatter: (val) => `${val.toLocaleString()} kWh` // 🔥 FULL VALUE
+    }
+  },
+
+  legend: {
+    show: false
+  },
+
+  colors: ['#0a223e']
+};
+
 
   const energyConsumptionSeries = [{
     name: '(kWh)',
@@ -319,63 +332,86 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const sampledPeakDemand = samplePeakDemandData();
 
   // Chart 2: Peak Demand Indicator
-  const peakDemandOptions = {
-    chart: {
-      type: 'line',
-      height: 150,
-      toolbar: { show: false },
-      background: 'transparent'
+const peakDemandOptions = {
+  chart: {
+    type: 'line',
+    height: 150,
+    toolbar: { show: false },
+    zoom: { enabled: false },
+    background: 'transparent'
+  },
+
+  stroke: {
+    curve: 'smooth',
+    width: 3
+  },
+
+  markers: {
+    size: 6,
+    colors: ['#cbc84c'],
+    strokeColors: '#ffffff',
+    strokeWidth: 2,
+    strokeOpacity: 0.9,
+    fillOpacity: 1
+  },
+
+  grid: {
+    strokeDashArray: 4,
+    borderColor: 'transparent',
+    position: 'back',
+    xaxis: { lines: { show: false } },
+    yaxis: { lines: { show: true, color: '#E5E7EB' } }
+  },
+
+  xaxis: {
+    categories:
+      sampledPeakDemand.categories.length > 0
+        ? sampledPeakDemand.categories
+        : ['-'],
+    labels: {
+      style: { colors: '#6B7280', fontSize: '12px' }
     },
-    stroke: {
-      curve: 'smooth',
-      width: 3
+    axisBorder: { show: false },
+    axisTicks: { show: false }
+  },
+
+  yaxis: {
+    min:
+      peakDemandData.values.length > 0
+        ? Math.min(...peakDemandData.values, 0)
+        : 0,
+    max:
+      peakDemandData.values.length > 0
+        ? Math.max(...peakDemandData.values) * 1.1 // 🔥 little top spacing
+        : 10,
+    tickAmount: 5,
+    labels: {
+      formatter: (val) => shortNumber(val),   // 🔥 SHORT VALUES
+      style: { colors: '#6B7280', fontSize: '12px' }
     },
-    markers: {
-      size: 6,
-      colors: ['#cbc84c'],
-      strokeColors: '#fff',
-      strokeWidth: 2,
-      strokeOpacity: 0.9,
-      fillOpacity: 1
-    },
-    grid: {
-      strokeDashArray: 4,
-      borderColor: 'transparent',
-      position: 'back',
-      xaxis: { lines: { show: false } },
-      yaxis: { lines: { show: true, color: '#E5E7EB' } }
-    },
-    xaxis: {
-      categories: sampledPeakDemand.categories.length > 0 ? sampledPeakDemand.categories : ['-'],
-      labels: {
-        style: { colors: '#6B7280', fontSize: '12px' }
-      },
-      axisBorder: { show: false },
-      axisTicks: { show: false }
-    },
-    yaxis: {
-      min: peakDemandData.values.length > 0 ? Math.min(...peakDemandData.values, 0) : 0,
-      max: peakDemandData.values.length > 0 ? Math.max(...peakDemandData.values, 10) : 10,
-      tickAmount: 5,
-      labels: {
-        style: { colors: '#6B7280', fontSize: '12px' }
-      },
-      axisBorder: { show: false }
-    },
-    dataLabels: { enabled: false },
-    tooltip: {
-      enabled: peakDemandData.values.length > 0,
-      theme: 'light',
-      style: { fontSize: '12px' },
-      y: {
-        formatter: function (val) {
-          return val + ' kW';
-        }
-      }
-    },
-    legend: { show: false },
-    colors: ['#0a223e']
-  };
+    axisBorder: { show: false }
+  },
+
+  dataLabels: {
+    enabled: false
+  },
+
+  tooltip: {
+    enabled: peakDemandData.values.length > 0,
+    theme: 'light',
+    style: { fontSize: '12px' },
+    y: {
+      formatter: (val) => `${val.toLocaleString()} kW` // 🔥 FULL VALUE
+    }
+  },
+
+  legend: {
+    show: false
+  },
+
+  colors: ['#0a223e']
+};
+
 
   const peakDemandSeries = [{
     name: 'Peak Demand',
@@ -1036,13 +1072,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                           </button>
                         </Box>
                       </Box>
-                      {slaveLoading && selectedSlave ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '150px' }}>
-                          <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
-                            Loading {selectedSlave.slave_name} data...
-                          </Typography>
-                        </Box>
-                      ) : selectedSlave && weeklyConsumptionData.length > 0 ? (
+                      
                         <Chart
                           options={{
                             ...energyConsumptionOptions,
@@ -1078,20 +1108,6 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                           height={350}
                           width={500}
                         />
-                      ) : (
-                        <Chart
-                          options={{
-                            ...energyConsumptionOptions,
-                            yaxis: {
-                              ...energyConsumptionOptions.yaxis,
-                              labels: { show: false }
-                            }
-                          }}
-                          series={energyConsumptionSeries}
-                          type="line"
-                          height={200}
-                        />
-                      )}
                     </Box>
                   ) : (
                     /* Machine Power Consumption Chart */

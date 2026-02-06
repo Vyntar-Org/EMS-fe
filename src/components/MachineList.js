@@ -614,8 +614,9 @@ const chartOptions = {
             display: 'flex',
             flexDirection: 'row',
             flexWrap: 'wrap',
-            justifyContent: 'space-around',
-            gap: '20px 0px'
+            justifyContent: '',
+            gap: '20px 50px',
+            marginLeft: '30px'
         },
         gridItem: {
             width: '30%',
