@@ -155,6 +155,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const slavesData = dashboardData?.devices || { total: 0, online: 0, offline: 0 };
   const energyConsumption = dashboardData?.energy_consumption || 0;
   const energyConsumptionUnit = dashboardData?.energy_consumption?.unit || 'kWh';
+  const carbonFootprints = dashboardData?.carbon_footprints || 0;
   
   console.log('Slaves data:', slavesData);
   console.log('Energy consumption:', energyConsumption);
@@ -885,20 +886,20 @@ const peakDemandOptions = {
               </Box>
               <Box display="flex" justifyContent="space-around" mt="auto">
                 <Box textAlign="center">
-                  <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>100</Typography>
+                  <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>{((carbonFootprints?.main?.toFixed(2)))}</Typography>
                   <Typography sx={labelStyle}>Main</Typography>
                 </Box>
                 <Box textAlign="center">
-                  <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>0</Typography>
+                  <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>{((carbonFootprints?.backup?.toFixed(2)))}</Typography>
                   <Typography sx={labelStyle}>Backup</Typography>
                 </Box>
                 <Box textAlign="center">
-                  <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>0</Typography>
+                  <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>{((carbonFootprints?.green?.toFixed(2)))}</Typography>
                   <Typography sx={labelStyle}>Green</Typography>
                 </Box>
               </Box>
               <Box display="flex" justifyContent="center" mt={1}>
-                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>kg of CO₂</Typography>
+                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>{((carbonFootprints?.unit))}</Typography>
               </Box>
             </CardContent>
           </Card>
