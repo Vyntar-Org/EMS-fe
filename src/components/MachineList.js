@@ -688,7 +688,7 @@ const chartOptions = {
         };
 
         const getConditionalStatus = (isOnline) => {
-            if (conditionalLatest.pf_t > 1 && isOnline) {
+            if (conditionalLatest.actpr_t > 1 && isOnline) {
                 return 'Online';
             } else {
                 return 'Offline';
