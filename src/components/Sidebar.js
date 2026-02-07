@@ -38,10 +38,13 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
   // Define menu items based on active application
   const menuItems = activeApp ? (
     activeApp.code === 'TEMPERATURE' ? [
-      // { id: 1, name: 'Dashboard', path: '/dashboard', icon: 'home' },
-      { id: 2, name: 'Machine List', path: '/temperature/machine-list', icon: 'list' },
-      { id: 3, name: 'Analytics', path: '/temperature/analytics', icon: 'bar-chart' },
-      { id: 4, name: 'Logs', path: '/temperature/logs', icon: 'file-text' },
+      { id: 1, name: 'Machine List', path: '/temperature/machine-list', icon: 'list' },
+      { id: 2, name: 'Analytics', path: '/temperature/analytics', icon: 'bar-chart' },
+      { id: 3, name: 'Logs', path: '/temperature/logs', icon: 'file-text' },
+    ] : activeApp.code === 'FIRE_SAFETY' ? [
+      { id: 1, name: 'Machine List', path: '/fire-safety/machine-list', icon: 'list' },
+      { id: 2, name: 'Analytics', path: '/fire-safety/analytics', icon: 'bar-chart' },
+      { id: 3, name: 'Logs', path: '/fire-safety/logs', icon: 'file-text' },
     ] : [
       { id: 1, name: 'Dashboard', path: '/dashboard', icon: 'home' },
       { id: 2, name: 'Machine List', path: '/machine-list', icon: 'list' },

@@ -39,46 +39,81 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
   const [userData, setUserData] = useState(null);
   const { logout, userData: contextUserData } = useAuth();
   
+  // Manually add the Fire & Safety application
+  const addFireSafetyApp = (applications) => {
+    if (!applications) return applications;
+    
+    // Check if Fire & Safety app already exists
+    const hasFireSafety = applications.some(app => app.code === 'FIRE_SAFETY');
+    
+    if (!hasFireSafety) {
+      // Add the Fire & Safety app
+      return [
+        ...applications,
+        {
+          code: 'FIRE_SAFETY',
+          name: 'Fire & Safety',
+          default_landing_page: 'machine-list'
+        }
+      ];
+    }
+    
+    return applications;
+  };
+  
   // Load user data from context
   useEffect(() => {
     const storedUserData = JSON.parse(localStorage.getItem('fullUserData'));
     if (storedUserData) {
-      setUserData(storedUserData);
+      // Add Fire & Safety app if not present
+      const updatedUserData = {
+        ...storedUserData,
+        applications: addFireSafetyApp(storedUserData.applications)
+      };
+      setUserData(updatedUserData);
+      
       // Set default active app if available and not already set
-      if (storedUserData.applications && storedUserData.applications.length > 0 && !activeApp) {
+      if (updatedUserData.applications && updatedUserData.applications.length > 0 && !activeApp) {
         // Check if there's a saved active app first
         const savedApp = localStorage.getItem('activeApp');
         if (savedApp) {
           const parsedApp = JSON.parse(savedApp);
           // Verify the saved app still exists in user's applications
-          const appExists = storedUserData.applications.some(app => app.code === parsedApp.code);
+          const appExists = updatedUserData.applications.some(app => app.code === parsedApp.code);
           if (appExists) {
             setActiveApp(parsedApp);
             return;
           }
         }
         // If no saved app or it doesn't exist, set default
-        const energyApp = storedUserData.applications.find(app => app.code === 'ENERGY');
-        setActiveApp(energyApp || storedUserData.applications[0]);
+        const energyApp = updatedUserData.applications.find(app => app.code === 'ENERGY');
+        setActiveApp(energyApp || updatedUserData.applications[0]);
       }
     } else {
-      setUserData(contextUserData);
+      // Add Fire & Safety app if not present
+      const updatedContextUserData = contextUserData ? {
+        ...contextUserData,
+        applications: addFireSafetyApp(contextUserData.applications)
+      } : null;
+      
+      setUserData(updatedContextUserData);
+      
       // Set default active app if available and not already set
-      if (contextUserData && contextUserData.applications && contextUserData.applications.length > 0 && !activeApp) {
+      if (updatedContextUserData && updatedContextUserData.applications && updatedContextUserData.applications.length > 0 && !activeApp) {
         // Check if there's a saved active app first
         const savedApp = localStorage.getItem('activeApp');
         if (savedApp) {
           const parsedApp = JSON.parse(savedApp);
           // Verify the saved app still exists in user's applications
-          const appExists = contextUserData.applications.some(app => app.code === parsedApp.code);
+          const appExists = updatedContextUserData.applications.some(app => app.code === parsedApp.code);
           if (appExists) {
             setActiveApp(parsedApp);
             return;
           }
         }
         // If no saved app or it doesn't exist, set default
-        const energyApp = contextUserData.applications.find(app => app.code === 'ENERGY');
-        setActiveApp(energyApp || contextUserData.applications[0]);
+        const energyApp = updatedContextUserData.applications.find(app => app.code === 'ENERGY');
+        setActiveApp(energyApp || updatedContextUserData.applications[0]);
       }
     }
   }, [contextUserData, activeApp, setActiveApp]);
@@ -163,13 +198,22 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
               <div className="applications-icons" style={{ display: 'flex', flexDirection: 'row-reverse', alignItems: 'center', gap: '10px', marginRight: '20px' }}>
                 {userData.applications.map((app, index) => {
                   const isActive = activeApp && activeApp.code === app.code;
+                  // Get display name for the app
+                  let displayName = app.name.substring(0, 4);
+                  if (app.code === 'ENERGY') {
+                    displayName = 'EMS';
+                  } else if (app.code === 'TEMPERATURE') {
+                    displayName = 'Temperature';
+                  } else if (app.code === 'FIRE_SAFETY') {
+                    displayName = 'Fire & Safety';
+                  }
+                  
                   return (
                     <div 
                       key={index}
                       title={`${app.name} Application`}
                       style={{
                         padding: '5px 10px',
-                        // borderRadius: '5px',
                         cursor: 'pointer',
                         fontSize: '12px',
                         fontWeight: 'bold',
@@ -177,7 +221,6 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                         minWidth: '60px',
                         textAlign: 'center',
                         borderBottom: isActive ? '2px solid #f5d547' : '2px solid transparent',
-                        // backgroundColor: isActive ? 'rgba(245, 213, 71, 0.1)' : 'transparent', // Optional: light glow for active app
                       }}
                       onClick={() => {
                         // Set the active application
@@ -188,16 +231,21 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                           let route = app.default_landing_page.toLowerCase();
                           // Convert underscores to hyphens for URL routing
                           route = route.replace(/_/g, '-');
-                          // For Temperature application, prepend 'temperature/' to the route
+                          
+                          // Handle different application routing
                           if (app.code === 'TEMPERATURE') {
                             navigate(`/temperature/${route}`);
+                          } else if (app.code === 'FIRE_SAFETY') {
+                            navigate(`/fire-safety/${route}`);
                           } else {
                             navigate(`/${route}`);
                           }
                         } else {
-                          // For Temperature application, go to TemperatureMachineList
+                          // Handle different application default routing
                           if (app.code === 'TEMPERATURE') {
                             navigate('/temperature/machine-list');
+                          } else if (app.code === 'FIRE_SAFETY') {
+                            navigate('/fire-safety/machine-list');
                           } else {
                             // Default to dashboard if no specific landing page
                             navigate('/dashboard');
@@ -205,7 +253,7 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                         }
                       }}
                     >
-                      {app.code === 'ENERGY' ? 'EMS' : app.code === 'TEMPERATURE' ? 'Temperature' : app.name.substring(0, 4)}
+                      {displayName}
                     </div>
                   );
                 })}
@@ -264,8 +312,6 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                 <Typography color="error">Logout</Typography>
               </MenuItem>
             </Menu>
-
-
           </div>
         </div>  
       </nav>
