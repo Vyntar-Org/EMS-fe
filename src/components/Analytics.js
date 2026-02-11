@@ -40,8 +40,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     // State for filters
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDevice, setFilterDevice] = useState('all');
-    const [filterStartDate, setFilterStartDate] = useState('');
-    const [filterEndDate, setFilterEndDate] = useState('');
+    // Initialize with default dates - 7 days ago to today
+    const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(7, 'day'));
+    const [filterEndDate, setFilterEndDate] = useState(dayjs());
     const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
     const [devices, setDevices] = useState(['all']); // Initialize with 'all' as default
     const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
@@ -188,6 +189,11 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 setDeviceObjects(slaves);
                 const deviceNames = slaves.map(slave => slave.slave_name);
                 setDevices(['all', ...deviceNames]);
+                
+                // Set default device to the first one (not 'all')
+                if (slaves.length > 0) {
+                    setFilterDevice(slaves[0].slave_name);
+                }
             } catch (error) {
                 console.error('Error fetching devices:', error);
                 setError('Failed to fetch devices');
@@ -264,8 +270,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const handleResetFilters = () => {
         setSearchTerm('');
         setFilterDevice('all');
-        setFilterStartDate('');
-        setFilterEndDate('');
+        // Reset to default dates
+        setFilterStartDate(dayjs().subtract(7, 'day'));
+        setFilterEndDate(dayjs());
         setSearchClicked(false); // Reset search state
         setSelectedParameter([]); // Reset main chart parameter
         setSelectedParameter2([]); // Reset first comparison parameter
@@ -544,7 +551,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                         colors: '#6B7280',
                         fontSize: '12px',
                     },
-                    show: true
+                    show: true,
+                    
                 },
                 tickAmount: 6,
                 axisBorder: {
@@ -814,7 +822,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         open={openStart}
                                         onOpen={() => setOpenStart(true)}
                                         onClose={() => setOpenStart(false)}
-                                        value={filterStartDate ? dayjs(filterStartDate) : null}
+                                        value={filterStartDate}
                                         onChange={(newValue) => setFilterStartDate(newValue)}
                                         format="DD/MM/YYYY hh:mm A"
                                         slotProps={{
@@ -832,7 +840,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         open={openEnd}
                                         onOpen={() => setOpenEnd(true)}
                                         onClose={() => setOpenEnd(false)}
-                                        value={filterEndDate ? dayjs(filterEndDate) : null}
+                                        value={filterEndDate}
                                         onChange={(newValue) => setFilterEndDate(newValue)}
                                         format="DD/MM/YYYY hh:mm A"
                                         slotProps={{

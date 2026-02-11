@@ -39,36 +39,43 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
   const [userData, setUserData] = useState(null);
   const { logout, userData: contextUserData } = useAuth();
   
-  // Manually add the Fire & Safety application
-  const addFireSafetyApp = (applications) => {
+  // Function to add applications if they don't exist
+  const addApplications = (applications) => {
     if (!applications) return applications;
     
-    // Check if Fire & Safety app already exists
-    const hasFireSafety = applications.some(app => app.code === 'FIRE_SAFETY');
+    let updatedApps = [...applications];
     
+    // Check if Fire & Safety app exists
+    const hasFireSafety = applications.some(app => app.code === 'FIRE_SAFETY');
     if (!hasFireSafety) {
-      // Add the Fire & Safety app
-      return [
-        ...applications,
-        {
-          code: 'FIRE_SAFETY',
-          name: 'Fire & Safety',
-          default_landing_page: 'machine-list'
-        }
-      ];
+      updatedApps.push({
+        code: 'FIRE_SAFETY',
+        name: 'Fire & Safety',
+        default_landing_page: 'machine-list'
+      });
     }
     
-    return applications;
+    // Check if Water app exists
+    const hasWater = applications.some(app => app.code === 'WATER');
+    if (!hasWater) {
+      updatedApps.push({
+        code: 'WATER',
+        name: 'Water',
+        default_landing_page: 'dashboard'
+      });
+    }
+    
+    return updatedApps;
   };
   
   // Load user data from context
   useEffect(() => {
     const storedUserData = JSON.parse(localStorage.getItem('fullUserData'));
     if (storedUserData) {
-      // Add Fire & Safety app if not present
+      // Add applications if not present
       const updatedUserData = {
         ...storedUserData,
-        applications: addFireSafetyApp(storedUserData.applications)
+        applications: addApplications(storedUserData.applications)
       };
       setUserData(updatedUserData);
       
@@ -90,10 +97,10 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
         setActiveApp(energyApp || updatedUserData.applications[0]);
       }
     } else {
-      // Add Fire & Safety app if not present
+      // Add applications if not present
       const updatedContextUserData = contextUserData ? {
         ...contextUserData,
-        applications: addFireSafetyApp(contextUserData.applications)
+        applications: addApplications(contextUserData.applications)
       } : null;
       
       setUserData(updatedContextUserData);
@@ -206,6 +213,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                     displayName = 'Temperature';
                   } else if (app.code === 'FIRE_SAFETY') {
                     displayName = 'Fire & Safety';
+                  } else if (app.code === 'WATER') {
+                    displayName = 'Water';
                   }
                   
                   return (
@@ -237,6 +246,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                             navigate(`/temperature/${route}`);
                           } else if (app.code === 'FIRE_SAFETY') {
                             navigate(`/fire-safety/${route}`);
+                          } else if (app.code === 'WATER') {
+                            navigate(`/water/${route}`);
                           } else {
                             navigate(`/${route}`);
                           }
@@ -246,6 +257,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                             navigate('/temperature/machine-list');
                           } else if (app.code === 'FIRE_SAFETY') {
                             navigate('/fire-safety/machine-list');
+                          } else if (app.code === 'WATER') {
+                            navigate('/water/dashboard');
                           } else {
                             // Default to dashboard if no specific landing page
                             navigate('/dashboard');

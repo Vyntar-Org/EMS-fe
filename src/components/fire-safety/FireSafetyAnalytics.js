@@ -93,8 +93,9 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     // State for filters
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDevice, setFilterDevice] = useState('all');
-    const [filterStartDate, setFilterStartDate] = useState('');
-    const [filterEndDate, setFilterEndDate] = useState('');
+    // Initialize with default dates - 7 days ago to today
+    const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(7, 'day'));
+    const [filterEndDate, setFilterEndDate] = useState(dayjs());
     const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
     const [devices, setDevices] = useState(['all']); // Initialize with 'all' as default
     const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
@@ -168,6 +169,11 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         setDeviceObjects(mockDevices);
         const deviceNames = mockDevices.map(device => device.slave_name);
         setDevices(['all', ...deviceNames]);
+        
+        // Set default device to the first one (not 'all')
+        if (mockDevices.length > 0) {
+            setFilterDevice(mockDevices[0].slave_name);
+        }
     }, []);
 
     // Handle search button click
@@ -191,8 +197,9 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     const handleResetFilters = () => {
         setSearchTerm('');
         setFilterDevice('all');
-        setFilterStartDate('');
-        setFilterEndDate('');
+        // Reset to default dates
+        setFilterStartDate(dayjs().subtract(7, 'day'));
+        setFilterEndDate(dayjs());
         setSearchClicked(false); // Reset search state
     };
 
@@ -536,8 +543,9 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                         colors: '#6B7280',
                         fontSize: '12px',
                     },
-                    show: true
+                    show: true,
                 },
+                tickAmount: 6,
                 axisBorder: {
                     show: false
                 },
@@ -758,7 +766,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         open={openStart}
                                         onOpen={() => setOpenStart(true)}
                                         onClose={() => setOpenStart(false)}
-                                        value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
+                                        value={filterStartDate}
                                         onChange={(newValue) => setFilterStartDate(newValue)}
                                         format="DD/MM/YYYY hh:mm A"
                                         slotProps={{
@@ -777,13 +785,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         open={openEnd}
                                         onOpen={() => setOpenEnd(true)}
                                         onClose={() => setOpenEnd(false)}
-                                        value={
-                                            filterEndDate
-                                                ? dayjs.isDayjs(filterEndDate)
-                                                    ? filterEndDate
-                                                    : dayjs(filterEndDate)
-                                                : null
-                                        }
+                                        value={filterEndDate}
                                         onChange={(newValue) => setFilterEndDate(newValue)}
                                         format="DD/MM/YYYY hh:mm A"
                                         slotProps={{

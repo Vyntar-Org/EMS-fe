@@ -43,8 +43,9 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
   const [filterDate, setFilterDate] = useState('');
   const [page, setPage] = useState(1);
   const rowsPerPage = 30; // Show 30 rows per page
-  const [filterStartDate, setFilterStartDate] = useState('');
-  const [filterEndDate, setFilterEndDate] = useState('');
+  // Initialize with default dates - 7 days ago to today
+  const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(1, 'hour'));
+  const [filterEndDate, setFilterEndDate] = useState(dayjs());
   const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
   const [devices, setDevices] = useState([]); // Initialize as empty array
   const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
@@ -140,8 +141,8 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
             return date;
           };
 
-          const startDate = filterStartDate ? formatDateTime(filterStartDate) : '2026-01-03 23:03:00';
-          const endDate = filterEndDate ? formatDateTime(filterEndDate) : '2026-01-05 23:03:00';
+          const startDate = filterStartDate ? formatDateTime(filterStartDate) : dayjs().subtract(7, 'day').format('YYYY-MM-DD HH:mm:ss');
+          const endDate = filterEndDate ? formatDateTime(filterEndDate) : dayjs().format('YYYY-MM-DD HH:mm:ss');
 
           // Use the actual ID from the device object - could be slave_id or id
           const slaveId = selectedDeviceObj.slave_id || selectedDeviceObj.id;
@@ -210,6 +211,12 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
         const deviceNames = slaveList.map(slave => slave.slave_name);
         console.log('Device names for dropdown:', deviceNames);
         setDevices(['all', ...deviceNames]); // Add 'all' as the first option
+        
+        // Set default device to the first one (not 'all')
+        if (slaveList.length > 0) {
+          setFilterDevice(slaveList[0].slave_name);
+        }
+        
         setError(null);
       } catch (err) {
         console.error('Error fetching devices:', err);
@@ -323,8 +330,9 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
     setSearchTerm('');
     setFilterDevice('all');
     setFilterDate('');
-    setFilterStartDate('');
-    setFilterEndDate('');
+    // Reset to default dates
+    setFilterStartDate(dayjs().subtract(1, 'hour'));
+    setFilterEndDate(dayjs());
     setPage(1);
     setSearchClicked(false); // Reset search state
     setSelectedColumn([]); // Reset the column selection dropdown
@@ -370,8 +378,8 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
           return date;
         };
 
-        const startDate = filterStartDate ? formatDateTime(filterStartDate) : '2026-01-03 23:03:00';
-        const endDate = filterEndDate ? formatDateTime(filterEndDate) : '2026-01-05 23:03:00';
+        const startDate = filterStartDate ? formatDateTime(filterStartDate) : dayjs().subtract(7, 'day').format('YYYY-MM-DD HH:mm:ss');
+        const endDate = filterEndDate ? formatDateTime(filterEndDate) : dayjs().format('YYYY-MM-DD HH:mm:ss');
 
         // Use the actual ID from the device object - could be slave_id or id
         const slaveId = selectedDeviceObj.slave_id || selectedDeviceObj.id;
@@ -647,7 +655,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                   open={openStart}
                   onOpen={() => setOpenStart(true)}
                   onClose={() => setOpenStart(false)}
-                  value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
+                  value={filterStartDate}
                   onChange={(newValue) => setFilterStartDate(newValue)}
                   slotProps={{
                     textField: {
@@ -670,13 +678,7 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                   open={openEnd}
                   onOpen={() => setOpenEnd(true)}
                   onClose={() => setOpenEnd(false)}
-                  value={
-                    filterEndDate
-                      ? dayjs.isDayjs(filterEndDate)
-                        ? filterEndDate
-                        : dayjs(filterEndDate)
-                      : null
-                  }
+                  value={filterEndDate}
                   onChange={(newValue) => setFilterEndDate(newValue)}
                   slotProps={{
                     textField: {
