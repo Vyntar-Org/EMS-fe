@@ -17,6 +17,12 @@ import TemperatureLogs from './components/temperature/TemperatureLogs';
 import FireSafetyMachineList from './components/fire-safety/FireSafetyMachineList';
 import FireSafetyAnalytics from './components/fire-safety/FireSafetyAnalytics';
 import FireSafetyLogs from './components/fire-safety/FireSafetyLogs';
+// Import Water components
+import WaterDashboard from './components/water/WaterDashboard';
+import WaterMachineList from './components/water/WaterMachineList';
+import WaterAnalytics from './components/water/WaterAnalytics';
+import WaterLogs from './components/water/WaterLogs';
+import WaterReports from './components/water/WaterReports';
 import './App.css';
 
 function App() {
@@ -309,6 +315,92 @@ function AppContent() {
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <FireSafetyLogs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          {/* Water application routes */}
+          <Route path="/water/dashboard" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <WaterDashboard onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/water/machine-list" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <WaterMachineList onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/water/analytics" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <WaterAnalytics onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/water/logs" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <WaterLogs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/water/reports" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <WaterReports onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
               </main>
             </ProtectedRoute>
           } />

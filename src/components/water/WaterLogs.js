@@ -38,12 +38,12 @@ import dayjs from 'dayjs';
 
 // Mock device data
 const mockDevices = [
-  { slave_id: 1, slave_name: 'Slave 1' },
-  { slave_id: 2, slave_name: 'Slave 2' },
-  { slave_id: 3, slave_name: 'Slave 3' },
-  { slave_id: 4, slave_name: 'Slave 4' },
-  { slave_id: 5, slave_name: 'Slave 5' },
-  { slave_id: 6, slave_name: 'Slave 6' }
+  { slave_id: 1, slave_name: 'Machine 1' },
+  { slave_id: 2, slave_name: 'Machine 2' },
+  { slave_id: 3, slave_name: 'Machine 3' },
+  { slave_id: 4, slave_name: 'Machine 4' },
+  { slave_id: 5, slave_name: 'Machine 5' },
+  { slave_id: 6, slave_name: 'Machine 6' }
 ];
 
 // Function to generate mock logs data
@@ -74,7 +74,7 @@ const generateMockLogs = (slaveId, startDate, endDate) => {
   return logs;
 };
 
-function FireSafetyLogs({ onSidebarToggle, sidebarVisible }) {
+function WaterLogs({ onSidebarToggle, sidebarVisible }) {
   // State variables
   const [devices, setDevices] = useState(['all']);
   const [logs, setLogs] = useState([]);
@@ -588,4 +588,4 @@ function FireSafetyLogs({ onSidebarToggle, sidebarVisible }) {
   );
 }
 
-export default FireSafetyLogs;
+export default WaterLogs;

@@ -27,9 +27,7 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import EventIcon from "@mui/icons-material/Event";
 import FactoryIcon from "@mui/icons-material/Factory";
 import MenuItem from "@mui/material/MenuItem";
-
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import { fetchConsumptionData, fetchReadingData, fetchConsumptionCostData, fetchMonthlyConsumptionData, fetchMonthlyConsumptionCostData } from "../auth/ReportsApi";
 
 const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
@@ -43,7 +41,133 @@ const getDaysInMonth = (month, year) => {
     return new Date(year, month, 0).getDate();
 };
 
-export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible }) {
+// Function to generate mock consumption data
+const generateMockConsumptionData = (month, year) => {
+    const daysInMonth = getDaysInMonth(month, year);
+    
+    return {
+        data: {
+            "Machine 1": Array.from({ length: daysInMonth }, (_, i) => ({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
+                consumption: Math.floor(Math.random() * 100) + 50
+            })),
+            "Machine 2": Array.from({ length: daysInMonth }, (_, i) => ({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
+                consumption: Math.floor(Math.random() * 100) + 50
+            })),
+            "Machine 3": Array.from({ length: daysInMonth }, (_, i) => ({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
+                consumption: Math.floor(Math.random() * 100) + 50
+            })),
+            "Machine 4": Array.from({ length: daysInMonth }, (_, i) => ({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
+                consumption: Math.floor(Math.random() * 100) + 50
+            }))
+        }
+    };
+};
+
+// Function to generate mock monthly consumption data
+const generateMockMonthlyConsumptionData = () => {
+    return {
+        data: {
+            "Machine 1": Array.from({ length: 12 }, (_, i) => ({
+                month: i + 1,
+                consumption_kwh: Math.floor(Math.random() * 1000) + 500
+            })),
+            "Machine 2": Array.from({ length: 12 }, (_, i) => ({
+                month: i + 1,
+                consumption_kwh: Math.floor(Math.random() * 1000) + 500
+            })),
+            "Machine 3": Array.from({ length: 12 }, (_, i) => ({
+                month: i + 1,
+                consumption_kwh: Math.floor(Math.random() * 1000) + 500
+            })),
+            "Machine 4": Array.from({ length: 12 }, (_, i) => ({
+                month: i + 1,
+                consumption_kwh: Math.floor(Math.random() * 1000) + 500
+            }))
+        }
+    };
+};
+
+// Function to generate mock reading data
+const generateMockReadingData = (month, year) => {
+    const daysInMonth = getDaysInMonth(month, year);
+    
+    return {
+        data: {
+            "Machine 1": Array.from({ length: daysInMonth }, (_, i) => ({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
+                first_meter_reading: Math.floor(Math.random() * 10000) + 5000
+            })),
+            "Machine 2": Array.from({ length: daysInMonth }, (_, i) => ({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
+                first_meter_reading: Math.floor(Math.random() * 10000) + 5000
+            })),
+            "Machine 3": Array.from({ length: daysInMonth }, (_, i) => ({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
+                first_meter_reading: Math.floor(Math.random() * 10000) + 5000
+            })),
+            "Machine 4": Array.from({ length: daysInMonth }, (_, i) => ({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
+                first_meter_reading: Math.floor(Math.random() * 10000) + 5000
+            }))
+        }
+    };
+};
+
+// Function to generate mock consumption cost data
+const generateMockConsumptionCostData = (month, year) => {
+    const daysInMonth = getDaysInMonth(month, year);
+    
+    return {
+        data: {
+            "Machine 1": Array.from({ length: daysInMonth }, (_, i) => ({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
+                cost: Math.floor(Math.random() * 1000) + 500
+            })),
+            "Machine 2": Array.from({ length: daysInMonth }, (_, i) => ({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
+                cost: Math.floor(Math.random() * 1000) + 500
+            })),
+            "Machine 3": Array.from({ length: daysInMonth }, (_, i) => ({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
+                cost: Math.floor(Math.random() * 1000) + 500
+            })),
+            "Machine 4": Array.from({ length: daysInMonth }, (_, i) => ({
+                date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
+                cost: Math.floor(Math.random() * 1000) + 500
+            }))
+        }
+    };
+};
+
+// Function to generate mock monthly consumption cost data
+const generateMockMonthlyConsumptionCostData = () => {
+    return {
+        data: {
+            "Machine 1": Array.from({ length: 12 }, (_, i) => ({
+                month: i + 1,
+                cost: Math.floor(Math.random() * 10000) + 5000
+            })),
+            "Machine 2": Array.from({ length: 12 }, (_, i) => ({
+                month: i + 1,
+                cost: Math.floor(Math.random() * 10000) + 5000
+            })),
+            "Machine 3": Array.from({ length: 12 }, (_, i) => ({
+                month: i + 1,
+                cost: Math.floor(Math.random() * 10000) + 5000
+            })),
+            "Machine 4": Array.from({ length: 12 }, (_, i) => ({
+                month: i + 1,
+                cost: Math.floor(Math.random() * 10000) + 5000
+            }))
+        }
+    };
+};
+
+function WaterReports({ onSidebarToggle, sidebarVisible }) {
     // Get current date for default values
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11, we need 1-12
@@ -55,17 +179,19 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [consumptionData, setConsumptionData] = useState(null);
-    const [readingData, setReadingData] = useState(null);
-    const [consumptionCostData, setConsumptionCostData] = useState(null);
-    const [monthlyConsumptionCostData, setMonthlyConsumptionCostData] = useState(null);
-    const [monthlyConsumptionData, setMonthlyConsumptionData] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(currentMonth); // Default to current month
     const [selectedYear, setSelectedYear] = useState(currentYear); // Default to current year
     const [selectedStation, setSelectedStation] = useState(''); // For dropdown filter
     const [searchTrigger, setSearchTrigger] = useState(0); // Used to trigger re-render on search
     const [isSearchApplied, setIsSearchApplied] = useState(false); // Track if search has been applied
     const [matchedStation, setMatchedStation] = useState(''); // Store the actual matched station name
+    
+    // Initialize state with mock data
+    const [consumptionData, setConsumptionData] = useState(generateMockConsumptionData(selectedMonth, selectedYear));
+    const [readingData, setReadingData] = useState(generateMockReadingData(selectedMonth, selectedYear));
+    const [consumptionCostData, setConsumptionCostData] = useState(generateMockConsumptionCostData(selectedMonth, selectedYear));
+    const [monthlyConsumptionCostData, setMonthlyConsumptionCostData] = useState(generateMockMonthlyConsumptionCostData());
+    const [monthlyConsumptionData, setMonthlyConsumptionData] = useState(generateMockMonthlyConsumptionData());
 
     // Get days in current month for display
     const daysInCurrentMonth = getDaysInMonth(selectedMonth, selectedYear);
@@ -79,44 +205,22 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
         borderRadius: "5px"
     };
 
-    // Fetch data only for active tab
+    // Simulate loading data and update mock data when month/year changes
     useEffect(() => {
-        const fetchDataForActiveTab = async () => {
-            try {
-                setLoading(true);
+        setLoading(true);
+        
+        // Update mock data when month/year changes
+        setConsumptionData(generateMockConsumptionData(selectedMonth, selectedYear));
+        setReadingData(generateMockReadingData(selectedMonth, selectedYear));
+        setConsumptionCostData(generateMockConsumptionCostData(selectedMonth, selectedYear));
+        
+        // Simulate API call delay
+        const timer = setTimeout(() => {
+            setLoading(false);
+            setError(null);
+        }, 1000);
 
-                if (activeTab === 0) {
-                    // Daywise consumption data
-                    const response = await fetchConsumptionData(selectedMonth, selectedYear);
-                    setConsumptionData(response);
-                } else if (activeTab === 1) {
-                    // Monthwise consumption data
-                    const response = await fetchMonthlyConsumptionData(selectedYear);
-                    setMonthlyConsumptionData(response);
-                } else if (activeTab === 2) {
-                    // Daily meter reading data
-                    const response = await fetchReadingData(selectedMonth, selectedYear);
-                    setReadingData(response);
-                } else if (activeTab === 3) {
-                    // Daywise cost consumption data
-                    const response = await fetchConsumptionCostData(selectedMonth, selectedYear);
-                    setConsumptionCostData(response);
-                } else if (activeTab === 4) {
-                    // Monthwise cost consumption data
-                    const response = await fetchMonthlyConsumptionCostData(selectedYear);
-                    setMonthlyConsumptionCostData(response);
-                }
-
-                setError(null);
-            } catch (err) {
-                setError('Failed to fetch data. Please try again later.');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDataForActiveTab();
+        return () => clearTimeout(timer);
     }, [activeTab, selectedMonth, selectedYear, searchTrigger]);
 
     // Transform API data to table rows format
@@ -237,7 +341,6 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
             };
         });
     };
-    
 
     // Get current data based on active tab
     const getCurrentData = () => {
@@ -528,6 +631,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
             });
         });
     };
+
     // Get all unique station names from current data
     const getAllStations = () => {
         let stations = [];
@@ -1002,3 +1106,5 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
         </Box>
     );
 }
+
+export default WaterReports;

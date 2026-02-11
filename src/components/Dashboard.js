@@ -31,7 +31,6 @@ import { getDashboardOverview, getSlaveList, getSlaveWeeklyConsumption, getHourl
 import './Dashboard.css';
 import Tooltip from '@mui/material/Tooltip';
 
-
 const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const truncateText = (text, length = 9) =>
     text.length > length ? text.slice(0, length) + '...' : text;
@@ -77,17 +76,13 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         setSlaveList(slaveResponse);
         setHourlyEnergyData(hourlyResponse);
 
-        // Automatically select slave ID 1 if it exists
-        // Check if slaveResponse is an array before calling .find()
-        if (Array.isArray(slaveResponse)) {
-          const slaveId1 = slaveResponse.find(slave => slave.slave_id === 1);
-          if (slaveId1) {
-            console.log('Auto-selecting slave ID 1');
-            handleSlaveSelect(slaveId1);
-          }
+        // Automatically select the first slave in the list if it exists
+        if (Array.isArray(slaveResponse) && slaveResponse.length > 0) {
+          const firstSlave = slaveResponse[0];
+          console.log('Auto-selecting first slave:', firstSlave.slave_name);
+          handleSlaveSelect(firstSlave);
         } else {
-          console.log('slaveResponse is not an array, skipping auto-selection');
-          console.log('slaveResponse type:', typeof slaveResponse, ', value:', slaveResponse);
+          console.log('No slaves available for auto-selection');
         }
 
       } catch (err) {
@@ -161,131 +156,134 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   console.log('Energy consumption:', energyConsumption);
   console.log('Hourly energy data:', hourlyEnergyData);
   
-  // Use the new hourly energy data from API
-  const hourlyData = hourlyEnergyData.hours;
-  const hourlyValues = hourlyEnergyData.consumption;
+  // Use the new hourly energy data from API - ensure arrays exist
+  const hourlyData = Array.isArray(hourlyEnergyData?.hours) ? hourlyEnergyData.hours : [];
+  const hourlyValuesRaw = Array.isArray(hourlyEnergyData?.consumption) ? hourlyEnergyData.consumption : [];
+  // Sanitize values: ApexCharts throws parser Error on null/undefined/NaN
+  const hourlyValues = hourlyValuesRaw.map(v => (typeof v === 'number' && !Number.isNaN(v) ? v : 0));
   
   // Helper function to format as 'HH.MM'
   const formatDateTime = (hourString) => {
     if (!hourString) return '';
     const date = new Date(hourString);
+    if (Number.isNaN(date.getTime())) return '';
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
 
     return `${hours}.${minutes}`;
   };
 
-  // Format hours for x-axis categories
-  const hourlyCategories = hourlyData.map(hourString => {
-    return formatDateTime(hourString);
-  });
+  // Format hours for x-axis categories (keep same length as data for ApexCharts)
+  const hourlyCategories = hourlyData.map(hourString => formatDateTime(hourString) || '--');
 
   const shortNumber = (value) => {
-  if (value >= 1e12) return (value / 1e12).toFixed(2) + "T";
-  if (value >= 1e9) return (value / 1e9).toFixed(0) + "B";
-  if (value >= 1e6) return (value / 1e6).toFixed(0) + "M";
-  // if (value >= 1e3) return (value / 1e3).toFixed(0) + "K";
-  return value.toFixed(0);
-};
-
+    const num = Number(value);
+    if (!Number.isFinite(num)) return '0';
+    if (num >= 1e12) return (num / 1e12).toFixed(2) + "T";
+    if (num >= 1e9) return (num / 1e9).toFixed(0) + "B";
+    if (num >= 1e6) return (num / 1e6).toFixed(0) + "M";
+    return num.toFixed(0);
+  };
 
   // Chart configurations remain the same
-const energyConsumptionOptions = {
-  chart: {
-    type: 'line',
-    height: 140,
-    toolbar: { show: false },
-    zoom: { enabled: false },
-    background: 'transparent'
-  },
-
-  stroke: {
-    curve: 'smooth',
-    width: 2
-  },
-
-  markers: {
-    size: 0
-  },
-
-  grid: {
-    strokeDashArray: 4,
-    borderColor: 'transparent',
-    position: 'back',
-    xaxis: { lines: { show: false } },
-    yaxis: { lines: { show: true, color: '#E5E7EB' } }
-  },
-
-  xaxis: {
-    categories: hourlyCategories,
-    labels: {
-      style: { colors: '#6B7280', fontSize: '12px' },
-      formatter: (val) => val
+  const energyConsumptionOptions = {
+    chart: {
+      type: 'line',
+      height: 140,
+      toolbar: { show: false },
+      zoom: { enabled: false },
+      background: 'transparent'
     },
-    axisBorder: { show: false },
-    axisTicks: { show: false }
-  },
 
-  yaxis: {
-    min: hourlyValues.length > 0 ? Math.min(...hourlyValues, 0) : 0,
-    max: hourlyValues.length > 0 ? Math.max(...hourlyValues, 1) : 1,
-    tickAmount: 4,
-    labels: {
-      formatter: (val) => shortNumber(val),   // 🔥 SHORT VALUES
-      style: { colors: '#6B7280', fontSize: '12px' }
+    stroke: {
+      curve: 'smooth',
+      width: 2
     },
-    axisBorder: { show: false }
-  },
 
-  dataLabels: {
-    enabled: true,
-    formatter: (val) => shortNumber(val),     // 🔥 SHORT VALUES ON LINE
-    offsetY: -10,
-    offsetX: 4,
-    style: {
-      fontSize: '12px',
-      colors: ['#0a223e']
+    markers: {
+      size: 0
     },
-    background: {
-      enabled: false
-    }
-  },
 
-  tooltip: {
-    enabled: true,
-    theme: 'light',
-    style: { fontSize: '12px' },
-    x: {
-      formatter: function (val, opts) {
-        const index = opts.dataPointIndex;
-        if (hourlyData[index]) {
-          return formatDateTime(hourlyData[index]);
-        }
-        return val;
+    grid: {
+      strokeDashArray: 4,
+      borderColor: 'transparent',
+      position: 'back',
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true, color: '#E5E7EB' } }
+    },
+
+    xaxis: {
+      categories: hourlyCategories.length > 0 ? hourlyCategories : ['-'],
+      labels: {
+        style: { colors: '#6B7280', fontSize: '12px' },
+        formatter: (val) => val
+      },
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+    },
+
+    yaxis: {
+      min: hourlyValues.length > 0 ? Math.min(...hourlyValues, 0) : 0,
+      max: hourlyValues.length > 0 ? Math.max(...hourlyValues, 1) : 1,
+      tickAmount: 4,
+      labels: {
+        formatter: (val) => shortNumber(val),   // 🔥 SHORT VALUES
+        style: { colors: '#6B7280', fontSize: '12px' }
+      },
+      axisBorder: { show: false }
+    },
+
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => shortNumber(val),     // 🔥 SHORT VALUES ON LINE
+      offsetY: -10,
+      offsetX: 4,
+      style: {
+        fontSize: '12px',
+        colors: ['#0a223e']
+      },
+      background: {
+        enabled: false
       }
     },
-    y: {
-      formatter: (val) => `${val.toLocaleString()} kWh` // 🔥 FULL VALUE
-    }
-  },
 
-  legend: {
-    show: false
-  },
+    tooltip: {
+      enabled: true,
+      theme: 'light',
+      style: { fontSize: '12px' },
+      x: {
+        formatter: function (val, opts) {
+          const index = opts.dataPointIndex;
+          if (hourlyData[index]) {
+            return formatDateTime(hourlyData[index]);
+          }
+          return val;
+        }
+      },
+      y: {
+        formatter: (val) => `${Number.isFinite(Number(val)) ? Number(val).toLocaleString() : '0'} kWh`
+      }
+    },
 
-  colors: ['#0a223e']
-};
+    legend: {
+      show: false
+    },
 
+    colors: ['#0a223e']
+  };
 
+  const energySeriesData = hourlyValues.length > 0 ? hourlyValues : [0];
+  const energySeriesCategories = hourlyCategories.length > 0 ? hourlyCategories : ['-'];
   const energyConsumptionSeries = [{
     name: '(kWh)',
-    data: hourlyValues
+    data: energySeriesData
   }];
 
   // Helper function to format timestamp as HH:MM
   const formatTimestamp = (timestampString) => {
     if (!timestampString) return '';
     const date = new Date(timestampString);
+    if (Number.isNaN(date.getTime())) return '';
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
@@ -293,12 +291,14 @@ const energyConsumptionOptions = {
 
   // Sample peak demand data to show only 6-7 points for better display
   const samplePeakDemandData = () => {
-    const totalPoints = peakDemandData.timestamps.length;
+    const timestamps = Array.isArray(peakDemandData?.timestamps) ? peakDemandData.timestamps : [];
+    const values = Array.isArray(peakDemandData?.values) ? peakDemandData.values.map(v => (typeof v === 'number' && !Number.isNaN(v) ? v : 0)) : [];
+    const totalPoints = timestamps.length;
     if (totalPoints <= 7) {
       // If we have 7 or fewer points, use all of them
       return {
-        categories: peakDemandData.timestamps.map(timestamp => formatTimestamp(timestamp)),
-        values: [...peakDemandData.values]
+        categories: timestamps.map(timestamp => formatTimestamp(timestamp) || '--'),
+        values: values
       };
     } else {
       // Sample 7 evenly spaced points
@@ -308,8 +308,8 @@ const energyConsumptionOptions = {
       
       for (let i = 0; i < totalPoints; i += step) {
         if (sampledCategories.length < 7) {
-          sampledCategories.push(formatTimestamp(peakDemandData.timestamps[i]));
-          sampledValues.push(peakDemandData.values[i]);
+          sampledCategories.push(formatTimestamp(timestamps[i]));
+          sampledValues.push(values[i] ?? 0);
         } else {
           break;
         }
@@ -318,8 +318,8 @@ const energyConsumptionOptions = {
       // Ensure we have exactly 7 points by adding the last point if needed
       if (sampledCategories.length < 7 && totalPoints >= 7) {
         const lastIndex = sampledCategories.length - 1;
-        sampledCategories[lastIndex] = formatTimestamp(peakDemandData.timestamps[totalPoints - 1]);
-        sampledValues[lastIndex] = peakDemandData.values[totalPoints - 1];
+        sampledCategories[lastIndex] = formatTimestamp(timestamps[totalPoints - 1]);
+        sampledValues[lastIndex] = values[totalPoints - 1] ?? 0;
       }
       
       return {
@@ -333,86 +333,85 @@ const energyConsumptionOptions = {
   const sampledPeakDemand = samplePeakDemandData();
 
   // Chart 2: Peak Demand Indicator
-const peakDemandOptions = {
-  chart: {
-    type: 'line',
-    height: 150,
-    toolbar: { show: false },
-    zoom: { enabled: false },
-    background: 'transparent'
-  },
-
-  stroke: {
-    curve: 'smooth',
-    width: 3
-  },
-
-  markers: {
-    size: 6,
-    colors: ['#cbc84c'],
-    strokeColors: '#ffffff',
-    strokeWidth: 2,
-    strokeOpacity: 0.9,
-    fillOpacity: 1
-  },
-
-  grid: {
-    strokeDashArray: 4,
-    borderColor: 'transparent',
-    position: 'back',
-    xaxis: { lines: { show: false } },
-    yaxis: { lines: { show: true, color: '#E5E7EB' } }
-  },
-
-  xaxis: {
-    categories:
-      sampledPeakDemand.categories.length > 0
-        ? sampledPeakDemand.categories
-        : ['-'],
-    labels: {
-      style: { colors: '#6B7280', fontSize: '12px' }
+  const peakDemandOptions = {
+    chart: {
+      type: 'line',
+      height: 150,
+      toolbar: { show: false },
+      zoom: { enabled: false },
+      background: 'transparent'
     },
-    axisBorder: { show: false },
-    axisTicks: { show: false }
-  },
 
-  yaxis: {
-    min:
-      peakDemandData.values.length > 0
-        ? Math.min(...peakDemandData.values, 0)
-        : 0,
-    max:
-      peakDemandData.values.length > 0
-        ? Math.max(...peakDemandData.values) * 1.1 // 🔥 little top spacing
-        : 10,
-    tickAmount: 5,
-    labels: {
-      formatter: (val) => shortNumber(val),   // 🔥 SHORT VALUES
-      style: { colors: '#6B7280', fontSize: '12px' }
+    stroke: {
+      curve: 'smooth',
+      width: 3
     },
-    axisBorder: { show: false }
-  },
 
-  dataLabels: {
-    enabled: false
-  },
+    markers: {
+      size: 6,
+      colors: ['#cbc84c'],
+      strokeColors: '#ffffff',
+      strokeWidth: 2,
+      strokeOpacity: 0.9,
+      fillOpacity: 1
+    },
 
-  tooltip: {
-    enabled: peakDemandData.values.length > 0,
-    theme: 'light',
-    style: { fontSize: '12px' },
-    y: {
-      formatter: (val) => `${val.toLocaleString()} kW` // 🔥 FULL VALUE
-    }
-  },
+    grid: {
+      strokeDashArray: 4,
+      borderColor: 'transparent',
+      position: 'back',
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true, color: '#E5E7EB' } }
+    },
 
-  legend: {
-    show: false
-  },
+    xaxis: {
+      categories:
+        sampledPeakDemand.categories.length > 0
+          ? sampledPeakDemand.categories
+          : ['-'],
+      labels: {
+        style: { colors: '#6B7280', fontSize: '12px' }
+      },
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+    },
 
-  colors: ['#0a223e']
-};
+    yaxis: {
+      min:
+        sampledPeakDemand.values.length > 0
+          ? Math.min(...sampledPeakDemand.values, 0)
+          : 0,
+      max:
+        sampledPeakDemand.values.length > 0
+          ? Math.max(...sampledPeakDemand.values) * 1.1 // 🔥 little top spacing
+          : 10,
+      tickAmount: 5,
+      labels: {
+        formatter: (val) => shortNumber(val),   // 🔥 SHORT VALUES
+        style: { colors: '#6B7280', fontSize: '12px' }
+      },
+      axisBorder: { show: false }
+    },
 
+    dataLabels: {
+      enabled: false
+    },
+
+    tooltip: {
+      enabled: sampledPeakDemand.values.length > 0,
+      theme: 'light',
+      style: { fontSize: '12px' },
+      y: {
+        formatter: (val) => `${Number.isFinite(Number(val)) ? Number(val).toLocaleString() : '0'} kW`
+      }
+    },
+
+    legend: {
+      show: false
+    },
+
+    colors: ['#0a223e']
+  };
 
   const peakDemandSeries = [{
     name: 'Peak Demand',
@@ -424,6 +423,7 @@ const peakDemandOptions = {
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '';
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const day = String(date.getDate()).padStart(2, '0');
     return `${months[date.getMonth()]} ${day}`;
@@ -544,7 +544,7 @@ const peakDemandOptions = {
   const machinePowerSeries = [{
     name: 'kWh',
     data: weeklyConsumptionData.length > 0
-      ? weeklyConsumptionData.map(item => item.value)
+      ? weeklyConsumptionData.map(item => (typeof item?.value === 'number' && !Number.isNaN(item.value) ? item.value : 0))
       : [0] // Provide a minimal data point to prevent chart breaking
   }];
 
@@ -692,14 +692,6 @@ const peakDemandOptions = {
     }
   };
 
-  // if (loading) {
-  //   return (
-  //     <Box style={{...styles.mainContent, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}} id="main-content">
-  //       <Typography variant="h6">Loading dashboard data...</Typography>
-  //     </Box>
-  //   );
-  // }
-
   if (error) {
     return (
       <Box style={{ ...styles.mainContent, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }} id="main-content">
@@ -812,17 +804,6 @@ const peakDemandOptions = {
                       Cost: ₹{(energyConsumption?.mtd?.cost.toFixed(2))}
                     </Typography>
                   </Box>
-
-                  {/* Value kWH Row */}
-                  {/* <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
-                    <Typography sx={{ ...labelStyle, fontSize: '13px', width: '110px', flexShrink: 0 }}>Value kWH</Typography>
-                    <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: '120px', flexShrink: 0, textAlign: 'right' }}>
-                      {energyConsumption.toFixed(1)} kWH
-                    </Typography>
-                    <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: '140px', flexShrink: 0, }}>
-                      Cost: ₹{(energyConsumption * 0.1).toFixed(2)}
-                    </Typography>
-                  </Box> */}
 
                   {/* Today Value Row */}
                   <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
@@ -1079,7 +1060,9 @@ const peakDemandOptions = {
                             ...energyConsumptionOptions,
                             xaxis: {
                               ...energyConsumptionOptions.xaxis,
-                              categories: weeklyConsumptionData.map(item => formatDate(item.date)),
+                              categories: weeklyConsumptionData.length > 0
+                                ? weeklyConsumptionData.map(item => formatDate(item.date)).filter(Boolean)
+                                : ['-'],
                               title: {
                                 text: 'Date',
                                 style: { color: '#6B7280', fontSize: '12px' }
@@ -1096,14 +1079,16 @@ const peakDemandOptions = {
                               ...energyConsumptionOptions.tooltip,
                               y: {
                                 formatter: function (val) {
-                                  return val + ' kWh';
+                                  return (Number.isFinite(Number(val)) ? Number(val) : 0) + ' kWh';
                                 }
                               }
                             }
                           }}
                           series={[{
                             name: 'Energy Consumption',
-                            data: weeklyConsumptionData.map(item => item.value)
+                            data: weeklyConsumptionData.length > 0
+                              ? weeklyConsumptionData.map(item => (typeof item?.value === 'number' && !Number.isNaN(item.value) ? item.value : 0))
+                              : [0]
                           }]}
                           type="line"
                           height={350}
