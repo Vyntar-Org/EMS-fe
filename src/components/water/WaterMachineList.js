@@ -23,12 +23,14 @@ import {
     Tabs,
     Tab,
     Divider,
+    Tooltip,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
 // Mock data for machine list
 const mockMachineListData = {
@@ -48,6 +50,10 @@ const mockMachineListData = {
                 energy: {
                     today: 120.5,
                     mtd: 3615.2
+                },
+                totalizer: {
+                    value: 1250.75,
+                    timestamp: new Date(Date.now() - 10 * 60000).toISOString(), // 10 minutes ago
                 }
             },
             {
@@ -64,6 +70,10 @@ const mockMachineListData = {
                 energy: {
                     today: 145.8,
                     mtd: 4374.0
+                },
+                totalizer: {
+                    value: 1380.25,
+                    timestamp: new Date(Date.now() - 5 * 60000).toISOString(), // 5 minutes ago
                 }
             },
             {
@@ -80,6 +90,10 @@ const mockMachineListData = {
                 energy: {
                     today: 95.3,
                     mtd: 2859.0
+                },
+                totalizer: {
+                    value: 1120.50,
+                    timestamp: new Date(Date.now() - 15 * 60000).toISOString(), // 15 minutes ago
                 }
             },
             {
@@ -96,6 +110,10 @@ const mockMachineListData = {
                 energy: {
                     today: 132.6,
                     mtd: 3978.0
+                },
+                totalizer: {
+                    value: 1425.30,
+                    timestamp: new Date(Date.now() - 3 * 60000).toISOString(), // 3 minutes ago
                 }
             },
             {
@@ -112,6 +130,10 @@ const mockMachineListData = {
                 energy: {
                     today: 118.9,
                     mtd: 3567.0
+                },
+                totalizer: {
+                    value: 1295.60,
+                    timestamp: new Date(Date.now() - 8 * 60000).toISOString(), // 8 minutes ago
                 }
             },
             {
@@ -128,6 +150,10 @@ const mockMachineListData = {
                 energy: {
                     today: 210.4,
                     mtd: 6312.0
+                },
+                totalizer: {
+                    value: 1580.90,
+                    timestamp: new Date(Date.now() - 6 * 60000).toISOString(), // 6 minutes ago
                 }
             }
         ]
@@ -142,11 +168,14 @@ const generateMockTrendData = (parameter) => {
 
     // Set base value based on parameter
     switch (parameter) {
-        case 'temperature':
+        case 'consumption':
             baseValue = 25;
             break;
-        case 'water':
+        case 'flow_rate':
             baseValue = 65;
+            break;
+        case 'totalizer':
+            baseValue = 1200;
             break;
         default:
             baseValue = 0;
@@ -172,21 +201,37 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Get parameter unit
     const getParameterUnit = (parameter) => {
         switch (parameter) {
-            case 'temperature':
-                return '°C';
-            case 'water':
-                return 'kPa';
+            case 'consumption':
+                return 'KLD';
+            case 'flow_rate':
+                return 'CFM';
+            case 'totalizer':
+                return 'L';
             default:
                 return '';
+        }
+    };
+
+    // Get parameter label
+    const getParameterLabel = (parameter) => {
+        switch (parameter) {
+            case 'consumption':
+                return 'Consumption';
+            case 'flow_rate':
+                return 'Flow Rate';
+            case 'totalizer':
+                return 'Totalizer';
+            default:
+                return 'Value';
         }
     };
 
     // State variables
     const [chartModalOpen, setChartModalOpen] = useState(false);
     const [selectedFloor, setSelectedFloor] = useState('Common');
-    const [chartType, setChartType] = useState('temperature');
+    const [chartType, setChartType] = useState('consumption');
     const [trendData, setTrendData] = useState([]);
-    const [selectedParameter, setSelectedParameter] = useState('temperature');
+    const [selectedParameter, setSelectedParameter] = useState('consumption');
     const [machineListData] = useState(mockMachineListData);
 
     // Function to fetch trend data (now using mock data)
@@ -194,6 +239,17 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const mockData = generateMockTrendData(parameter);
         setTrendData(mockData);
         return mockData;
+    };
+
+    // Function to format timestamp for tooltip - showing only time
+    const formatTimestampForTooltip = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        return new Date(timestamp).toLocaleTimeString('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
     };
 
     // Define styles
@@ -376,7 +432,123 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             padding: '4px 8px',
             fontSize: '12px',
         },
+        clockIcon: {
+            fontSize: '16px',
+            marginLeft: '5px',
+            cursor: 'pointer',
+            color: '#6B7280',
+            verticalAlign: 'middle',
+        },
     };
+
+    // Chart data for trend
+    const chartOptions = {
+        chart: {
+            type: 'line',
+            height: 350,
+            toolbar: { show: true },
+            zoom: { enabled: true },
+            background: '#FFFFFF',
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 2,
+        },
+        markers: {
+            size: 4,
+        },
+        grid: {
+            borderColor: '#ebe5e5',
+            strokeDashArray: 0,
+            xaxis: {
+                lines: {
+                    show: false,
+                },
+            },
+            yaxis: {
+                lines: {
+                    show: false,
+                },
+            },
+        },
+        xaxis: {
+            title: {
+                text: 'Time',
+                style: {
+                    color: '#6B7280',
+                    fontSize: '12px',
+                },
+            },
+            categories: trendData.map(item => {
+                const date = new Date(item.timestamp);
+                return date.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            }),
+            labels: {
+                style: {
+                    colors: '#6B7280',
+                    fontSize: '11px',
+                },
+                rotate: -45,
+                formatter: function (val) {
+                    return val;
+                },
+            },
+            tickAmount: 6,
+        },
+        yaxis: {
+            title: {
+                text: getParameterUnit(selectedParameter),
+                style: {
+                    color: '#6B7280',
+                    fontSize: '12px',
+                },
+            },
+            labels: {
+                style: {
+                    colors: '#6B7280',
+                    fontSize: '11px',
+                },
+                formatter: function (val) {
+                    return parseFloat(val).toFixed(2);
+                }
+            },
+        },
+        tooltip: {
+            enabled: true,
+            theme: 'light',
+            x: {
+                format: 'dd/MM/yyyy HH:mm',
+            },
+            custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+                const item = trendData[dataPointIndex];
+                const date = new Date(item.timestamp);
+                const formattedDate = date.toLocaleString();
+                const value = series[0][dataPointIndex];
+
+                return `<div style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                    <div style="font-weight: bold; margin-bottom: 8px; color: #333; font-size: 12px;">${formattedDate}</div>
+                    <div style="display: flex; align-items: center;">
+                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #2F6FB0; margin-right: 8px;"></span>
+                        <span style="flex: 1; color: #333; font-size: 12px;">${getParameterLabel(selectedParameter)}:</span>
+                        <span style="font-weight: bold; color: #333; margin-left: 5px; font-size: 12px;">${value} ${getParameterUnit(selectedParameter)}</span>
+                    </div>
+                </div>`;
+            }
+        },
+        legend: {
+            show: true,
+        },
+    };
+
+    // Chart series
+    const chartSeries = [{
+        name: getParameterLabel(selectedParameter),
+        data: trendData.map(item => item.value)
+    }];
 
     // Function to render a floor card
     const renderFloorCard = (machine) => {
@@ -396,6 +568,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
+        const totalizer = machine.totalizer || {};
 
         // Apply the conditional logic for values
         const getConditionalValue = (value, isAllowedField = false) => {
@@ -466,90 +639,151 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
-                            <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
-                                {machine.last_ts
-                                    ? new Date(machine.last_ts).toLocaleString('en-GB', {
-                                        day: '2-digit',
-                                        month: 'short',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        hour12: true
-                                    })
-                                    : 'N/A'}
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: '10px' }}>
+                                <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
+                                    {totalizer.value} L
+                                </Typography>
+                                <Tooltip
+                                    title={`${formatTimestampForTooltip(totalizer.timestamp)}`}
+                                    placement="top"
+                                    arrow
+                                    enterDelay={500}
+                                    PopperProps={{
+                                        disablePortal: true,
+                                        modifiers: [
+                                            {
+                                                name: 'offset',
+                                                options: {
+                                                    offset: [0, -10],
+                                                },
+                                            },
+                                        ],
+                                    }}
+                                >
+                                    <AccessTimeIcon style={styles.clockIcon} />
+                                </Tooltip>
+                            </Box>
                         </Box>
                     </Box>
 
                     {/* Temperature/Water Data Table */}
-                    <Box>
-                        {/* Location */}
-                        <Box sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            py: 0.5
-                        }}>
-                            <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280' }}>
-                                Location :
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                {machine.location || 'N/A'}
-                            </Typography>
-                            {/* <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                </Typography> */}
-                        </Box>
+                    <TableContainer style={styles.phaseTable}>
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow style={styles.phaseTableHeader}>
+                                    <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
+                                    <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
+                                    <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {/* Temperature */}
+                                <TableRow>
+                                    <TableCell style={styles.tableCell}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            Location
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                        {machine.location || 'N/A'}
+                                    </TableCell>
+                                </TableRow>
 
-                        {/* Consumption */}
-                        <Box sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            py: 0.5
-                        }}>
-                            <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280' }}>
-                                Consumption :
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                {(machine.latest?.consumption || 0).toFixed(1)} KLD
-                            </Typography>
-                            {/* <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                </Typography> */}
-                        </Box>
+                                {/* Humidity */}
+                                <TableRow>
+                                    <TableCell style={styles.tableCell}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            Consumption
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                        {(machine.latest?.consumption || 0).toFixed(1)} KLD
+                                    </TableCell>
+                                </TableRow>
 
-                        {/* Rate of Flow */}
-                        <Box sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            py: 0.5,
-                            marginBottom: '10px'
-                        }}>
-                            <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280' }}>
-                                Rate of Flow :
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                {(machine.latest?.flow_rate || 0).toFixed(1)} CLm
-                            </Typography>
-                            {/* <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                </Typography> */}
-                        </Box>
-                        <Divider sx={{ marginBottom: '10px' }} />
+                                {/* Battery */}
+                                <TableRow>
+                                    <TableCell style={styles.tableCell}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            Rate of Flow
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                        {(machine.latest?.flow_rate || 0).toFixed(1)} CFM
+                                    </TableCell>
+                                </TableRow>
 
-                        {/* MTD */}
-                        <Box sx={{
-                            display: 'flex',
-                            justifyContent: 'right',
-                            alignItems: 'center',
-                            py: 0.5
-                        }}>
-                            <Typography variant="body2" sx={{ fontWeight: 500, color: '#6b7280', marginRight: "10px" }}>
-                                MTD :
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                {(machine.energy?.mtd || 0).toFixed(1)} KLD
+                                {/* Totalizer Value */}
+                                <TableRow>
+                                    <TableCell style={styles.tableCell}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            Totalizer Value
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                        {(totalizer.value || 0).toFixed(2)} L
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+
+                        </Table>
+                    </TableContainer>
+                    <Divider sx={{ marginBottom: '10px' }} />
+
+                    {/* MTD and Trend Button */}
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        py: 0.5
+                    }}>
+                        <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
+                            {machine.last_ts
+                                ? new Date(machine.last_ts).toLocaleString('en-GB', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                })
+                                : 'N/A'}
+                        </Typography>
+                        <Box style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
+                                MTD : {(machine.energy?.mtd || 0).toFixed(1)} KLD
                             </Typography>
                         </Box>
+                    </Box>
+                    <Box style={{ ...styles.metricsRow, marginTop: '10px', display: 'flex', justifyContent: 'right' }}>
+                    <Button
+                        variant="contained"
+                        style={styles.chartButton}
+                        onClick={async () => {
+                            setSelectedFloor(machine.name);
+                            setChartType('consumption');
+                            setChartModalOpen(true);
+
+                            // Find the selected machine by name to get its slave_id
+                            const selectedMachine = machineListData?.data?.machines?.find(
+                                m => m.name === machine.name
+                            );
+                            if (selectedMachine) {
+                                await fetchTrendData(selectedMachine.slave_id, selectedParameter);
+                            }
+                        }}
+                        sx={{ height: '30px', minWidth: '60px' }}
+                    >
+                        Trend
+                    </Button>
                     </Box>
                 </CardContent>
             </Card>
@@ -566,6 +800,64 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     </Box>
                 ))}
             </Box>
+
+            {/* Chart Modal */}
+            <Modal
+                open={chartModalOpen}
+                onClose={() => setChartModalOpen(false)}
+                aria-labelledby="chart-modal-title"
+                aria-describedby="chart-modal-description"
+                style={styles.modal}
+            >
+                <Box style={styles.modalPaper}>
+                    <Box style={styles.modalHeader}>
+                        <Box>
+                            <Typography id="chart-modal-title" variant="h6" component="h2">
+                                {selectedFloor} - Last 6 hours {getParameterLabel(selectedParameter)} data
+                            </Typography>
+                            <Box style={{ marginTop: '10px' }}>
+                                <FormControl size="small" sx={{ minWidth: 200, marginBottom: 2 }}>
+                                    <InputLabel>Parameter</InputLabel>
+                                    <Select
+                                        value={selectedParameter}
+                                        onChange={async (e) => {
+                                            const newParameter = e.target.value;
+                                            setSelectedParameter(newParameter);
+
+                                            // Find the selected machine by name to get its slave_id
+                                            const selectedMachine = machineListData?.data?.machines?.find(
+                                                m => m.name === selectedFloor
+                                            );
+                                            if (selectedMachine) {
+                                                await fetchTrendData(selectedMachine.slave_id, newParameter);
+                                            }
+                                        }}
+                                        label="Parameter"
+                                    >
+                                        <MenuItem value="consumption">Consumption</MenuItem>
+                                        <MenuItem value="flow_rate">Flow Rate</MenuItem>
+                                        <MenuItem value="totalizer">Totalizer</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Box>
+                        </Box>
+                        <IconButton
+                            style={styles.closeButton}
+                            onClick={() => setChartModalOpen(false)}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                    </Box>
+                    <Box id="chart-modal-description">
+                        <Chart
+                            options={chartOptions}
+                            series={chartSeries}
+                            type="line"
+                            height={350}
+                        />
+                    </Box>
+                </Box>
+            </Modal>
         </Box>
     );
 };
