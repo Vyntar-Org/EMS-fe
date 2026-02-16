@@ -51,6 +51,12 @@ function Sidebar({ mobileOpen: controlledMobileOpen, onClose, visible = false, o
       { id: 3, name: 'Analytics', path: '/water/analytics', icon: 'bar-chart' },
       { id: 4, name: 'Logs', path: '/water/logs', icon: 'file-text' },
       { id: 5, name: 'Reports', path: '/water/reports', icon: 'reports' },
+    ] : activeApp.code === 'FUEL' ? [
+      { id: 1, name: 'Dashboard', path: '/fuel/dashboard', icon: 'home' },
+      { id: 2, name: 'Machine List', path: '/fuel/machine-list', icon: 'list' },
+      { id: 3, name: 'Analytics', path: '/fuel/analytics', icon: 'bar-chart' },
+      { id: 4, name: 'Logs', path: '/fuel/logs', icon: 'file-text' },
+      { id: 5, name: 'Reports', path: '/fuel/reports', icon: 'reports' },
     ] : [
       { id: 1, name: 'Dashboard', path: '/dashboard', icon: 'home' },
       { id: 2, name: 'Machine List', path: '/machine-list', icon: 'list' },

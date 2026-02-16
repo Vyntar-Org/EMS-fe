@@ -718,20 +718,6 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         {(machine.latest?.flow_rate || 0).toFixed(1)} CFM
                                     </TableCell>
                                 </TableRow>
-
-                                {/* Totalizer Value */}
-                                <TableRow>
-                                    <TableCell style={styles.tableCell}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            Totalizer Value
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>
-                                    </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>
-                                        {(totalizer.value || 0).toFixed(2)} L
-                                    </TableCell>
-                                </TableRow>
                             </TableBody>
 
                         </Table>

@@ -968,7 +968,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 transform: 'translateY(-2px)',
               }
             }}>
-              <Typography sx={titleStyle1}>Peak Demand Indicator</Typography>
+              <Typography sx={titleStyle1}> {selectedSlave ? `${selectedSlave.slave_name}` : ''}</Typography>
               {peakDemandLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '165px' }}>
                   <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
