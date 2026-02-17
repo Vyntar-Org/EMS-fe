@@ -23,6 +23,12 @@ import WaterMachineList from './components/water/WaterMachineList';
 import WaterAnalytics from './components/water/WaterAnalytics';
 import WaterLogs from './components/water/WaterLogs';
 import WaterReports from './components/water/WaterReports';
+// Import Fuel components
+import FuelDashboard from './components/fuel/FuelDashboard';
+import FuelMachineList from './components/fuel/FuelMachineList';
+import FuelAnalytics from './components/fuel/FuelAnalytics';
+import FuelLogs from './components/fuel/FuelLogs';
+import FuelReports from './components/fuel/FuelReports';
 import './App.css';
 
 function App() {
@@ -401,6 +407,92 @@ function AppContent() {
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <WaterReports onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          {/* Fuel application routes */}
+          <Route path="/fuel/dashboard" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <FuelDashboard onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/fuel/machine-list" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <FuelMachineList onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/fuel/analytics" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <FuelAnalytics onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/fuel/logs" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <FuelLogs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/fuel/reports" element={
+            <ProtectedRoute>
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <FuelReports onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
               </main>
             </ProtectedRoute>
           } />

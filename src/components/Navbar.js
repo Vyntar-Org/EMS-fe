@@ -65,6 +65,16 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
       });
     }
     
+    // Check if Fuel app exists
+    const hasFuel = applications.some(app => app.code === 'FUEL');
+    if (!hasFuel) {
+      updatedApps.push({
+        code: 'FUEL',
+        name: 'Fuel',
+        default_landing_page: 'dashboard'
+      });
+    }
+    
     return updatedApps;
   };
   
@@ -215,6 +225,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                     displayName = 'Fire & Safety';
                   } else if (app.code === 'WATER') {
                     displayName = 'Water';
+                  } else if (app.code === 'FUEL') {
+                    displayName = 'Fuel';
                   }
                   
                   return (
@@ -248,6 +260,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                             navigate(`/fire-safety/${route}`);
                           } else if (app.code === 'WATER') {
                             navigate(`/water/${route}`);
+                          } else if (app.code === 'FUEL') {
+                            navigate(`/fuel/${route}`);
                           } else {
                             navigate(`/${route}`);
                           }
@@ -259,6 +273,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                             navigate('/fire-safety/machine-list');
                           } else if (app.code === 'WATER') {
                             navigate('/water/dashboard');
+                          } else if (app.code === 'FUEL') {
+                            navigate('/fuel/dashboard');
                           } else {
                             // Default to dashboard if no specific landing page
                             navigate('/dashboard');
