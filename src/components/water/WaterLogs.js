@@ -57,17 +57,17 @@ const generateMockLogs = (slaveId, startDate, endDate) => {
   for (let i = 0; i <= minutesDiff; i += 5) {
     const timestamp = start.add(i, 'minute').toISOString();
     
-    // Generate random values for temperature and water
-    const temperature = 18 + Math.random() * 10 + (slaveId * 0.5);
-    const water = 40 + Math.random() * 30 + (slaveId * 2);
+    // Generate random values for totalizer and flow rate
+    const totalizer = 100 + Math.random() * 500 + (slaveId * 10);
+    const flowRate = 5 + Math.random() * 15 + (slaveId * 0.5);
     
     logs.push({
       id: `${slaveId}-${i}`,
       slave_id: slaveId,
       slave_name: `Slave ${slaveId}`,
       timestamp: timestamp,
-      temperature: parseFloat(temperature.toFixed(2)),
-      water: parseFloat(water.toFixed(2))
+      totalizer: parseFloat(totalizer.toFixed(2)),
+      flowRate: parseFloat(flowRate.toFixed(2))
     });
   }
   
@@ -97,8 +97,8 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
   // Define all available parameters
   const allParameters = [
     { val: 'timestamp', label: 'Timestamp' },
-    { val: 'temperature', label: 'Temperature' },
-    { val: 'water', label: 'Water' }
+    { val: 'totalizer', label: 'Totalizer (L)' },
+    { val: 'flowRate', label: 'Flow Rate (L/min)' }
   ];
 
   // Get all parameter values for easy reference
@@ -178,8 +178,8 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
     return (
       log.timestamp.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.slave_name && log.slave_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.temperature !== undefined && log.temperature.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.water !== undefined && log.water.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+      (log.totalizer !== undefined && log.totalizer.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.flowRate !== undefined && log.flowRate.toString().toLowerCase().includes(searchTerm.toLowerCase()))
     );
   });
 
@@ -509,8 +509,8 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                     ) : (
                       <>
                         <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Timestamp</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Temperature (°C)</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Water (%)</TableCell>
+                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Totalizer (L)</TableCell>
+                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Flow Rate (L/min)</TableCell>
                       </>
                     )}
                   </TableRow>
@@ -519,8 +519,8 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                   {paginatedLogs.length > 0 ? (
                     paginatedLogs.map((log) => {
                       const timestamp = new Date(log.timestamp).toLocaleString();
-                      const temperature = log.temperature;
-                      const water = log.water;
+                      const totalizer = log.totalizer;
+                      const flowRate = log.flowRate;
                       console.log(log);
 
                       return (
@@ -531,8 +531,8 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                             selectedColumn.map((col) => (
                               <TableCell key={col} className="log-table-cell">
                                 {col === 'timestamp' && timestamp}
-                                {col === 'temperature' && (typeof temperature === 'number' ? temperature.toFixed(2) : temperature)}
-                                {col === 'water' && (typeof water === 'number' ? water.toFixed(2) : water)}
+                                {col === 'totalizer' && (typeof totalizer === 'number' ? totalizer.toFixed(2) : totalizer)}
+                                {col === 'flowRate' && (typeof flowRate === 'number' ? flowRate.toFixed(2) : flowRate)}
                               </TableCell>
                             ))
                           ) : (
@@ -542,10 +542,10 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                                 {timestamp}
                               </TableCell>
                               <TableCell className="log-table-cell">
-                                {typeof temperature === 'number' ? temperature.toFixed(2) : temperature}
+                                {typeof totalizer === 'number' ? totalizer.toFixed(2) : totalizer}
                               </TableCell>
                               <TableCell className="log-table-cell">
-                                {typeof water === 'number' ? water.toFixed(2) : water}
+                                {typeof flowRate === 'number' ? flowRate.toFixed(2) : flowRate}
                               </TableCell>
                             </>
                           )}

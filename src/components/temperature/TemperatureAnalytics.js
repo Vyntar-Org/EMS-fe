@@ -22,8 +22,7 @@ import {
     Select,
     MenuItem,
     Checkbox,
-    ListItemText,
-    Divider
+    ListItemText
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -34,9 +33,16 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { getEnergyAnalytics, getDevices } from '../../auth/AnalyticsApi';
+import { getTemperatureSlaves, getTemperatureAnalytics } from '../../auth/temperature/TemperatureAnalyticsApi';
 
-const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
+// Updated parameter options to match the API response
+const parameterOptions = [
+    { value: "temperature", label: "Temperature (°C)" },
+    { value: "humidity", label: "Humidity (RH)" },
+    { value: "battery", label: "Battery (V)" },
+];
+
+const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     // State for filters
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDevice, setFilterDevice] = useState('all');
@@ -49,82 +55,13 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [selectedParameter, setSelectedParameter] = useState([]); // State for main chart parameter selection (array for multi-select)
     const [selectedParameter2, setSelectedParameter2] = useState([]); // State for first comparison chart parameter selection (array for multi-select)
     const [selectedParameter3, setSelectedParameter3] = useState([]); // State for second comparison chart parameter selection (array for multi-select)
-    const [compareDevice, setCompareDevice] = useState(''); // Selected device for comparison
-    const [compareDevice2, setCompareDevice2] = useState(''); // Selected device for second comparison
+    const [compareParameter, setCompareParameter] = useState(''); // State for first comparison chart parameter selection
+    const [compareParameter2, setCompareParameter2] = useState(''); // State for second comparison chart parameter selection
+    const [filterDevice2, setFilterDevice2] = useState('all'); // State for first comparison chart machine selection
+    const [filterDevice3, setFilterDevice3] = useState('all'); // State for second comparison chart machine selection
     const [openStart, setOpenStart] = useState(false);
     const [openEnd, setOpenEnd] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [compareMode, setCompareMode] = useState(false); // Track if compare mode is active
-    const [compareChartData, setCompareChartData] = useState([]); // Chart data for comparison device
-    const [compareMode2, setCompareMode2] = useState(false); // Track if second compare mode is active
-    const [compareChartData2, setCompareChartData2] = useState([]); // Chart data for second comparison device
-    const [filteredChartData, setFilteredChartData] = useState([]); // State for filtered chart data
 
-    // Define parameter categories with their associated parameters
-    const parameterCategories = {
-        'Timestamp': {
-            parameters: ['timestamp'],
-            label: 'Timestamp'
-        },
-        'Active power': {
-            parameters: ['actpr_t'],
-            label: 'Active Power (kW)'
-        },
-        'Apparent power': {
-            parameters: ['apppr_t'],
-            label: 'Apparent Power (kVA)'
-        },
-        'Energy': {
-            parameters: ['acte_im', 'reacte_im'],
-            label: 'Energy'
-        },
-        'Power factor': {
-            parameters: ['pf_t'],
-            label: 'Power Factor'
-        },
-        'Frequency': {
-            parameters: ['fq'],
-            label: 'Frequency (Hz)'
-        },
-        'Voltage (Line to Neutral)': {
-            parameters: ['rv', 'yv', 'bv'],
-            label: 'Voltage (Line to Neutral)'
-        },
-        'Voltage (Line to Line)': {
-            parameters: ['ry_v', 'yb_v', 'br_v', 'avg_l_l_v'],
-            label: 'Voltage (Line to Line)'
-        },
-        'Current': {
-            parameters: ['i_b', 'i_r', 'i_y', 'avg_i'],
-            label: 'Current (A)'
-        }
-    };
-
-    // Get all available parameters for easy reference
-    const allParameters = Object.values(parameterCategories).flatMap(category => category.parameters);
-
-    // Parameter label mapping for display
-    const parameterLabels = {
-        'timestamp': 'Timestamp',
-        'actpr_t': 'Active Power (kW)',
-        'apppr_t': 'Apparent Power (kVA)',
-        'acte_im': 'Active Energy Import (kWh)',
-        'reacte_im': 'Reactive Energy Import (kVArh)',
-        'pf_t': 'Power Factor',
-        'fq': 'Frequency (Hz)',
-        'rv': 'R Phase Voltage (V)',
-        'yv': 'Y Phase Voltage (V)',
-        'bv': 'B Phase Voltage (V)',
-        'ry_v': 'R-Y Voltage (V)',
-        'yb_v': 'Y-B Voltage (V)',
-        'br_v': 'B-R Voltage (V)',
-        'avg_l_l_v': 'Avg Line-to-Line Voltage (V)',
-        'i_b': 'B Phase Current (A)',
-        'i_r': 'R Phase Current (A)',
-        'i_y': 'Y Phase Current (A)',
-        'avg_i': 'Average Current (A)'
-    };
 
     const styles = {
         mainContent: {
@@ -185,85 +122,57 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     useEffect(() => {
         const fetchDevices = async () => {
             try {
-                const slaves = await getDevices();
-                setDeviceObjects(slaves);
-                const deviceNames = slaves.map(slave => slave.slave_name);
-                setDevices(['all', ...deviceNames]);
-                
-                // Set default device to the first one (not 'all')
-                if (slaves.length > 0) {
-                    setFilterDevice(slaves[0].slave_name);
+                const response = await getTemperatureSlaves();
+                if (response.success && response.data.slaves) {
+                    // Store full device objects for ID mapping
+                    setDeviceObjects(response.data.slaves);
+                    // Transform the slave list to the format expected by the dropdown
+                    const deviceNames = response.data.slaves.map(slave => slave.slave_name);
+                    setDevices(['all', ...deviceNames]); // Add 'all' as the first option
+                    
+                    // Set default device to the first one (not 'all')
+                    if (response.data.slaves.length > 0) {
+                        setFilterDevice(response.data.slaves[0].slave_name);
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching devices:', error);
-                setError('Failed to fetch devices');
+                // Fallback to dummy devices if API fails
+                const dummyDevices = [
+                    { id: 7, slave_name: 'Compliance Room' },
+                    { id: 8, slave_name: 'Executive Room' },
+                    { id: 9, slave_name: 'Production Area' },
+                    { id: 10, slave_name: 'IT Cabin' }
+                ];
+                setDeviceObjects(dummyDevices);
+                const deviceNames = dummyDevices.map(slave => slave.slave_name);
+                setDevices(['all', ...deviceNames]);
+                
+                // Set default device to the first one (not 'all')
+                if (dummyDevices.length > 0) {
+                    setFilterDevice(dummyDevices[0].slave_name);
+                }
             }
         };
 
         fetchDevices();
     }, []);
 
-    // Fetch analytics data when search is clicked
-    const fetchAnalyticsData = async (slaveId, parameters, startDate, endDate) => {
-        try {
-            setLoading(true);
-            setError(null);
-            
-            // Format dates to API expected format
-            const fromDatetime = dayjs(startDate).format('YYYY-MM-DD HH:mm:ss');
-            const toDatetime = dayjs(endDate).format('YYYY-MM-DD HH:mm:ss');
-            
-            // Fetch analytics data using API function
-            const data = await getEnergyAnalytics(slaveId, parameters, fromDatetime, toDatetime);
-            return data;
-        } catch (error) {
-            console.error('Error fetching analytics data:', error);
-            throw error;
-        } finally {
-            setLoading(false);
-        }
-    };
-
     // Handle search button click
-    const handleSearch = async () => {
+    const handleSearch = () => {
         if (!filterDevice || filterDevice === 'all') {
-            setError('Please select a device');
+            alert('Please select a device');
             return;
         }
         if (!filterStartDate) {
-            setError('Please select a start date');
+            alert('Please select a start date');
             return;
         }
         if (!filterEndDate) {
-            setError('Please select an end date');
+            alert('Please select an end date');
             return;
         }
-
-        try {
-            setSearchClicked(true);
-            
-            // Find the device ID based on the device name
-            const selectedDevice = deviceObjects.find(device => device.slave_name === filterDevice);
-            if (!selectedDevice) {
-                setError(`Device '${filterDevice}' not found`);
-                return;
-            }
-            
-            // Default to all parameters if none selected
-            const params = selectedParameter.length > 0 ? selectedParameter : allParameters;
-            
-            // Fetch analytics data
-            const data = await fetchAnalyticsData(
-                selectedDevice.slave_id,
-                params,
-                filterStartDate,
-                filterEndDate
-            );
-            
-            setFilteredChartData(data);
-        } catch (error) {
-            setError(error.message || 'Failed to fetch analytics data');
-        }
+        setSearchClicked(true);
     };
 
     // Function to reset all filters
@@ -277,91 +186,186 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         setSelectedParameter([]); // Reset main chart parameter
         setSelectedParameter2([]); // Reset first comparison parameter
         setSelectedParameter3([]); // Reset second comparison parameter
-        setCompareDevice(''); // Reset first comparison machine
-        setCompareDevice2(''); // Reset second comparison machine
-        setCompareMode(false); // Reset first compare mode
-        setCompareMode2(false); // Reset second compare mode
-        setFilteredChartData([]); // Clear chart data
-        setCompareChartData([]); // Clear comparison chart data
-        setCompareChartData2([]); // Clear second comparison chart data
+        setFilterDevice2('all'); // Reset first comparison machine
+        setFilterDevice3('all'); // Reset second comparison machine
+        setCompareParameter(''); // Reset first comparison parameter
+        setCompareParameter2(''); // Reset second comparison parameter
     };
+    const [parameters, setParameters] = React.useState([]);
+    const [totalActiveEnergyData, setTotalActiveEnergyData] = useState([]);
+    const [consumptionData, setConsumptionData] = useState([]);
+    const [filteredChartData, setFilteredChartData] = useState([]); // State for filtered chart data
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [compareMode, setCompareMode] = useState(false); // Track if compare mode is active
+    const [compareDevice, setCompareDevice] = useState(''); // Selected device for comparison
+    const [compareChartData, setCompareChartData] = useState([]); // Chart data for comparison device
+    const [compareMode2, setCompareMode2] = useState(false); // Track if second compare mode is active
+    const [compareDevice2, setCompareDevice2] = useState(''); // Selected device for second comparison
+    const [compareChartData2, setCompareChartData2] = useState([]); // Chart data for second comparison device
 
-    // Fetch comparison data when compare mode is active
+    // Fetch analytics data from API when search is clicked
     useEffect(() => {
-        if (compareMode && compareDevice && filterStartDate && filterEndDate) {
-            const fetchComparisonData = async () => {
+        const fetchAnalyticsData = async () => {
+            if (searchClicked && filterDevice && filterDevice !== 'all' && filterStartDate && filterEndDate) {
                 try {
+                    setLoading(true);
+
                     // Find the device ID based on the device name
-                    const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice);
+                    console.log('Looking for device:', filterDevice);
+                    console.log('Available devices:', deviceObjects);
+                    const selectedDevice = deviceObjects.find(device => device.slave_name === filterDevice);
+                    console.log('Found device:', selectedDevice);
                     if (!selectedDevice) {
-                        console.error('Comparison device not found');
+                        setError(`Device '${filterDevice}' not found in device list`);
+                        console.error('Device not found. Filter device:', filterDevice, 'Device objects:', deviceObjects);
                         return;
                     }
 
+                    // Format dates for API
+                    const formattedStartDate = dayjs(filterStartDate).format('YYYY-MM-DD HH:mm:ss');
+                    const formattedEndDate = dayjs(filterEndDate).format('YYYY-MM-DD HH:mm:ss');
+
                     // Default to all parameters if none selected
-                    const params = selectedParameter2.length > 0 ? selectedParameter2 : allParameters;
+                    const params = selectedParameter.length > 0 ? selectedParameter : ['temperature', 'humidity', 'battery'];
+
+                    console.log('Fetching analytics with params:', {
+                        slave_id: selectedDevice.slave_id,
+                        parameters: params,
+                        from_datetime: formattedStartDate,
+                        to_datetime: formattedEndDate
+                    });
 
                     // Fetch analytics data
-                    const data = await fetchAnalyticsData(
+                    const response = await getTemperatureAnalytics(
                         selectedDevice.slave_id,
                         params,
-                        filterStartDate,
-                        filterEndDate
+                        formattedStartDate,
+                        formattedEndDate
                     );
 
-                    setCompareChartData(data);
-                } catch (error) {
-                    console.error('Error fetching comparison data:', error);
-                }
-            };
+                    console.log('API Response:', response);
 
-            fetchComparisonData();
-        }
+                    if (response.success && response.data.data) {
+                        setFilteredChartData(response.data.data);
+                        setError(null);
+                    } else {
+                        setError('Failed to fetch analytics data');
+                    }
+                } catch (err) {
+                    console.error('Error fetching analytics data:', err);
+                    setError(err.message || 'Failed to fetch analytics data');
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchAnalyticsData();
+    }, [searchClicked, filterDevice, filterStartDate, filterEndDate, selectedParameter, deviceObjects]);
+
+    // Fetch comparison data when compare mode is active
+    useEffect(() => {
+        const fetchCompareData = async () => {
+            if (compareMode && compareDevice && filterStartDate && filterEndDate) {
+                try {
+                    // Find the device ID based on the device name
+                    console.log('Looking for compare device:', compareDevice);
+                    console.log('Available devices:', deviceObjects);
+                    const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice);
+                    console.log('Found compare device:', selectedDevice);
+                    if (!selectedDevice) {
+                        console.error('Comparison device not found. Compare device:', compareDevice, 'Device objects:', deviceObjects);
+                        return;
+                    }
+
+                    // Format dates for API
+                    const formattedStartDate = dayjs(filterStartDate).format('YYYY-MM-DD HH:mm:ss');
+                    const formattedEndDate = dayjs(filterEndDate).format('YYYY-MM-DD HH:mm:ss');
+
+                    // Default to all parameters if none selected
+                    const params = selectedParameter2.length > 0 ? selectedParameter2 : ['temperature', 'humidity', 'battery'];
+
+                    // Fetch analytics data
+                    const response = await getTemperatureAnalytics(
+                        selectedDevice.slave_id,
+                        params,
+                        formattedStartDate,
+                        formattedEndDate
+                    );
+
+                    if (response.success && response.data.data) {
+                        setCompareChartData(response.data.data);
+                    } else {
+                        console.error('Failed to fetch comparison data');
+                    }
+                } catch (err) {
+                    console.error('Error fetching comparison data:', err);
+                }
+            }
+        };
+
+        fetchCompareData();
     }, [compareMode, compareDevice, filterStartDate, filterEndDate, selectedParameter2, deviceObjects]);
 
     // Fetch second comparison data when second compare mode is active
     useEffect(() => {
-        if (compareMode2 && compareDevice2 && filterStartDate && filterEndDate) {
-            const fetchSecondComparisonData = async () => {
+        const fetchCompareData2 = async () => {
+            if (compareMode2 && compareDevice2 && filterStartDate && filterEndDate) {
                 try {
                     // Find the device ID based on the device name
+                    console.log('Looking for second compare device:', compareDevice2);
+                    console.log('Available devices:', deviceObjects);
                     const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice2);
+                    console.log('Found second compare device:', selectedDevice);
                     if (!selectedDevice) {
-                        console.error('Second comparison device not found');
+                        console.error('Second comparison device not found. Compare device2:', compareDevice2, 'Device objects:', deviceObjects);
                         return;
                     }
 
+                    // Format dates for API
+                    const formattedStartDate = dayjs(filterStartDate).format('YYYY-MM-DD HH:mm:ss');
+                    const formattedEndDate = dayjs(filterEndDate).format('YYYY-MM-DD HH:mm:ss');
+
                     // Default to all parameters if none selected
-                    const params = selectedParameter3.length > 0 ? selectedParameter3 : allParameters;
+                    const params = selectedParameter3.length > 0 ? selectedParameter3 : ['temperature', 'humidity', 'battery'];
 
                     // Fetch analytics data
-                    const data = await fetchAnalyticsData(
+                    const response = await getTemperatureAnalytics(
                         selectedDevice.slave_id,
                         params,
-                        filterStartDate,
-                        filterEndDate
+                        formattedStartDate,
+                        formattedEndDate
                     );
 
-                    setCompareChartData2(data);
-                } catch (error) {
-                    console.error('Error fetching second comparison data:', error);
+                    if (response.success && response.data.data) {
+                        setCompareChartData2(response.data.data);
+                    } else {
+                        console.error('Failed to fetch second comparison data');
+                    }
+                } catch (err) {
+                    console.error('Error fetching second comparison data:', err);
                 }
-            };
+            }
+        };
 
-            fetchSecondComparisonData();
-        }
+        fetchCompareData2();
     }, [compareMode2, compareDevice2, filterStartDate, filterEndDate, selectedParameter3, deviceObjects]);
 
     // Process the filtered chart data to create chart series and categories
     const processedFilteredData = React.useMemo(() => {
+        console.log('Processing filtered chart data:', filteredChartData);
+        console.log('Selected parameter:', selectedParameter);
+
         if (!filteredChartData || !Array.isArray(filteredChartData) || filteredChartData.length === 0) {
+            console.log('No filtered chart data available');
             return { series: [], categories: [] };
         }
 
         // Process the filtered data to extract timestamps and values
         const categories = filteredChartData.map(item => {
             // Format timestamp for x-axis - date and month only
-            const timestamp = item.timestamp;
+            const timestamp = item.timestamp || item.created_at || item.date;
             if (timestamp) {
                 const date = new Date(timestamp);
                 return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
@@ -375,7 +379,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter) && selectedParameter.length > 0
             ? selectedParameter
-            : allParameters; // Default to all parameters
+            : ['temperature', 'humidity', 'battery']; // Default to all parameters
+
+        console.log('Parameters to process:', parametersToProcess);
 
         parametersToProcess.forEach(param => {
             // Extract values from the filtered data based on selected parameter and format to 2 decimal places
@@ -384,10 +390,22 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
                 // If a specific parameter is selected, use that field
                 if (param) {
-                    value = parseFloat(item[param]) || 0;
+                    switch (param) {
+                        case 'temperature':
+                            value = parseFloat(item.temperature) || 0;
+                            break;
+                        case 'humidity':
+                            value = parseFloat(item.humidity) || 0;
+                            break;
+                        case 'battery':
+                            value = parseFloat(item.battery) || 0;
+                            break;
+                        default:
+                            value = 0;
+                    }
                 } else {
-                    // If no parameter selected, use the default logic (ry_v)
-                    value = parseFloat(item.ry_v) || 0;
+                    // If no parameter selected, use the default logic (temperature)
+                    value = parseFloat(item.temperature) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -396,13 +414,18 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
             // Always create a series if we have data, even if all values are 0
             if (filteredChartData.length > 0) {
-                const parameterLabel = parameterLabels[param] || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const parameterLabel = param
+                    ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    : filterDevice;
                 series.push({
                     name: parameterLabel,
                     data: values
                 });
             }
         });
+
+        console.log('Processed series:', series);
+        console.log('Processed categories:', categories);
 
         return { series, categories };
     }, [filteredChartData, filterDevice, selectedParameter]);
@@ -416,7 +439,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Process the comparison data to extract timestamps and values
         const categories = compareChartData.map(item => {
             // Format timestamp for x-axis - date and month only
-            const timestamp = item.timestamp;
+            const timestamp = item.timestamp || item.created_at || item.date;
             if (timestamp) {
                 const date = new Date(timestamp);
                 return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
@@ -430,7 +453,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter2) && selectedParameter2.length > 0
             ? selectedParameter2
-            : allParameters; // Default to all parameters
+            : ['temperature', 'humidity', 'battery']; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the comparison data based on selected parameter and format to 2 decimal places
@@ -439,10 +462,22 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
                 // If a specific parameter is selected, use that field
                 if (param) {
-                    value = parseFloat(item[param]) || 0;
+                    switch (param) {
+                        case 'temperature':
+                            value = parseFloat(item.temperature) || 0;
+                            break;
+                        case 'humidity':
+                            value = parseFloat(item.humidity) || 0;
+                            break;
+                        case 'battery':
+                            value = parseFloat(item.battery) || 0;
+                            break;
+                        default:
+                            value = 0;
+                    }
                 } else {
-                    // If no parameter selected, use the default logic (ry_v)
-                    value = parseFloat(item.ry_v) || 0;
+                    // If no parameter selected, use the default logic (temperature)
+                    value = parseFloat(item.temperature) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -451,7 +486,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
             // Always create a series if we have data, even if all values are 0
             if (compareChartData.length > 0) {
-                const parameterLabel = parameterLabels[param] || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const parameterLabel = param
+                    ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    : compareDevice;
                 series.push({
                     name: parameterLabel,
                     data: values
@@ -460,7 +497,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         });
 
         return { series, categories };
-    }, [compareChartData, compareDevice, selectedParameter2]);
+    }, [compareChartData, compareDevice, selectedParameter2, filterDevice2]);
 
     // Process the second comparison chart data to create chart series and categories
     const processedCompareData2 = React.useMemo(() => {
@@ -471,7 +508,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Process the second comparison data to extract timestamps and values
         const categories = compareChartData2.map(item => {
             // Format timestamp for x-axis - date and month only
-            const timestamp = item.timestamp;
+            const timestamp = item.timestamp || item.created_at || item.date;
             if (timestamp) {
                 const date = new Date(timestamp);
                 return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
@@ -485,7 +522,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter3) && selectedParameter3.length > 0
             ? selectedParameter3
-            : allParameters; // Default to all parameters
+            : ['temperature', 'humidity', 'battery']; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
@@ -494,10 +531,22 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
                 // If a specific parameter is selected, use that field
                 if (param) {
-                    value = parseFloat(item[param]) || 0;
+                    switch (param) {
+                        case 'temperature':
+                            value = parseFloat(item.temperature) || 0;
+                            break;
+                        case 'humidity':
+                            value = parseFloat(item.humidity) || 0;
+                            break;
+                        case 'battery':
+                            value = parseFloat(item.battery) || 0;
+                            break;
+                        default:
+                            value = 0;
+                    }
                 } else {
-                    // If no parameter selected, use the default logic (ry_v)
-                    value = parseFloat(item.ry_v) || 0;
+                    // If no parameter selected, use the default logic (temperature)
+                    value = parseFloat(item.temperature) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -506,7 +555,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
 
             // Always create a series if we have data, even if all values are 0
             if (compareChartData2.length > 0) {
-                const parameterLabel = parameterLabels[param] || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const parameterLabel = param
+                    ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    : compareDevice2;
                 series.push({
                     name: parameterLabel,
                     data: values
@@ -515,7 +566,20 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         });
 
         return { series, categories };
-    }, [compareChartData2, compareDevice2, selectedParameter3]);
+    }, [compareChartData2, compareDevice2, selectedParameter3, filterDevice3]);
+
+    // Debug useEffect to monitor state changes
+    useEffect(() => {
+        console.log('=== State Debug Info ===');
+        console.log('searchClicked:', searchClicked);
+        console.log('filteredChartData:', filteredChartData);
+        console.log('filteredChartData.length:', filteredChartData?.length);
+        console.log('processedFilteredData:', processedFilteredData);
+        console.log('processedFilteredData.series:', processedFilteredData.series);
+        console.log('processedFilteredData.series.length:', processedFilteredData.series?.length);
+        console.log('selectedParameter:', selectedParameter);
+        console.log('========================');
+    }, [searchClicked, filteredChartData, processedFilteredData, selectedParameter]);
 
     // Define colors for each series to match the dots in the image
     const seriesColors = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'];
@@ -552,8 +616,10 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                         fontSize: '12px',
                     },
                     show: true,
+                    
                 },
                 tickAmount: 6,
+                tickPlacement: 'on',
                 axisBorder: {
                     show: false
                 },
@@ -612,15 +678,21 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 shared: true, // Enable shared tooltip to show all series at once
                 intersect: false, // Show tooltip when hovering anywhere on the x-axis
                 custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-                    // Get the original date from the data
+                    // Get the original date from the data based on search state
                     let originalDate = '';
 
                     if (currentData && currentData.length > 0) {
-                        const item = currentData[dataPointIndex];
-                        const timestamp = item?.timestamp || '';
-                        if (timestamp) {
-                            const date = new Date(timestamp);
-                            originalDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                        if (searchClicked) {
+                            // For filtered data, use timestamp from filteredChartData
+                            const item = currentData[dataPointIndex];
+                            const timestamp = item?.timestamp || item?.created_at || item?.date || '';
+                            if (timestamp) {
+                                const date = new Date(timestamp);
+                                originalDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                            }
+                        } else {
+                            // For default data, use the original logic
+                            originalDate = currentData[0]?.data[dataPointIndex]?.date || '';
                         }
                     }
 
@@ -662,51 +734,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         };
     };
 
-    // Handle parameter category selection
-    const handleParameterChange = (event, setSelectedParam) => {
-        const value = event.target.value;
-        
-        // Check if "All Categories" was selected
-        if (value.includes('all_categories')) {
-            if (selectedParameter.length === allParameters.length) {
-                // If all are already selected, deselect all
-                setSelectedParam([]);
-            } else {
-                // Select all parameters from all categories
-                setSelectedParam([...allParameters]);
-            }
-        } else {
-            // Get all parameters from the selected categories
-            const selectedParameters = [];
-            value.forEach(category => {
-                if (parameterCategories[category]) {
-                    selectedParameters.push(...parameterCategories[category].parameters);
-                }
-            });
-            
-            setSelectedParam(selectedParameters);
-        }
-    };
-
-    // Check if all parameters from all categories are selected
-    const isAllParametersSelected = (selectedParam) => {
-        return selectedParam.length === allParameters.length;
-    };
-
-    // Get selected categories based on selected parameters
-    const getSelectedCategories = (selectedParam) => {
-        const categories = [];
-        Object.entries(parameterCategories).forEach(([categoryName, categoryData]) => {
-            const allCategoryParamsSelected = categoryData.parameters.every(param => 
-                selectedParam.includes(param)
-            );
-            if (allCategoryParamsSelected) {
-                categories.push(categoryName);
-            }
-        });
-        return categories;
-    };
-
     return (
         <Box style={styles.mainContent} id="main-content">
             <Box style={styles.container}>
@@ -732,35 +759,34 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                     <InputLabel>Select Parameters</InputLabel>
                                     <Select
                                         multiple
-                                        value={getSelectedCategories(selectedParameter)}
-                                        onChange={(e) => handleParameterChange(e, setSelectedParameter)}
+                                        value={selectedParameter}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            // If "All Parameters" is selected, clear all other selections
+                                            if (value.includes('all')) {
+                                                setSelectedParameter([]);
+                                            } else {
+                                                // Remove "all" from selection if other items are selected
+                                                const filteredValue = value.filter(item => item !== 'all');
+                                                setSelectedParameter(filteredValue);
+                                            }
+                                        }}
                                         label="Select Parameters"
                                         renderValue={(selected) => (
                                             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                {/* Show "All Categories" if all are selected */}
-                                                {isAllParametersSelected(selectedParameter) ? (
+                                                {selected.slice(0, 2).map((value) => (
                                                     <Chip
-                                                        label="All Categories"
+                                                        key={value}
+                                                        label={parameterOptions.find(p => p.value === value)?.label || value.replace(/_/g, ' ')}
                                                         size="small"
-                                                        sx={{ height: '20px', fontSize: '10px' }}
+                                                        sx={{
+                                                            height: '20px',
+                                                            fontSize: '10px',
+                                                            textTransform: 'capitalize'
+                                                        }}
                                                     />
-                                                ) : (
-                                                    /* Show the first 2 items as Chips */
-                                                    selected.slice(0, 2).map((value) => (
-                                                        <Chip
-                                                            key={value}
-                                                            label={parameterCategories[value]?.label || value}
-                                                            size="small"
-                                                            sx={{
-                                                                height: '20px',
-                                                                fontSize: '10px'
-                                                            }}
-                                                        />
-                                                    ))
-                                                )}
-
-                                                {/* If more than 2 items and not all selected, show the +X counter */}
-                                                {!isAllParametersSelected(selectedParameter) && selected.length > 2 && (
+                                                ))}
+                                                {selected.length > 2 && (
                                                     <Chip
                                                         label={`+${selected.length - 2} more`}
                                                         size="small"
@@ -783,34 +809,28 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             }
                                         }
                                     >
-                                       
-                                        {/* Category options */}
-                                        {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
-                                            <MenuItem key={categoryKey} value={categoryKey} sx={{
+                                        {parameterOptions.map((option) => (
+                                            <MenuItem key={option.value} value={option.value} sx={{
                                                 py: 0.2, // Tight vertical padding for the list item
                                                 px: 1,
                                                 minHeight: '32px', // Forces a slim row height
                                             }}>
-                                                <Checkbox 
-                                                    checked={categoryData.parameters.every(param => selectedParameter.includes(param))} 
-                                                    sx={{
+                                                <Checkbox checked={selectedParameter.indexOf(option.value) > -1} 
+                                                     sx={{
                                                         p: 0.5,   // Removes the 9px default padding
                                                         mr: 0.5,   // Adds spacing between box and text
                                                         transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
                                                         '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
-                                                    }} 
-                                                />
-                                                <ListItemText 
-                                                    primary={categoryData.label} 
-                                                    primaryTypographyProps={{
+                                                    }} />
+                                                <ListItemText primary={option.label} 
+                                                 primaryTypographyProps={{
                                                         fontSize: '12px', // Smaller font to match the small checkbox
                                                         lineHeight: 1.2
                                                     }}
                                                     secondaryTypographyProps={{
                                                         fontSize: '10px',
                                                         color: 'text.secondary'
-                                                    }}
-                                                />
+                                                    }}/>
                                             </MenuItem>
                                         ))}
                                     </Select>
@@ -834,6 +854,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                     />
                                 </LocalizationProvider>
 
+
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DateTimePicker
                                         open={openEnd}
@@ -851,6 +872,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         }}
                                     />
                                 </LocalizationProvider>
+
 
                                 <Button
                                     variant="contained"
@@ -876,7 +898,16 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 <Button
                                     variant="outlined"
                                     startIcon={<RefreshIcon />}
-                                    onClick={handleResetFilters}
+                                    onClick={() => {
+                                        handleResetFilters();
+                                        setSelectedParameter([]); // Reset main chart parameter
+                                        setSelectedParameter2([]); // Reset first comparison parameter
+                                        setSelectedParameter3([]); // Reset second comparison parameter
+                                        setFilterDevice2('all'); // Reset first comparison machine
+                                        setFilterDevice3('all'); // Reset second comparison machine
+                                        setCompareParameter(''); // Reset first comparison parameter
+                                        setCompareParameter2(''); // Reset second comparison parameter
+                                    }}
                                     sx={{
                                         borderColor: '#6c757d',
                                         color: '#6c757d',
@@ -898,7 +929,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                             </Box>
                         </Box>
                         {loading ? (
-                            <div>Loading...</div>
+                            <div></div>
                         ) : error ? (
                             <div>Error: {error}</div>
                         ) : searchClicked ? (
@@ -917,8 +948,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             {Array.isArray(selectedParameter) && selectedParameter.length > 0
                                                 ? `${filterDevice} - ${selectedParameter.length > 1
                                                     ? `${selectedParameter.length} Parameters Selected`
-                                                    : parameterLabels[selectedParameter[0]] || selectedParameter[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
-                                                : (filterDevice !== 'all' ? `${filterDevice}` : 'Energy Analytics')}
+                                                    : parameterOptions.find(opt => opt.value === selectedParameter[0])?.label || selectedParameter[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                : (filterDevice !== 'all' ? `${filterDevice}` : 'Temperature Analytics')}
                                         </Typography>
                                         <Box>
                                             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -985,7 +1016,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 {Array.isArray(selectedParameter2) && selectedParameter2.length > 0
                                                     ? `${compareDevice} - ${selectedParameter2.length > 1
                                                         ? `${selectedParameter2.length} Parameters Selected`
-                                                        : parameterLabels[selectedParameter2[0]] || selectedParameter2[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                        : parameterOptions.find(opt => opt.value === selectedParameter2[0])?.label || selectedParameter2[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                     : compareDevice}
                                             </Typography>
                                             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -1012,35 +1043,34 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                         <InputLabel>Select Parameters</InputLabel>
                                                         <Select
                                                             multiple
-                                                            value={getSelectedCategories(selectedParameter2)}
-                                                            onChange={(e) => handleParameterChange(e, setSelectedParameter2)}
+                                                            value={selectedParameter2}
+                                                            onChange={(e) => {
+                                                                const value = e.target.value;
+                                                                // If "All Parameters" is selected, clear all other selections
+                                                                if (value.includes('all')) {
+                                                                    setSelectedParameter2([]);
+                                                                } else {
+                                                                    // Remove "all" from selection if other items are selected
+                                                                    const filteredValue = value.filter(item => item !== 'all');
+                                                                    setSelectedParameter2(filteredValue);
+                                                                }
+                                                            }}
                                                             label="Select Parameters"
                                                             renderValue={(selected) => (
                                                                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                                    {/* Show "All Categories" if all are selected */}
-                                                                    {isAllParametersSelected(selectedParameter2) ? (
+                                                                    {selected.slice(0, 2).map((value) => (
                                                                         <Chip
-                                                                            label="All Categories"
+                                                                            key={value}
+                                                                            label={parameterOptions.find(p => p.value === value)?.label || value.replace(/_/g, ' ')}
                                                                             size="small"
-                                                                            sx={{ height: '20px', fontSize: '10px' }}
+                                                                            sx={{
+                                                                                height: '20px',
+                                                                                fontSize: '10px',
+                                                                                textTransform: 'capitalize'
+                                                                            }}
                                                                         />
-                                                                    ) : (
-                                                                        /* Show the first 2 items as Chips */
-                                                                        selected.slice(0, 2).map((value) => (
-                                                                            <Chip
-                                                                                key={value}
-                                                                                label={parameterCategories[value]?.label || value}
-                                                                                size="small"
-                                                                                sx={{
-                                                                                    height: '20px',
-                                                                                    fontSize: '10px'
-                                                                                }}
-                                                                            />
-                                                                        ))
-                                                                    )}
-
-                                                                    {/* If more than 2 items and not all selected, show the +X counter */}
-                                                                    {!isAllParametersSelected(selectedParameter2) && selected.length > 2 && (
+                                                                    ))}
+                                                                    {selected.length > 2 && (
                                                                         <Chip
                                                                             label={`+${selected.length - 2} more`}
                                                                             size="small"
@@ -1063,34 +1093,29 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 }
                                                             }
                                                         >
-                                                            
-                                                            {/* Category options */}
-                                                            {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
-                                                                <MenuItem key={categoryKey} value={categoryKey} sx={{
+                                                            {parameterOptions.map((option) => (
+                                                                <MenuItem key={option.value} value={option.value}
+                                                                sx={{
                                                                     py: 0.2, // Tight vertical padding for the list item
                                                                     px: 1,
                                                                     minHeight: '32px', // Forces a slim row height
                                                                 }}>
-                                                                    <Checkbox 
-                                                                        checked={categoryData.parameters.every(param => selectedParameter2.includes(param))} 
+                                                                    <Checkbox checked={selectedParameter2.indexOf(option.value) > -1} 
                                                                         sx={{
                                                                             p: 0.5,   // Removes the 9px default padding
                                                                             mr: 0.5,   // Adds spacing between box and text
                                                                             transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
                                                                             '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
-                                                                        }} 
-                                                                    />
-                                                                    <ListItemText 
-                                                                        primary={categoryData.label} 
-                                                                        primaryTypographyProps={{
+                                                                        }} />
+                                                                    <ListItemText primary={option.label} 
+                                                                     primaryTypographyProps={{
                                                                             fontSize: '12px', // Smaller font to match the small checkbox
                                                                             lineHeight: 1.2
                                                                         }}
                                                                         secondaryTypographyProps={{
                                                                             fontSize: '10px',
                                                                             color: 'text.secondary'
-                                                                        }}
-                                                                    />
+                                                                        }}/>
                                                                 </MenuItem>
                                                             ))}
                                                         </Select>
@@ -1158,7 +1183,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 {Array.isArray(selectedParameter3) && selectedParameter3.length > 0
                                                     ? `${compareDevice2} - ${selectedParameter3.length > 1
                                                         ? `${selectedParameter3.length} Parameters Selected`
-                                                        : parameterLabels[selectedParameter3[0]] || selectedParameter3[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                        : parameterOptions.find(opt => opt.value === selectedParameter3[0])?.label || selectedParameter3[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                     : compareDevice2}
                                             </Typography>
                                             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
@@ -1184,35 +1209,34 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     <InputLabel>Select Parameters</InputLabel>
                                                     <Select
                                                         multiple
-                                                        value={getSelectedCategories(selectedParameter3)}
-                                                        onChange={(e) => handleParameterChange(e, setSelectedParameter3)}
+                                                        value={selectedParameter3}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value;
+                                                            // If "All Parameters" is selected, clear all other selections
+                                                            if (value.includes('all')) {
+                                                                setSelectedParameter3([]);
+                                                            } else {
+                                                                // Remove "all" from selection if other items are selected
+                                                                const filteredValue = value.filter(item => item !== 'all');
+                                                                setSelectedParameter3(filteredValue);
+                                                            }
+                                                        }}
                                                         label="Select Parameters"
                                                         renderValue={(selected) => (
                                                             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                                {/* Show "All Categories" if all are selected */}
-                                                                {isAllParametersSelected(selectedParameter3) ? (
+                                                                {selected.slice(0, 2).map((value) => (
                                                                     <Chip
-                                                                        label="All Categories"
+                                                                        key={value}
+                                                                        label={parameterOptions.find(p => p.value === value)?.label || value.replace(/_/g, ' ')}
                                                                         size="small"
-                                                                        sx={{ height: '20px', fontSize: '10px' }}
+                                                                        sx={{
+                                                                            height: '20px',
+                                                                            fontSize: '10px',
+                                                                            textTransform: 'capitalize'
+                                                                        }}
                                                                     />
-                                                                ) : (
-                                                                    /* Show the first 2 items as Chips */
-                                                                    selected.slice(0, 2).map((value) => (
-                                                                        <Chip
-                                                                            key={value}
-                                                                            label={parameterCategories[value]?.label || value}
-                                                                            size="small"
-                                                                            sx={{
-                                                                                height: '20px',
-                                                                                fontSize: '10px'
-                                                                            }}
-                                                                        />
-                                                                    ))
-                                                                )}
-
-                                                                {/* If more than 2 items and not all selected, show the +X counter */}
-                                                                {!isAllParametersSelected(selectedParameter3) && selected.length > 2 && (
+                                                                ))}
+                                                                {selected.length > 2 && (
                                                                     <Chip
                                                                         label={`+${selected.length - 2} more`}
                                                                         size="small"
@@ -1235,34 +1259,29 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             }
                                                         }
                                                     >
-                                                        
-                                                        {/* Category options */}
-                                                        {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
-                                                            <MenuItem key={categoryKey} value={categoryKey} sx={{
-                                                                py: 0.2, // Tight vertical padding for the list item
-                                                                px: 1,
-                                                                minHeight: '32px', // Forces a slim row height
-                                                            }}>
-                                                                <Checkbox 
-                                                                    checked={categoryData.parameters.every(param => selectedParameter3.includes(param))} 
+                                                        {parameterOptions.map((option) => (
+                                                            <MenuItem key={option.value} value={option.value}
+                                                            sx={{
+                                                                    py: 0.2, // Tight vertical padding for the list item
+                                                                    px: 1,
+                                                                    minHeight: '32px', // Forces a slim row height
+                                                                }}>
+                                                                <Checkbox checked={selectedParameter3.indexOf(option.value) > -1} 
                                                                     sx={{
-                                                                        p: 0.5,   // Removes the 9px default padding
-                                                                        mr: 0.5,   // Adds spacing between box and text
-                                                                        transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
-                                                                        '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
-                                                                    }} 
-                                                                />
-                                                                <ListItemText 
-                                                                    primary={categoryData.label} 
-                                                                    primaryTypographyProps={{
-                                                                        fontSize: '12px', // Smaller font to match the small checkbox
-                                                                        lineHeight: 1.2
-                                                                    }}
-                                                                    secondaryTypographyProps={{
-                                                                        fontSize: '10px',
-                                                                        color: 'text.secondary'
-                                                                    }}
-                                                                />
+                                                                            p: 0.5,   // Removes the 9px default padding
+                                                                            mr: 0.5,   // Adds spacing between box and text
+                                                                            transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
+                                                                            '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
+                                                                        }} />
+                                                                <ListItemText primary={option.label} 
+                                                                 primaryTypographyProps={{
+                                                                            fontSize: '12px', // Smaller font to match the small checkbox
+                                                                            lineHeight: 1.2
+                                                                        }}
+                                                                        secondaryTypographyProps={{
+                                                                            fontSize: '10px',
+                                                                            color: 'text.secondary'
+                                                                        }}/>
                                                             </MenuItem>
                                                         ))}
                                                     </Select>
@@ -1291,4 +1310,4 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     )
 }
 
-export default Analytics;
+export default TemperatureAnalytics;

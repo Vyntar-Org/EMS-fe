@@ -36,8 +36,8 @@ import dayjs from 'dayjs';
 
 // Updated parameter options to match the API response
 const parameterOptions = [
-    { value: "temperature", label: "Temperature (°C)" },
-    { value: "water", label: "Water (%)" },
+    { value: "water_consumption", label: "Water Consumption (KLD)" },
+    { value: "flow_rate", label: "Flow Rate (CFM)" },
 ];
 
 // Mock device data
@@ -68,13 +68,13 @@ const generateMockAnalyticsData = (deviceId, parameters, startDate, endDate) => 
         parameters.forEach(param => {
             let value;
             switch (param) {
-                case 'temperature':
-                    // Generate temperature values between 18-28°C with some variation
-                    value = 18 + Math.random() * 10 + (deviceId * 0.5);
+                case 'water_consumption':
+                    // Generate water consumption values between 100-500 liters with some variation
+                    value = 100 + Math.random() * 400 + (deviceId * 10);
                     break;
-                case 'water':
-                    // Generate water values between 40-70% with some variation
-                    value = 40 + Math.random() * 30 + (deviceId * 2);
+                case 'flow_rate':
+                    // Generate flow rate values between 5-20 L/min with some variation
+                    value = 5 + Math.random() * 15 + (deviceId * 0.5);
                     break;
                 default:
                     value = 0;
@@ -225,7 +225,7 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
 
             // Default to all parameters if none selected
-            const params = selectedParameter.length > 0 ? selectedParameter : ['temperature', 'water'];
+            const params = selectedParameter.length > 0 ? selectedParameter : ['water_consumption', 'flow_rate'];
 
             // Generate mock analytics data
             const mockData = generateMockAnalyticsData(
@@ -250,7 +250,7 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
 
             // Default to all parameters if none selected
-            const params = selectedParameter2.length > 0 ? selectedParameter2 : ['temperature', 'water'];
+            const params = selectedParameter2.length > 0 ? selectedParameter2 : ['water_consumption', 'flow_rate'];
 
             // Generate mock analytics data
             const mockData = generateMockAnalyticsData(
@@ -275,7 +275,7 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
 
             // Default to all parameters if none selected
-            const params = selectedParameter3.length > 0 ? selectedParameter3 : ['temperature', 'water'];
+            const params = selectedParameter3.length > 0 ? selectedParameter3 : ['water_consumption', 'flow_rate'];
 
             // Generate mock analytics data
             const mockData = generateMockAnalyticsData(
@@ -316,7 +316,7 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter) && selectedParameter.length > 0
             ? selectedParameter
-            : ['temperature', 'water']; // Default to all parameters
+            : ['water_consumption', 'flow_rate']; // Default to all parameters
 
         console.log('Parameters to process:', parametersToProcess);
 
@@ -328,18 +328,18 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                 // If a specific parameter is selected, use that field
                 if (param) {
                     switch (param) {
-                        case 'temperature':
-                            value = parseFloat(item.temperature) || 0;
+                        case 'water_consumption':
+                            value = parseFloat(item.water_consumption) || 0;
                             break;
-                        case 'water':
-                            value = parseFloat(item.water) || 0;
+                        case 'flow_rate':
+                            value = parseFloat(item.flow_rate) || 0;
                             break;
                         default:
                             value = 0;
                     }
                 } else {
-                    // If no parameter selected, use the default logic (temperature)
-                    value = parseFloat(item.temperature) || 0;
+                    // If no parameter selected, use the default logic (water_consumption)
+                    value = parseFloat(item.water_consumption) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -387,7 +387,7 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter2) && selectedParameter2.length > 0
             ? selectedParameter2
-            : ['temperature', 'water']; // Default to all parameters
+            : ['water_consumption', 'flow_rate']; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the comparison data based on selected parameter and format to 2 decimal places
@@ -397,18 +397,18 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                 // If a specific parameter is selected, use that field
                 if (param) {
                     switch (param) {
-                        case 'temperature':
-                            value = parseFloat(item.temperature) || 0;
+                        case 'water_consumption':
+                            value = parseFloat(item.water_consumption) || 0;
                             break;
-                        case 'water':
-                            value = parseFloat(item.water) || 0;
+                        case 'flow_rate':
+                            value = parseFloat(item.flow_rate) || 0;
                             break;
                         default:
                             value = 0;
                     }
                 } else {
-                    // If no parameter selected, use the default logic (temperature)
-                    value = parseFloat(item.temperature) || 0;
+                    // If no parameter selected, use the default logic (water_consumption)
+                    value = parseFloat(item.water_consumption) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -453,7 +453,7 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter3) && selectedParameter3.length > 0
             ? selectedParameter3
-            : ['temperature', 'water']; // Default to all parameters
+            : ['water_consumption', 'flow_rate']; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
@@ -463,18 +463,18 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                 // If a specific parameter is selected, use that field
                 if (param) {
                     switch (param) {
-                        case 'temperature':
-                            value = parseFloat(item.temperature) || 0;
+                        case 'water_consumption':
+                            value = parseFloat(item.water_consumption) || 0;
                             break;
-                        case 'water':
-                            value = parseFloat(item.water) || 0;
+                        case 'flow_rate':
+                            value = parseFloat(item.flow_rate) || 0;
                             break;
                         default:
                             value = 0;
                     }
                 } else {
-                    // If no parameter selected, use the default logic (temperature)
-                    value = parseFloat(item.temperature) || 0;
+                    // If no parameter selected, use the default logic (water_consumption)
+                    value = parseFloat(item.water_consumption) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -870,7 +870,7 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 ? `${filterDevice} - ${selectedParameter.length > 1
                                                     ? `${selectedParameter.length} Parameters Selected`
                                                     : parameterOptions.find(opt => opt.value === selectedParameter[0])?.label || selectedParameter[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
-                                                : (filterDevice !== 'all' ? `${filterDevice}` : 'Fire Safety Analytics')}
+                                                : (filterDevice !== 'all' ? `${filterDevice}` : 'Water Analytics')}
                                         </Typography>
                                         <Box>
                                             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
