@@ -242,9 +242,13 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     };
 
     // Function to format timestamp for tooltip - showing only time
+    // Function to format timestamp for tooltip - showing date and time
     const formatTimestampForTooltip = (timestamp) => {
         if (!timestamp) return 'N/A';
-        return new Date(timestamp).toLocaleTimeString('en-GB', {
+        return new Date(timestamp).toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
@@ -628,11 +632,6 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 <Typography style={styles.floorTitle}>
                                     {machine.name}
                                 </Typography>
-
-                                {/* Subtitle/Number */}
-                                <span style={{ fontSize: '13px', fontWeight: 'normal', color: "#6b7280" }}>
-                                    {machine.no}
-                                </span>
                             </div>
                         </div>
                         <Box style={styles.onlineStatus}>
@@ -722,7 +721,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
                         </Table>
                     </TableContainer>
-                    <Divider sx={{ marginBottom: '10px' }} />
+                    <Divider />
 
                     {/* MTD and Trend Button */}
                     <Box sx={{
@@ -731,45 +730,33 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         alignItems: 'center',
                         py: 0.5
                     }}>
-                        <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
-                            {machine.last_ts
-                                ? new Date(machine.last_ts).toLocaleString('en-GB', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: true
-                                })
-                                : 'N/A'}
-                        </Typography>
                         <Box style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
                                 MTD : {(machine.energy?.mtd || 0).toFixed(1)} KLD
                             </Typography>
                         </Box>
-                    </Box>
-                    <Box style={{ ...styles.metricsRow, marginTop: '10px', display: 'flex', justifyContent: 'right' }}>
-                    <Button
-                        variant="contained"
-                        style={styles.chartButton}
-                        onClick={async () => {
-                            setSelectedFloor(machine.name);
-                            setChartType('consumption');
-                            setChartModalOpen(true);
+                        <Box style={{ ...styles.metricsRow, display: 'flex', justifyContent: 'right' }}>
+                            <Button
+                                variant="contained"
+                                style={styles.chartButton}
+                                onClick={async () => {
+                                    setSelectedFloor(machine.name);
+                                    setChartType('consumption');
+                                    setChartModalOpen(true);
 
-                            // Find the selected machine by name to get its slave_id
-                            const selectedMachine = machineListData?.data?.machines?.find(
-                                m => m.name === machine.name
-                            );
-                            if (selectedMachine) {
-                                await fetchTrendData(selectedMachine.slave_id, selectedParameter);
-                            }
-                        }}
-                        sx={{ height: '30px', minWidth: '60px' }}
-                    >
-                        Trend
-                    </Button>
+                                    // Find the selected machine by name to get its slave_id
+                                    const selectedMachine = machineListData?.data?.machines?.find(
+                                        m => m.name === machine.name
+                                    );
+                                    if (selectedMachine) {
+                                        await fetchTrendData(selectedMachine.slave_id, selectedParameter);
+                                    }
+                                }}
+                                sx={{ height: '30px', minWidth: '60px' }}
+                            >
+                                Trend
+                            </Button>
+                        </Box>
                     </Box>
                 </CardContent>
             </Card>

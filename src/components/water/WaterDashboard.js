@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Grid,
@@ -11,7 +11,8 @@ import {
     ListItem,
     ListItemIcon,
     ListItemText,
-    InputAdornment
+    InputAdornment,
+    CircularProgress
 } from '@mui/material';
 import {
     Search,
@@ -33,27 +34,43 @@ import LocalFireDepartmentOutlinedIcon from '@mui/icons-material/LocalFireDepart
 import WaterDropOutlinedIcon from '@mui/icons-material/WaterDropOutlined';
 import LocalDrinkOutlinedIcon from '@mui/icons-material/LocalDrinkOutlined';
 
+import { fetchWaterDashboardOverview } from '../../auth/water/WaterDashboardApi';
+
 const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
     const [waterPositivity, setWaterPositivity] = useState(26.0);
+    const [dashboardData, setDashboardData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const truncateText = (text, length = 9) =>
         text.length > length ? text.slice(0, length) + '...' : text;
 
-    // Static data instead of API calls
-    const [dashboardData] = useState({
-        devices: { total: 10, online: 7, offline: 3 },
-        energy_consumption: {
-            mtd: { value: 1250.5, cost: 12500.50 },
-            today: { value: 45.8, cost: 458.00 },
-            yesterday: { value: 52.3, cost: 523.00 },
-            unit: 'kWh'
-        },
-        carbon_footprints: {
-            main: 875.35,
-            backup: 0,
-            green: 0,
-            unit: 'tCO2'
-        }
-    });
+    // Fetch dashboard data from API
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                
+                const response = await fetchWaterDashboardOverview();
+                
+                if (response.success && response.data) {
+                    setDashboardData(response.data);
+                    
+                    // Update water positivity state
+                    setWaterPositivity(response.data.water_positivity.current || 0);
+                } else {
+                    setError('Failed to fetch dashboard data');
+                }
+            } catch (err) {
+                console.error('Error fetching dashboard data:', err);
+                setError('Failed to fetch dashboard data: ' + err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        fetchData();
+    }, []);
 
     const [slaveList] = useState([
         { slave_id: 1, slave_name: 'Machine 1 - Production Line A' },
@@ -505,6 +522,25 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent} id="main-content">
+            {/* Loading indicator */}
+            {loading && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                    <CircularProgress />
+                </Box>
+            )}
+            
+            {/* Error message */}
+            {error && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                    <Typography variant="h6" color="error">
+                        Error: {error}
+                    </Typography>
+                </Box>
+            )}
+            
+            {!loading && !error && dashboardData && (
+                <>
+            
             {/* Top Summary Cards Row */}
             <Box sx={{
                 paddingLeft: '10px',
@@ -516,7 +552,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 overflow: 'hidden'
             }}>
                 <Box sx={{ display: 'flex', gap: '10px', marginLeft: '-40px' }}>
-                    {/* Card 1: Devices */}
+                    {/* Card 1: Raw Water Inlet */}
                     <Card sx={responsiveCardStyle}>
                         <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                             <Box display="flex" alignItems="center" justifyContent="center">
@@ -524,15 +560,19 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                 <Typography sx={titleStyle}>Raw Water Inlet</Typography>
                             </Box>
                             <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>24.0 KLD</Typography>
+                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                    {dashboardData.raw_water_inlet?.current?.toFixed(1) || '0.0'} KLD
+                                </Typography>
                             </Box>
                             <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>Yesterday 61.0 KLD</Typography>
+                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                    Yesterday {dashboardData.raw_water_inlet?.previous?.toFixed(1) || '0.0'} KLD
+                                </Typography>
                             </Box>
                         </CardContent>
                     </Card>
 
-                    {/* Merged Card: Energy Consumption & Power Factor */}
+                    {/* Card 2: Raw Water Outlet */}
                     <Card sx={{ ...responsiveCardStyle, }}>
                         <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                             <Box display="flex" alignItems="center" justifyContent="center">
@@ -540,12 +580,19 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                 <Typography sx={titleStyle}>Raw Water Outlet</Typography>
                             </Box>
                             <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>13.0 KLD</Typography>
+                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                    {dashboardData.raw_water_outlet?.current?.toFixed(1) || '0.0'} KLD
+                                </Typography>
+                            </Box>
+                            <Box display="flex" justifyContent="center" mt="10px">
+                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                    Yesterday {dashboardData.raw_water_outlet?.previous?.toFixed(1) || '0.0'} KLD
+                                </Typography>
                             </Box>
                         </CardContent>
                     </Card>
 
-                    {/* Card 4: Ener Tree */}
+                    {/* Card 3: Filter Water Outlet */}
                     <Card sx={responsiveCardStyle}>
                         <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                             <Box display="flex" alignItems="center" justifyContent="center">
@@ -553,12 +600,19 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                 <Typography sx={titleStyle}>Filter Water Outlet</Typography>
                             </Box>
                             <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>18.0 KLD</Typography>
+                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                    {dashboardData.filter_water_outlet?.current?.toFixed(1) || '0.0'} KLD
+                                </Typography>
+                            </Box>
+                            <Box display="flex" justifyContent="center" mt="10px">
+                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                    Yesterday {dashboardData.filter_water_outlet?.previous?.toFixed(1) || '0.0'} KLD
+                                </Typography>
                             </Box>
                         </CardContent>
                     </Card>
 
-                    {/* Card 5: Carbon Footprints */}
+                    {/* Card 4: Drinking RO */}
                     <Card sx={responsiveCardStyle}>
                         <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                             <Box display="flex" alignItems="center" justifyContent="center">
@@ -567,13 +621,20 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                             <Box display="flex" justifyContent="center" mt="10px">
                                 <Typography sx={ titleStyle }>Drinking RO</Typography>
                             </Box>
+                            <Box display="flex" justifyContent="center">
+                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                    {dashboardData.drinking_ro?.current?.toFixed(1) || '0.0'} KLD
+                                </Typography>
+                            </Box>
                             <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>Yesterday 0.0 KLD</Typography>
+                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                    Yesterday {dashboardData.drinking_ro?.previous?.toFixed(1) || '0.0'} KLD
+                                </Typography>
                             </Box>
                         </CardContent>
                     </Card>
 
-                    {/* Card 6: Load Balance */}
+                    {/* Card 5: Water Positivity */}
                     <Card sx={responsiveCardStyle}>
                         <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                             <Box display="flex" alignItems="center" justifyContent="center" mb="10px">
@@ -590,11 +651,13 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                         color: waterPositivity >= 0 ? '#16A34A' : '#DC2626' // Green for positive, red for negative
                                     }}
                                 >
-                                    {waterPositivity >= 0 ? '' : ''}{waterPositivity} KLD
+                                    {waterPositivity >= 0 ? '' : ''}{waterPositivity.toFixed(1)} KLD
                                 </Typography>
                             </Box>
                             <Box display="flex" justifyContent="center">
-                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>Yesterday 60.0 KLD</Typography>
+                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                    Yesterday {dashboardData.water_positivity?.previous?.toFixed(1) || '0.0'} KLD
+                                </Typography>
                             </Box>
                         </CardContent>
                     </Card>
@@ -606,7 +669,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 <Grid container spacing={3} justifyContent="center" gap={'10px'}>
                     {/* Left Column - 2 Stacked Cards */}
                     <Grid item xs={8}>
-                        {/* Card 1*/}
+                        {/* Sewage Inlet Card */}
                         <Card sx={{
                             ...cardStyle1,
                             width: getChartCardWidth(),
@@ -625,15 +688,19 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                     <Typography sx={titleStyle}>Sewage Inlet</Typography>
                                 </Box>
                                 <Box display="flex" justifyContent="center" mb="10px">
-                                    <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>0.0 KLD</Typography>
+                                    <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                        {dashboardData.sewage_inlet?.current?.toFixed(1) || '0.0'} KLD
+                                    </Typography>
                                 </Box>
                                 <Box display="flex" justifyContent="center">
-                                    <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>Yesterday 44.0 KLD</Typography>
+                                    <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                        Yesterday {dashboardData.sewage_inlet?.previous?.toFixed(1) || '0.0'} KLD
+                                    </Typography>
                                 </Box>
                             </CardContent>
                         </Card>
 
-                        {/* Card 2*/}
+                        {/* Sewage Outlet Card */}
                         <Card sx={{
                             ...cardStyle1,
                             width: getChartCardWidth(),
@@ -652,27 +719,32 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                     <Typography sx={titleStyle}>Sewage Outlet</Typography>
                                 </Box>
                                 <Box display="flex" justifyContent="center" mb="10px">
-                                    <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>2.0 KLD</Typography>
+                                    <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                        {dashboardData.sewage_outlet?.current?.toFixed(1) || '0.0'} KLD
+                                    </Typography>
                                 </Box>
                                 <Box display="flex" justifyContent="center">
-                                    <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>Yesterday 41.0 KLD</Typography>
+                                    <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                        Yesterday {dashboardData.sewage_outlet?.previous?.toFixed(1) || '0.0'} KLD
+                                    </Typography>
                                 </Box>
                             </CardContent>
                         </Card>
-                        {/* Card 3 */}
-                        <Card sx={{
-                            ...cardStyle1,
-                            width: getChartCardWidth(),
-                            height: '100px',
-                            padding: '20px',
-                            marginBottom: '10px',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                                backgroundColor: '#fff',
-                                boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
-                                transform: 'translateY(-2px)',
-                            }
-                        }}>
+                        {/* Total Stations Card */}
+                        <Card sx={
+                            {
+                                ...cardStyle1,
+                                width: getChartCardWidth(),
+                                height: '100px',
+                                padding: '20px',
+                                marginBottom: '10px',
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                    backgroundColor: '#fff',
+                                    boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                                    transform: 'translateY(-2px)',
+                                }
+                            }}>
                             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                 <Box display="flex" alignItems="center" justifyContent="center">
                                     <LocalDrinkOutlinedIcon sx={{ color: '#0156a6', mr: 1, fontSize: '20px', }} />
@@ -681,7 +753,9 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                     <Typography sx={titleStyle}>Total Stations</Typography>
                                 </Box>
                                 <Box display="flex" justifyContent="center" mt="10px">
-                                    <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>28</Typography>
+                                    <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                        {dashboardData.total_stations || 0}
+                                    </Typography>
                                 </Box>
                             </CardContent>
                         </Card>
@@ -853,6 +927,8 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     </Grid>
                 </Grid>
             </Box>
+                </>
+            )}
         </Box>
     );
 };

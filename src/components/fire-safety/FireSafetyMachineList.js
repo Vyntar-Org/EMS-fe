@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Grid,
@@ -28,132 +28,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
-
-// Mock data for machine list
-const mockMachineListData = {
-    data: {
-        machines: [
-            {
-                slave_id: 1,
-                name: "Slave 1",
-                status: "ONLINE",
-                last_ts: new Date(Date.now() - 5 * 60000).toISOString(), // 5 minutes ago
-                latest: {
-                    temperature: 24.5,
-                    water: 65.2
-                },
-                energy: {
-                    today: 120.5,
-                    mtd: 3615.2
-                }
-            },
-            {
-                slave_id: 2,
-                name: "Slave 2",
-                status: "ONLINE",
-                last_ts: new Date(Date.now() - 2 * 60000).toISOString(), // 2 minutes ago
-                latest: {
-                    temperature: 28.3,
-                    water: 70.5
-                },
-                energy: {
-                    today: 145.8,
-                    mtd: 4374.0
-                }
-            },
-            {
-                slave_id: 3,
-                name: "Slave 3",
-                status: "OFFLINE",
-                last_ts: new Date(Date.now() - 30 * 60000).toISOString(), // 30 minutes ago
-                latest: {
-                    temperature: 22.1,
-                    water: 60.8
-                },
-                energy: {
-                    today: 95.3,
-                    mtd: 2859.0
-                }
-            },
-            {
-                slave_id: 4,
-                name: "Slave 4",
-                status: "ONLINE",
-                last_ts: new Date(Date.now() - 1 * 60000).toISOString(), // 1 minute ago
-                latest: {
-                    temperature: 25.7,
-                    water: 68.3
-                },
-                energy: {
-                    today: 132.6,
-                    mtd: 3978.0
-                }
-            },
-            {
-                slave_id: 5,
-                name: "Slave 5",
-                status: "ONLINE",
-                last_ts: new Date(Date.now() - 8 * 60000).toISOString(), // 8 minutes ago
-                latest: {
-                    temperature: 26.2,
-                    water: 66.7
-                },
-                energy: {
-                    today: 118.9,
-                    mtd: 3567.0
-                }
-            },
-            {
-                slave_id: 6,
-                name: "Slave 6",
-                status: "ONLINE",
-                last_ts: new Date(Date.now() - 3 * 60000).toISOString(), // 3 minutes ago
-                latest: {
-                    temperature: 18.5,
-                    water: 55.2
-                },
-                energy: {
-                    today: 210.4,
-                    mtd: 6312.0
-                }
-            }
-        ]
-    }
-};
-
-// Function to generate mock trend data
-const generateMockTrendData = (parameter) => {
-    const data = [];
-    const now = new Date();
-    let baseValue;
-    
-    // Set base value based on parameter
-    switch (parameter) {
-        case 'temperature':
-            baseValue = 25;
-            break;
-        case 'water':
-            baseValue = 65;
-            break;
-        default:
-            baseValue = 0;
-    }
-    
-    // Generate data points for the last 6 hours (one every 30 minutes)
-    for (let i = 12; i >= 0; i--) {
-        const timestamp = new Date(now.getTime() - i * 30 * 60000);
-        // Add some random variation to the base value
-        const variation = (Math.random() - 0.5) * baseValue * 0.2;
-        const value = baseValue + variation;
-        
-        data.push({
-            timestamp: timestamp.toISOString(),
-            value: parseFloat(value.toFixed(2))
-        });
-    }
-    
-    return data;
-};
+import {
+    getFireSafetyMachineList,
+    getFireSafetySlaves,
+    getFireSafetyMachineTrend,
+} from '../../auth/fire-safety/FireSafetyMachineListApi';
 
 const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Get parameter unit
@@ -174,13 +53,55 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [chartType, setChartType] = useState('temperature');
     const [trendData, setTrendData] = useState([]);
     const [selectedParameter, setSelectedParameter] = useState('temperature');
-    const [machineListData] = useState(mockMachineListData);
+    const [machineListData, setMachineListData] = useState({ data: { machines: [] } });
+    const [slaveList, setSlaveList] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Function to fetch trend data (now using mock data)
-    const fetchTrendData = (slaveId, parameter) => {
-        const mockData = generateMockTrendData(parameter);
-        setTrendData(mockData);
-        return mockData;
+    // Fetch machine list and slaves from API on mount
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                const [machinesResponse, slavesResponse] = await Promise.all([
+                    getFireSafetyMachineList(),
+                    getFireSafetySlaves(),
+                ]);
+
+                if (machinesResponse && machinesResponse.data && Array.isArray(machinesResponse.data.machines)) {
+                    setMachineListData(machinesResponse);
+                } else {
+                    console.warn('Fire-safety machine list API returned unexpected format:', machinesResponse);
+                    setMachineListData({ data: { machines: [] } });
+                }
+
+                if (Array.isArray(slavesResponse)) {
+                    setSlaveList(slavesResponse);
+                }
+            } catch (err) {
+                console.error('Error loading fire-safety machine list:', err);
+                setError(err.message || 'Failed to load fire-safety machine list');
+                setMachineListData({ data: { machines: [] } });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    // Function to fetch trend data from API for the last 6 hours
+    const fetchTrendData = async (slaveId, parameter) => {
+        try {
+            const response = await getFireSafetyMachineTrend(slaveId, parameter, 6);
+            const data = Array.isArray(response?.data) ? response.data : [];
+            setTrendData(data);
+        } catch (err) {
+            console.error('Error fetching fire-safety trend data:', err);
+            setTrendData([]);
+        }
     };
 
     // Define styles
@@ -554,7 +475,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
-                            <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
+                            <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
                                 {machine.last_ts
                                     ? new Date(machine.last_ts).toLocaleString('en-GB', {
                                         day: '2-digit',
@@ -642,6 +563,26 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             </Card>
         );
     };
+
+    if (error) {
+        return (
+            <Box style={styles.mainContent} id="main-content">
+                <Typography color="error" variant="body2">
+                    {error}
+                </Typography>
+            </Box>
+        );
+    }
+
+    if (loading) {
+        return (
+            <Box style={styles.mainContent} id="main-content">
+                <Typography variant="body2">
+                    Loading fire-safety machines...
+                </Typography>
+            </Box>
+        );
+    }
 
     return (
         <Box style={styles.mainContent} id="main-content">

@@ -24,7 +24,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, updateUserData } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -72,6 +72,11 @@ const Login = () => {
         
         // Update auth context with both basic user info and full user data
         login({ username }, userDataResponse.data);
+        
+        // Also update the user data in the context
+        if (updateUserData) {
+          updateUserData(userDataResponse.data);
+        }
         
         // Navigate to dashboard which will set EMS as default active app
         navigate('/dashboard');

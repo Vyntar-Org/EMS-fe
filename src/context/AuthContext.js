@@ -12,6 +12,11 @@ const authReducer = (state, action) => {
         user: action.payload.user || null,
         userData: action.payload.userData || null
       };
+    case 'UPDATE_USER_DATA':
+      return {
+        ...state,
+        userData: action.payload
+      };
     case 'LOGOUT':
       return {
         ...state,
@@ -49,6 +54,28 @@ export const AuthProvider = ({ children }) => {
     const initializeAuth = () => {
       const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
       dispatch({ type: 'INITIALIZE', payload: { isLoggedIn } });
+      
+      // If user is logged in but we don't have user data, fetch it
+      if (isLoggedIn) {
+        const storedUserData = localStorage.getItem('fullUserData');
+        if (!storedUserData) {
+          // Try to fetch user data
+          const fetchUserData = async () => {
+            try {
+              const loginApi = await import('../auth/LoginApi');
+              const userDataResponse = await loginApi.default.getUserData();
+              if (userDataResponse && userDataResponse.data) {
+                localStorage.setItem('fullUserData', JSON.stringify(userDataResponse.data));
+                dispatch({ type: 'UPDATE_USER_DATA', payload: userDataResponse.data });
+              }
+            } catch (error) {
+              console.error('Error fetching user data during initialization:', error);
+            }
+          };
+          
+          fetchUserData();
+        }
+      }
     };
 
     initializeAuth();
@@ -74,6 +101,11 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'LOGIN', payload: { user: userData, userData: fullUserData } });
   };
 
+  // Function to update user data
+  const updateUserData = (userData) => {
+    dispatch({ type: 'UPDATE_USER_DATA', payload: userData });
+  };
+
   // Logout function
   const logout = () => {
     // Clear specific auth items instead of all local storage
@@ -87,7 +119,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthStateContext.Provider value={{ ...state, login, logout }}>
+    <AuthStateContext.Provider value={{ ...state, login, logout, updateUserData }}>
       {children}
     </AuthStateContext.Provider>
   );
