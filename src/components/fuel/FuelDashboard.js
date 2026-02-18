@@ -12,7 +12,8 @@ import {
     ListItemIcon,
     ListItemText,
     InputAdornment,
-    Button
+    Button,
+    Tooltip
 } from '@mui/material';
 import {
     Search,
@@ -28,7 +29,6 @@ import {
 } from '@mui/icons-material';
 import Chart from 'react-apexcharts';
 import SearchIcon from '@mui/icons-material/Search';
-import Tooltip from '@mui/material/Tooltip';
 import LocalFireDepartmentOutlinedIcon from '@mui/icons-material/LocalFireDepartmentOutlined';
 import WaterDropOutlinedIcon from '@mui/icons-material/WaterDropOutlined';
 import LocalDrinkOutlinedIcon from '@mui/icons-material/LocalDrinkOutlined';
@@ -63,9 +63,38 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         { id: 4, name: 'DG 380 KVA', status: 'online' }
     ]);
 
+    // New state for slave list
+    const [slaveList] = useState([
+        { slave_id: 1, slave_name: 'DG 1500 KVA' },
+        { slave_id: 2, slave_name: 'DG 625 KVA' },
+        { slave_id: 3, slave_name: 'Mother Tank' },
+        { slave_id: 4, slave_name: 'DG 380 KVA' }
+    ]);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedGenerator, setSelectedGenerator] = useState(generatorList[0]);
+    const [selectedSlave, setSelectedSlave] = useState(slaveList[0]);
     const [activeChart, setActiveChart] = useState('bar'); // 'line' or 'bar'
+
+    // Function to handle slave selection
+    const handleSlaveSelect = (slave) => {
+        setSelectedSlave(slave);
+        console.log('Selected slave:', slave.slave_name);
+    };
+
+    // Function to handle generator selection
+    const handleGeneratorSelect = (generator) => {
+        setSelectedGenerator(generator);
+        console.log('Selected generator:', generator.name);
+    };
+
+    // Function to calculate card width
+    const getAlertsCardWidth = () => {
+        if (sidebarVisible) {
+            return '280px';
+        }
+        return '380px';
+    };
 
     // Static daily fuel consumption data (13 days)
     const [dailyFuelData] = useState([
@@ -77,12 +106,6 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         { day: '11/2', consumption: 82 },
         { day: '13/2', consumption: 100 }
     ]);
-
-    // Function to handle generator selection
-    const handleGeneratorSelect = (generator) => {
-        setSelectedGenerator(generator);
-        console.log('Selected generator:', generator.name);
-    };
 
     // Extract data from static data
     const generatorsData = dashboardData?.devices || { total: 0, online: 0, offline: 0 };
@@ -322,14 +345,6 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Calculate responsive card widths based on sidebar visibility
-    const getCardWidth = () => {
-        if (sidebarVisible) {
-            return '176px'; // Smaller width when sidebar is visible
-        }
-        return '247px'; // Original width when sidebar is hidden
-    };
-
     // Donut chart options for fuel station status
     const donutOptions = {
         chart: {
@@ -355,7 +370,7 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
             }
         },
         labels: ['Online - 4', 'Offline - 0'],
-        colors: ['#16A34A', '#DC2626'],
+        colors: ['#16A34A', '#EF4444'],
         dataLabels: {
             enabled: false
         },
@@ -382,14 +397,14 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 display: 'flex',
                 height: '100%',
                 // padding: '20px',
-                gap: '20px'
+                gap: '10px'
             }}>
                 {/* Left Column - Fuel Station Status and Generator List */}
                 <Box sx={{
                     width: '500px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '20px'
+                    gap: '10px'
                 }}>
                     {/* Fuel Station Status Card */}
                     <Card sx={{
@@ -414,42 +429,95 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                         />
                     </Card>
 
-                    {/* Generator List Card */}
+                    {/* Generator List Card - Corrected */}
                     <Card sx={{
                         ...cardStyle1,
                         padding: '20px',
-                        flex: 1,
                         display: 'flex',
-                        flexDirection: 'column'
+                        flexDirection: 'column',
                     }}>
-                        <Typography sx={titleStyle1}></Typography>
-                        <Box sx={{ flex: 1, overflowY: 'auto' }}>
-                            {generatorList.map((generator) => (
-                                <Box
-                                    key={generator.id}
-                                    sx={{
-                                        padding: '12px',
-                                        borderRadius: '8px',
-                                        marginBottom: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        backgroundColor: selectedGenerator?.id === generator.id ? '#E3F2FD' : '#F9FAFB',
-                                        border: selectedGenerator?.id === generator.id ? '2px solid #0156a6' : '1px solid #E5E7EB',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s ease',
-                                        '&:hover': {
-                                            backgroundColor: '#F3F4F6',
-                                            border: '1px solid #0156a6'
-                                        }
-                                    }}
-                                    onClick={() => handleGeneratorSelect(generator)}
-                                >
-                                    <ShowChartIcon sx={{ color: '#a855f7', fontSize: 28 }} />
-                                    <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                                        {generator.name}
-                                    </Typography>
-                                </Box>
-                            ))}
+                        <TextField
+                            fullWidth
+                            size="small"
+                            placeholder="Search machines..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+                            sx={{
+                                marginBottom: '8px',
+                                '& .MuiOutlinedInput-root': {
+                                    borderRadius: '8px',
+                                    height: '30px'
+                                }
+                            }}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon />
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
+
+                        <Box sx={{ maxHeight: "300px", overflowY: "auto", scrollbarWidth: "thin" }}>
+                            {Array.isArray(slaveList) ? (
+                                slaveList
+                                    .filter(slave => slave.slave_name && slave.slave_name.toLowerCase().includes(searchTerm))
+                                    .map((slave, index) => (
+                                        <Box
+                                            key={slave.slave_id}
+                                            sx={{
+                                                padding: '10px 12px',
+                                                borderRadius: '8px',
+                                                marginBottom: '6px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                backgroundColor: selectedSlave?.slave_id === slave.slave_id ? '#E3F2FD' : (index % 2 === 0 ? '#F9FAFB' : '#FFFFFF'),
+                                                border: selectedSlave?.slave_id === slave.slave_id ? '2px solid #E5E7EB' : '1px solid #E5E7EB',
+                                                transition: 'all 0.3s ease',
+                                                cursor: 'pointer',
+                                                '&:hover': {
+                                                    backgroundColor: '#F3F4F6',
+                                                    boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                                                    transform: 'translateY(-2px)',
+                                                    border: '1px solid #0a223e'
+                                                }
+                                            }}
+                                            onClick={() => {
+                                                console.log('Slave list item clicked:', slave.slave_name);
+                                                handleSlaveSelect(slave);
+                                            }}
+                                        >
+                                            <Box sx={{ marginRight: '8px', color: '#444444', fontWeight: 'bold' }}>
+                                                <FlashOnIcon fontSize="small" onClick={() => handleSlaveSelect(slave)} />
+                                            </Box>
+
+                                            <Tooltip
+                                                title={sidebarVisible ? slave.slave_name : ''}
+                                                placement="right"
+                                                arrow
+                                                disableHoverListener={!sidebarVisible}
+                                            >
+                                                <Typography
+                                                    sx={{
+                                                        fontSize: '14px',
+                                                        color: '#444444',
+                                                        fontWeight: 'bold',
+                                                        fontFamily: 'ubuntu, sans-serif',
+                                                        cursor: 'pointer',
+                                                        flex: 1,
+                                                        whiteSpace: sidebarVisible ? 'nowrap' : 'normal',
+                                                        overflow: sidebarVisible ? 'hidden' : 'visible',
+                                                        textOverflow: sidebarVisible ? 'ellipsis' : 'clip',
+                                                        maxWidth: sidebarVisible ? '90px' : '100%',
+                                                        transition: 'all 0.3s ease',
+                                                    }}
+                                                    onClick={() => handleSlaveSelect(slave)}
+                                                >
+                                                    {sidebarVisible ? truncateText(slave.slave_name) : slave.slave_name}
+                                                </Typography>
+                                            </Tooltip>
+                                        </Box>
+                                    ))) : null}
                         </Box>
                     </Card>
                 </Box>
@@ -463,13 +531,13 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     <Card sx={{
                         ...cardStyle1,
                         padding: '20px',
-                        height: '80%',
+                        height: '100%',
+                        width: '94%',
                         display: 'flex',
                         flexDirection: 'column',
-                        marginTop: '40px'
                     }}>
                         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                            <Typography sx={titleStyle1}>{selectedGenerator.name}, February 2026</Typography>
+                            <Typography sx={titleStyle1}>{selectedSlave.slave_name}, February 2026</Typography>
                             <Box display="flex" gap={1}>
                                 <button
                                     onClick={() => setActiveChart('bar')}

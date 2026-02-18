@@ -33,15 +33,83 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { fetchFireSafetySlaves, fetchFireSafetyAnalytics } from '../../auth/fire-safety/FireSafetyAnalyticsApi';
 
-// Updated parameter options to match the API response
+// Updated parameter options for solar analytics
 const parameterOptions = [
-    { value: "temperature", label: "Temperature (°C)" },
-    { value: "water_level", label: "Water Level" },
+    { value: "flow_rate", label: "Flow Rate (m³/hr)" },
+    { value: "inlet_temperature", label: "Inlet Temperature (°C)" },
+    { value: "outlet_temperature", label: "Outlet Temperature (°C)" },
+    { value: "efficiency", label: "Efficiency (%)" },
+    { value: "energy_output", label: "Energy Output (kW)" }
 ];
 
-const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
+// Mock solar device data
+const mockDevices = [
+    { slave_id: 1, slave_name: 'VAM' },
+    { slave_id: 2, slave_name: 'Tower1' },
+    { slave_id: 3, slave_name: 'Tower2' }
+];
+
+// Function to generate mock solar analytics data
+const generateMockAnalyticsData = (deviceId, parameters, startDate, endDate) => {
+    const data = [];
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+    const daysDiff = end.diff(start, 'days');
+
+    // Generate data points for each day in the range
+    for (let i = 0; i <= daysDiff; i++) {
+        const currentDate = start.add(i, 'day');
+        const timestamp = currentDate.toISOString();
+
+        const dataPoint = { timestamp };
+
+        // Add values for each requested parameter
+        parameters.forEach(param => {
+            let value;
+            switch (param) {
+                case 'flow_rate':
+                    // Generate flow rate values between 40-60 m³/hr with some variation
+                    value = 40 + Math.random() * 20 + (deviceId * 2);
+                    break;
+                case 'inlet_temperature':
+                    // Generate inlet temperature values between 55-65°C for VAM, 105-115°C for Towers
+                    if (deviceId === 1) { // VAM
+                        value = 55 + Math.random() * 10;
+                    } else { // Tower1 or Tower2
+                        value = 105 + Math.random() * 10;
+                    }
+                    break;
+                case 'outlet_temperature':
+                    // Generate outlet temperature values between 75-85°C for VAM, 95-105°C for Towers
+                    if (deviceId === 1) { // VAM
+                        value = 75 + Math.random() * 10;
+                    } else { // Tower1 or Tower2
+                        value = 95 + Math.random() * 10;
+                    }
+                    break;
+                case 'efficiency':
+                    // Generate efficiency values between 70-95% with some variation
+                    value = 70 + Math.random() * 25;
+                    break;
+                case 'energy_output':
+                    // Generate energy output values between 100-500 kW with some variation
+                    value = 100 + Math.random() * 400 + (deviceId * 50);
+                    break;
+                default:
+                    value = 0;
+            }
+
+            dataPoint[param] = parseFloat(value.toFixed(2));
+        });
+
+        data.push(dataPoint);
+    }
+
+    return data;
+};
+
+const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     // State for filters
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDevice, setFilterDevice] = useState('all');
@@ -51,8 +119,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
     const [devices, setDevices] = useState(['all']); // Initialize with 'all' as default
     const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
-    const [loading, setLoading] = useState(false); // Loading state for API calls
-    const [error, setError] = useState(null); // Error state for API calls
     const [selectedParameter, setSelectedParameter] = useState([]); // State for main chart parameter selection (array for multi-select)
     const [selectedParameter2, setSelectedParameter2] = useState([]); // State for first comparison chart parameter selection (array for multi-select)
     const [selectedParameter3, setSelectedParameter3] = useState([]); // State for second comparison chart parameter selection (array for multi-select)
@@ -118,35 +184,16 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Initialize devices from API
+    // Initialize devices from mock data
     useEffect(() => {
-        const loadSlaves = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                const response = await fetchFireSafetySlaves();
-                
-                if (response.success && response.data?.slaves) {
-                    setDeviceObjects(response.data.slaves);
-                    const deviceNames = response.data.slaves.map(device => device.slave_name);
-                    setDevices(['all', ...deviceNames]);
-                    
-                    // Set default device to the first one (not 'all')
-                    if (response.data.slaves.length > 0) {
-                        setFilterDevice(response.data.slaves[0].slave_name);
-                    }
-                } else {
-                    setError('Failed to load fire safety slaves');
-                }
-            } catch (err) {
-                console.error('Error loading slaves:', err);
-                setError('Failed to load fire safety slaves: ' + err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadSlaves();
+        setDeviceObjects(mockDevices);
+        const deviceNames = mockDevices.map(device => device.slave_name);
+        setDevices(['all', ...deviceNames]);
+        
+        // Set default device to the first one (not 'all')
+        if (mockDevices.length > 0) {
+            setFilterDevice(mockDevices[0].slave_name);
+        }
     }, []);
 
     // Handle search button click
@@ -187,133 +234,79 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [compareDevice2, setCompareDevice2] = useState(''); // Selected device for second comparison
     const [compareChartData2, setCompareChartData2] = useState([]); // Chart data for second comparison device
 
-    // Fetch analytics data when search is clicked
+    // Generate analytics data when search is clicked
     useEffect(() => {
-        const fetchAnalyticsData = async () => {
-            if (searchClicked && filterDevice && filterDevice !== 'all' && filterStartDate && filterEndDate) {
-                try {
-                    setLoading(true);
-                    setError(null);
-                    
-                    // Find the device ID based on the device name
-                    const selectedDevice = deviceObjects.find(device => device.slave_name === filterDevice);
-                    if (!selectedDevice) {
-                        throw new Error('Device not found');
-                    }
-
-                    // Default to all parameters if none selected
-                    const params = selectedParameter.length > 0 ? selectedParameter : ['temperature', 'water_level'];
-
-                    // Fetch analytics data from API
-                    const response = await fetchFireSafetyAnalytics(
-                        selectedDevice.slave_id,
-                        params,
-                        filterStartDate.toDate(),
-                        filterEndDate.toDate()
-                    );
-
-                    if (response.success && response.data) {
-                        setFilteredChartData(response.data);
-                    } else {
-                        throw new Error(response.message || 'Failed to fetch analytics data');
-                    }
-                } catch (err) {
-                    console.error('Error fetching analytics data:', err);
-                    setError(err.message || 'Failed to fetch analytics data');
-                    setFilteredChartData([]);
-                } finally {
-                    setLoading(false);
-                }
+        if (searchClicked && filterDevice && filterDevice !== 'all' && filterStartDate && filterEndDate) {
+            // Find the device ID based on the device name
+            const selectedDevice = deviceObjects.find(device => device.slave_name === filterDevice);
+            if (!selectedDevice) {
+                console.error('Device not found. Filter device:', filterDevice, 'Device objects:', deviceObjects);
+                return;
             }
-        };
 
-        fetchAnalyticsData();
+            // Default to all parameters if none selected
+            const params = selectedParameter.length > 0 ? selectedParameter : ['flow_rate', 'inlet_temperature', 'outlet_temperature'];
+
+            // Generate mock analytics data
+            const mockData = generateMockAnalyticsData(
+                selectedDevice.slave_id,
+                params,
+                filterStartDate,
+                filterEndDate
+            );
+
+            setFilteredChartData(mockData);
+        }
     }, [searchClicked, filterDevice, filterStartDate, filterEndDate, selectedParameter, deviceObjects]);
 
-    // Fetch comparison data when compare mode is active
+    // Generate comparison data when compare mode is active
     useEffect(() => {
-        const fetchCompareData = async () => {
-            if (compareMode && compareDevice && filterStartDate && filterEndDate) {
-                try {
-                    setLoading(true);
-                    setError(null);
-                    
-                    // Find the device ID based on the device name
-                    const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice);
-                    if (!selectedDevice) {
-                        throw new Error('Comparison device not found');
-                    }
-
-                    // Default to all parameters if none selected
-                    const params = selectedParameter2.length > 0 ? selectedParameter2 : ['temperature', 'water_level'];
-
-                    // Fetch analytics data from API
-                    const response = await fetchFireSafetyAnalytics(
-                        selectedDevice.slave_id,
-                        params,
-                        filterStartDate.toDate(),
-                        filterEndDate.toDate()
-                    );
-
-                    if (response.success && response.data) {
-                        setCompareChartData(response.data);
-                    } else {
-                        throw new Error(response.message || 'Failed to fetch comparison data');
-                    }
-                } catch (err) {
-                    console.error('Error fetching comparison data:', err);
-                    setError(err.message || 'Failed to fetch comparison data');
-                    setCompareChartData([]);
-                } finally {
-                    setLoading(false);
-                }
+        if (compareMode && compareDevice && filterStartDate && filterEndDate) {
+            // Find the device ID based on the device name
+            const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice);
+            if (!selectedDevice) {
+                console.error('Comparison device not found. Compare device:', compareDevice, 'Device objects:', deviceObjects);
+                return;
             }
-        };
 
-        fetchCompareData();
+            // Default to all parameters if none selected
+            const params = selectedParameter2.length > 0 ? selectedParameter2 : ['flow_rate', 'inlet_temperature', 'outlet_temperature'];
+
+            // Generate mock analytics data
+            const mockData = generateMockAnalyticsData(
+                selectedDevice.slave_id,
+                params,
+                filterStartDate,
+                filterEndDate
+            );
+
+            setCompareChartData(mockData);
+        }
     }, [compareMode, compareDevice, filterStartDate, filterEndDate, selectedParameter2, deviceObjects]);
 
-    // Fetch second comparison data when second compare mode is active
+    // Generate second comparison data when second compare mode is active
     useEffect(() => {
-        const fetchCompareData2 = async () => {
-            if (compareMode2 && compareDevice2 && filterStartDate && filterEndDate) {
-                try {
-                    setLoading(true);
-                    setError(null);
-                    
-                    // Find the device ID based on the device name
-                    const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice2);
-                    if (!selectedDevice) {
-                        throw new Error('Second comparison device not found');
-                    }
-
-                    // Default to all parameters if none selected
-                    const params = selectedParameter3.length > 0 ? selectedParameter3 : ['temperature', 'water_level'];
-
-                    // Fetch analytics data from API
-                    const response = await fetchFireSafetyAnalytics(
-                        selectedDevice.slave_id,
-                        params,
-                        filterStartDate.toDate(),
-                        filterEndDate.toDate()
-                    );
-
-                    if (response.success && response.data) {
-                        setCompareChartData2(response.data);
-                    } else {
-                        throw new Error(response.message || 'Failed to fetch second comparison data');
-                    }
-                } catch (err) {
-                    console.error('Error fetching second comparison data:', err);
-                    setError(err.message || 'Failed to fetch second comparison data');
-                    setCompareChartData2([]);
-                } finally {
-                    setLoading(false);
-                }
+        if (compareMode2 && compareDevice2 && filterStartDate && filterEndDate) {
+            // Find the device ID based on the device name
+            const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice2);
+            if (!selectedDevice) {
+                console.error('Second comparison device not found. Compare device2:', compareDevice2, 'Device objects:', deviceObjects);
+                return;
             }
-        };
 
-        fetchCompareData2();
+            // Default to all parameters if none selected
+            const params = selectedParameter3.length > 0 ? selectedParameter3 : ['flow_rate', 'inlet_temperature', 'outlet_temperature'];
+
+            // Generate mock analytics data
+            const mockData = generateMockAnalyticsData(
+                selectedDevice.slave_id,
+                params,
+                filterStartDate,
+                filterEndDate
+            );
+
+            setCompareChartData2(mockData);
+        }
     }, [compareMode2, compareDevice2, filterStartDate, filterEndDate, selectedParameter3, deviceObjects]);
 
     // Process the filtered chart data to create chart series and categories
@@ -321,19 +314,13 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         console.log('Processing filtered chart data:', filteredChartData);
         console.log('Selected parameter:', selectedParameter);
 
-        // Handle API response structure - data might be in filteredChartData.data
-        const chartData = filteredChartData?.data || filteredChartData;
-        
-        if (!chartData || !Array.isArray(chartData) || chartData.length === 0) {
+        if (!filteredChartData || !Array.isArray(filteredChartData) || filteredChartData.length === 0) {
             console.log('No filtered chart data available');
             return { series: [], categories: [] };
         }
 
-        console.log('Chart data length:', chartData.length);
-        console.log('First data item:', chartData[0]);
-
         // Process the filtered data to extract timestamps and values
-        const categories = chartData.map(item => {
+        const categories = filteredChartData.map(item => {
             // Format timestamp for x-axis - date and month only
             const timestamp = item.timestamp || item.created_at || item.date;
             if (timestamp) {
@@ -349,30 +336,39 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter) && selectedParameter.length > 0
             ? selectedParameter
-            : ['temperature', 'water_level']; // Default to all parameters
+            : ['flow_rate', 'inlet_temperature', 'outlet_temperature']; // Default to all parameters
 
         console.log('Parameters to process:', parametersToProcess);
 
         parametersToProcess.forEach(param => {
             // Extract values from the filtered data based on selected parameter and format to 2 decimal places
-            const values = chartData.map((item, index) => {
+            const values = filteredChartData.map((item, index) => {
                 let value = 0;
 
                 // If a specific parameter is selected, use that field
                 if (param) {
                     switch (param) {
-                        case 'temperature':
-                            value = parseFloat(item.temperature) || 0;
+                        case 'flow_rate':
+                            value = parseFloat(item.flow_rate) || 0;
                             break;
-                        case 'water_level':
-                            value = parseFloat(item.water_level) || 0;
+                        case 'inlet_temperature':
+                            value = parseFloat(item.inlet_temperature) || 0;
+                            break;
+                        case 'outlet_temperature':
+                            value = parseFloat(item.outlet_temperature) || 0;
+                            break;
+                        case 'efficiency':
+                            value = parseFloat(item.efficiency) || 0;
+                            break;
+                        case 'energy_output':
+                            value = parseFloat(item.energy_output) || 0;
                             break;
                         default:
                             value = 0;
                     }
                 } else {
-                    // If no parameter selected, use the default logic (temperature)
-                    value = parseFloat(item.temperature) || 0;
+                    // If no parameter selected, use the default logic (flow_rate)
+                    value = parseFloat(item.flow_rate) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -380,7 +376,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             });
 
             // Always create a series if we have data, even if all values are 0
-            if (chartData.length > 0) {
+            if (filteredChartData.length > 0) {
                 const parameterLabel = param
                     ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
                     : filterDevice;
@@ -393,37 +389,18 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
 
         console.log('Processed series:', series);
         console.log('Processed categories:', categories);
-        console.log('Series length:', series.length);
-        console.log('Categories length:', categories.length);
 
-        // Validate data before returning
-        if (series.length === 0 || categories.length === 0) {
-            console.log('Warning: Empty series or categories');
-            return { series: [], categories: [] };
-        }
-        
-        // Ensure all series have the same length as categories
-        const validSeries = series.map(s => ({
-            ...s,
-            data: s.data.slice(0, categories.length)
-        }));
-        
-        console.log('Final processed data:', { series: validSeries, categories });
-        
-        return { series: validSeries, categories };
+        return { series, categories };
     }, [filteredChartData, filterDevice, selectedParameter]);
 
     // Process the comparison chart data to create chart series and categories
     const processedCompareData = React.useMemo(() => {
-        // Handle API response structure - data might be in compareChartData.data
-        const chartData = compareChartData?.data || compareChartData;
-        
-        if (!chartData || !Array.isArray(chartData) || chartData.length === 0) {
+        if (!compareChartData || !Array.isArray(compareChartData) || compareChartData.length === 0) {
             return { series: [], categories: [] };
         }
 
         // Process the comparison data to extract timestamps and values
-        const categories = chartData.map(item => {
+        const categories = compareChartData.map(item => {
             // Format timestamp for x-axis - date and month only
             const timestamp = item.timestamp || item.created_at || item.date;
             if (timestamp) {
@@ -439,28 +416,37 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter2) && selectedParameter2.length > 0
             ? selectedParameter2
-            : ['temperature', 'water_level']; // Default to all parameters
+            : ['flow_rate', 'inlet_temperature', 'outlet_temperature']; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the comparison data based on selected parameter and format to 2 decimal places
-            const values = chartData.map((item, index) => {
+            const values = compareChartData.map((item, index) => {
                 let value = 0;
 
                 // If a specific parameter is selected, use that field
                 if (param) {
                     switch (param) {
-                        case 'temperature':
-                            value = parseFloat(item.temperature) || 0;
+                        case 'flow_rate':
+                            value = parseFloat(item.flow_rate) || 0;
                             break;
-                        case 'water_level':
-                            value = parseFloat(item.water_level) || 0;
+                        case 'inlet_temperature':
+                            value = parseFloat(item.inlet_temperature) || 0;
+                            break;
+                        case 'outlet_temperature':
+                            value = parseFloat(item.outlet_temperature) || 0;
+                            break;
+                        case 'efficiency':
+                            value = parseFloat(item.efficiency) || 0;
+                            break;
+                        case 'energy_output':
+                            value = parseFloat(item.energy_output) || 0;
                             break;
                         default:
                             value = 0;
                     }
                 } else {
-                    // If no parameter selected, use the default logic (temperature)
-                    value = parseFloat(item.temperature) || 0;
+                    // If no parameter selected, use the default logic (flow_rate)
+                    value = parseFloat(item.flow_rate) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -468,7 +454,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             });
 
             // Always create a series if we have data, even if all values are 0
-            if (chartData.length > 0) {
+            if (compareChartData.length > 0) {
                 const parameterLabel = param
                     ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
                     : compareDevice;
@@ -479,32 +465,17 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
         });
 
-        // Validate data before returning
-        if (series.length === 0 || categories.length === 0) {
-            console.log('Warning: Empty comparison series or categories');
-            return { series: [], categories: [] };
-        }
-        
-        // Ensure all series have the same length as categories
-        const validSeries = series.map(s => ({
-            ...s,
-            data: s.data.slice(0, categories.length)
-        }));
-        
-        return { series: validSeries, categories };
+        return { series, categories };
     }, [compareChartData, compareDevice, selectedParameter2, filterDevice2]);
 
     // Process the second comparison chart data to create chart series and categories
     const processedCompareData2 = React.useMemo(() => {
-        // Handle API response structure - data might be in compareChartData2.data
-        const chartData = compareChartData2?.data || compareChartData2;
-        
-        if (!chartData || !Array.isArray(chartData) || chartData.length === 0) {
+        if (!compareChartData2 || !Array.isArray(compareChartData2) || compareChartData2.length === 0) {
             return { series: [], categories: [] };
         }
 
         // Process the second comparison data to extract timestamps and values
-        const categories = chartData.map(item => {
+        const categories = compareChartData2.map(item => {
             // Format timestamp for x-axis - date and month only
             const timestamp = item.timestamp || item.created_at || item.date;
             if (timestamp) {
@@ -520,28 +491,37 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter3) && selectedParameter3.length > 0
             ? selectedParameter3
-            : ['temperature', 'water_level']; // Default to all parameters
+            : ['flow_rate', 'inlet_temperature', 'outlet_temperature']; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
-            const values = chartData.map((item, index) => {
+            const values = compareChartData2.map((item, index) => {
                 let value = 0;
 
                 // If a specific parameter is selected, use that field
                 if (param) {
                     switch (param) {
-                        case 'temperature':
-                            value = parseFloat(item.temperature) || 0;
+                        case 'flow_rate':
+                            value = parseFloat(item.flow_rate) || 0;
                             break;
-                        case 'water_level':
-                            value = parseFloat(item.water_level) || 0;
+                        case 'inlet_temperature':
+                            value = parseFloat(item.inlet_temperature) || 0;
+                            break;
+                        case 'outlet_temperature':
+                            value = parseFloat(item.outlet_temperature) || 0;
+                            break;
+                        case 'efficiency':
+                            value = parseFloat(item.efficiency) || 0;
+                            break;
+                        case 'energy_output':
+                            value = parseFloat(item.energy_output) || 0;
                             break;
                         default:
                             value = 0;
                     }
                 } else {
-                    // If no parameter selected, use the default logic (temperature)
-                    value = parseFloat(item.temperature) || 0;
+                    // If no parameter selected, use the default logic (flow_rate)
+                    value = parseFloat(item.flow_rate) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -549,7 +529,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             });
 
             // Always create a series if we have data, even if all values are 0
-            if (chartData.length > 0) {
+            if (compareChartData2.length > 0) {
                 const parameterLabel = param
                     ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
                     : compareDevice2;
@@ -560,19 +540,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
         });
 
-        // Validate data before returning
-        if (series.length === 0 || categories.length === 0) {
-            console.log('Warning: Empty second comparison series or categories');
-            return { series: [], categories: [] };
-        }
-        
-        // Ensure all series have the same length as categories
-        const validSeries = series.map(s => ({
-            ...s,
-            data: s.data.slice(0, categories.length)
-        }));
-        
-        return { series: validSeries, categories };
+        return { series, categories };
     }, [compareChartData2, compareDevice2, selectedParameter3, filterDevice3]);
 
     // Debug useEffect to monitor state changes
@@ -580,13 +548,10 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         console.log('=== State Debug Info ===');
         console.log('searchClicked:', searchClicked);
         console.log('filteredChartData:', filteredChartData);
-        console.log('filteredChartData.data:', filteredChartData?.data);
-        console.log('filteredChartData.data.length:', filteredChartData?.data?.length);
-        console.log('filteredChartData length:', filteredChartData?.length);
+        console.log('filteredChartData.length:', filteredChartData?.length);
         console.log('processedFilteredData:', processedFilteredData);
         console.log('processedFilteredData.series:', processedFilteredData.series);
         console.log('processedFilteredData.series.length:', processedFilteredData.series?.length);
-        console.log('processedFilteredData.categories.length:', processedFilteredData.categories?.length);
         console.log('selectedParameter:', selectedParameter);
         console.log('========================');
     }, [searchClicked, filteredChartData, processedFilteredData, selectedParameter]);
@@ -627,7 +592,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                     },
                     show: true,
                 },
-                tickAmount: Math.min(6, currentProcessedData.categories.length),
+                tickAmount: 6,
                 axisBorder: {
                     show: false
                 },
@@ -747,24 +712,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             <Box style={styles.container}>
                 <Card style={styles.tableCard}>
                     <CardContent sx={{ p: 1 }}>
-                        {/* Loading indicator */}
-                        {loading && (
-                            <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Loading data...
-                                </Typography>
-                            </Box>
-                        )}
-                        
-                        {/* Error message */}
-                        {error && (
-                            <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                                <Typography variant="body2" color="error">
-                                    Error: {error}
-                                </Typography>
-                            </Box>
-                        )}
-                        
                         <Box className="logs-header">
                             <Box className="logs-filters">
                                 <FormControl size="small" sx={{ minWidth: 300 }}>
@@ -773,7 +720,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         value={filterDevice}
                                         label="Select Machine"
                                         onChange={(e) => setFilterDevice(e.target.value)}
-                                        disabled={loading}
                                     >
                                         {devices.map((device) => (
                                             <MenuItem key={device} value={device}>
@@ -799,7 +745,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             }
                                         }}
                                         label="Select Parameters"
-                                        disabled={loading}
                                         renderValue={(selected) => (
                                             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
                                                 {selected.slice(0, 2).map((value) => (
@@ -871,7 +816,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         value={filterStartDate}
                                         onChange={(newValue) => setFilterStartDate(newValue)}
                                         format="DD/MM/YYYY hh:mm A"
-                                        disabled={loading}
                                         slotProps={{
                                             textField: {
                                                 size: 'small',
@@ -891,7 +835,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         value={filterEndDate}
                                         onChange={(newValue) => setFilterEndDate(newValue)}
                                         format="DD/MM/YYYY hh:mm A"
-                                        disabled={loading}
                                         slotProps={{
                                             textField: {
                                                 size: 'small',
@@ -907,7 +850,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                     variant="contained"
                                     startIcon={<SearchIcon />}
                                     onClick={handleSearch}
-                                    disabled={loading}
                                     sx={{
                                         backgroundColor: '#2F6FB0',
                                         '&:hover': {
@@ -937,9 +879,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         setFilterDevice3('all'); // Reset second comparison machine
                                         setCompareParameter(''); // Reset first comparison parameter
                                         setCompareParameter2(''); // Reset second comparison parameter
-                                        setError(null); // Clear error
                                     }}
-                                    disabled={loading}
                                     sx={{
                                         borderColor: '#6c757d',
                                         color: '#6c757d',
@@ -961,7 +901,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                             </Box>
                         </Box>
                         {searchClicked ? (
-                            processedFilteredData.series.length > 0 && processedFilteredData.categories.length > 0 ? (
+                            processedFilteredData.series.length > 0 ? (
                                 <>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                                         <Typography
@@ -977,7 +917,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 ? `${filterDevice} - ${selectedParameter.length > 1
                                                     ? `${selectedParameter.length} Parameters Selected`
                                                     : parameterOptions.find(opt => opt.value === selectedParameter[0])?.label || selectedParameter[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
-                                                : (filterDevice !== 'all' ? `${filterDevice}` : 'Fire Safety Analytics')}
+                                                : (filterDevice !== 'all' ? `${filterDevice}` : 'Solar Analytics')}
                                         </Typography>
                                         <Box>
                                             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -1008,7 +948,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 setCompareDevice(e.target.value);
                                                                 setCompareMode(true);
                                                             }}
-                                                            disabled={loading}
                                                         >
                                                             {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice2).map((device) => (
                                                                 <MenuItem key={device} value={device}>
@@ -1060,7 +999,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 // Set compare mode to true when machine is selected
                                                                 setCompareMode(true);
                                                             }}
-                                                            disabled={loading}
                                                         >
                                                             {devices.map((device) => (
                                                                 <MenuItem key={device} value={device}>
@@ -1086,7 +1024,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 }
                                                             }}
                                                             label="Select Parameters"
-                                                            disabled={loading}
                                                             renderValue={(selected) => (
                                                                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
                                                                     {selected.slice(0, 2).map((value) => (
@@ -1178,7 +1115,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                     setCompareDevice2(e.target.value);
                                                                     setCompareMode2(true);
                                                                 }}
-                                                                disabled={loading}
                                                             >
                                                                 {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice).map((device) => (
                                                                     <MenuItem key={device} value={device}>
@@ -1229,7 +1165,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             // Set compare mode to true when machine is selected
                                                             setCompareMode2(true);
                                                         }}
-                                                        disabled={loading}
                                                     >
                                                         {devices.map((device) => (
                                                             <MenuItem key={device} value={device}>
@@ -1255,7 +1190,6 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             }
                                                         }}
                                                         label="Select Parameters"
-                                                        disabled={loading}
                                                         renderValue={(selected) => (
                                                             <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
                                                                 {selected.slice(0, 2).map((value) => (
@@ -1344,4 +1278,4 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     )
 }
 
-export default FireSafetyAnalytics;
+export default SolarAnalytics;

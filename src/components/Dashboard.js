@@ -968,7 +968,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 transform: 'translateY(-2px)',
               }
             }}>
-              <Typography sx={titleStyle1}> {selectedSlave ? `${selectedSlave.slave_name}` : ''}</Typography>
+              <Typography sx={titleStyle1}> {selectedSlave ? `Demand Indicator - ${selectedSlave.slave_name}` : ''}</Typography>
               {peakDemandLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '165px' }}>
                   <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
@@ -1191,10 +1191,10 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                         <Box
                           key={slave.slave_id}
                           sx={{
-                            height: '20px',
-                            padding: '8px 12px',
+                            height: '25px',
+                            padding: '10px 20px',
                             borderRadius: '8px',
-                            marginBottom: '6px',
+                            marginBottom: '10px',
                             display: 'flex',
                             alignItems: 'center',
                             backgroundColor: selectedSlave?.slave_id === slave.slave_id ? '#E3F2FD' : (index % 2 === 0 ? '#F9FAFB' : '#FFFFFF'),

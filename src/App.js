@@ -73,8 +73,8 @@ function AppContent() {
   }, [activeApp]);
 
   // Component wrapper for protected routes
-  const ProtectedRoute = ({ children }) => {
-    const { isLoggedIn, loading } = useAuth();
+  const ProtectedRoute = ({ children, requiredAppCode = null }) => {
+    const { isLoggedIn, loading, userData: authUserData } = useAuth();
     
     // Show loading state while auth state is being initialized
     if (loading) {
@@ -87,6 +87,29 @@ function AppContent() {
     
     if (!isLoggedIn) {
       return <Navigate to="/login" replace />;
+    }
+    
+    // Check if user has access to the required application
+    if (requiredAppCode && authUserData && authUserData.applications) {
+      const hasAccess = authUserData.applications.some(app => app.code === requiredAppCode);
+      if (!hasAccess) {
+        // If user doesn't have access to this app, redirect to their default app or dashboard
+        const defaultApp = authUserData.applications[0];
+        if (defaultApp) {
+          if (defaultApp.code === 'ENERGY') {
+            return <Navigate to="/dashboard" replace />;
+          } else if (defaultApp.code === 'TEMPERATURE') {
+            return <Navigate to="/temperature/machine-list" replace />;
+          } else if (defaultApp.code === 'FIRE-SAFETY') {
+            return <Navigate to="/fire-safety/machine-list" replace />;
+          } else if (defaultApp.code === 'WATER') {
+            return <Navigate to="/water/dashboard" replace />;
+          } else if (defaultApp.code === 'FUEL') {
+            return <Navigate to="/fuel/dashboard" replace />;
+          }
+        }
+        return <Navigate to="/dashboard" replace />;
+      }
     }
     
     return children;
@@ -123,9 +146,9 @@ function AppContent() {
             </Fragment>
           } />
           
-          {/* Protected routes */}
+          {/* ENERGY application routes */}
           <Route path="/dashboard" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="ENERGY">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -141,7 +164,7 @@ function AppContent() {
             </ProtectedRoute>
           } />
           <Route path="/logs" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="ENERGY">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -157,7 +180,7 @@ function AppContent() {
             </ProtectedRoute>
           } />
           <Route path="/machine-list" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="ENERGY">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -173,7 +196,7 @@ function AppContent() {
             </ProtectedRoute>
           } />
           <Route path="/equipment-insight" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="ENERGY">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -189,7 +212,7 @@ function AppContent() {
             </ProtectedRoute>
           } />
           <Route path="/analytics" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="ENERGY">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -205,7 +228,7 @@ function AppContent() {
             </ProtectedRoute>
           } />
           <Route path="/reports" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="ENERGY">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -223,7 +246,7 @@ function AppContent() {
           
           {/* Temperature application routes */}
           <Route path="/temperature/machine-list" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="TEMPERATURE">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -240,7 +263,7 @@ function AppContent() {
           } />
           
           <Route path="/temperature/analytics" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="TEMPERATURE">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -257,7 +280,7 @@ function AppContent() {
           } />
           
           <Route path="/temperature/logs" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="TEMPERATURE">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -275,7 +298,7 @@ function AppContent() {
           
           {/* Fire & Safety application routes */}
           <Route path="/fire-safety/machine-list" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="FIRE-SAFETY">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -292,7 +315,7 @@ function AppContent() {
           } />
           
           <Route path="/fire-safety/analytics" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="FIRE-SAFETY">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -309,7 +332,7 @@ function AppContent() {
           } />
           
           <Route path="/fire-safety/logs" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="FIRE-SAFETY">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -327,7 +350,7 @@ function AppContent() {
           
           {/* Water application routes */}
           <Route path="/water/dashboard" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="WATER">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -344,7 +367,7 @@ function AppContent() {
           } />
           
           <Route path="/water/machine-list" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="WATER">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -361,7 +384,7 @@ function AppContent() {
           } />
           
           <Route path="/water/analytics" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="WATER">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -378,7 +401,7 @@ function AppContent() {
           } />
           
           <Route path="/water/logs" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="WATER">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -395,7 +418,7 @@ function AppContent() {
           } />
           
           <Route path="/water/reports" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="WATER">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -413,7 +436,7 @@ function AppContent() {
           
           {/* Fuel application routes */}
           <Route path="/fuel/dashboard" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="FUEL">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -430,7 +453,7 @@ function AppContent() {
           } />
           
           <Route path="/fuel/machine-list" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="FUEL">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -447,7 +470,7 @@ function AppContent() {
           } />
           
           <Route path="/fuel/analytics" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="FUEL">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -464,7 +487,7 @@ function AppContent() {
           } />
           
           <Route path="/fuel/logs" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="FUEL">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 
@@ -481,7 +504,7 @@ function AppContent() {
           } />
           
           <Route path="/fuel/reports" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredAppCode="FUEL">
               <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
               <Sidebar 
                 mobileOpen={mobileMenuOpen} 

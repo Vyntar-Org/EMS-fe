@@ -35,49 +35,14 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-
-// Mock device data
-const mockDevices = [
-  { slave_id: 1, slave_name: 'Slave 1' },
-  { slave_id: 2, slave_name: 'Slave 2' },
-  { slave_id: 3, slave_name: 'Slave 3' },
-  { slave_id: 4, slave_name: 'Slave 4' },
-  { slave_id: 5, slave_name: 'Slave 5' },
-  { slave_id: 6, slave_name: 'Slave 6' }
-];
-
-// Function to generate mock logs data
-const generateMockLogs = (slaveId, startDate, endDate) => {
-  const logs = [];
-  const start = dayjs(startDate);
-  const end = dayjs(endDate);
-  const minutesDiff = end.diff(start, 'minute');
-  
-  // Generate a log entry every 5 minutes
-  for (let i = 0; i <= minutesDiff; i += 5) {
-    const timestamp = start.add(i, 'minute').toISOString();
-    
-    // Generate random values for temperature and water
-    const temperature = 18 + Math.random() * 10 + (slaveId * 0.5);
-    const water = 40 + Math.random() * 30 + (slaveId * 2);
-    
-    logs.push({
-      id: `${slaveId}-${i}`,
-      slave_id: slaveId,
-      slave_name: `Slave ${slaveId}`,
-      timestamp: timestamp,
-      temperature: parseFloat(temperature.toFixed(2)),
-      water: parseFloat(water.toFixed(2))
-    });
-  }
-  
-  return logs;
-};
+import { getFireSafetyLogSlaves, getFireSafetyLogs } from '../../auth/fire-safety/FireSafetyLogsApi';
 
 function FireSafetyLogs({ onSidebarToggle, sidebarVisible }) {
   // State variables
   const [devices, setDevices] = useState(['all']);
   const [logs, setLogs] = useState([]);
+  const [realLogs, setRealLogs] = useState([]); // current page logs from API
+  const [paginationMeta, setPaginationMeta] = useState({}); // pagination info from API
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -104,15 +69,30 @@ function FireSafetyLogs({ onSidebarToggle, sidebarVisible }) {
   // Get all parameter values for easy reference
   const allParameterValues = allParameters.map(param => param.val);
 
-  // Initialize devices on component mount
+  // Initialize devices on component mount (fetch from API)
   useEffect(() => {
-    const deviceNames = mockDevices.map(device => device.slave_name);
-    setDevices(['all', ...deviceNames]);
-    
-    // Set the first device as default if available
-    if (mockDevices.length > 0) {
-      setFilterDevice(mockDevices[0].slave_name);
-    }
+    const loadDevices = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const slaves = await getFireSafetyLogSlaves();
+        const names = slaves.map((s) => s.slave_name);
+        setDevices(['all', ...names]);
+
+        if (slaves.length > 0) {
+          setFilterDevice(slaves[0].slave_name);
+        }
+      } catch (err) {
+        console.error('Error loading fire-safety log slaves:', err);
+        setError(err.message || 'Failed to load fire-safety devices');
+        setDevices(['all']);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDevices();
   }, []);
 
   // Handle search button click
@@ -132,43 +112,66 @@ function FireSafetyLogs({ onSidebarToggle, sidebarVisible }) {
 
     setSearchClicked(true);
     setPage(1);
-    setLoading(true);
 
-    try {
-      // If 'all' is selected, we'll generate logs for all devices
-      if (filterDevice === 'all') {
-        let allLogs = [];
-        mockDevices.forEach(device => {
-          const deviceLogs = generateMockLogs(
-            device.slave_id,
-            filterStartDate,
-            filterEndDate
-          );
-          allLogs = [...allLogs, ...deviceLogs];
-        });
-        
-        // Sort logs by timestamp
-        allLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        setLogs(allLogs);
-      } else {
-        // Find the device ID for the selected device name
-        const selectedDevice = mockDevices.find(device => device.slave_name === filterDevice);
-        if (selectedDevice) {
-          const deviceLogs = generateMockLogs(
-            selectedDevice.slave_id,
-            filterStartDate,
-            filterEndDate
-          );
-          setLogs(deviceLogs);
+    const fetchLogs = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // For now, support single selected device (not "all")
+        if (filterDevice === 'all') {
+          setLogs([]);
+          setError('Please select a specific machine (not "all") to fetch logs.');
+          return;
         }
+
+        // Find slave_id for selected name via latest devices list
+        // devices state holds names; we need to re-fetch slaves to map name->id
+        const slaves = await getFireSafetyLogSlaves();
+        const selectedSlave = slaves.find((s) => s.slave_name === filterDevice);
+
+        if (!selectedSlave) {
+          setLogs([]);
+          setError('Selected machine not found in slave list.');
+          return;
+        }
+
+        // Backend expects "YYYY-MM-DD HH:mm:ss" strings
+        const startStr = dayjs(filterStartDate).format('YYYY-MM-DD HH:mm:ss');
+        const endStr = dayjs(filterEndDate).format('YYYY-MM-DD HH:mm:ss');
+
+        const { logs: apiLogs, meta } = await getFireSafetyLogs({
+          slaveId: selectedSlave.slave_id,
+          startDatetime: startStr,
+          endDatetime: endStr,
+          limit: rowsPerPage,
+          offset: (page - 1) * rowsPerPage,
+        });
+
+        // Map logs into the shape used by table
+        const mapped = (apiLogs || []).map((log, index) => ({
+          id: `${selectedSlave.slave_id}-${index}-${log.timestamp}`,
+          slave_id: selectedSlave.slave_id,
+          slave_name: selectedSlave.slave_name,
+          timestamp: log.timestamp,
+          temperature: log.temperature,
+          water: log.water_level,
+        }));
+
+        // API already returns sorted newest->oldest; keep order as-is
+        setRealLogs(mapped);
+        setLogs(mapped);
+        setPaginationMeta(meta || {});
+      } catch (err) {
+        console.error('Error fetching fire-safety logs:', err);
+        setError(err.message || 'Failed to load logs');
+        setLogs([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Error generating logs:', err);
-      setError(err.message || 'Failed to generate logs');
-      setLogs([]);
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    fetchLogs();
   };
 
   // Filter logs based on search term only (date and device filters are handled by the search function)
@@ -183,11 +186,21 @@ function FireSafetyLogs({ onSidebarToggle, sidebarVisible }) {
     );
   });
 
+  // Calculate pagination based on API metadata (similar to Logs.js)
+  const count = paginationMeta.count || filteredLogs.length;
+  const totalRecords = paginationMeta.total || filteredLogs.length;
+  const totalPages = Math.ceil(totalRecords / rowsPerPage);
+
+  const shouldShowPagination = searchClicked && totalRecords > 0 && totalRecords > rowsPerPage;
+
   // Get logs for current page
-  const paginatedLogs = filteredLogs.slice(
-    (page - 1) * rowsPerPage,
-    page * rowsPerPage
-  );
+  // When using API pagination, realLogs already contains the correct page
+  const paginatedLogs = searchClicked
+    ? realLogs
+    : filteredLogs.slice(
+        (page - 1) * rowsPerPage,
+        page * rowsPerPage
+      );
 
   // Function to reset all filters
   const handleResetFilters = () => {
@@ -204,9 +217,61 @@ function FireSafetyLogs({ onSidebarToggle, sidebarVisible }) {
     setLogs([]);
   };
 
-  // Handle page change
-  const handlePageChange = (event, value) => {
+  // Handle page change (fetch new page from API, like Logs.js)
+  const handlePageChange = async (event, value) => {
     setPage(value);
+
+    if (searchClicked && filterDevice !== 'all') {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Re-fetch slaves to map name -> id
+        const slaves = await getFireSafetyLogSlaves();
+        const selectedSlave = slaves.find((s) => s.slave_name === filterDevice);
+
+        if (!selectedSlave) {
+          setLogs([]);
+          setRealLogs([]);
+          setError('Selected machine not found in slave list.');
+          return;
+        }
+
+        const startStr = dayjs(filterStartDate).format('YYYY-MM-DD HH:mm:ss');
+        const endStr = dayjs(filterEndDate).format('YYYY-MM-DD HH:mm:ss');
+
+        const limit = rowsPerPage;
+        const offset = (value - 1) * rowsPerPage;
+
+        const { logs: apiLogs, meta } = await getFireSafetyLogs({
+          slaveId: selectedSlave.slave_id,
+          startDatetime: startStr,
+          endDatetime: endStr,
+          limit,
+          offset,
+        });
+
+        const mapped = (apiLogs || []).map((log, index) => ({
+          id: `${selectedSlave.slave_id}-${index}-${log.timestamp}`,
+          slave_id: selectedSlave.slave_id,
+          slave_name: selectedSlave.slave_name,
+          timestamp: log.timestamp,
+          temperature: log.temperature,
+          water: log.water_level,
+        }));
+
+        setRealLogs(mapped);
+        setLogs(mapped);
+        setPaginationMeta(meta || {});
+      } catch (err) {
+        console.error('Error fetching fire-safety logs (page change):', err);
+        setError(err.message || 'Failed to load logs');
+        setLogs([]);
+        setRealLogs([]);
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   // Handle parameter selection
@@ -564,14 +629,17 @@ function FireSafetyLogs({ onSidebarToggle, sidebarVisible }) {
             </TableContainer>
           )}
 
-          {/* Pagination */}
-          {searchClicked && (
+          {/* Pagination (server-side, like Logs.js) */}
+          {shouldShowPagination && (
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
               <Typography variant="body2" color="textSecondary">
-                Showing {(page - 1) * rowsPerPage + 1} to {Math.min(page * rowsPerPage, logs.length)} of {logs.length} entries
+                Showing {(paginationMeta.offset || 0) + 1} to {Math.min(
+                  (paginationMeta.offset || 0) + (paginationMeta.limit || rowsPerPage),
+                  paginationMeta.total || realLogs.length
+                )} of {paginationMeta.total || realLogs.length} entries
               </Typography>
               <Pagination
-                count={Math.ceil(logs.length / rowsPerPage)}
+                count={totalPages}
                 page={page}
                 onChange={handlePageChange}
                 color="primary"

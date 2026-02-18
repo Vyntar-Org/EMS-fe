@@ -35,14 +35,57 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { getTemperatureLogsWithNames, getTemperatureSlaves } from '../../auth/temperature/TemperatureLogsApi';
 
-function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
+// Mock solar device data
+const mockDevices = [
+  { slave_id: 1, slave_name: 'VAM' },
+  { slave_id: 2, slave_name: 'Tower1' },
+  { slave_id: 3, slave_name: 'Tower2' }
+];
+
+// Function to generate mock solar logs data
+const generateMockLogs = (slaveId, startDate, endDate) => {
+  const logs = [];
+  const start = dayjs(startDate);
+  const end = dayjs(endDate);
+  const minutesDiff = end.diff(start, 'minute');
+  
+  // Generate a log entry every 5 minutes
+  for (let i = 0; i <= minutesDiff; i += 5) {
+    const timestamp = start.add(i, 'minute').toISOString();
+    
+    // Generate random values for solar parameters
+    let flowRate, inletTemp, outletTemp;
+    
+    // Different parameters based on device type
+    if (slaveId === 1) { // VAM
+      flowRate = 40 + Math.random() * 20; // 40-60 m³/hr
+      inletTemp = 55 + Math.random() * 10; // 55-65°C
+      outletTemp = 75 + Math.random() * 10; // 75-85°C
+    } else { // Tower1 or Tower2
+      flowRate = 45 + Math.random() * 15; // 45-60 m³/hr
+      inletTemp = 105 + Math.random() * 10; // 105-115°C
+      outletTemp = 95 + Math.random() * 10; // 95-105°C
+    }
+    
+    logs.push({
+      id: `${slaveId}-${i}`,
+      slave_id: slaveId,
+      slave_name: `Slave ${slaveId}`,
+      timestamp: timestamp,
+      flowRate: parseFloat(flowRate.toFixed(2)),
+      inletTemp: parseFloat(inletTemp.toFixed(2)),
+      outletTemp: parseFloat(outletTemp.toFixed(2))
+    });
+  }
+  
+  return logs;
+};
+
+function SolarLogs({ onSidebarToggle, sidebarVisible }) {
   // State variables
-  const [devices, setDevices] = useState([]);
+  const [devices, setDevices] = useState(['all']);
   const [logs, setLogs] = useState([]);
-  const [realLogs, setRealLogs] = useState([]); // current page logs from API
-  const [paginationMeta, setPaginationMeta] = useState({}); // pagination info from API
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -59,49 +102,30 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
   const [openStart, setOpenStart] = React.useState(false);
   const [openEnd, setOpenEnd] = React.useState(false);
 
-  // Define all available parameters
+  // Define all available parameters for solar
   const allParameters = [
     { val: 'timestamp', label: 'Timestamp' },
-    { val: 'temperature', label: 'Temperature' },
-    { val: 'humidity', label: 'Humidity' },
-    { val: 'battery', label: 'Battery' }
+    { val: 'flowRate', label: 'Flow Rate (m³/hr)' },
+    { val: 'inletTemp', label: 'Inlet Temperature (°C)' },
+    { val: 'outletTemp', label: 'Outlet Temperature (°C)' }
   ];
 
   // Get all parameter values for easy reference
   const allParameterValues = allParameters.map(param => param.val);
 
-  // Load devices on component mount
+  // Initialize devices on component mount
   useEffect(() => {
-    const fetchDevices = async () => {
-      try {
-        setLoading(true);
-        const slavesData = await getTemperatureSlaves();
-
-        if (slavesData.success && slavesData.data && slavesData.data.slaves) {
-          // Transform slave data to device list
-          const deviceList = ['all', ...slavesData.data.slaves.map(slave => slave.slave_name)];
-          setDevices(deviceList);
-
-          // Set the first device as default if available
-          if (slavesData.data.slaves.length > 0) {
-            setFilterDevice(slavesData.data.slaves[0].slave_name);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching devices:', err);
-        setError(err.message || 'Failed to fetch devices');
-        // Set a default list if API fails
-        setDevices(['all', 'Compliance Room', 'Executive Room', 'Production Area', 'IT Cabin']);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDevices();
+    const deviceNames = mockDevices.map(device => device.slave_name);
+    setDevices(['all', ...deviceNames]);
+    
+    // Set the first device as default if available
+    if (mockDevices.length > 0) {
+      setFilterDevice(mockDevices[0].slave_name);
+    }
   }, []);
 
   // Handle search button click
-  const handleSearch = async () => {
+  const handleSearch = () => {
     if (!filterDevice) {
       alert('Please select a device');
       return;
@@ -117,104 +141,63 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
 
     setSearchClicked(true);
     setPage(1);
+    setLoading(true);
 
     try {
-      setLoading(true);
-
-      // Convert dayjs objects to proper datetime strings
-      const startDateTime = filterStartDate.format('YYYY-MM-DD HH:mm:ss');
-      const endDateTime = filterEndDate.format('YYYY-MM-DD HH:mm:ss');
-
-      // For server-side pagination, always fetch a single device page at a time
+      // If 'all' is selected, we'll generate logs for all devices
       if (filterDevice === 'all') {
-        setLogs([]);
-        setRealLogs([]);
-        setPaginationMeta({});
-        setError('Please select a specific device (not "all") to fetch logs.');
-        return;
-      }
-
-      // Map selected device name -> slave_id from latest slaves list
-      const slavesData = await getTemperatureSlaves();
-      let slaveId = null;
-      if (slavesData.success && slavesData.data && Array.isArray(slavesData.data.slaves)) {
-        const selectedSlave = slavesData.data.slaves.find(
-          (s) => s.slave_name === filterDevice
-        );
-        if (selectedSlave) {
-          slaveId = selectedSlave.slave_id;
+        let allLogs = [];
+        mockDevices.forEach(device => {
+          const deviceLogs = generateMockLogs(
+            device.slave_id,
+            filterStartDate,
+            filterEndDate
+          );
+          allLogs = [...allLogs, ...deviceLogs];
+        });
+        
+        // Sort logs by timestamp
+        allLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        setLogs(allLogs);
+      } else {
+        // Find the device ID for the selected device name
+        const selectedDevice = mockDevices.find(device => device.slave_name === filterDevice);
+        if (selectedDevice) {
+          const deviceLogs = generateMockLogs(
+            selectedDevice.slave_id,
+            filterStartDate,
+            filterEndDate
+          );
+          setLogs(deviceLogs);
         }
       }
-
-      if (!slaveId) {
-        setLogs([]);
-        setRealLogs([]);
-        setPaginationMeta({});
-        setError('Selected device not found in slave list.');
-        return;
-      }
-
-      const limit = rowsPerPage;
-      const offset = 0; // first page
-
-      const logsData = await getTemperatureLogsWithNames(
-        slaveId,
-        startDateTime,
-        endDateTime,
-        limit,
-        offset
-      );
-
-      let pageLogs = [];
-      let meta = {};
-
-      if (logsData.success && logsData.data && Array.isArray(logsData.data.logs)) {
-        pageLogs = logsData.data.logs;
-        meta = logsData.meta || {};
-      }
-
-      setRealLogs(pageLogs);
-      setLogs(pageLogs);
-      setPaginationMeta(meta);
     } catch (err) {
-      console.error('Error fetching logs:', err);
-      setError(err.message || 'Failed to fetch logs');
+      console.error('Error generating logs:', err);
+      setError(err.message || 'Failed to generate logs');
       setLogs([]);
-      setRealLogs([]);
-      setPaginationMeta({});
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter logs based on search term only (date and device filters are handled by API)
+  // Filter logs based on search term only (date and device filters are handled by the search function)
   const filteredLogs = logs.filter((log) => {
     if (!searchTerm) return true;
 
     return (
       log.timestamp.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.slave_name && log.slave_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.temperature !== undefined && log.temperature.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.humidity !== undefined && log.humidity.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.battery !== undefined && log.battery.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+      (log.flowRate !== undefined && log.flowRate.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.inletTemp !== undefined && log.inletTemp.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.outletTemp !== undefined && log.outletTemp.toString().toLowerCase().includes(searchTerm.toLowerCase()))
     );
   });
 
-  // Calculate pagination based on API metadata (similar to Logs.js)
-  const count = paginationMeta.count || filteredLogs.length;
-  const totalRecords = paginationMeta.total || filteredLogs.length;
-  const totalPages = Math.ceil(totalRecords / rowsPerPage);
-
-  const shouldShowPagination = searchClicked && totalRecords > 0 && totalRecords > rowsPerPage;
-
   // Get logs for current page
-  // When using API pagination, realLogs already contains the correct page
-  const paginatedLogs = searchClicked
-    ? realLogs
-    : filteredLogs.slice(
-        (page - 1) * rowsPerPage,
-        page * rowsPerPage
-      );
+  const paginatedLogs = filteredLogs.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
 
   // Function to reset all filters
   const handleResetFilters = () => {
@@ -231,69 +214,9 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
     setLogs([]);
   };
 
-  // Handle page change (fetch new page from API, like Logs.js)
-  const handlePageChange = async (event, value) => {
+  // Handle page change
+  const handlePageChange = (event, value) => {
     setPage(value);
-
-    if (searchClicked && filterDevice && filterDevice !== 'all') {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const startDateTime = filterStartDate.format('YYYY-MM-DD HH:mm:ss');
-        const endDateTime = filterEndDate.format('YYYY-MM-DD HH:mm:ss');
-
-        const slavesData = await getTemperatureSlaves();
-        let slaveId = null;
-        if (slavesData.success && slavesData.data && Array.isArray(slavesData.data.slaves)) {
-          const selectedSlave = slavesData.data.slaves.find(
-            (s) => s.slave_name === filterDevice
-          );
-          if (selectedSlave) {
-            slaveId = selectedSlave.slave_id;
-          }
-        }
-
-        if (!slaveId) {
-          setLogs([]);
-          setRealLogs([]);
-          setPaginationMeta({});
-          setError('Selected device not found in slave list.');
-          return;
-        }
-
-        const limit = rowsPerPage;
-        const offset = (value - 1) * rowsPerPage;
-
-        const logsData = await getTemperatureLogsWithNames(
-          slaveId,
-          startDateTime,
-          endDateTime,
-          limit,
-          offset
-        );
-
-        let pageLogs = [];
-        let meta = {};
-
-        if (logsData.success && logsData.data && Array.isArray(logsData.data.logs)) {
-          pageLogs = logsData.data.logs;
-          meta = logsData.meta || {};
-        }
-
-        setRealLogs(pageLogs);
-        setLogs(pageLogs);
-        setPaginationMeta(meta);
-      } catch (err) {
-        console.error('Error fetching logs (page change):', err);
-        setError(err.message || 'Failed to fetch logs');
-        setLogs([]);
-        setRealLogs([]);
-        setPaginationMeta({});
-      } finally {
-        setLoading(false);
-      }
-    }
   };
 
   // Handle parameter selection
@@ -422,7 +345,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                           sx={{
                             height: '20px',
                             fontSize: '10px',
-                            backgroundColor: '#0156a6',
+                            backgroundColor: '#d32f2f',
                             color: '#fff',
                             fontWeight: 'bold'
                           }}
@@ -443,7 +366,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                       py: 0.5,
                       px: 1,
                       fontWeight: isAllParametersSelected ? 'bold' : 'normal',
-                      backgroundColor: isAllParametersSelected ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
+                      backgroundColor: isAllParametersSelected ? 'rgba(211, 47, 47, 0.08)' : 'transparent',
                     }}
                   >
                     <Checkbox 
@@ -537,9 +460,9 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                 startIcon={<SearchIcon />}
                 onClick={handleSearch}
                 sx={{
-                  backgroundColor: '#0156a6',
+                  backgroundColor: '#2F6FB0',
                   '&:hover': {
-                    backgroundColor: '#166aa0',
+                    backgroundColor: '#1E4A7C',
                   },
                   minWidth: 'auto',
                   width: '32px', // Smaller width
@@ -596,9 +519,9 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                     ) : (
                       <>
                         <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Timestamp</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Temperature (°C)</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Humidity (%)</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Battery (V)</TableCell>
+                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Flow Rate (m³/hr)</TableCell>
+                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Inlet Temperature (°C)</TableCell>
+                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Outlet Temperature (°C)</TableCell>
                       </>
                     )}
                   </TableRow>
@@ -607,9 +530,9 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                   {paginatedLogs.length > 0 ? (
                     paginatedLogs.map((log) => {
                       const timestamp = new Date(log.timestamp).toLocaleString();
-                      const temperature = log.temperature;
-                      const humidity = log.humidity;
-                      const battery = log.battery;
+                      const flowRate = log.flowRate;
+                      const inletTemp = log.inletTemp;
+                      const outletTemp = log.outletTemp;
                       console.log(log);
 
                       return (
@@ -620,9 +543,9 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                             selectedColumn.map((col) => (
                               <TableCell key={col} className="log-table-cell">
                                 {col === 'timestamp' && timestamp}
-                                {col === 'temperature' && (typeof temperature === 'number' ? temperature.toFixed(2) : temperature)}
-                                {col === 'humidity' && (typeof humidity === 'number' ? humidity.toFixed(2) : humidity)}
-                                {col === 'battery' && (typeof battery === 'number' ? battery.toFixed(2) : battery)}
+                                {col === 'flowRate' && (typeof flowRate === 'number' ? flowRate.toFixed(2) : flowRate)}
+                                {col === 'inletTemp' && (typeof inletTemp === 'number' ? inletTemp.toFixed(2) : inletTemp)}
+                                {col === 'outletTemp' && (typeof outletTemp === 'number' ? outletTemp.toFixed(2) : outletTemp)}
                               </TableCell>
                             ))
                           ) : (
@@ -632,13 +555,13 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                                 {timestamp}
                               </TableCell>
                               <TableCell className="log-table-cell">
-                                {typeof temperature === 'number' ? temperature.toFixed(2) : temperature}
+                                {typeof flowRate === 'number' ? flowRate.toFixed(2) : flowRate}
                               </TableCell>
                               <TableCell className="log-table-cell">
-                                {typeof humidity === 'number' ? humidity.toFixed(2) : humidity}
+                                {typeof inletTemp === 'number' ? inletTemp.toFixed(2) : inletTemp}
                               </TableCell>
                               <TableCell className="log-table-cell">
-                                {typeof battery === 'number' ? battery.toFixed(2) : battery}
+                                {typeof outletTemp === 'number' ? outletTemp.toFixed(2) : outletTemp}
                               </TableCell>
                             </>
                           )}
@@ -657,17 +580,14 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
             </TableContainer>
           )}
 
-          {/* Pagination (server-side, similar to Logs.js) */}
-          {shouldShowPagination && (
+          {/* Pagination */}
+          {searchClicked && (
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
               <Typography variant="body2" color="textSecondary">
-                Showing {(paginationMeta.offset || 0) + 1} to {Math.min(
-                  (paginationMeta.offset || 0) + (paginationMeta.limit || rowsPerPage),
-                  paginationMeta.total || realLogs.length
-                )} of {paginationMeta.total || realLogs.length} entries
+                Showing {(page - 1) * rowsPerPage + 1} to {Math.min(page * rowsPerPage, logs.length)} of {logs.length} entries
               </Typography>
               <Pagination
-                count={totalPages}
+                count={Math.ceil(logs.length / rowsPerPage)}
                 page={page}
                 onChange={handlePageChange}
                 color="primary"
@@ -684,4 +604,4 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
   );
 }
 
-export default TemperatureLogs;
+export default SolarLogs;
