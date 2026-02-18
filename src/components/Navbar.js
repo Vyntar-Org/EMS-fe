@@ -182,6 +182,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                     displayName = 'Water';
                   } else if (app.code === 'FUEL') {
                     displayName = 'Fuel';
+                  } else if (app.code === 'SOLAR') {
+                    displayName = 'Solar';
                   }
                                   
                   return (
@@ -217,6 +219,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                             navigate(`/water/${route}`);
                           } else if (app.code === 'FUEL') {
                             navigate(`/fuel/${route}`);
+                          } else if (app.code === 'SOLAR') {
+                            navigate(`/solar/${route}`);
                           } else {
                             navigate(`/${route}`);
                           }
@@ -230,6 +234,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                             navigate('/water/dashboard');
                           } else if (app.code === 'FUEL') {
                             navigate('/fuel/dashboard');
+                          } else if (app.code === 'SOLAR') {
+                            navigate('/solar/machine-list');
                           } else {
                             // Default to dashboard if no specific landing page
                             navigate('/dashboard');

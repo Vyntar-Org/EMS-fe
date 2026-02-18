@@ -46,7 +46,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDevice, setFilterDevice] = useState('all');
     // Initialize with default dates - 7 days ago to today
-    const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(7, 'day'));
+    const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(1, 'day'));
     const [filterEndDate, setFilterEndDate] = useState(dayjs());
     const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
     const [devices, setDevices] = useState(['all']); // Initialize with 'all' as default
@@ -171,7 +171,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         setSearchTerm('');
         setFilterDevice('all');
         // Reset to default dates
-        setFilterStartDate(dayjs().subtract(7, 'day'));
+        setFilterStartDate(dayjs().subtract(1, 'day'));
         setFilterEndDate(dayjs());
         setSearchClicked(false); // Reset search state
     };
@@ -596,6 +596,9 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
 
     // Dynamic chart configuration function
     const getChartOptions = (currentProcessedData, currentData) => {
+        // Handle API response structure - data might be in currentData.data
+        const chartData = currentData?.data || currentData;
+        
         return {
             chart: {
                 type: 'line',
@@ -689,31 +692,27 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                     // Get the original date from the data based on search state
                     let originalDate = '';
 
-                    if (currentData && currentData.length > 0) {
-                        if (searchClicked) {
-                            // For filtered data, use timestamp from filteredChartData
-                            const item = currentData[dataPointIndex];
-                            const timestamp = item?.timestamp || item?.created_at || item?.date || '';
-                            if (timestamp) {
-                                const date = new Date(timestamp);
-                                originalDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
-                            }
-                        } else {
-                            // For default data, use the original logic
-                            originalDate = currentData[0]?.data[dataPointIndex]?.date || '';
+                    if (chartData && chartData.length > 0 && dataPointIndex < chartData.length) {
+                        // For filtered data, use timestamp from chartData
+                        const item = chartData[dataPointIndex];
+                        const timestamp = item?.timestamp || item?.created_at || item?.date || '';
+                        if (timestamp) {
+                            const date = new Date(timestamp);
+                            originalDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
                         }
                     }
 
                     // Build the tooltip content
                     let tooltipContent = `<div class="apexcharts-tooltip-custom" style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-                        <div style="font-weight: bold; margin-bottom: 8px; color: lightgray; font-size: 14px; padding: 10px; background-color: #f4f7f6">${originalDate}</div>`;
+                        <div style="font-weight: bold; margin-bottom: 8px; color: #333; font-size: 14px; padding: 10px; background-color: #f4f7f6">${originalDate}</div>`;
 
                     // Add each series with its color dot and value
                     w.globals.seriesNames.forEach((name, index) => {
                         const value = series[index][dataPointIndex];
                         const color = seriesColors[index % seriesColors.length];
+                        
                         tooltipContent += `
-                            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                            <div style="display: flex; align-items: center; margin-bottom: 10px;">
                                 <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${color}; margin-right: 8px;"></span>
                                 <span style="flex: 1; color: #333; font-size: 12px;">${name}:</span>
                                 <span style="font-weight: bold; color: #333; margin-left: 5px; font-size: 12px;">${value}</span>
@@ -1334,7 +1333,7 @@ const FireSafetyAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                     )}
                                 </>
                             ) : (
-                                <div>No data available for the selected filters</div>
+                                <div></div>
                             )
                         ) : null}
                     </CardContent>

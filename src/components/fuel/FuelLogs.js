@@ -100,9 +100,7 @@ function FuelLogs({ onSidebarToggle, sidebarVisible }) {
   const allParameters = [
     { val: 'timestamp', label: 'Timestamp' },
     { val: 'consumed', label: 'Consumed (L)' },
-    { val: 'refilled', label: 'Refilled (L)' },
-    { val: 'temperature', label: 'Temperature (°C)' },
-    { val: 'fuelLevel', label: 'Fuel Level (%)' }
+    { val: 'temperature', label: 'Temperature (°C)' }
   ];
 
   // Get all parameter values for easy reference
@@ -516,9 +514,7 @@ function FuelLogs({ onSidebarToggle, sidebarVisible }) {
                       <>
                         <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Timestamp</TableCell>
                         <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Consumed (L)</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Refilled (L)</TableCell>
                         <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Temperature (°C)</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Fuel Level (%)</TableCell>
                       </>
                     )}
                   </TableRow>
@@ -541,9 +537,7 @@ function FuelLogs({ onSidebarToggle, sidebarVisible }) {
                               <TableCell key={col} className="log-table-cell">
                                 {col === 'timestamp' && timestamp}
                                 {col === 'consumed' && (typeof consumed === 'number' ? consumed.toFixed(2) : consumed)}
-                                {col === 'refilled' && (typeof refilled === 'number' ? refilled.toFixed(2) : refilled)}
                                 {col === 'temperature' && (typeof temperature === 'number' ? temperature.toFixed(2) : temperature)}
-                                {col === 'fuelLevel' && (typeof fuelLevel === 'number' ? fuelLevel.toFixed(2) : fuelLevel)}
                               </TableCell>
                             ))
                           ) : (
@@ -556,13 +550,7 @@ function FuelLogs({ onSidebarToggle, sidebarVisible }) {
                                 {typeof consumed === 'number' ? consumed.toFixed(2) : consumed}
                               </TableCell>
                               <TableCell className="log-table-cell">
-                                {typeof refilled === 'number' ? refilled.toFixed(2) : refilled}
-                              </TableCell>
-                              <TableCell className="log-table-cell">
                                 {typeof temperature === 'number' ? temperature.toFixed(2) : temperature}
-                              </TableCell>
-                              <TableCell className="log-table-cell">
-                                {typeof fuelLevel === 'number' ? fuelLevel.toFixed(2) : fuelLevel}
                               </TableCell>
                             </>
                           )}

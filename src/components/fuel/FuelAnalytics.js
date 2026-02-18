@@ -37,9 +37,7 @@ import dayjs from 'dayjs';
 // Updated parameter options for fuel analytics
 const parameterOptions = [
     { value: "consumed", label: "Consumed (Ltrs)" },
-    { value: "refilled", label: "Refilled (Ltrs)" },
-    { value: "temperature", label: "Temperature (°C)" },
-    { value: "fuel_level", label: "Fuel Level (%)" },
+    { value: "temperature", label: "Temperature (°C)" }
 ];
 
 // Mock device data with fuel generators
@@ -72,17 +70,9 @@ const generateMockAnalyticsData = (deviceId, parameters, startDate, endDate) => 
                     // Generate consumed values between 10-100 liters with some variation
                     value = 10 + Math.random() * 90 + (deviceId * 5);
                     break;
-                case 'refilled':
-                    // Generate refilled values between 5-50 liters with some variation
-                    value = 5 + Math.random() * 45 + (deviceId * 2);
-                    break;
                 case 'temperature':
                     // Generate temperature values between 20-35°C with some variation
                     value = 20 + Math.random() * 15 + (deviceId * 0.5);
-                    break;
-                case 'fuel_level':
-                    // Generate fuel level values between 20-90% with some variation
-                    value = 20 + Math.random() * 70 + (deviceId * 2);
                     break;
                 default:
                     value = 0;
@@ -102,7 +92,7 @@ const FuelAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDevice, setFilterDevice] = useState('all');
     // Initialize with default dates - 7 days ago to today
-    const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(7, 'day'));
+    const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(1, 'day'));
     const [filterEndDate, setFilterEndDate] = useState(dayjs());
     const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
     const [devices, setDevices] = useState(['all']); // Initialize with 'all' as default
@@ -206,7 +196,7 @@ const FuelAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         setSearchTerm('');
         setFilterDevice('all');
         // Reset to default dates
-        setFilterStartDate(dayjs().subtract(7, 'day'));
+        setFilterStartDate(dayjs().subtract(1, 'day'));
         setFilterEndDate(dayjs());
         setSearchClicked(false); // Reset search state
     };
@@ -233,7 +223,7 @@ const FuelAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
 
             // Default to all parameters if none selected
-            const params = selectedParameter.length > 0 ? selectedParameter : ['consumed', 'refilled', 'temperature', 'fuel_level'];
+            const params = selectedParameter.length > 0 ? selectedParameter : ['consumed', 'temperature'];
 
             // Generate mock analytics data
             const mockData = generateMockAnalyticsData(
@@ -258,7 +248,7 @@ const FuelAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
 
             // Default to all parameters if none selected
-            const params = selectedParameter2.length > 0 ? selectedParameter2 : ['consumed', 'refilled', 'temperature', 'fuel_level'];
+            const params = selectedParameter2.length > 0 ? selectedParameter2 : ['consumed', 'temperature'];
 
             // Generate mock analytics data
             const mockData = generateMockAnalyticsData(
@@ -283,7 +273,7 @@ const FuelAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
 
             // Default to all parameters if none selected
-            const params = selectedParameter3.length > 0 ? selectedParameter3 : ['consumed', 'refilled', 'temperature', 'fuel_level'];
+            const params = selectedParameter3.length > 0 ? selectedParameter3 : ['consumed', 'temperature'];
 
             // Generate mock analytics data
             const mockData = generateMockAnalyticsData(
@@ -324,7 +314,7 @@ const FuelAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter) && selectedParameter.length > 0
             ? selectedParameter
-            : ['consumed', 'refilled', 'temperature', 'fuel_level']; // Default to all parameters
+            : ['consumed', 'temperature']; // Default to all parameters
 
         console.log('Parameters to process:', parametersToProcess);
 
@@ -339,14 +329,8 @@ const FuelAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                         case 'consumed':
                             value = parseFloat(item.consumed) || 0;
                             break;
-                        case 'refilled':
-                            value = parseFloat(item.refilled) || 0;
-                            break;
                         case 'temperature':
                             value = parseFloat(item.temperature) || 0;
-                            break;
-                        case 'fuel_level':
-                            value = parseFloat(item.fuel_level) || 0;
                             break;
                         default:
                             value = 0;
@@ -401,7 +385,7 @@ const FuelAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter2) && selectedParameter2.length > 0
             ? selectedParameter2
-            : ['consumed', 'refilled', 'temperature', 'fuel_level']; // Default to all parameters
+            : ['consumed', 'temperature']; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the comparison data based on selected parameter and format to 2 decimal places
@@ -414,14 +398,8 @@ const FuelAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                         case 'consumed':
                             value = parseFloat(item.consumed) || 0;
                             break;
-                        case 'refilled':
-                            value = parseFloat(item.refilled) || 0;
-                            break;
                         case 'temperature':
                             value = parseFloat(item.temperature) || 0;
-                            break;
-                        case 'fuel_level':
-                            value = parseFloat(item.fuel_level) || 0;
                             break;
                         default:
                             value = 0;
@@ -473,7 +451,7 @@ const FuelAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter3) && selectedParameter3.length > 0
             ? selectedParameter3
-            : ['consumed', 'refilled', 'temperature', 'fuel_level']; // Default to all parameters
+            : ['consumed', 'temperature']; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
@@ -486,14 +464,8 @@ const FuelAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                         case 'consumed':
                             value = parseFloat(item.consumed) || 0;
                             break;
-                        case 'refilled':
-                            value = parseFloat(item.refilled) || 0;
-                            break;
                         case 'temperature':
                             value = parseFloat(item.temperature) || 0;
-                            break;
-                        case 'fuel_level':
-                            value = parseFloat(item.fuel_level) || 0;
                             break;
                         default:
                             value = 0;
@@ -1247,7 +1219,7 @@ const FuelAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                     )}
                                 </>
                             ) : (
-                                <div>No data available for the selected filters</div>
+                                <div></div>
                             )
                         ) : null}
                     </CardContent>

@@ -151,17 +151,17 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const energyConsumption = dashboardData?.energy_consumption || 0;
   const energyConsumptionUnit = dashboardData?.energy_consumption?.unit || 'kWh';
   const carbonFootprints = dashboardData?.carbon_footprints || 0;
-  
+
   console.log('Slaves data:', slavesData);
   console.log('Energy consumption:', energyConsumption);
   console.log('Hourly energy data:', hourlyEnergyData);
-  
+
   // Use the new hourly energy data from API - ensure arrays exist
   const hourlyData = Array.isArray(hourlyEnergyData?.hours) ? hourlyEnergyData.hours : [];
   const hourlyValuesRaw = Array.isArray(hourlyEnergyData?.consumption) ? hourlyEnergyData.consumption : [];
   // Sanitize values: ApexCharts throws parser Error on null/undefined/NaN
   const hourlyValues = hourlyValuesRaw.map(v => (typeof v === 'number' && !Number.isNaN(v) ? v : 0));
-  
+
   // Helper function to format as 'HH.MM'
   const formatDateTime = (hourString) => {
     if (!hourString) return '';
@@ -305,7 +305,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       const sampledCategories = [];
       const sampledValues = [];
       const step = Math.floor((totalPoints - 1) / 6); // To get 7 points including first and last
-      
+
       for (let i = 0; i < totalPoints; i += step) {
         if (sampledCategories.length < 7) {
           sampledCategories.push(formatTimestamp(timestamps[i]));
@@ -314,21 +314,21 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
           break;
         }
       }
-      
+
       // Ensure we have exactly 7 points by adding the last point if needed
       if (sampledCategories.length < 7 && totalPoints >= 7) {
         const lastIndex = sampledCategories.length - 1;
         sampledCategories[lastIndex] = formatTimestamp(timestamps[totalPoints - 1]);
         sampledValues[lastIndex] = values[totalPoints - 1] ?? 0;
       }
-      
+
       return {
         categories: sampledCategories,
         values: sampledValues
       };
     }
   };
-  
+
   // Get sampled peak demand data
   const sampledPeakDemand = samplePeakDemandData();
 
@@ -1054,46 +1054,46 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                           </button>
                         </Box>
                       </Box>
-                      
-                        <Chart
-                          options={{
-                            ...energyConsumptionOptions,
-                            xaxis: {
-                              ...energyConsumptionOptions.xaxis,
-                              categories: weeklyConsumptionData.length > 0
-                                ? weeklyConsumptionData.map(item => formatDate(item.date)).filter(Boolean)
-                                : ['-'],
-                              title: {
-                                text: 'Date',
-                                style: { color: '#6B7280', fontSize: '12px' }
-                              }
-                            },
-                            yaxis: {
-                              ...energyConsumptionOptions.yaxis,
-                              min: 0,
-                              max: calculateYAxis(weeklyConsumptionData).max,
-                              tickAmount: calculateYAxis(weeklyConsumptionData).tickAmount,
-                              labels: { show: true }
-                            },
-                            tooltip: {
-                              ...energyConsumptionOptions.tooltip,
-                              y: {
-                                formatter: function (val) {
-                                  return (Number.isFinite(Number(val)) ? Number(val) : 0) + ' kWh';
-                                }
+
+                      <Chart
+                        options={{
+                          ...energyConsumptionOptions,
+                          xaxis: {
+                            ...energyConsumptionOptions.xaxis,
+                            categories: weeklyConsumptionData.length > 0
+                              ? weeklyConsumptionData.map(item => formatDate(item.date)).filter(Boolean)
+                              : ['-'],
+                            title: {
+                              text: 'Date',
+                              style: { color: '#6B7280', fontSize: '12px' }
+                            }
+                          },
+                          yaxis: {
+                            ...energyConsumptionOptions.yaxis,
+                            min: 0,
+                            max: calculateYAxis(weeklyConsumptionData).max,
+                            tickAmount: calculateYAxis(weeklyConsumptionData).tickAmount,
+                            labels: { show: true }
+                          },
+                          tooltip: {
+                            ...energyConsumptionOptions.tooltip,
+                            y: {
+                              formatter: function (val) {
+                                return (Number.isFinite(Number(val)) ? Number(val) : 0) + ' kWh';
                               }
                             }
-                          }}
-                          series={[{
-                            name: 'Energy Consumption',
-                            data: weeklyConsumptionData.length > 0
-                              ? weeklyConsumptionData.map(item => (typeof item?.value === 'number' && !Number.isNaN(item.value) ? item.value : 0))
-                              : [0]
-                          }]}
-                          type="line"
-                          height={350}
-                          width={500}
-                        />
+                          }
+                        }}
+                        series={[{
+                          name: 'Energy Consumption',
+                          data: weeklyConsumptionData.length > 0
+                            ? weeklyConsumptionData.map(item => (typeof item?.value === 'number' && !Number.isNaN(item.value) ? item.value : 0))
+                            : [0]
+                        }]}
+                        type="line"
+                        height={350}
+                        width={500}
+                      />
                     </Box>
                   ) : (
                     /* Machine Power Consumption Chart */
@@ -1188,65 +1188,61 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                       slaveList
                         .filter(slave => slave.slave_name && slave.slave_name.toLowerCase().includes(searchTerm))
                         .map((slave, index) => (
-                        <Box
-                          key={slave.slave_id}
-                          sx={{
-                            height: '25px',
-                            padding: '10px 20px',
-                            borderRadius: '8px',
-                            marginBottom: '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            backgroundColor: selectedSlave?.slave_id === slave.slave_id ? '#E3F2FD' : (index % 2 === 0 ? '#F9FAFB' : '#FFFFFF'),
-                            border: selectedSlave?.slave_id === slave.slave_id ? '2px solid #E5E7EB' : '1px solid #E5E7EB',
-                            transition: 'all 0.3s ease',
-                            cursor: 'pointer',
-                            '&:hover': {
-                              backgroundColor: '#F3F4F6',
-                              boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
-                              transform: 'translateY(-2px)',
-                              border: '1px solid #0a223e'
-                            }
-                          }}
-                          onClick={() => {
-                            console.log('Slave list item clicked:', slave.slave_name);
-                            handleSlaveSelect(slave);
-                          }}
-                        >
-                          <Box sx={{ marginRight: '8px', color: '#444444', fontWeight: 'bold', marginTop: "10px" }}>
-                            <FlashOnIcon fontSize="small" onClick={() => handleSlaveSelect(slave)} />
-                          </Box>
-
                           <Tooltip
-                            title={sidebarVisible ? slave.slave_name : ''}
+                            title={slave.slave_name}
                             placement="right"
                             arrow
-                            disableHoverListener={!sidebarVisible} // 👈 tooltip ONLY when sidebarVisible = true
                           >
-                            <Typography
+                            <Box
+                              key={slave.slave_id}
                               sx={{
-                                fontSize: '14px',
-                                color: '#444444',
-                                fontWeight: 'bold',
-                                fontFamily: 'ubuntu, sans-serif',
-                                cursor: 'pointer',
-                                flex: 1,
-
-                                /* ✅ Correct truncate rules */
-                                whiteSpace: sidebarVisible ? 'nowrap' : 'normal',
-                                overflow: sidebarVisible ? 'hidden' : 'visible',
-                                textOverflow: sidebarVisible ? 'ellipsis' : 'clip',
-                                maxWidth: sidebarVisible ? '90px' : '100%',
-
+                                height: '25px',
+                                padding: '10px 20px',
+                                borderRadius: '8px',
+                                marginBottom: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                backgroundColor: selectedSlave?.slave_id === slave.slave_id ? '#E3F2FD' : (index % 2 === 0 ? '#F9FAFB' : '#FFFFFF'),
+                                border: selectedSlave?.slave_id === slave.slave_id ? '2px solid #E5E7EB' : '1px solid #E5E7EB',
                                 transition: 'all 0.3s ease',
+                                cursor: 'pointer',
+                                '&:hover': {
+                                  backgroundColor: '#F3F4F6',
+                                  boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                                  transform: 'translateY(-2px)',
+                                  border: '1px solid #0a223e'
+                                }
                               }}
-                              onClick={() => handleSlaveSelect(slave)}
+                              onClick={() => {
+                                console.log('Slave list item clicked:', slave.slave_name);
+                                handleSlaveSelect(slave);
+                              }}
                             >
-                              {sidebarVisible ? truncateText(slave.slave_name) : slave.slave_name}
-                            </Typography>
+                              <Box sx={{ marginRight: '8px', color: '#444444', fontWeight: 'bold', marginTop: "10px" }}>
+                                <FlashOnIcon fontSize="small" />
+                              </Box>
+
+
+                              <Typography
+                                sx={{
+                                  fontSize: '14px',
+                                  color: '#444444',
+                                  fontWeight: 'bold',
+                                  fontFamily: 'ubuntu, sans-serif',
+                                  cursor: 'pointer',
+                                  flex: 1,
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  maxWidth: '90px',
+                                  transition: 'all 0.3s ease',
+                                }}
+                              >
+                                {truncateText(slave.slave_name)}
+                              </Typography>
+                            </Box>
                           </Tooltip>
-                        </Box>
-                      ))) : null}
+                        ))) : null}
                   </Box>
                 </Grid>
               </Grid>
