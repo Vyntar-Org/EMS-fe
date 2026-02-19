@@ -300,7 +300,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             width: 2,
         },
         markers: {
-            size: 4,
+            size: 0,
         },
         grid: {
             borderColor: '#ebe5e5',
@@ -395,7 +395,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         switch (parameter) {
             case 'temperature':
                 return 'Temperature';
-            case 'water':
+            case 'water_level':
                 return 'Water';
             default:
                 return 'Value';
@@ -628,7 +628,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         }}
                                         label="Parameter"
                                     >
-                                        <MenuItem value="water">Water</MenuItem>
+                                        <MenuItem value="water_level">Water</MenuItem>
                                         <MenuItem value="temperature">Temperature</MenuItem>
                                     </Select>
                                 </FormControl>

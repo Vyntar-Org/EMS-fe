@@ -50,12 +50,12 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
             try {
                 setLoading(true);
                 setError(null);
-                
+
                 const response = await fetchWaterDashboardOverview();
-                
+
                 if (response.success && response.data) {
                     setDashboardData(response.data);
-                    
+
                     // Update water positivity state
                     setWaterPositivity(response.data.water_positivity.current || 0);
                 } else {
@@ -68,7 +68,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 setLoading(false);
             }
         };
-        
+
         fetchData();
     }, []);
 
@@ -101,15 +101,36 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
     });
 
     // Static weekly water consumption data (7 days)
-    const [weeklyWaterData] = useState([
-        { day: 'Mon', actual: 1200, target: 1000 },
-        { day: 'Tue', actual: 1450, target: 1200 },
-        { day: 'Wed', actual: 1600, target: 1400 },
-        { day: 'Thu', actual: 1800, target: 1600 },
-        { day: 'Fri', actual: 1750, target: 1500 },
-        { day: 'Sat', actual: 1600, target: 1400 },
-        { day: 'Sun', actual: 1400, target: 1200 }
-    ]);
+    const [weeklyWaterData] = useState(() => {
+        // Generate 30 days of data starting from 30 days ago
+        const data = [];
+        const today = new Date();
+
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+
+            // Generate realistic water consumption data
+            // Base target around 1200-1600 with some variation
+            const baseTarget = 1400;
+            const targetVariation = Math.random() * 400 - 200; // ±200 variation
+            const target = Math.round(baseTarget + targetVariation);
+
+            // Actual consumption is usually close to target but with more variation
+            const actualVariation = Math.random() * 600 - 300; // ±300 variation
+            const actual = Math.round(target + actualVariation);
+
+            // Ensure values are positive and reasonable
+            data.push({
+                day: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                fullDate: date.toISOString().split('T')[0], // YYYY-MM-DD format
+                actual: Math.max(800, Math.min(2000, actual)), // Clamp between 800-2000
+                target: Math.max(1000, Math.min(1600, target))  // Clamp between 1000-1600
+            });
+        }
+
+        return data;
+    });
 
     // Static peak demand data
     const [peakDemandData] = useState({
@@ -203,7 +224,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         plotOptions: {
             bar: {
                 borderRadius: 4,
-                columnWidth: '60%',
+                columnWidth: '80%',
                 dataLabels: { position: 'top' }
             }
         },
@@ -491,13 +512,13 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         if (sidebarVisible) {
             return '500px'; // Smaller width when sidebar is visible
         }
-        return '400px'; // Original width when sidebar is hidden
+        return '247px'; // Original width when sidebar is hidden
     };
     const getChartCardWidth1 = () => {
         if (sidebarVisible) {
             return '670px'; // Smaller width when sidebar is visible
         }
-        return '950px'; // Original width when sidebar is hidden
+        return '1100px'; // Original width when sidebar is hidden
     };
 
     // Calculate responsive alerts card width based on sidebar visibility
@@ -505,7 +526,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         if (sidebarVisible) {
             return '150px'; // Smaller width when sidebar is visible
         }
-        return '320px'; // Original width when sidebar is hidden
+        return '240px'; // Original width when sidebar is hidden
     };
 
     // Update card styles with dynamic width
@@ -528,7 +549,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     <CircularProgress />
                 </Box>
             )}
-            
+
             {/* Error message */}
             {error && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -537,396 +558,395 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     </Typography>
                 </Box>
             )}
-            
+
             {!loading && !error && dashboardData && (
                 <>
-            
-            {/* Top Summary Cards Row */}
-            <Box sx={{
-                paddingLeft: '10px',
-                paddingRight: '10px',
-                paddingBottom: '10px',
-                display: 'flex',
-                justifyContent: 'center',
-                width: '100%',
-                overflow: 'hidden'
-            }}>
-                <Box sx={{ display: 'flex', gap: '10px', marginLeft: '-40px' }}>
-                    {/* Card 1: Raw Water Inlet */}
-                    <Card sx={responsiveCardStyle}>
-                        <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                            <Box display="flex" alignItems="center" justifyContent="center">
-                                <LocalFireDepartmentOutlinedIcon sx={{ color: '#0156a6', fontSize: '17px', fontWeight: 600 }} />
-                                <Typography sx={titleStyle}>Raw Water Inlet</Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
-                                    {dashboardData.raw_water_inlet?.current?.toFixed(1) || '0.0'} KLD
-                                </Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
-                                    Yesterday {dashboardData.raw_water_inlet?.previous?.toFixed(1) || '0.0'} KLD
-                                </Typography>
-                            </Box>
-                        </CardContent>
-                    </Card>
 
-                    {/* Card 2: Raw Water Outlet */}
-                    <Card sx={{ ...responsiveCardStyle, }}>
-                        <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                            <Box display="flex" alignItems="center" justifyContent="center">
-                                <LocalFireDepartmentOutlinedIcon sx={{ color: '#0156a6', fontSize: '17px', fontWeight: 600 }} />
-                                <Typography sx={titleStyle}>Raw Water Outlet</Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
-                                    {dashboardData.raw_water_outlet?.current?.toFixed(1) || '0.0'} KLD
-                                </Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
-                                    Yesterday {dashboardData.raw_water_outlet?.previous?.toFixed(1) || '0.0'} KLD
-                                </Typography>
-                            </Box>
-                        </CardContent>
-                    </Card>
+                    {/* Top Summary Cards Row */}
+                    <Box sx={{
+                        paddingLeft: '10px',
+                        paddingRight: '10px',
+                        paddingBottom: '10px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        width: '100%',
+                        overflow: 'hidden'
+                    }}>
+                        <Box sx={{ display: 'flex', gap: '10px', marginLeft: '-35px' }}>
+                            {/* Card 1: Raw Water Inlet */}
+                            <Card sx={responsiveCardStyle}>
+                                <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <Box display="flex" alignItems="center" justifyContent="center">
+                                        <LocalFireDepartmentOutlinedIcon sx={{ color: '#0156a6', fontSize: '17px', fontWeight: 600 }} />
+                                        <Typography sx={titleStyle}>Raw Water Inlet</Typography>
+                                    </Box>
+                                    <Box display="flex" justifyContent="center" mt="10px">
+                                        <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                            {dashboardData.raw_water_inlet?.current?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
+                                    <Box display="flex" justifyContent="center" mt="10px">
+                                        <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                            Yesterday {dashboardData.raw_water_inlet?.previous?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
+                                </CardContent>
+                            </Card>
 
-                    {/* Card 3: Filter Water Outlet */}
-                    <Card sx={responsiveCardStyle}>
-                        <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                            <Box display="flex" alignItems="center" justifyContent="center">
-                                <LocalFireDepartmentOutlinedIcon sx={{ color: '#0156a6', fontSize: '17px', fontWeight: 600 }} />
-                                <Typography sx={titleStyle}>Filter Water Outlet</Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
-                                    {dashboardData.filter_water_outlet?.current?.toFixed(1) || '0.0'} KLD
-                                </Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
-                                    Yesterday {dashboardData.filter_water_outlet?.previous?.toFixed(1) || '0.0'} KLD
-                                </Typography>
-                            </Box>
-                        </CardContent>
-                    </Card>
+                            {/* Card 2: Raw Water Outlet */}
+                            <Card sx={{ ...responsiveCardStyle, }}>
+                                <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <Box display="flex" alignItems="center" justifyContent="center">
+                                        <LocalFireDepartmentOutlinedIcon sx={{ color: '#0156a6', fontSize: '17px', fontWeight: 600 }} />
+                                        <Typography sx={titleStyle}>Raw Water Outlet</Typography>
+                                    </Box>
+                                    <Box display="flex" justifyContent="center" mt="10px">
+                                        <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                            {dashboardData.raw_water_outlet?.current?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
+                                    <Box display="flex" justifyContent="center" mt="10px">
+                                        <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                            Yesterday {dashboardData.raw_water_outlet?.previous?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
+                                </CardContent>
+                            </Card>
 
-                    {/* Card 4: Drinking RO */}
-                    <Card sx={responsiveCardStyle}>
-                        <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                            <Box display="flex" alignItems="center" justifyContent="center">
-                                <LocalDrinkOutlinedIcon sx={{ color: '#0156a6', fontSize: '17px', fontWeight: 600 }} />
-                            </Box>
-                            <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={ titleStyle }>Drinking RO</Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="center">
-                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
-                                    {dashboardData.drinking_ro?.current?.toFixed(1) || '0.0'} KLD
-                                </Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="center" mt="10px">
-                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
-                                    Yesterday {dashboardData.drinking_ro?.previous?.toFixed(1) || '0.0'} KLD
-                                </Typography>
-                            </Box>
-                        </CardContent>
-                    </Card>
+                            {/* Card 3: Filter Water Outlet */}
+                            <Card sx={responsiveCardStyle}>
+                                <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <Box display="flex" alignItems="center" justifyContent="center">
+                                        <LocalFireDepartmentOutlinedIcon sx={{ color: '#0156a6', fontSize: '17px', fontWeight: 600 }} />
+                                        <Typography sx={titleStyle}>Filter Water Outlet</Typography>
+                                    </Box>
+                                    <Box display="flex" justifyContent="center" mt="10px">
+                                        <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                            {dashboardData.filter_water_outlet?.current?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
+                                    <Box display="flex" justifyContent="center" mt="10px">
+                                        <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                            Yesterday {dashboardData.filter_water_outlet?.previous?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
+                                </CardContent>
+                            </Card>
 
-                    {/* Card 5: Water Positivity */}
-                    <Card sx={responsiveCardStyle}>
-                        <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                            <Box display="flex" alignItems="center" justifyContent="center" mb="10px">
-                                <WaterDropOutlinedIcon sx={{ color: '#0156a6', fontSize: '17px', fontWeight: 600 }} />
-                            </Box>
-                            <Box display="flex" alignItems="center" justifyContent="center">
-                                <Typography sx={titleStyle}>Water Positivity</Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="center">
-                                <Typography
-                                    sx={{
-                                        fontSize: '30px',
-                                        fontWeight: 'bold',
-                                        color: waterPositivity >= 0 ? '#16A34A' : '#DC2626' // Green for positive, red for negative
-                                    }}
-                                >
-                                    {waterPositivity >= 0 ? '' : ''}{waterPositivity.toFixed(1)} KLD
-                                </Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="center">
-                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
-                                    Yesterday {dashboardData.water_positivity?.previous?.toFixed(1) || '0.0'} KLD
-                                </Typography>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Box>
-            </Box>
+                            {/* Card 4: Drinking RO */}
+                            <Card sx={responsiveCardStyle}>
+                                <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <Box display="flex" alignItems="center" justifyContent="center">
+                                        <LocalDrinkOutlinedIcon sx={{ color: '#0156a6', fontSize: '17px', fontWeight: 600 }} />
+                                    </Box>
+                                    <Box display="flex" justifyContent="center" mt="10px">
+                                        <Typography sx={titleStyle}>Drinking RO</Typography>
+                                    </Box>
+                                    <Box display="flex" justifyContent="center">
+                                        <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                            {dashboardData.drinking_ro?.current?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
+                                    <Box display="flex" justifyContent="center" mt="10px">
+                                        <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                            Yesterday {dashboardData.drinking_ro?.previous?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
+                                </CardContent>
+                            </Card>
 
-            {/* Chart Section Layout */}
-            <Box sx={{ backgroundColor: '', padding: '0px', marginLeft: '-20px' }}>
-                <Grid container spacing={3} justifyContent="center" gap={'10px'}>
-                    {/* Left Column - 2 Stacked Cards */}
-                    <Grid item xs={8}>
-                        {/* Sewage Inlet Card */}
-                        <Card sx={{
-                            ...cardStyle1,
-                            width: getChartCardWidth(),
-                            height: '100px',
-                            padding: '20px',
-                            marginBottom: '10px',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                                backgroundColor: '#fff',
-                                boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
-                                transform: 'translateY(-2px)',
-                            }
-                        }}>
-                            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <Box display="flex" alignItems="center" justifyContent="center">
-                                    <Typography sx={titleStyle}>Sewage Inlet</Typography>
-                                </Box>
-                                <Box display="flex" justifyContent="center" mb="10px">
-                                    <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
-                                        {dashboardData.sewage_inlet?.current?.toFixed(1) || '0.0'} KLD
-                                    </Typography>
-                                </Box>
-                                <Box display="flex" justifyContent="center">
-                                    <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
-                                        Yesterday {dashboardData.sewage_inlet?.previous?.toFixed(1) || '0.0'} KLD
-                                    </Typography>
-                                </Box>
-                            </CardContent>
-                        </Card>
+                            {/* Card 5: Water Positivity */}
+                            <Card sx={responsiveCardStyle}>
+                                <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <Box display="flex" alignItems="center" justifyContent="center" mb="10px">
+                                        <WaterDropOutlinedIcon sx={{ color: '#0156a6', fontSize: '17px', fontWeight: 600 }} />
+                                    </Box>
+                                    <Box display="flex" alignItems="center" justifyContent="center">
+                                        <Typography sx={titleStyle}>Water Positivity</Typography>
+                                    </Box>
+                                    <Box display="flex" justifyContent="center">
+                                        <Typography
+                                            sx={{
+                                                fontSize: '30px',
+                                                fontWeight: 'bold',
+                                                color: waterPositivity >= 0 ? '#16A34A' : '#DC2626' // Green for positive, red for negative
+                                            }}
+                                        >
+                                            {waterPositivity >= 0 ? '' : ''}{waterPositivity.toFixed(1)} KLD
+                                        </Typography>
+                                    </Box>
+                                    <Box display="flex" justifyContent="center">
+                                        <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                            Yesterday {dashboardData.water_positivity?.previous?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        </Box>
+                    </Box>
 
-                        {/* Sewage Outlet Card */}
-                        <Card sx={{
-                            ...cardStyle1,
-                            width: getChartCardWidth(),
-                            height: '100px',
-                            padding: '20px',
-                            marginBottom: '10px',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                                backgroundColor: '#fff',
-                                boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
-                                transform: 'translateY(-2px)',
-                            }
-                        }}>
-                            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <Box display="flex" alignItems="center" justifyContent="center">
-                                    <Typography sx={titleStyle}>Sewage Outlet</Typography>
-                                </Box>
-                                <Box display="flex" justifyContent="center" mb="10px">
-                                    <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
-                                        {dashboardData.sewage_outlet?.current?.toFixed(1) || '0.0'} KLD
-                                    </Typography>
-                                </Box>
-                                <Box display="flex" justifyContent="center">
-                                    <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
-                                        Yesterday {dashboardData.sewage_outlet?.previous?.toFixed(1) || '0.0'} KLD
-                                    </Typography>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                        {/* Total Stations Card */}
-                        <Card sx={
-                            {
-                                ...cardStyle1,
-                                width: getChartCardWidth(),
-                                height: '100px',
-                                padding: '20px',
-                                marginBottom: '10px',
-                                transition: 'all 0.3s ease',
-                                '&:hover': {
-                                    backgroundColor: '#fff',
-                                    boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
-                                    transform: 'translateY(-2px)',
-                                }
-                            }}>
-                            <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <Box display="flex" alignItems="center" justifyContent="center">
-                                    <LocalDrinkOutlinedIcon sx={{ color: '#0156a6', mr: 1, fontSize: '20px', }} />
-                                </Box>
-                                <Box display="flex" justifyContent="center" mt="10px">
-                                    <Typography sx={titleStyle}>Total Stations</Typography>
-                                </Box>
-                                <Box display="flex" justifyContent="center" mt="10px">
-                                    <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
-                                        {dashboardData.total_stations || 0}
-                                    </Typography>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                    {/* Right Column */}
-                    <Grid item xs={12}>
-                        <Card sx={{
-                            ...cardStyle1,
-                            width: getChartCardWidth1(),
-                            height: '399px',
-                            padding: '20px',
-                            marginBottom: '10px',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                                backgroundColor: '#fff',
-                                boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
-                                transform: 'translateY(-2px)',
-                            }
-                        }}>
-                            <Grid container spacing={2}>
-                                {/* Left Column - Charts */}
-                                <Grid item xs={8}>
-                                    {/* Weekly Water Consumption Chart */}
-                                    <Box>
-                                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                                            <Typography sx={titleStyle1}>Weekly Water Consumption</Typography>
-                                            <Box display="flex" gap={1}>
-                                                <button
-                                                    onClick={() => setActiveChart('bar')}
-                                                    style={
-                                                        {
-                                                            padding: '4px 12px',
-                                                            backgroundColor: activeChart === 'bar' ? '#0156a6' : '#e0e0e0',
-                                                            color: activeChart === 'bar' ? 'white' : '#333',
-                                                            border: 'none',
-                                                            borderRadius: '4px',
-                                                            cursor: 'pointer',
-                                                            fontWeight: activeChart === 'bar' ? 'bold' : 'normal',
-                                                            fontSize: '12px'
-                                                        }
-                                                    }
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <line x1="18" y1="20" x2="18" y2="10"></line>
-                                                        <line x1="12" y1="20" x2="12" y2="4"></line>
-                                                        <line x1="6" y1="20" x2="6" y2="14"></line>
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    onClick={() => setActiveChart('line')}
-                                                    style={
-                                                        {
-                                                            padding: '4px 12px',
-                                                            backgroundColor: activeChart === 'line' ? '#0156a6' : '#e0e0e0',
-                                                            color: activeChart === 'line' ? 'white' : '#333',
-                                                            border: 'none',
-                                                            borderRadius: '4px',
-                                                            cursor: 'pointer',
-                                                            fontWeight: activeChart === 'line' ? 'bold' : 'normal',
-                                                            fontSize: '12px'
-                                                        }
-                                                    }
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-                                                    </svg>
-                                                </button>
-                                            </Box>
+                    {/* Chart Section Layout */}
+                    <Box sx={{ backgroundColor: '', padding: '0px', marginLeft: '-20px' }}>
+                        <Grid container spacing={3} justifyContent="center" gap={'10px'}>
+                            {/* Left Column - 2 Stacked Cards */}
+                            <Grid item xs={8}>
+                                {/* Sewage Inlet Card */}
+                                <Card sx={{
+                                    ...cardStyle1,
+                                    width: getChartCardWidth(),
+                                    height: '100px',
+                                    padding: '20px',
+                                    marginBottom: '10px',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                        backgroundColor: '#fff',
+                                        boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                                        transform: 'translateY(-2px)',
+                                    }
+                                }}>
+                                    <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                        <Box display="flex" alignItems="center" justifyContent="center">
+                                            <Typography sx={titleStyle}>Sewage Inlet</Typography>
                                         </Box>
-                                        <Chart
-                                            options={activeChart === 'bar' ? weeklyWaterBarOptions : weeklyWaterLineOptions}
-                                            series={weeklyWaterSeries}
-                                            type={activeChart}
-                                            height={350}
-                                            width={510}
-                                        />
-                                    </Box>
-                                </Grid>
+                                        <Box display="flex" justifyContent="center" mb="10px">
+                                            <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                                {dashboardData.sewage_inlet?.current?.toFixed(1) || '0.0'} KLD
+                                            </Typography>
+                                        </Box>
+                                        <Box display="flex" justifyContent="center">
+                                            <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                                Yesterday {dashboardData.sewage_inlet?.previous?.toFixed(1) || '0.0'} KLD
+                                            </Typography>
+                                        </Box>
+                                    </CardContent>
+                                </Card>
 
-                                {/* Right Column - Alerts Panel */}
-                                <Grid item xs={4} sx={{ width: getAlertsCardWidth(), padding: '10px', marginLeft: sidebarVisible ? '0px' : '100px' }}>
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        placeholder="Search machines..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-                                        sx={{
-                                            marginBottom: '8px',
-                                            '& .MuiOutlinedInput-root': {
-                                                borderRadius: '8px',
-                                                height: '30px'
-                                            }
-                                        }}
-                                        InputProps={{
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    <SearchIcon />
-                                                </InputAdornment>
-                                            ),
-                                        }}
-                                    />
-
-                                    <Box sx={{ maxHeight: "340px", overflowY: "auto", scrollbarWidth: "thin" }}>
-                                        {Array.isArray(slaveList) ? (
-                                            slaveList
-                                                .filter(slave => slave.slave_name && slave.slave_name.toLowerCase().includes(searchTerm))
-                                                .map((slave, index) => (
-                                                    <Box
-                                                        key={slave.slave_id}
-                                                        sx={{
-                                                            height: '20px',
-                                                            padding: '8px 12px',
-                                                            borderRadius: '8px',
-                                                            marginBottom: '6px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            backgroundColor: selectedSlave?.slave_id === slave.slave_id ? '#E3F2FD' : (index % 2 === 0 ? '#F9FAFB' : '#FFFFFF'),
-                                                            border: selectedSlave?.slave_id === slave.slave_id ? '2px solid #E5E7EB' : '1px solid #E5E7EB',
-                                                            transition: 'all 0.3s ease',
-                                                            cursor: 'pointer',
-                                                            '&:hover': {
-                                                                backgroundColor: '#F3F4F6',
-                                                                boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
-                                                                transform: 'translateY(-2px)',
-                                                                border: '1px solid #0a223e'
-                                                            }
-                                                        }}
-                                                        onClick={() => {
-                                                            console.log('Slave list item clicked:', slave.slave_name);
-                                                            handleSlaveSelect(slave);
-                                                        }}
-                                                    >
-                                                        <Box sx={{ marginRight: '8px', color: '#444444', fontWeight: 'bold', marginTop: "10px" }}>
-                                                            <FlashOnIcon fontSize="small" onClick={() => handleSlaveSelect(slave)} />
-                                                        </Box>
-
-                                                        <Tooltip
-                                                            title={sidebarVisible ? slave.slave_name : ''}
-                                                            placement="right"
-                                                            arrow
-                                                            disableHoverListener={!sidebarVisible}
-                                                        >
-                                                            <Typography
-                                                                sx={{
-                                                                    fontSize: '14px',
-                                                                    color: '#444444',
-                                                                    fontWeight: 'bold',
-                                                                    fontFamily: 'ubuntu, sans-serif',
-                                                                    cursor: 'pointer',
-                                                                    flex: 1,
-                                                                    whiteSpace: sidebarVisible ? 'nowrap' : 'normal',
-                                                                    overflow: sidebarVisible ? 'hidden' : 'visible',
-                                                                    textOverflow: sidebarVisible ? 'ellipsis' : 'clip',
-                                                                    maxWidth: sidebarVisible ? '90px' : '100%',
-                                                                    transition: 'all 0.3s ease',
-                                                                }}
-                                                                onClick={() => handleSlaveSelect(slave)}
-                                                            >
-                                                                {sidebarVisible ? truncateText(slave.slave_name) : slave.slave_name}
-                                                            </Typography>
-                                                        </Tooltip>
-                                                    </Box>
-                                                ))) : null}
-                                    </Box>
-                                </Grid>
+                                {/* Sewage Outlet Card */}
+                                <Card sx={{
+                                    ...cardStyle1,
+                                    width: getChartCardWidth(),
+                                    height: '100px',
+                                    padding: '20px',
+                                    marginBottom: '10px',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                        backgroundColor: '#fff',
+                                        boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                                        transform: 'translateY(-2px)',
+                                    }
+                                }}>
+                                    <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                        <Box display="flex" alignItems="center" justifyContent="center">
+                                            <Typography sx={titleStyle}>Sewage Outlet</Typography>
+                                        </Box>
+                                        <Box display="flex" justifyContent="center" mb="10px">
+                                            <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                                {dashboardData.sewage_outlet?.current?.toFixed(1) || '0.0'} KLD
+                                            </Typography>
+                                        </Box>
+                                        <Box display="flex" justifyContent="center">
+                                            <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                                Yesterday {dashboardData.sewage_outlet?.previous?.toFixed(1) || '0.0'} KLD
+                                            </Typography>
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+                                {/* Total Stations Card */}
+                                <Card sx={
+                                    {
+                                        ...cardStyle1,
+                                        width: getChartCardWidth(),
+                                        height: '100px',
+                                        padding: '20px',
+                                        marginBottom: '10px',
+                                        transition: 'all 0.3s ease',
+                                        '&:hover': {
+                                            backgroundColor: '#fff',
+                                            boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                                            transform: 'translateY(-2px)',
+                                        }
+                                    }}>
+                                    <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                        <Box display="flex" alignItems="center" justifyContent="center">
+                                            <LocalDrinkOutlinedIcon sx={{ color: '#0156a6', mr: 1, fontSize: '20px', }} />
+                                        </Box>
+                                        <Box display="flex" justifyContent="center" mt="10px">
+                                            <Typography sx={titleStyle}>Total Stations</Typography>
+                                        </Box>
+                                        <Box display="flex" justifyContent="center" mt="10px">
+                                            <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                                {dashboardData.total_stations || 0}
+                                            </Typography>
+                                        </Box>
+                                    </CardContent>
+                                </Card>
                             </Grid>
-                        </Card>
-                    </Grid>
-                </Grid>
-            </Box>
+                            {/* Right Column */}
+                            <Grid item xs={12}>
+                                <Card sx={{
+                                    ...cardStyle1,
+                                    width: getChartCardWidth1(),
+                                    height: '399px',
+                                    padding: '20px',
+                                    marginBottom: '10px',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                        backgroundColor: '#fff',
+                                        boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                                        transform: 'translateY(-2px)',
+                                    }
+                                }}>
+                                    <Grid container spacing={2}>
+                                        {/* Left Column - Charts */}
+                                        <Grid item xs={8}>
+                                            {/* Weekly Water Consumption Chart */}
+                                            <Box>
+                                                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                                                    <Typography sx={titleStyle1}>Weekly Water Consumption</Typography>
+                                                    <Box display="flex" gap={1}>
+                                                        <button
+                                                            onClick={() => setActiveChart('bar')}
+                                                            style={
+                                                                {
+                                                                    padding: '4px 12px',
+                                                                    backgroundColor: activeChart === 'bar' ? '#0156a6' : '#e0e0e0',
+                                                                    color: activeChart === 'bar' ? 'white' : '#333',
+                                                                    border: 'none',
+                                                                    borderRadius: '4px',
+                                                                    cursor: 'pointer',
+                                                                    fontWeight: activeChart === 'bar' ? 'bold' : 'normal',
+                                                                    fontSize: '12px'
+                                                                }
+                                                            }
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                                                            </svg>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setActiveChart('line')}
+                                                            style={
+                                                                {
+                                                                    padding: '4px 12px',
+                                                                    backgroundColor: activeChart === 'line' ? '#0156a6' : '#e0e0e0',
+                                                                    color: activeChart === 'line' ? 'white' : '#333',
+                                                                    border: 'none',
+                                                                    borderRadius: '4px',
+                                                                    cursor: 'pointer',
+                                                                    fontWeight: activeChart === 'line' ? 'bold' : 'normal',
+                                                                    fontSize: '12px'
+                                                                }
+                                                            }
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                                                            </svg>
+                                                        </button>
+                                                    </Box>
+                                                </Box>
+                                                <Chart
+                                                    options={activeChart === 'bar' ? weeklyWaterBarOptions : weeklyWaterLineOptions}
+                                                    series={weeklyWaterSeries}
+                                                    type={activeChart}
+                                                    height={350}
+                                                    width={844}
+                                                />
+                                            </Box>
+                                        </Grid>
+
+                                        {/* Right Column - Alerts Panel */}
+                                        <Grid item xs={4} sx={{ width: getAlertsCardWidth(), padding: '10px', marginLeft: sidebarVisible ? '0px' : '0px' }}>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                placeholder="Search machines..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+                                                sx={{
+                                                    marginBottom: '8px',
+                                                    '& .MuiOutlinedInput-root': {
+                                                        borderRadius: '8px',
+                                                        height: '40px'
+                                                    }
+                                                }}
+                                                InputProps={{
+                                                    startAdornment: (
+                                                        <InputAdornment position="start">
+                                                            <SearchIcon />
+                                                        </InputAdornment>
+                                                    ),
+                                                }}
+                                            />
+
+                                            <Box sx={{ maxHeight: "340px", overflowY: "auto", scrollbarWidth: "thin" }}>
+                                                {Array.isArray(slaveList) ? (
+                                                    slaveList
+                                                        .filter(slave => slave.slave_name && slave.slave_name.toLowerCase().includes(searchTerm))
+                                                        .map((slave, index) => (
+                                                            <Tooltip
+                                                                title={slave.slave_name}
+                                                                placement="right"
+                                                                arrow
+                                                            >
+                                                                <Box
+                                                                    key={slave.slave_id}
+                                                                    sx={{
+                                                                        height: '25px',
+                                                                        padding: '10px 20px',
+                                                                        borderRadius: '8px',
+                                                                        marginBottom: '10px',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        backgroundColor: selectedSlave?.slave_id === slave.slave_id ? '#E3F2FD' : (index % 2 === 0 ? '#F9FAFB' : '#FFFFFF'),
+                                                                        border: selectedSlave?.slave_id === slave.slave_id ? '2px solid #E5E7EB' : '1px solid #E5E7EB',
+                                                                        transition: 'all 0.3s ease',
+                                                                        cursor: 'pointer',
+                                                                        '&:hover': {
+                                                                            backgroundColor: '#F3F4F6',
+                                                                            boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                                                                            transform: 'translateY(-2px)',
+                                                                            border: '1px solid #0a223e'
+                                                                        }
+                                                                    }}
+                                                                    onClick={() => {
+                                                                        console.log('Slave list item clicked:', slave.slave_name);
+                                                                        handleSlaveSelect(slave);
+                                                                    }}
+                                                                >
+                                                                    <Box sx={{ marginRight: '8px', color: '#444444', fontWeight: 'bold', marginTop: "10px" }}>
+                                                                        <FlashOnIcon fontSize="small" />
+                                                                    </Box>
+
+
+                                                                    <Typography
+                                                                        sx={{
+                                                                            fontSize: '14px',
+                                                                            color: '#444444',
+                                                                            fontWeight: 'bold',
+                                                                            fontFamily: 'ubuntu, sans-serif',
+                                                                            cursor: 'pointer',
+                                                                            flex: 1,
+                                                                            whiteSpace: 'nowrap',
+                                                                            overflow: 'hidden',
+                                                                            textOverflow: 'ellipsis',
+                                                                            maxWidth: '90px',
+                                                                            transition: 'all 0.3s ease',
+                                                                        }}
+                                                                    >
+                                                                        {truncateText(slave.slave_name)}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Tooltip>
+                                                        ))) : null}
+                                            </Box>
+                                        </Grid>
+                                    </Grid>
+                                </Card>
+                            </Grid>
+                        </Grid>
+                    </Box>
                 </>
             )}
         </Box>

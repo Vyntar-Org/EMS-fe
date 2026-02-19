@@ -44,7 +44,7 @@ const mockMachineListData = {
                 slave_id: 1,
                 name: "DG 1500 KVA",
                 status: "Online",
-                fuelLevel: 70.91,
+                fuelLevel: 91.91,
                 consumed: 0,
                 refilled: 0,
                 temperature: 25,
@@ -176,10 +176,11 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     };
 
     // Get fuel level color based on percentage
+    // Updated color scheme: 0%-40% green, 40%-90% orange, 90%-100% red
     const getFuelLevelColor = (level) => {
-        if (level > 60) return '#4caf50'; // Green
-        if (level > 30) return '#ff9800'; // Orange
-        return '#f44336'; // Red
+        if (level >= 90) return '#f44336'; // Red for 90%-100%
+        if (level >= 40) return '#ff9800'; // Orange for 40%-90%
+        return '#4caf50'; // Green for 0%-40%
     };
 
     // State variables
@@ -466,7 +467,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             width: 2,
         },
         markers: {
-            size: 4,
+            size: 0,
         },
         grid: {
             borderColor: '#ebe5e5',
@@ -826,9 +827,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         label="Parameter"
                                     >
                                         <MenuItem value="consumed">Consumed</MenuItem>
-                                        <MenuItem value="refilled">Refilled</MenuItem>
                                         <MenuItem value="temperature">Temperature</MenuItem>
-                                        <MenuItem value="fuelCapacity">Fuel Level</MenuItem>
                                     </Select>
                                 </FormControl>
                             </Box>

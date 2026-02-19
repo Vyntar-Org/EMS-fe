@@ -31,6 +31,9 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SpeedIcon from '@mui/icons-material/Speed';
+import OpacityIcon from '@mui/icons-material/Opacity';
 
 // Mock data for machine list
 const mockMachineListData = {
@@ -241,7 +244,6 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         return mockData;
     };
 
-    // Function to format timestamp for tooltip - showing only time
     // Function to format timestamp for tooltip - showing date and time
     const formatTimestampForTooltip = (timestamp) => {
         if (!timestamp) return 'N/A';
@@ -443,6 +445,11 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             color: '#6B7280',
             verticalAlign: 'middle',
         },
+        parameterIcon: {
+            fontSize: '14px',
+            marginRight: '5px',
+            color: '#2F6FB0',
+        }
     };
 
     // Chart data for trend
@@ -459,7 +466,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             width: 2,
         },
         markers: {
-            size: 4,
+            size: 0,
         },
         grid: {
             borderColor: '#ebe5e5',
@@ -676,10 +683,11 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {/* Temperature */}
+                                {/* Location */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <LocationOnIcon style={styles.parameterIcon} />
                                             Location
                                         </Box>
                                     </TableCell>
@@ -690,10 +698,11 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableCell>
                                 </TableRow>
 
-                                {/* Humidity */}
+                                {/* Consumption */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <OpacityIcon style={styles.parameterIcon} />
                                             Consumption
                                         </Box>
                                     </TableCell>
@@ -704,10 +713,11 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableCell>
                                 </TableRow>
 
-                                {/* Battery */}
+                                {/* Rate of Flow */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <SpeedIcon style={styles.parameterIcon} />
                                             Rate of Flow
                                         </Box>
                                     </TableCell>

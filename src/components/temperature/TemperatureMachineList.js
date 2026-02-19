@@ -303,7 +303,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             width: 2,
         },
         markers: {
-            size: 4,
+            size: 0,
         },
         grid: {
             borderColor: '#ebe5e5',

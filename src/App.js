@@ -29,6 +29,10 @@ import FuelMachineList from './components/fuel/FuelMachineList';
 import FuelAnalytics from './components/fuel/FuelAnalytics';
 import FuelLogs from './components/fuel/FuelLogs';
 import FuelReports from './components/fuel/FuelReports';
+// Import Solar components
+import SolarMachineList from './components/solar/SolarMachineList';
+import SolarAnalytics from './components/solar/SolarAnalytics';
+import SolarLogs from './components/solar/SolarLogs';
 import './App.css';
 
 function App() {
@@ -106,6 +110,8 @@ function AppContent() {
             return <Navigate to="/water/dashboard" replace />;
           } else if (defaultApp.code === 'FUEL') {
             return <Navigate to="/fuel/dashboard" replace />;
+          } else if (defaultApp.code === 'SOLAR') {
+            return <Navigate to="/solar/machine-list" replace />;
           }
         }
         return <Navigate to="/dashboard" replace />;
@@ -516,6 +522,58 @@ function AppContent() {
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <FuelReports onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          {/* Solar application routes */}
+          <Route path="/solar/machine-list" element={
+            <ProtectedRoute requiredAppCode="SOLAR">
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <SolarMachineList onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/solar/analytics" element={
+            <ProtectedRoute requiredAppCode="SOLAR">
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <SolarAnalytics onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/solar/logs" element={
+            <ProtectedRoute requiredAppCode="SOLAR">
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <SolarLogs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
               </main>
             </ProtectedRoute>
           } />

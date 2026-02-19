@@ -47,7 +47,7 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDevice, setFilterDevice] = useState('all');
     // Initialize with default dates - 7 days ago to today
-    const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(7, 'day'));
+    const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(1, 'day'));
     const [filterEndDate, setFilterEndDate] = useState(dayjs());
     const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
     const [devices, setDevices] = useState(['all']); // Initialize with 'all' as default
@@ -180,7 +180,7 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         setSearchTerm('');
         setFilterDevice('all');
         // Reset to default dates
-        setFilterStartDate(dayjs().subtract(7, 'day'));
+        setFilterStartDate(dayjs().subtract(1, 'day'));
         setFilterEndDate(dayjs());
         setSearchClicked(false); // Reset search state
         setSelectedParameter([]); // Reset main chart parameter
@@ -1300,7 +1300,7 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                     )}
                                 </>
                             ) : (
-                                <div>No data available for the selected filters</div>
+                                <div></div>
                             )
                         ) : null}
                     </CardContent>

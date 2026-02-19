@@ -21,10 +21,12 @@ import {
     IconButton,
     Tabs,
     Tab,
+    Tooltip,
 } from '@mui/material';
 import axios from 'axios';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { getMachineList, getActivePowerChart, getVoltageChart, getCurrentChart, getPowerFactorChart, getFrequencyChart } from '../auth/MachineList';
 
 
@@ -98,154 +100,178 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [frequencyData, setFrequencyData] = useState([]);
 
     // Chart data for Kw Consumption over last 8/12 hours
-const chartOptions = {
-    chart: {
-        type: 'line',
-        height: 350,
-        toolbar: { show: true },
-        zoom: { enabled: true },
-        background: '#FFFFFF',
-    },
-    stroke: {
-        curve: 'smooth',
-        width: 2,
-    },
-    markers: {
-        size: 4,
-    },
-    grid: {
-        borderColor: '#ebe5e5',
-        strokeDashArray: 0, // Changed from 4 to 0 for solid lines (if you want to keep the lines)
+    const chartOptions = {
+        chart: {
+            type: 'line',
+            height: 350,
+            toolbar: { show: true },
+            zoom: { enabled: true },
+            background: '#FFFFFF',
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 2,
+        },
+        markers: {
+            size: 0,
+        },
+        grid: {
+            borderColor: '#ebe5e5',
+            strokeDashArray: 0, // Changed from 4 to 0 for solid lines (if you want to keep the lines)
+            xaxis: {
+                lines: {
+                    show: false, // Set to false to remove x-axis grid lines
+                },
+            },
+            yaxis: {
+                lines: {
+                    show: false, // Set to false to remove y-axis grid lines
+                },
+            },
+        },
         xaxis: {
-            lines: {
-                show: false, // Set to false to remove x-axis grid lines
+            title: {
+                text: 'Time',
+                style: {
+                    color: '#6B7280',
+                    fontSize: '12px',
+                },
             },
-        },
-        yaxis: {
-            lines: {
-                show: false, // Set to false to remove y-axis grid lines
+            categories: chartType === 'voltage' ?
+                voltageData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
+                chartType === 'current' ?
+                    currentData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
+                    chartType === 'powerFactor' ?
+                        powerFactorData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
+                        chartType === 'frequency' ?
+                            frequencyData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
+                            activePowerData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })),
+            labels: {
+                style: {
+                    colors: '#6B7280',
+                    fontSize: '11px',
+                },
+                rotate: -45,
+                formatter: function (val) {
+                    // Format to match the image style (e.g., "05:49 AM")
+                    return val;
+                },
             },
-        },
-    },
-    xaxis: {
-        title: {
-            text: 'Time',
-            style: {
-                color: '#6B7280',
-                fontSize: '12px',
-            },
-        },
-        categories: chartType === 'voltage' ? 
-            voltageData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
-            chartType === 'current' ?
-                currentData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
-            chartType === 'powerFactor' ?
-                powerFactorData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
-            chartType === 'frequency' ?
-                frequencyData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })) :
-                activePowerData.map(item => new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })),
-        labels: {
-            style: {
-                colors: '#6B7280',
-                fontSize: '11px',
-            },
-            rotate: -45,
-            formatter: function(val) {
-                // Format to match the image style (e.g., "05:49 AM")
-                return val;
-            },
-        },
-        tickAmount: 6, // Increased to show more time points across the 6-hour period
-        tooltip: {
-            enabled: false,
-            formatter: function(val) {
-                return new Date(val).toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit', 
-                    hour12: true 
-                });
-            }
-        }
-    },
-    yaxis: {
-        title: {
-            text: chartType === 'voltage' ? 'V' : (chartType === 'current' ? 'A' : (chartType === 'powerFactor' ? 'PF' : (chartType === 'frequency' ? 'Hz' : 'kW'))),
-            style: {
-                color: '#6B7280',
-                fontSize: '12px',
-            },
-        },
-        labels: {
-            style: {
-                colors: '#6B7280',
-                fontSize: '11px',
-            },
-        },
-    },
-    tooltip: {
-        enabled: true,
-        theme: 'light',
-        style: {
-            fontSize: '12px',
-        },
-        shared: true, // Enable shared tooltip to show all series at once
-        intersect: false, // Show tooltip when hovering anywhere on the x-axis
-        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-            // Get the original date from the data based on chart type
-            let originalDate = '';
-            let currentData = [];
-            
-            if (chartType === 'voltage') {
-                currentData = voltageData;
-            } else if (chartType === 'current') {
-                currentData = currentData;
-            } else if (chartType === 'powerFactor') {
-                currentData = powerFactorData;
-            } else if (chartType === 'frequency') {
-                currentData = frequencyData;
-            } else {
-                currentData = activePowerData;
-            }
-            
-            if (currentData && currentData.length > 0 && currentData[dataPointIndex]) {
-                const item = currentData[dataPointIndex];
-                const timestamp = item?.timestamp || '';
-                if (timestamp) {
-                    const date = new Date(timestamp);
-                    originalDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+            tickAmount: 6, // Increased to show more time points across the 6-hour period
+            tooltip: {
+                enabled: false,
+                formatter: function (val) {
+                    return new Date(val).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    });
                 }
             }
-            
-            // Build the tooltip content
-            let tooltipContent = `<div class="apexcharts-tooltip-custom" style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+        },
+        yaxis: {
+            title: {
+                text: chartType === 'voltage' ? 'V' : (chartType === 'current' ? 'A' : (chartType === 'powerFactor' ? 'PF' : (chartType === 'frequency' ? 'Hz' : 'kW'))),
+                style: {
+                    color: '#6B7280',
+                    fontSize: '12px',
+                },
+            },
+            labels: {
+                style: {
+                    colors: '#6B7280',
+                    fontSize: '11px',
+                },
+            },
+        },
+        tooltip: {
+            enabled: true,
+            theme: 'light',
+            style: {
+                fontSize: '12px',
+            },
+            shared: true, // Enable shared tooltip to show all series at once
+            intersect: false, // Show tooltip when hovering anywhere on the x-axis
+            custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+                // Get the original date from the data based on chart type
+                let originalDate = '';
+                let currentData = [];
+
+                if (chartType === 'voltage') {
+                    currentData = voltageData;
+                } else if (chartType === 'current') {
+                    currentData = currentData;
+                } else if (chartType === 'powerFactor') {
+                    currentData = powerFactorData;
+                } else if (chartType === 'frequency') {
+                    currentData = frequencyData;
+                } else {
+                    currentData = activePowerData;
+                }
+
+                if (currentData && currentData.length > 0 && currentData[dataPointIndex]) {
+                    const item = currentData[dataPointIndex];
+                    const timestamp = item?.timestamp || '';
+                    if (timestamp) {
+                        const date = new Date(timestamp);
+                        originalDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                    }
+                }
+
+                // Build the tooltip content
+                let tooltipContent = `<div class="apexcharts-tooltip-custom" style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
                 <div style="font-weight: bold; margin-bottom: 8px; color: lightgray; font-size: 14px; padding: 10px; background-color: #f4f7f6">${originalDate}</div>`;
-            
-            // Add each series with its color dot and value
-            w.globals.seriesNames.forEach((name, index) => {
-                const value = series[index][dataPointIndex];
-                const color = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'][index % 6];
-                tooltipContent += `
+
+                // Add each series with its color dot and value
+                w.globals.seriesNames.forEach((name, index) => {
+                    const value = series[index][dataPointIndex];
+                    const color = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'][index % 6];
+                    tooltipContent += `
                     <div style="display: flex; align-items: center; margin-bottom: 20px;">
                         <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${color}; margin-right: 8px;"></span>
                         <span style="flex: 1; color: #333; font-size: 12px;">${name}:</span>
                         <span style="font-weight: bold; color: #333; margin-left: 5px; font-size: 12px;">${value}</span>
                     </div>`;
-            });
-            
-            tooltipContent += '</div>';
-            return tooltipContent;
+                });
+
+                tooltipContent += '</div>';
+                return tooltipContent;
+            }
+        },
+        legend: {
+            show: true,
+        },
+    };
+    const formatTimestampForTooltip = (timestamp) => {
+    if (!timestamp) return 'N/A';
+    
+    try {
+        const date = new Date(timestamp);
+        // Check if the date is valid
+        if (isNaN(date.getTime())) {
+            return 'Invalid Date';
         }
-    },
-    legend: {
-        show: true,
-    },
+        
+        return date.toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+    } catch (error) {
+        console.error('Error formatting timestamp:', error);
+        return 'Error';
+    }
 };
 
     // Function to fetch active power chart data
     const fetchActivePowerData = async (slaveId) => {
         try {
             const response = await getActivePowerChart(slaveId);
-            
+
             if (response.success) {
                 setActivePowerData(response.data.data);
                 return response.data.data;
@@ -258,12 +284,12 @@ const chartOptions = {
             return [];
         }
     };
-    
+
     // Function to fetch voltage chart data
     const fetchVoltageData = async (slaveId) => {
         try {
             const response = await getVoltageChart(slaveId);
-            
+
             if (response.success) {
                 setVoltageData(response.data.data);
                 return response.data.data;
@@ -276,12 +302,12 @@ const chartOptions = {
             return [];
         }
     };
-    
+
     // Function to fetch current chart data
     const fetchCurrentData = async (slaveId) => {
         try {
             const response = await getCurrentChart(slaveId);
-            
+
             if (response.success) {
                 setCurrentData(response.data.data);
                 return response.data.data;
@@ -294,12 +320,12 @@ const chartOptions = {
             return [];
         }
     };
-    
+
     // Function to fetch power factor chart data
     const fetchPowerFactorData = async (slaveId) => {
         try {
             const response = await getPowerFactorChart(slaveId);
-            
+
             if (response.success) {
                 setPowerFactorData(response.data.data);
                 return response.data.data;
@@ -312,12 +338,12 @@ const chartOptions = {
             return [];
         }
     };
-    
+
     // Function to fetch frequency chart data
     const fetchFrequencyData = async (slaveId) => {
         try {
             const response = await getFrequencyChart(slaveId);
-            
+
             if (response.success) {
                 setFrequencyData(response.data.data);
                 return response.data.data;
@@ -428,7 +454,7 @@ const chartOptions = {
             data: activePowerValues
         }];
     };
-        
+
     const chartSeries = getCurrentChartSeries();
 
     // Define styles
@@ -657,7 +683,7 @@ const chartOptions = {
         const isOnline = isWithinTimeLimit(machine.latest.last_ts);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
-        
+
         // Apply the conditional logic for values
         const getConditionalValue = (value, isAllowedField = false) => {
             if (isOnline) {
@@ -672,7 +698,7 @@ const chartOptions = {
                 }
             }
         };
-        
+
         // Determine which fields are allowed when offline
         const conditionalLatest = {
             acte_im: getConditionalValue(latest.acte_im, true), // Allowed when offline
@@ -723,6 +749,26 @@ const chartOptions = {
                             <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
                                 {conditionalLatest.acte_im?.toFixed(1)} kWh
                             </Typography>
+                            <Tooltip
+                                title={`${formatTimestampForTooltip(machine.latest?.last_ts)}`}
+                                placement="top"
+                                arrow
+                                enterDelay={500}
+                                PopperProps={{
+                                    disablePortal: true,
+                                    modifiers: [
+                                        {
+                                            name: 'offset',
+                                            options: {
+                                                offset: [0, -10],
+                                            },
+                                        },
+                                    ],
+                                }}
+                                sx={{fontSize: "14px"}}
+                            >
+                                <AccessTimeIcon style={styles.clockIcon} />
+                            </Tooltip>
                         </Box>
                     </Box>
 
@@ -805,7 +851,7 @@ const chartOptions = {
                                     setSelectedFloor(machine.name);
                                     setChartType('activePower');
                                     setChartModalOpen(true);
-                                    
+
                                     // Find the selected machine by name to get its slave_id
                                     const selectedMachine = machineListData?.data?.machines?.find(
                                         m => m.name === machine.name
@@ -887,7 +933,7 @@ const chartOptions = {
                                 {selectedFloor} - {chartType === 'keyParameters' ? chartName : `Last 6 hours ${chartName} data`}
                             </Typography>
                             <Box style={{ marginTop: '10px' }}>
-                                <Tabs 
+                                <Tabs
                                     value={chartType === 'activePower' ? 0 : 1}
                                     onChange={async (event, newValue) => {
                                         if (newValue === 0) {
@@ -914,8 +960,8 @@ const chartOptions = {
                                         }
                                     }}
                                 >
-                                    <Tab 
-                                        label="Active Power" 
+                                    <Tab
+                                        label="Active Power"
                                         sx={{
                                             color: chartType === 'activePower' ? '#2F6FB0' : '#6B7280',
                                             '&.Mui-selected': {
@@ -923,8 +969,8 @@ const chartOptions = {
                                             }
                                         }}
                                     />
-                                    <Tab 
-                                        label="Key Parameters" 
+                                    <Tab
+                                        label="Key Parameters"
                                         onClick={async () => {
                                             setChartType('keyParameters');
                                         }}
@@ -946,7 +992,7 @@ const chartOptions = {
                                         onChange={async (e) => {
                                             const selectedValue = e.target.value;
                                             setKeyParameter(selectedValue);
-                                                                    
+
                                             if (selectedValue === 'voltage') {
                                                 setChartType('voltage');
                                                 // Find the selected machine by name to get its slave_id
