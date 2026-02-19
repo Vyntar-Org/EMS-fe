@@ -12,7 +12,9 @@ import {
     ListItemIcon,
     ListItemText,
     InputAdornment,
-    CircularProgress
+    CircularProgress,
+    Alert,
+    Snackbar
 } from '@mui/material';
 import {
     Search,
@@ -28,19 +30,26 @@ import {
 } from '@mui/icons-material';
 import Chart from 'react-apexcharts';
 import SearchIcon from '@mui/icons-material/Search';
-// import '../../dashboard.css';
 import Tooltip from '@mui/material/Tooltip';
 import LocalFireDepartmentOutlinedIcon from '@mui/icons-material/LocalFireDepartmentOutlined';
 import WaterDropOutlinedIcon from '@mui/icons-material/WaterDropOutlined';
 import LocalDrinkOutlinedIcon from '@mui/icons-material/LocalDrinkOutlined';
 
-import { fetchWaterDashboardOverview } from '../../auth/water/WaterDashboardApi';
+import { fetchWaterDashboardOverview, getWaterSlaveList } from '../../auth/water/WaterDashboardApi';
 
 const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
     const [waterPositivity, setWaterPositivity] = useState(26.0);
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [slaveList, setSlaveList] = useState([]);
+    const [slaveListLoading, setSlaveListLoading] = useState(false);
+    const [selectedSlave, setSelectedSlave] = useState(null);
+    const [activeChart, setActiveChart] = useState('bar'); // 'line' or 'bar'
+
+    // Function to truncate text
     const truncateText = (text, length = 9) =>
         text.length > length ? text.slice(0, length) + '...' : text;
 
@@ -57,13 +66,15 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     setDashboardData(response.data);
 
                     // Update water positivity state
-                    setWaterPositivity(response.data.water_positivity.current || 0);
+                    setWaterPositivity(response.data.water_positivity?.current || 0);
                 } else {
                     setError('Failed to fetch dashboard data');
                 }
             } catch (err) {
                 console.error('Error fetching dashboard data:', err);
                 setError('Failed to fetch dashboard data: ' + err.message);
+                setSnackbarMessage('Failed to fetch dashboard data: ' + err.message);
+                setSnackbarOpen(true);
             } finally {
                 setLoading(false);
             }
@@ -72,20 +83,37 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         fetchData();
     }, []);
 
-    const [slaveList] = useState([
-        { slave_id: 1, slave_name: 'Machine 1 - Production Line A' },
-        { slave_id: 2, slave_name: 'Machine 2 - Production Line B' },
-        { slave_id: 3, slave_name: 'Machine 3 - Production Line C' },
-        { slave_id: 4, slave_name: 'Machine 4 - Production Line D' },
-        { slave_id: 5, slave_name: 'Machine 5 - Production Line E' },
-        { slave_id: 6, slave_name: 'Machine 6 - Production Line F' },
-        { slave_id: 7, slave_name: 'Machine 7 - Production Line G' },
-        { slave_id: 8, slave_name: 'Machine 8 - Production Line H' }
-    ]);
+    // Fetch slave list from API
+    useEffect(() => {
+        const fetchSlaveList = async () => {
+            try {
+                setSlaveListLoading(true);
+                const slaves = await getWaterSlaveList();
+                setSlaveList(slaves);
+            } catch (err) {
+                console.error('Error fetching slave list:', err);
+                setSnackbarMessage('Failed to fetch slave list: ' + err.message);
+                setSnackbarOpen(true);
+                // Keep the mock data as fallback
+                setSlaveList([
+                    { slave_id: 1, slave_name: 'Machine 1 - Production Line A' },
+                    { slave_id: 2, slave_name: 'Machine 2 - Production Line B' },
+                    { slave_id: 3, slave_name: 'Machine 3 - Production Line C' },
+                    { slave_id: 4, slave_name: 'Machine 4 - Production Line D' },
+                    { slave_id: 5, slave_name: 'Machine 5 - Production Line E' },
+                    { slave_id: 6, slave_name: 'Machine 6 - Production Line F' },
+                    { slave_id: 7, slave_name: 'Machine 7 - Production Line G' },
+                    { slave_id: 8, slave_name: 'Machine 8 - Production Line H' }
+                ]);
+            } finally {
+                setSlaveListLoading(false);
+            }
+        };
+
+        fetchSlaveList();
+    }, []);
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedSlave, setSelectedSlave] = useState(null);
-    const [activeChart, setActiveChart] = useState('bar'); // 'line' or 'bar'
 
     // Static hourly energy data
     const [hourlyEnergyData] = useState({
@@ -183,6 +211,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         if (value >= 1e6) return (value / 1e6).toFixed(0) + "M";
         return value.toFixed(0);
     };
+    
     // Helper function to format timestamp as HH:MM
     const formatTimestamp = (timestampString) => {
         if (!timestampString) return '';
@@ -191,6 +220,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         const minutes = String(date.getMinutes()).padStart(2, '0');
         return `${hours}:${minutes}`;
     };
+    
     // Helper function to calculate appropriate y-axis values based on data range
     const calculateYAxis = (actualData, targetData) => {
         if (actualData.length === 0 && targetData.length === 0) {
@@ -775,7 +805,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                         </Box>
                                         <Box display="flex" justifyContent="center" mt="10px">
                                             <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
-                                                {dashboardData.total_stations || 0}
+                                                {dashboardData.total_stations || slaveList.length}
                                             </Typography>
                                         </Box>
                                     </CardContent>
@@ -861,7 +891,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                             <TextField
                                                 fullWidth
                                                 size="small"
-                                                placeholder="Search machines..."
+                                                placeholder="Search slaves..."
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
                                                 sx={{
@@ -881,7 +911,11 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                             />
 
                                             <Box sx={{ maxHeight: "340px", overflowY: "auto", scrollbarWidth: "thin" }}>
-                                                {Array.isArray(slaveList) ? (
+                                                {slaveListLoading ? (
+                                                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100px' }}>
+                                                        <CircularProgress size={24} />
+                                                    </Box>
+                                                ) : Array.isArray(slaveList) ? (
                                                     slaveList
                                                         .filter(slave => slave.slave_name && slave.slave_name.toLowerCase().includes(searchTerm))
                                                         .map((slave, index) => (
@@ -947,6 +981,14 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                             </Grid>
                         </Grid>
                     </Box>
+
+                    {/* Snackbar for notifications */}
+                    <Snackbar
+                        open={snackbarOpen}
+                        autoHideDuration={6000}
+                        onClose={() => setSnackbarOpen(false)}
+                        message={snackbarMessage}
+                    />
                 </>
             )}
         </Box>

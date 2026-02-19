@@ -24,7 +24,10 @@ import {
   Pagination,
   Checkbox,
   ListItemText,
-  Divider
+  Divider,
+  CircularProgress,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -35,51 +38,18 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-
-// Mock device data
-const mockDevices = [
-  { slave_id: 1, slave_name: 'Machine 1' },
-  { slave_id: 2, slave_name: 'Machine 2' },
-  { slave_id: 3, slave_name: 'Machine 3' },
-  { slave_id: 4, slave_name: 'Machine 4' },
-  { slave_id: 5, slave_name: 'Machine 5' },
-  { slave_id: 6, slave_name: 'Machine 6' }
-];
-
-// Function to generate mock logs data
-const generateMockLogs = (slaveId, startDate, endDate) => {
-  const logs = [];
-  const start = dayjs(startDate);
-  const end = dayjs(endDate);
-  const minutesDiff = end.diff(start, 'minute');
-  
-  // Generate a log entry every 5 minutes
-  for (let i = 0; i <= minutesDiff; i += 5) {
-    const timestamp = start.add(i, 'minute').toISOString();
-    
-    // Generate random values for totalizer and flow rate
-    const totalizer = 100 + Math.random() * 500 + (slaveId * 10);
-    const flowRate = 5 + Math.random() * 15 + (slaveId * 0.5);
-    
-    logs.push({
-      id: `${slaveId}-${i}`,
-      slave_id: slaveId,
-      slave_name: `Slave ${slaveId}`,
-      timestamp: timestamp,
-      totalizer: parseFloat(totalizer.toFixed(2)),
-      flowRate: parseFloat(flowRate.toFixed(2))
-    });
-  }
-  
-  return logs;
-};
+import { getWaterSlaves, getWaterLogs } from '../../auth/water/WaterLogsApi';
 
 function WaterLogs({ onSidebarToggle, sidebarVisible }) {
   // State variables
   const [devices, setDevices] = useState(['all']);
   const [logs, setLogs] = useState([]);
+  const [realLogs, setRealLogs] = useState([]); // current page logs from API
+  const [paginationMeta, setPaginationMeta] = useState({}); // pagination info from API
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // State variables
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,97 +67,156 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
   // Define all available parameters
   const allParameters = [
     { val: 'timestamp', label: 'Timestamp' },
-    { val: 'totalizer', label: 'Totalizer (L)' },
-    { val: 'flowRate', label: 'Flow Rate (L/min)' }
+    { val: 'metric_name', label: 'Metric Name' },
+    { val: 'flowrate', label: 'Flow Rate (L/min)' },
+    { val: 'totalizer', label: 'Totalizer (L)' }
   ];
 
   // Get all parameter values for easy reference
   const allParameterValues = allParameters.map(param => param.val);
 
-  // Initialize devices on component mount
+  // Load devices on component mount
   useEffect(() => {
-    const deviceNames = mockDevices.map(device => device.slave_name);
-    setDevices(['all', ...deviceNames]);
-    
-    // Set the first device as default if available
-    if (mockDevices.length > 0) {
-      setFilterDevice(mockDevices[0].slave_name);
-    }
+    const fetchDevices = async () => {
+      try {
+        setLoading(true);
+        const slavesData = await getWaterSlaves();
+
+        if (Array.isArray(slavesData)) {
+          // Transform slave data to device list
+          const deviceList = ['all', ...slavesData.map(slave => slave.slave_name)];
+          setDevices(deviceList);
+
+          // Set the first device as default if available
+          if (slavesData.length > 0) {
+            setFilterDevice(slavesData[0].slave_name);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching devices:', err);
+        setError(err.message || 'Failed to fetch devices');
+        setSnackbarMessage(err.message || 'Failed to fetch devices');
+        setSnackbarOpen(true);
+        // Set a default list if API fails
+        setDevices(['all', 'Water Slave 1', 'Water Slave 2', 'Water Slave 3']);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDevices();
   }, []);
 
   // Handle search button click
-  const handleSearch = () => {
-    if (!filterDevice) {
-      alert('Please select a device');
+  const handleSearch = async () => {
+    if (!filterDevice || filterDevice === 'all') {
+      setSnackbarMessage('Please select a device');
+      setSnackbarOpen(true);
       return;
     }
     if (!filterStartDate) {
-      alert('Please select a start date');
+      setSnackbarMessage('Please select a start date');
+      setSnackbarOpen(true);
       return;
     }
     if (!filterEndDate) {
-      alert('Please select an end date');
+      setSnackbarMessage('Please select an end date');
+      setSnackbarOpen(true);
       return;
     }
 
     setSearchClicked(true);
     setPage(1);
-    setLoading(true);
 
     try {
-      // If 'all' is selected, we'll generate logs for all devices
-      if (filterDevice === 'all') {
-        let allLogs = [];
-        mockDevices.forEach(device => {
-          const deviceLogs = generateMockLogs(
-            device.slave_id,
-            filterStartDate,
-            filterEndDate
-          );
-          allLogs = [...allLogs, ...deviceLogs];
-        });
-        
-        // Sort logs by timestamp
-        allLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        setLogs(allLogs);
-      } else {
-        // Find the device ID for the selected device name
-        const selectedDevice = mockDevices.find(device => device.slave_name === filterDevice);
-        if (selectedDevice) {
-          const deviceLogs = generateMockLogs(
-            selectedDevice.slave_id,
-            filterStartDate,
-            filterEndDate
-          );
-          setLogs(deviceLogs);
+      setLoading(true);
+      setError(null);
+
+      // Convert dayjs objects to proper datetime strings
+      const startDateTime = filterStartDate.format('YYYY-MM-DD HH:mm:ss');
+      const endDateTime = filterEndDate.format('YYYY-MM-DD HH:mm:ss');
+
+      // Map selected device name -> slave_id from latest slaves list
+      const slavesData = await getWaterSlaves();
+      let slaveId = null;
+      if (Array.isArray(slavesData)) {
+        const selectedSlave = slavesData.find(
+          (s) => s.slave_name === filterDevice
+        );
+        if (selectedSlave) {
+          slaveId = selectedSlave.slave_id;
         }
       }
+
+      if (!slaveId) {
+        setError('Selected device not found in slave list.');
+        setSnackbarMessage('Selected device not found in slave list.');
+        setSnackbarOpen(true);
+        return;
+      }
+
+      const limit = rowsPerPage;
+      const offset = 0; // first page
+
+      const logsData = await getWaterLogs(
+        slaveId,
+        startDateTime,
+        endDateTime,
+        limit,
+        offset
+      );
+
+      let pageLogs = [];
+      let meta = {};
+
+      if (logsData.success && logsData.data && Array.isArray(logsData.data.logs)) {
+        pageLogs = logsData.data.logs;
+        meta = logsData.meta || {};
+      }
+
+      setRealLogs(pageLogs);
+      setLogs(pageLogs);
+      setPaginationMeta(meta);
     } catch (err) {
-      console.error('Error generating logs:', err);
-      setError(err.message || 'Failed to generate logs');
+      console.error('Error fetching logs:', err);
+      setError(err.message || 'Failed to fetch logs');
+      setSnackbarMessage(err.message || 'Failed to fetch logs');
+      setSnackbarOpen(true);
       setLogs([]);
+      setRealLogs([]);
+      setPaginationMeta({});
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter logs based on search term only (date and device filters are handled by the search function)
+  // Filter logs based on search term only (date and device filters are handled by API)
   const filteredLogs = logs.filter((log) => {
     if (!searchTerm) return true;
 
     return (
       log.timestamp.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (log.slave_name && log.slave_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.totalizer !== undefined && log.totalizer.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.flowRate !== undefined && log.flowRate.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+      (log.metric_name && log.metric_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.flowrate !== undefined && log.flowrate.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.totalizer !== undefined && log.totalizer.toString().toLowerCase().includes(searchTerm.toLowerCase()))
     );
   });
 
+  // Calculate pagination based on API metadata
+  const count = paginationMeta.count || filteredLogs.length;
+  const totalRecords = paginationMeta.total || filteredLogs.length;
+  const totalPages = Math.ceil(totalRecords / rowsPerPage);
+
+  const shouldShowPagination = searchClicked && totalRecords > 0 && totalRecords > rowsPerPage;
+
   // Get logs for current page
-  const paginatedLogs = filteredLogs.slice(
-    (page - 1) * rowsPerPage,
-    page * rowsPerPage
-  );
+  // When using API pagination, realLogs already contains the correct page
+  const paginatedLogs = searchClicked
+    ? realLogs
+    : filteredLogs.slice(
+        (page - 1) * rowsPerPage,
+        page * rowsPerPage
+      );
 
   // Function to reset all filters
   const handleResetFilters = () => {
@@ -202,11 +231,74 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
     setSearchClicked(false);
     setSelectedColumn([]);
     setLogs([]);
+    setRealLogs([]);
+    setPaginationMeta({});
   };
 
-  // Handle page change
-  const handlePageChange = (event, value) => {
+  // Handle page change (fetch new page from API)
+  const handlePageChange = async (event, value) => {
     setPage(value);
+
+    if (searchClicked && filterDevice && filterDevice !== 'all') {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const startDateTime = filterStartDate.format('YYYY-MM-DD HH:mm:ss');
+        const endDateTime = filterEndDate.format('YYYY-MM-DD HH:mm:ss');
+
+        const slavesData = await getWaterSlaves();
+        let slaveId = null;
+        if (Array.isArray(slavesData)) {
+          const selectedSlave = slavesData.find(
+            (s) => s.slave_name === filterDevice
+          );
+          if (selectedSlave) {
+            slaveId = selectedSlave.slave_id;
+          }
+        }
+
+        if (!slaveId) {
+          setError('Selected device not found in slave list.');
+          setSnackbarMessage('Selected device not found in slave list.');
+          setSnackbarOpen(true);
+          return;
+        }
+
+        const limit = rowsPerPage;
+        const offset = (value - 1) * rowsPerPage;
+
+        const logsData = await getWaterLogs(
+          slaveId,
+          startDateTime,
+          endDateTime,
+          limit,
+          offset
+        );
+
+        let pageLogs = [];
+        let meta = {};
+
+        if (logsData.success && logsData.data && Array.isArray(logsData.data.logs)) {
+          pageLogs = logsData.data.logs;
+          meta = logsData.meta || {};
+        }
+
+        setRealLogs(pageLogs);
+        setLogs(pageLogs);
+        setPaginationMeta(meta);
+      } catch (err) {
+        console.error('Error fetching logs (page change):', err);
+        setError(err.message || 'Failed to fetch logs');
+        setSnackbarMessage(err.message || 'Failed to fetch logs');
+        setSnackbarOpen(true);
+        setLogs([]);
+        setRealLogs([]);
+        setPaginationMeta({});
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   // Handle parameter selection
@@ -241,6 +333,12 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
       margin: '0',
       transition: 'all 0.3s ease',
     },
+    loadingContainer: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '50vh',
+    }
   }
 
   // Show loading indicator
@@ -266,13 +364,13 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
             </Typography>
           )}
           {error && (
-            <Typography color="error" align="center" gutterBottom>
+            <Alert severity="error" sx={{ mb: 2 }}>
               Error: {error}
-            </Typography>
+            </Alert>
           )}
           <Box className="logs-header">
             <Box className="logs-filters">
-              <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
+              <FormControl size="small" sx={{ minWidth: 300 }}>
                 <InputLabel>Select Machine</InputLabel>
                 <Select
                   value={filterDevice}
@@ -283,7 +381,7 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                   {devices.length > 0 ? (
                     devices.map((device) => (
                       <MenuItem key={device} value={device}>
-                        {device === 'all' ? '' : device}
+                        {device === 'all' ? 'Select Machine' : device}
                       </MenuItem>
                     ))
                   ) : (
@@ -294,17 +392,14 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                 </Select>
               </FormControl>
               <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
-                <InputLabel id="param-select-label">Select Parameter</InputLabel>
+                <InputLabel>Select Parameters</InputLabel>
                 <Select
-                  labelId="param-select-label"
                   multiple
-                  value={selectedColumn} // Ensure this state is an array: []
+                  value={selectedColumn}
                   onChange={handleParameterChange}
-                  label="Select Parameter"
-                  // RENDER LOGIC: Keeps input box height fixed
+                  label="Select Parameters"
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                      {/* Show "All Parameters" if all are selected */}
                       {isAllParametersSelected ? (
                         <Chip
                           label="All Parameters"
@@ -312,7 +407,6 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                           sx={{ height: '20px', fontSize: '10px' }}
                         />
                       ) : (
-                        /* Show the first 2 items as Chips */
                         selected.slice(0, 2).map((value) => (
                           <Chip
                             key={value}
@@ -326,8 +420,6 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                           />
                         ))
                       )}
-
-                      {/* If more than 2 items and not all selected, show the +X counter */}
                       {!isAllParametersSelected && selected.length > 2 && (
                         <Chip
                           label={`+${selected.length - 2} more`}
@@ -349,7 +441,6 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                     },
                   }}
                 >
-                  {/* "All Parameters" option */}
                   <MenuItem 
                     value="all_parameters" 
                     sx={{
@@ -375,8 +466,6 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                       fontWeight: isAllParametersSelected ? 'bold' : 'normal'
                     }} />
                   </MenuItem>
-                  
-                  {/* Individual parameter options */}
                   {allParameters.map((item) => (
                     <MenuItem
                       key={item.val}
@@ -388,7 +477,7 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                         sx={{
                           p: 0.5,
                           mr: 0.5,
-                          transform: "scale(0.8)", // Shrunk checkbox
+                          transform: "scale(0.8)",
                           '& .MuiSvgIcon-root': { fontSize: 20 }
                         }}
                       />
@@ -412,13 +501,12 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                     textField: {
                       size: 'small',
                       sx: { minWidth: 220, mr: 2, borderRadius: 2 },
-                      onClick: () => setOpenStart(true), // 🔥 input click opens picker
+                      onClick: () => setOpenStart(true),
                     },
                   }}
                   format="DD/MM/YYYY hh:mm A"
                 />
               </LocalizationProvider>
-
 
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateTimePicker
@@ -437,13 +525,12 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                     textField: {
                       size: 'small',
                       sx: { minWidth: 220, mr: 2, borderRadius: 2 },
-                      onClick: () => setOpenEnd(true), // 🔥 input click opens picker
+                      onClick: () => setOpenEnd(true),
                     },
                   }}
                   format="DD/MM/YYYY hh:mm A"
                 />
               </LocalizationProvider>
-
 
               <Button
                 variant="contained"
@@ -455,10 +542,10 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                     backgroundColor: '#1E4A7C',
                   },
                   minWidth: 'auto',
-                  width: '32px', // Smaller width
-                  height: '32px', // Smaller height
-                  padding: '6px', // Even smaller padding
-                  borderRadius: '4px', // Square with rounded corners
+                  width: '32px',
+                  height: '32px',
+                  padding: '6px',
+                  borderRadius: '4px',
                   '& .MuiButton-startIcon': {
                     margin: 0,
                   }
@@ -478,9 +565,9 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                     color: '#5a6268',
                   },
                   minWidth: 'auto',
-                  width: '32px', // Smaller width
-                  height: '32px', // Smaller height
-                  padding: '4px', // Even smaller padding
+                  width: '32px',
+                  height: '32px',
+                  padding: '4px',
                   borderRadius: '4px',
                   '& .MuiButton-startIcon': {
                     margin: 0,
@@ -509,43 +596,45 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                     ) : (
                       <>
                         <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Timestamp</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Totalizer (L)</TableCell>
+                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Metric Name</TableCell>
                         <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Flow Rate (L/min)</TableCell>
+                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Totalizer (L)</TableCell>
                       </>
                     )}
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {paginatedLogs.length > 0 ? (
-                    paginatedLogs.map((log) => {
+                    paginatedLogs.map((log, index) => {
                       const timestamp = new Date(log.timestamp).toLocaleString();
+                      const metricName = log.metric_name;
+                      const flowRate = log.flowrate;
                       const totalizer = log.totalizer;
-                      const flowRate = log.flowRate;
-                      console.log(log);
 
                       return (
-                        <TableRow key={log.id} hover className="log-table-row">
+                        <TableRow key={`${log.timestamp}-${index}`} hover className="log-table-row">
                           {selectedColumn.length > 0 ? (
-                            // DYNAMIC MULTI-COLUMN VIEW
-                            // This loops through whatever you checked in the dropdown
                             selectedColumn.map((col) => (
                               <TableCell key={col} className="log-table-cell">
                                 {col === 'timestamp' && timestamp}
+                                {col === 'metric_name' && metricName}
+                                {col === 'flowrate' && (typeof flowRate === 'number' ? flowRate.toFixed(2) : flowRate)}
                                 {col === 'totalizer' && (typeof totalizer === 'number' ? totalizer.toFixed(2) : totalizer)}
-                                {col === 'flowRate' && (typeof flowRate === 'number' ? flowRate.toFixed(2) : flowRate)}
                               </TableCell>
                             ))
                           ) : (
-                            // DEFAULT "ALL COLUMNS" VIEW (When nothing is selected)
                             <>
                               <TableCell className="log-table-cell" title={timestamp}>
                                 {timestamp}
                               </TableCell>
                               <TableCell className="log-table-cell">
-                                {typeof totalizer === 'number' ? totalizer.toFixed(2) : totalizer}
+                                {metricName}
                               </TableCell>
                               <TableCell className="log-table-cell">
                                 {typeof flowRate === 'number' ? flowRate.toFixed(2) : flowRate}
+                              </TableCell>
+                              <TableCell className="log-table-cell">
+                                {typeof totalizer === 'number' ? totalizer.toFixed(2) : totalizer}
                               </TableCell>
                             </>
                           )}
@@ -554,7 +643,7 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={selectedColumn ? selectedColumn.length : 3} align="center">
+                      <TableCell colSpan={selectedColumn ? selectedColumn.length : 4} align="center">
                         {paginatedLogs.length === 0 ? 'No logs found matching your filters' : ''}
                       </TableCell>
                     </TableRow>
@@ -565,13 +654,16 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
           )}
 
           {/* Pagination */}
-          {searchClicked && (
+          {shouldShowPagination && (
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
               <Typography variant="body2" color="textSecondary">
-                Showing {(page - 1) * rowsPerPage + 1} to {Math.min(page * rowsPerPage, logs.length)} of {logs.length} entries
+                Showing {(paginationMeta.offset || 0) + 1} to {Math.min(
+                  (paginationMeta.offset || 0) + (paginationMeta.limit || rowsPerPage),
+                  paginationMeta.total || realLogs.length
+                )} of {paginationMeta.total || realLogs.length} entries
               </Typography>
               <Pagination
-                count={Math.ceil(logs.length / rowsPerPage)}
+                count={totalPages}
                 page={page}
                 onChange={handlePageChange}
                 color="primary"
@@ -581,9 +673,16 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
               />
             </Box>
           )}
-
         </CardContent>
       </Card>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+      />
     </Box>
   );
 }
