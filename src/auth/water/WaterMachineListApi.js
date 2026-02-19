@@ -1,8 +1,8 @@
-// WaterDashboardApi.js
+// waterMachineListApi.js
 import axios from 'axios';
 import tokenUtils from '../tokenUtils';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://bms.api.v1.vyntar.in/api/applications/water';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://bms.api.v1.vyntar.in/api';
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -68,10 +68,10 @@ apiClient.interceptors.response.use(
 );
 
 /**
- * Get water dashboard overview data
- * @returns {Promise} Promise object represents the water dashboard overview data
+ * Get water machine list data
+ * @returns {Promise} Promise object represents the water machine list data
  */
-export const fetchWaterDashboardOverview = async () => {
+export const getWaterMachineList = async () => {
   try {
     // Get a valid access token (will refresh if expired)
     const validToken = await tokenUtils.getValidAccessToken();
@@ -81,19 +81,21 @@ export const fetchWaterDashboardOverview = async () => {
       throw new Error('Authentication token not found. Please log in first.');
     }
     
-    console.log('Making water dashboard overview API call with token:', validToken.substring(0, 20) + '...');
+    console.log('Making water machine list API call with token:', validToken.substring(0, 20) + '...');
+    console.log('API Base URL:', apiClient.defaults.baseURL);
     
-    const response = await apiClient.get('/dashboard-overview/');
+    // Fetch machine list
+    const response = await apiClient.get('/applications/water/machine-list/');
     
-    console.log('Water dashboard overview API response:', response);
+    console.log('Water machines API response:', response);
     
     if (response.data.success) {
       return response.data;
     } else {
-      throw new Error(response.data.message || 'Failed to fetch water dashboard overview');
+      throw new Error(response.data.message || 'Failed to fetch water machine list');
     }
   } catch (error) {
-    console.error('Error fetching water dashboard overview:', error);
+    console.error('Error fetching water machine list:', error);
     if (error.response) {
       console.error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
       console.error('Response data:', error.response.data);
@@ -109,10 +111,11 @@ export const fetchWaterDashboardOverview = async () => {
 };
 
 /**
- * Get water slave list data
- * @returns {Promise} Promise object represents the water slave list data
+ * Get water machine trend data
+ * @param {number} slaveId - The slave ID
+ * @returns {Promise} Promise object represents the water trend data
  */
-export const getWaterSlaveList = async () => {
+export const getWaterMachineTrend = async (slaveId) => {
   try {
     // Get a valid access token (will refresh if expired)
     const validToken = await tokenUtils.getValidAccessToken();
@@ -122,19 +125,19 @@ export const getWaterSlaveList = async () => {
       throw new Error('Authentication token not found. Please log in first.');
     }
     
-    console.log('Making water slave list API call with token:', validToken.substring(0, 20) + '...');
+    console.log(`Making water trend API call for slave ${slaveId}`);
     
-    const response = await apiClient.get('/slave-list/');
+    const response = await apiClient.get(`/applications/water/machine-trend/?slave_id=${slaveId}`);
     
-    console.log('Water slave list API response:', response);
+    console.log('Water trend API response:', response);
     
     if (response.data.success) {
-      return response.data.data.slaves;
+      return response.data;
     } else {
-      throw new Error(response.data.message || 'Failed to fetch water slave list');
+      throw new Error(response.data.message || 'Failed to fetch water trend data');
     }
   } catch (error) {
-    console.error('Error fetching water slave list:', error);
+    console.error('Error fetching water trend:', error);
     if (error.response) {
       console.error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
       console.error('Response data:', error.response.data);

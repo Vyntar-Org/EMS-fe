@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Grid,
@@ -24,6 +24,9 @@ import {
     Tab,
     Divider,
     Tooltip,
+    CircularProgress,
+    Alert,
+    Snackbar,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
@@ -35,170 +38,8 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SpeedIcon from '@mui/icons-material/Speed';
 import OpacityIcon from '@mui/icons-material/Opacity';
 
-// Mock data for machine list
-const mockMachineListData = {
-    data: {
-        machines: [
-            {
-                slave_id: 1,
-                name: "Flow Meter 1",
-                no: "S001",
-                status: "ONLINE",
-                location: "Building A - Floor 1",
-                last_ts: new Date(Date.now() - 5 * 60000).toISOString(), // 5 minutes ago
-                latest: {
-                    consumption: 24.5,
-                    flow_rate: 65.2
-                },
-                energy: {
-                    today: 120.5,
-                    mtd: 3615.2
-                },
-                totalizer: {
-                    value: 1250.75,
-                    timestamp: new Date(Date.now() - 10 * 60000).toISOString(), // 10 minutes ago
-                }
-            },
-            {
-                slave_id: 2,
-                name: "Flow Meter 2",
-                no: "S002",
-                status: "ONLINE",
-                location: "Building A - Floor 2",
-                last_ts: new Date(Date.now() - 2 * 60000).toISOString(), // 2 minutes ago
-                latest: {
-                    consumption: 28.3,
-                    flow_rate: 70.5
-                },
-                energy: {
-                    today: 145.8,
-                    mtd: 4374.0
-                },
-                totalizer: {
-                    value: 1380.25,
-                    timestamp: new Date(Date.now() - 5 * 60000).toISOString(), // 5 minutes ago
-                }
-            },
-            {
-                slave_id: 3,
-                name: "Flow Meter 3",
-                no: "S003",
-                status: "OFFLINE",
-                location: "Building B - Floor 1",
-                last_ts: new Date(Date.now() - 30 * 60000).toISOString(), // 30 minutes ago
-                latest: {
-                    consumption: 22.1,
-                    flow_rate: 60.8
-                },
-                energy: {
-                    today: 95.3,
-                    mtd: 2859.0
-                },
-                totalizer: {
-                    value: 1120.50,
-                    timestamp: new Date(Date.now() - 15 * 60000).toISOString(), // 15 minutes ago
-                }
-            },
-            {
-                slave_id: 4,
-                name: "Flow Meter 4",
-                no: "S004",
-                status: "ONLINE",
-                location: "Building B - Floor 2",
-                last_ts: new Date(Date.now() - 1 * 60000).toISOString(), // 1 minute ago
-                latest: {
-                    consumption: 25.7,
-                    flow_rate: 68.3
-                },
-                energy: {
-                    today: 132.6,
-                    mtd: 3978.0
-                },
-                totalizer: {
-                    value: 1425.30,
-                    timestamp: new Date(Date.now() - 3 * 60000).toISOString(), // 3 minutes ago
-                }
-            },
-            {
-                slave_id: 5,
-                name: "Flow Meter 5",
-                no: "S005",
-                status: "ONLINE",
-                location: "Building C - Floor 1",
-                last_ts: new Date(Date.now() - 8 * 60000).toISOString(), // 8 minutes ago
-                latest: {
-                    consumption: 26.2,
-                    flow_rate: 66.7
-                },
-                energy: {
-                    today: 118.9,
-                    mtd: 3567.0
-                },
-                totalizer: {
-                    value: 1295.60,
-                    timestamp: new Date(Date.now() - 8 * 60000).toISOString(), // 8 minutes ago
-                }
-            },
-            {
-                slave_id: 6,
-                name: "Flow Meter 6",
-                no: "S006",
-                status: "ONLINE",
-                location: "Building C - Floor 2",
-                last_ts: new Date(Date.now() - 3 * 60000).toISOString(), // 3 minutes ago
-                latest: {
-                    consumption: 18.5,
-                    flow_rate: 55.2
-                },
-                energy: {
-                    today: 210.4,
-                    mtd: 6312.0
-                },
-                totalizer: {
-                    value: 1580.90,
-                    timestamp: new Date(Date.now() - 6 * 60000).toISOString(), // 6 minutes ago
-                }
-            }
-        ]
-    }
-};
-
-// Function to generate mock trend data
-const generateMockTrendData = (parameter) => {
-    const data = [];
-    const now = new Date();
-    let baseValue;
-
-    // Set base value based on parameter
-    switch (parameter) {
-        case 'consumption':
-            baseValue = 25;
-            break;
-        case 'flow_rate':
-            baseValue = 65;
-            break;
-        case 'totalizer':
-            baseValue = 1200;
-            break;
-        default:
-            baseValue = 0;
-    }
-
-    // Generate data points for the last 6 hours (one every 30 minutes)
-    for (let i = 12; i >= 0; i--) {
-        const timestamp = new Date(now.getTime() - i * 30 * 60000);
-        // Add some random variation to the base value
-        const variation = (Math.random() - 0.5) * baseValue * 0.2;
-        const value = baseValue + variation;
-
-        data.push({
-            timestamp: timestamp.toISOString(),
-            value: parseFloat(value.toFixed(2))
-        });
-    }
-
-    return data;
-};
+// Import API functions
+import { getWaterMachineList, getWaterMachineTrend } from '../../auth/water/WaterMachineListApi';
 
 const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Get parameter unit
@@ -234,14 +75,50 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [selectedFloor, setSelectedFloor] = useState('Common');
     const [chartType, setChartType] = useState('consumption');
     const [trendData, setTrendData] = useState([]);
-    const [selectedParameter, setSelectedParameter] = useState('consumption');
-    const [machineListData] = useState(mockMachineListData);
+    const [selectedParameter, setSelectedParameter] = useState('flow_rate');
+    const [machineListData, setMachineListData] = useState({ data: { machines: [] } });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [trendLoading, setTrendLoading] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
 
-    // Function to fetch trend data (now using mock data)
-    const fetchTrendData = (slaveId, parameter) => {
-        const mockData = generateMockTrendData(parameter);
-        setTrendData(mockData);
-        return mockData;
+    // Fetch machine list on component mount
+    useEffect(() => {
+        const fetchMachineList = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const response = await getWaterMachineList();
+                setMachineListData(response);
+            } catch (err) {
+                console.error('Error fetching machine list:', err);
+                setError(err.message || 'Failed to fetch machine list');
+                setSnackbarMessage(err.message || 'Failed to fetch machine list');
+                setSnackbarOpen(true);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchMachineList();
+    }, []);
+
+    // Function to fetch trend data
+    const fetchTrendData = async (slaveId, parameter) => {
+        try {
+            setTrendLoading(true);
+            const response = await getWaterMachineTrend(slaveId);
+            setTrendData(response.data.data);
+            return response.data.data;
+        } catch (err) {
+            console.error('Error fetching trend data:', err);
+            setSnackbarMessage(err.message || 'Failed to fetch trend data');
+            setSnackbarOpen(true);
+            throw err;
+        } finally {
+            setTrendLoading(false);
+        }
     };
 
     // Function to format timestamp for tooltip - showing date and time
@@ -449,7 +326,13 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '14px',
             marginRight: '5px',
             color: '#2F6FB0',
-        }
+        },
+        loadingContainer: {
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '50vh',
+        },
     };
 
     // Chart data for trend
@@ -576,7 +459,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             return timeDiff <= 15; // Within 15 minutes
         };
 
-        const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
+        const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.latest_ts);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
         const totalizer = machine.totalizer || {};
@@ -637,7 +520,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             <div>
                                 {/* Main Title */}
                                 <Typography style={styles.floorTitle}>
-                                    {machine.name}
+                                    {machine.slave_name}
                                 </Typography>
                             </div>
                         </div>
@@ -647,10 +530,10 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: '10px' }}>
                                 <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
-                                    {totalizer.value} L
+                                    {machine.mtd || 0} KLD
                                 </Typography>
                                 <Tooltip
-                                    title={`${formatTimestampForTooltip(totalizer.timestamp)}`}
+                                    title={`${formatTimestampForTooltip(machine.latest_ts)}`}
                                     placement="top"
                                     arrow
                                     enterDelay={500}
@@ -709,7 +592,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     <TableCell align="right" style={styles.tableCell}>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.latest?.consumption || 0).toFixed(1)} KLD
+                                        {(machine.consumption || 0).toFixed(1)} KLD
                                     </TableCell>
                                 </TableRow>
 
@@ -724,7 +607,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     <TableCell align="right" style={styles.tableCell}>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.latest?.flow_rate || 0).toFixed(1)} CFM
+                                        {(machine.rate_of_flow || 0).toFixed(1)} CFM
                                     </TableCell>
                                 </TableRow>
                             </TableBody>
@@ -742,7 +625,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     }}>
                         <Box style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
-                                MTD : {(machine.energy?.mtd || 0).toFixed(1)} KLD
+                                MTD : {(machine.mtd || 0).toFixed(1)} KLD
                             </Typography>
                         </Box>
                         <Box style={{ ...styles.metricsRow, display: 'flex', justifyContent: 'right' }}>
@@ -750,13 +633,13 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 variant="contained"
                                 style={styles.chartButton}
                                 onClick={async () => {
-                                    setSelectedFloor(machine.name);
+                                    setSelectedFloor(machine.slave_name);
                                     setChartType('consumption');
                                     setChartModalOpen(true);
 
                                     // Find the selected machine by name to get its slave_id
                                     const selectedMachine = machineListData?.data?.machines?.find(
-                                        m => m.name === machine.name
+                                        m => m.slave_name === machine.slave_name
                                     );
                                     if (selectedMachine) {
                                         await fetchTrendData(selectedMachine.slave_id, selectedParameter);
@@ -775,72 +658,94 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent} id="main-content">
-            {/* Custom Grid Container for 2 cards per row */}
-            <Box style={styles.gridContainer}>
-                {machineListData?.data?.machines?.map((machine, index) => (
-                    <Box style={styles.gridItem} key={machine.slave_id || index}>
-                        {renderFloorCard(machine)}
+            {loading ? (
+                <Box style={styles.loadingContainer}>
+                    <CircularProgress />
+                </Box>
+            ) : error ? (
+                <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+            ) : (
+                <>
+                    {/* Custom Grid Container for 2 cards per row */}
+                    <Box style={styles.gridContainer}>
+                        {machineListData?.data?.machines?.map((machine, index) => (
+                            <Box style={styles.gridItem} key={machine.slave_id || index}>
+                                {renderFloorCard(machine)}
+                            </Box>
+                        ))}
                     </Box>
-                ))}
-            </Box>
 
-            {/* Chart Modal */}
-            <Modal
-                open={chartModalOpen}
-                onClose={() => setChartModalOpen(false)}
-                aria-labelledby="chart-modal-title"
-                aria-describedby="chart-modal-description"
-                style={styles.modal}
-            >
-                <Box style={styles.modalPaper}>
-                    <Box style={styles.modalHeader}>
-                        <Box>
-                            <Typography id="chart-modal-title" variant="h6" component="h2">
-                                {selectedFloor} - Last 6 hours {getParameterLabel(selectedParameter)} data
-                            </Typography>
-                            <Box style={{ marginTop: '10px' }}>
-                                <FormControl size="small" sx={{ minWidth: 200, marginBottom: 2 }}>
-                                    <InputLabel>Parameter</InputLabel>
-                                    <Select
-                                        value={selectedParameter}
-                                        onChange={async (e) => {
-                                            const newParameter = e.target.value;
-                                            setSelectedParameter(newParameter);
+                    {/* Chart Modal */}
+                    <Modal
+                        open={chartModalOpen}
+                        onClose={() => setChartModalOpen(false)}
+                        aria-labelledby="chart-modal-title"
+                        aria-describedby="chart-modal-description"
+                        style={styles.modal}
+                    >
+                        <Box style={styles.modalPaper}>
+                            <Box style={styles.modalHeader}>
+                                <Box>
+                                    <Typography id="chart-modal-title" variant="h6" component="h2">
+                                        {selectedFloor} - Last 6 hours {getParameterLabel(selectedParameter)} data
+                                    </Typography>
+                                    {/* <Box style={{ marginTop: '10px' }}>
+                                        <FormControl size="small" sx={{ minWidth: 200, marginBottom: 2 }}>
+                                            <InputLabel>Parameter</InputLabel>
+                                            <Select
+                                                value={selectedParameter}
+                                                onChange={async (e) => {
+                                                    const newParameter = e.target.value;
+                                                    setSelectedParameter(newParameter);
 
-                                            // Find the selected machine by name to get its slave_id
-                                            const selectedMachine = machineListData?.data?.machines?.find(
-                                                m => m.name === selectedFloor
-                                            );
-                                            if (selectedMachine) {
-                                                await fetchTrendData(selectedMachine.slave_id, newParameter);
-                                            }
-                                        }}
-                                        label="Parameter"
-                                    >
-                                        <MenuItem value="consumption">Consumption</MenuItem>
-                                        <MenuItem value="flow_rate">Flow Rate</MenuItem>
-                                        <MenuItem value="totalizer">Totalizer</MenuItem>
-                                    </Select>
-                                </FormControl>
+                                                    // Find the selected machine by name to get its slave_id
+                                                    const selectedMachine = machineListData?.data?.machines?.find(
+                                                        m => m.slave_name === selectedFloor
+                                                    );
+                                                    if (selectedMachine) {
+                                                        await fetchTrendData(selectedMachine.slave_id, newParameter);
+                                                    }
+                                                }}
+                                                label="Parameter"
+                                            >
+                                                <MenuItem value="flow_rate">Flow Rate</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Box> */}
+                                </Box>
+                                <IconButton
+                                    style={styles.closeButton}
+                                    onClick={() => setChartModalOpen(false)}
+                                >
+                                    <CloseIcon />
+                                </IconButton>
+                            </Box>
+                            <Box id="chart-modal-description">
+                                {trendLoading ? (
+                                    <Box style={styles.loadingContainer}>
+                                        <CircularProgress />
+                                    </Box>
+                                ) : (
+                                    <Chart
+                                        options={chartOptions}
+                                        series={chartSeries}
+                                        type="line"
+                                        height={350}
+                                    />
+                                )}
                             </Box>
                         </Box>
-                        <IconButton
-                            style={styles.closeButton}
-                            onClick={() => setChartModalOpen(false)}
-                        >
-                            <CloseIcon />
-                        </IconButton>
-                    </Box>
-                    <Box id="chart-modal-description">
-                        <Chart
-                            options={chartOptions}
-                            series={chartSeries}
-                            type="line"
-                            height={350}
-                        />
-                    </Box>
-                </Box>
-            </Modal>
+                    </Modal>
+
+                    {/* Snackbar for notifications */}
+                    <Snackbar
+                        open={snackbarOpen}
+                        autoHideDuration={6000}
+                        onClose={() => setSnackbarOpen(false)}
+                        message={snackbarMessage}
+                    />
+                </>
+            )}
         </Box>
     );
 };

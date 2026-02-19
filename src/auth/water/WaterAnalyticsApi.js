@@ -1,4 +1,4 @@
-// WaterDashboardApi.js
+// WaterAnalyticsApi.js
 import axios from 'axios';
 import tokenUtils from '../tokenUtils';
 
@@ -68,51 +68,10 @@ apiClient.interceptors.response.use(
 );
 
 /**
- * Get water dashboard overview data
- * @returns {Promise} Promise object represents the water dashboard overview data
- */
-export const fetchWaterDashboardOverview = async () => {
-  try {
-    // Get a valid access token (will refresh if expired)
-    const validToken = await tokenUtils.getValidAccessToken();
-    
-    if (!validToken) {
-      console.warn('No authentication token found. Please log in first.');
-      throw new Error('Authentication token not found. Please log in first.');
-    }
-    
-    console.log('Making water dashboard overview API call with token:', validToken.substring(0, 20) + '...');
-    
-    const response = await apiClient.get('/dashboard-overview/');
-    
-    console.log('Water dashboard overview API response:', response);
-    
-    if (response.data.success) {
-      return response.data;
-    } else {
-      throw new Error(response.data.message || 'Failed to fetch water dashboard overview');
-    }
-  } catch (error) {
-    console.error('Error fetching water dashboard overview:', error);
-    if (error.response) {
-      console.error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
-      console.error('Response data:', error.response.data);
-      throw new Error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
-    } else if (error.request) {
-      console.error('Network Error: No response received from server');
-      throw new Error('Network Error: Unable to connect to server');
-    } else {
-      console.error('Request Error:', error.message);
-      throw new Error(`Request Error: ${error.message}`);
-    }
-  }
-};
-
-/**
  * Get water slave list data
  * @returns {Promise} Promise object represents the water slave list data
  */
-export const getWaterSlaveList = async () => {
+export const getWaterSlaves = async () => {
   try {
     // Get a valid access token (will refresh if expired)
     const validToken = await tokenUtils.getValidAccessToken();
@@ -135,6 +94,62 @@ export const getWaterSlaveList = async () => {
     }
   } catch (error) {
     console.error('Error fetching water slave list:', error);
+    if (error.response) {
+      console.error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
+      console.error('Response data:', error.response.data);
+      throw new Error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
+    } else if (error.request) {
+      console.error('Network Error: No response received from server');
+      throw new Error('Network Error: Unable to connect to server');
+    } else {
+      console.error('Request Error:', error.message);
+      throw new Error(`Request Error: ${error.message}`);
+    }
+  }
+};
+
+/**
+ * Get water analytics data
+ * @param {number} slaveId - The slave ID
+ * @param {string} startDatetime - Start datetime in format 'YYYY-MM-DD HH:mm:ss'
+ * @param {string} endDatetime - End datetime in format 'YYYY-MM-DD HH:mm:ss'
+ * @param {number} limit - Number of records to fetch
+ * @param {number} offset - Number of records to skip
+ * @param {string} parameters - Comma-separated list of parameters to fetch
+ * @returns {Promise} Promise object represents the water analytics data
+ */
+export const getWaterAnalytics = async (slaveId, startDatetime, endDatetime, limit = 30, offset = 0, parameters = 'consumption') => {
+  try {
+    // Get a valid access token (will refresh if expired)
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
+      console.warn('No authentication token found. Please log in first.');
+      throw new Error('Authentication token not found. Please log in first.');
+    }
+    
+    console.log(`Making water analytics API call for slave ${slaveId}`);
+    
+    const params = new URLSearchParams({
+      slave_id: slaveId.toString(),
+      start_datetime: startDatetime,
+      end_datetime: endDatetime,
+      limit: limit.toString(),
+      offset: offset.toString(),
+      parameters: parameters
+    });
+    
+    const response = await apiClient.get(`/analytics/?${params}`);
+    
+    console.log('Water analytics API response:', response);
+    
+    if (response.data.success) {
+      return response.data;
+    } else {
+      throw new Error(response.data.message || 'Failed to fetch water analytics');
+    }
+  } catch (error) {
+    console.error('Error fetching water analytics:', error);
     if (error.response) {
       console.error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
       console.error('Response data:', error.response.data);

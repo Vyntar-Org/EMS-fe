@@ -22,7 +22,10 @@ import {
     Select,
     MenuItem,
     Checkbox,
-    ListItemText
+    ListItemText,
+    CircularProgress,
+    Alert,
+    Snackbar
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -33,61 +36,13 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
+import { getWaterSlaves, getWaterAnalytics } from '../../auth/water/WaterAnalyticsApi';
 
 // Updated parameter options to match the API response
 const parameterOptions = [
-    { value: "water_consumption", label: "Water Consumption (KLD)" },
+    { value: "consumption", label: "Water Consumption (KLD)" },
     { value: "flow_rate", label: "Flow Rate (CFM)" },
 ];
-
-// Mock device data
-const mockDevices = [
-    { slave_id: 1, slave_name: 'Machine 1' },
-    { slave_id: 2, slave_name: 'Machine 2' },
-    { slave_id: 3, slave_name: 'Machine 3' },
-    { slave_id: 4, slave_name: 'Machine 4' },
-    { slave_id: 5, slave_name: 'Machine 5' },
-    { slave_id: 6, slave_name: 'Machine 6' }
-];
-
-// Function to generate mock analytics data
-const generateMockAnalyticsData = (deviceId, parameters, startDate, endDate) => {
-    const data = [];
-    const start = dayjs(startDate);
-    const end = dayjs(endDate);
-    const daysDiff = end.diff(start, 'days');
-
-    // Generate data points for each day in the range
-    for (let i = 0; i <= daysDiff; i++) {
-        const currentDate = start.add(i, 'day');
-        const timestamp = currentDate.toISOString();
-
-        const dataPoint = { timestamp };
-
-        // Add values for each requested parameter
-        parameters.forEach(param => {
-            let value;
-            switch (param) {
-                case 'water_consumption':
-                    // Generate water consumption values between 100-500 liters with some variation
-                    value = 100 + Math.random() * 400 + (deviceId * 10);
-                    break;
-                case 'flow_rate':
-                    // Generate flow rate values between 5-20 L/min with some variation
-                    value = 5 + Math.random() * 15 + (deviceId * 0.5);
-                    break;
-                default:
-                    value = 0;
-            }
-
-            dataPoint[param] = parseFloat(value.toFixed(2));
-        });
-
-        data.push(dataPoint);
-    }
-
-    return data;
-};
 
 const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     // State for filters
@@ -99,15 +54,24 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
     const [devices, setDevices] = useState(['all']); // Initialize with 'all' as default
     const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
-    const [selectedParameter, setSelectedParameter] = useState([]); // State for main chart parameter selection (array for multi-select)
-    const [selectedParameter2, setSelectedParameter2] = useState([]); // State for first comparison chart parameter selection (array for multi-select)
-    const [selectedParameter3, setSelectedParameter3] = useState([]); // State for second comparison chart parameter selection (array for multi-select)
+    const [selectedParameter, setSelectedParameter] = useState(''); // Changed from array to string for single selection
+    const [selectedParameter2, setSelectedParameter2] = useState(''); // Changed from array to string
+    const [selectedParameter3, setSelectedParameter3] = useState(''); // Changed from array to string
     const [compareParameter, setCompareParameter] = useState(''); // State for first comparison chart parameter selection
     const [compareParameter2, setCompareParameter2] = useState(''); // State for second comparison chart parameter selection
     const [filterDevice2, setFilterDevice2] = useState('all'); // State for first comparison chart machine selection
     const [filterDevice3, setFilterDevice3] = useState('all'); // State for second comparison chart machine selection
     const [openStart, setOpenStart] = useState(false);
     const [openEnd, setOpenEnd] = useState(false);
+    
+    // Loading and error states
+    const [loading, setLoading] = useState(false); // Loading state for API calls
+    const [dataLoading, setDataLoading] = useState(false); // Loading state for data fetching
+    const [compareLoading, setCompareLoading] = useState(false); // Loading state for comparison data
+    const [compareLoading2, setCompareLoading2] = useState(false); // Loading state for second comparison data
+    const [error, setError] = useState(null); // Error state for API calls
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
 
     const styles = {
         mainContent: {
@@ -161,46 +125,190 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         inactiveStatus: {
             color: '#e34d4d',
             backgroundColor: '#fae8e8',
+        },
+        loadingContainer: {
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '50vh',
         }
     };
 
-    // Initialize devices from mock data
+    // Fetch devices from API when component mounts
     useEffect(() => {
-        setDeviceObjects(mockDevices);
-        const deviceNames = mockDevices.map(device => device.slave_name);
-        setDevices(['all', ...deviceNames]);
-        
-        // Set default device to the first one (not 'all')
-        if (mockDevices.length > 0) {
-            setFilterDevice(mockDevices[0].slave_name);
-        }
+        const fetchDevices = async () => {
+            try {
+                setLoading(true);
+                const slaves = await getWaterSlaves();
+                if (slaves && slaves.length > 0) {
+                    setDeviceObjects(slaves);
+                    const deviceNames = slaves.map(device => device.slave_name);
+                    setDevices(['all', ...deviceNames]);
+                    
+                    // Set default device to the first one (not 'all')
+                    setFilterDevice(slaves[0].slave_name);
+                }
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching devices:', error);
+                setError('Failed to load devices. Please try again later.');
+                setSnackbarMessage('Failed to load devices. Please try again later.');
+                setSnackbarOpen(true);
+                setLoading(false);
+            }
+        };
+
+        fetchDevices();
     }, []);
 
+    // Function to fetch analytics data for a specific device
+    const fetchAnalyticsData = async (deviceName, parameter, startDate, endDate) => {
+        try {
+            // Find the device ID based on the device name
+            const selectedDevice = deviceObjects.find(device => device.slave_name === deviceName);
+            if (!selectedDevice) {
+                throw new Error(`Device '${deviceName}' not found`);
+            }
+
+            // Format dates for API
+            const startDatetime = dayjs(startDate).format('YYYY-MM-DD HH:mm:ss');
+            const endDatetime = dayjs(endDate).format('YYYY-MM-DD HH:mm:ss');
+            
+            // Use selected parameter directly
+            const parametersString = parameter;
+            
+            // Fetch analytics data from API
+            const response = await getWaterAnalytics(
+                selectedDevice.slave_id,
+                startDatetime,
+                endDatetime,
+                30, // limit
+                0,  // offset
+                parametersString
+            );
+            
+            // The actual data is in response.data.data, not response.data
+            if (response && response.data && response.data.data && response.data.data.length > 0) {
+                return response.data.data;
+            } else {
+                return [];
+            }
+        } catch (err) {
+            console.error('Error fetching analytics data:', err);
+            throw err;
+        }
+    };
+
     // Handle search button click
-    const handleSearch = () => {
+    const handleSearch = async () => {
         if (!filterDevice || filterDevice === 'all') {
-            alert('Please select a device');
+            setSnackbarMessage('Please select a device');
+            setSnackbarOpen(true);
             return;
         }
         if (!filterStartDate) {
-            alert('Please select a start date');
+            setSnackbarMessage('Please select a start date');
+            setSnackbarOpen(true);
             return;
         }
         if (!filterEndDate) {
-            alert('Please select an end date');
+            setSnackbarMessage('Please select an end date');
+            setSnackbarOpen(true);
             return;
         }
-        setSearchClicked(true);
+        
+        // Check if parameter is selected
+        if (!selectedParameter) {
+            setSnackbarMessage('Please select a parameter');
+            setSnackbarOpen(true);
+            return;
+        }
+        
+        try {
+            setDataLoading(true);
+            setSearchClicked(true);
+            setError(null);
+            
+            // Fetch analytics data for the main device
+            const analyticsData = await fetchAnalyticsData(
+                filterDevice, 
+                selectedParameter, 
+                filterStartDate, 
+                filterEndDate
+            );
+            setFilteredChartData(analyticsData);
+            
+            // If comparison mode is active, fetch comparison data
+            if (compareMode && compareDevice) {
+                setCompareLoading(true);
+                try {
+                    // Use selectedParameter2 if it's set, otherwise use selectedParameter
+                    const paramToUse = selectedParameter2 || selectedParameter;
+                    const compareData = await fetchAnalyticsData(
+                        compareDevice, 
+                        paramToUse, 
+                        filterStartDate, 
+                        filterEndDate
+                    );
+                    setCompareChartData(compareData);
+                } catch (err) {
+                    console.error('Error fetching comparison data:', err);
+                    setSnackbarMessage(err.message || 'Failed to fetch comparison data');
+                    setSnackbarOpen(true);
+                } finally {
+                    setCompareLoading(false);
+                }
+            }
+            
+            // If second comparison mode is active, fetch second comparison data
+            if (compareMode2 && compareDevice2) {
+                setCompareLoading2(true);
+                try {
+                    // Use selectedParameter3 if it's set, otherwise use selectedParameter
+                    const paramToUse = selectedParameter3 || selectedParameter;
+                    const compareData2 = await fetchAnalyticsData(
+                        compareDevice2, 
+                        paramToUse, 
+                        filterStartDate, 
+                        filterEndDate
+                    );
+                    setCompareChartData2(compareData2);
+                } catch (err) {
+                    console.error('Error fetching second comparison data:', err);
+                    setSnackbarMessage(err.message || 'Failed to fetch second comparison data');
+                    setSnackbarOpen(true);
+                } finally {
+                    setCompareLoading2(false);
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching analytics data:', err);
+            setError(err.message || 'Failed to fetch analytics data. Please try again later.');
+            setSnackbarMessage(err.message || 'Failed to fetch analytics data. Please try again later.');
+            setSnackbarOpen(true);
+        } finally {
+            setDataLoading(false);
+        }
     };
 
     // Function to reset all filters
     const handleResetFilters = () => {
         setSearchTerm('');
-        setFilterDevice('all');
+        setFilterDevice(deviceObjects.length > 0 ? deviceObjects[0].slave_name : 'all');
         // Reset to default dates
         setFilterStartDate(dayjs().subtract(1, 'day'));
         setFilterEndDate(dayjs());
         setSearchClicked(false); // Reset search state
+        setSelectedParameter(''); // Reset main chart parameter
+        setSelectedParameter2(''); // Reset first comparison parameter
+        setSelectedParameter3(''); // Reset second comparison parameter
+        setFilterDevice2('all'); // Reset first comparison machine
+        setFilterDevice3('all'); // Reset second comparison machine
+        setCompareParameter(''); // Reset first comparison parameter
+        setCompareParameter2(''); // Reset second comparison parameter
+        setFilteredChartData([]); // Clear chart data
+        setCompareChartData([]); // Clear comparison chart data
+        setCompareChartData2([]); // Clear second comparison chart data
     };
 
     const [parameters, setParameters] = React.useState([]);
@@ -214,80 +322,73 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [compareDevice2, setCompareDevice2] = useState(''); // Selected device for second comparison
     const [compareChartData2, setCompareChartData2] = useState([]); // Chart data for second comparison device
 
-    // Generate analytics data when search is clicked
-    useEffect(() => {
-        if (searchClicked && filterDevice && filterDevice !== 'all' && filterStartDate && filterEndDate) {
-            // Find the device ID based on the device name
-            const selectedDevice = deviceObjects.find(device => device.slave_name === filterDevice);
-            if (!selectedDevice) {
-                console.error('Device not found. Filter device:', filterDevice, 'Device objects:', deviceObjects);
-                return;
+    // Handle comparison device selection
+    const handleCompareDeviceChange = async (deviceName) => {
+        setCompareDevice(deviceName);
+        setCompareMode(true);
+        
+        // If main data is already loaded, fetch comparison data immediately
+        if (searchClicked && filteredChartData.length > 0) {
+            setCompareLoading(true);
+            try {
+                // Use selectedParameter2 if it's set, otherwise use selectedParameter
+                const paramToUse = selectedParameter2 || selectedParameter;
+                
+                // If no parameter is selected yet, set it to the main parameter
+                if (!selectedParameter2) {
+                    setSelectedParameter2(selectedParameter);
+                }
+                
+                const compareData = await fetchAnalyticsData(
+                    deviceName, 
+                    paramToUse, 
+                    filterStartDate, 
+                    filterEndDate
+                );
+                setCompareChartData(compareData);
+            } catch (err) {
+                console.error('Error fetching comparison data:', err);
+                setSnackbarMessage(err.message || 'Failed to fetch comparison data');
+                setSnackbarOpen(true);
+            } finally {
+                setCompareLoading(false);
             }
-
-            // Default to all parameters if none selected
-            const params = selectedParameter.length > 0 ? selectedParameter : ['water_consumption', 'flow_rate'];
-
-            // Generate mock analytics data
-            const mockData = generateMockAnalyticsData(
-                selectedDevice.slave_id,
-                params,
-                filterStartDate,
-                filterEndDate
-            );
-
-            setFilteredChartData(mockData);
         }
-    }, [searchClicked, filterDevice, filterStartDate, filterEndDate, selectedParameter, deviceObjects]);
+    };
 
-    // Generate comparison data when compare mode is active
-    useEffect(() => {
-        if (compareMode && compareDevice && filterStartDate && filterEndDate) {
-            // Find the device ID based on the device name
-            const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice);
-            if (!selectedDevice) {
-                console.error('Comparison device not found. Compare device:', compareDevice, 'Device objects:', deviceObjects);
-                return;
+    // Handle second comparison device selection
+    const handleCompareDevice2Change = async (deviceName) => {
+        setCompareDevice2(deviceName);
+        setCompareMode2(true);
+        
+        // If main data is already loaded, fetch comparison data immediately
+        if (searchClicked && filteredChartData.length > 0) {
+            setCompareLoading2(true);
+            try {
+                // Use selectedParameter3 if it's set, otherwise use selectedParameter
+                const paramToUse = selectedParameter3 || selectedParameter;
+                
+                // If no parameter is selected yet, set it to the main parameter
+                if (!selectedParameter3) {
+                    setSelectedParameter3(selectedParameter);
+                }
+                
+                const compareData2 = await fetchAnalyticsData(
+                    deviceName, 
+                    paramToUse, 
+                    filterStartDate, 
+                    filterEndDate
+                );
+                setCompareChartData2(compareData2);
+            } catch (err) {
+                console.error('Error fetching second comparison data:', err);
+                setSnackbarMessage(err.message || 'Failed to fetch second comparison data');
+                setSnackbarOpen(true);
+            } finally {
+                setCompareLoading2(false);
             }
-
-            // Default to all parameters if none selected
-            const params = selectedParameter2.length > 0 ? selectedParameter2 : ['water_consumption', 'flow_rate'];
-
-            // Generate mock analytics data
-            const mockData = generateMockAnalyticsData(
-                selectedDevice.slave_id,
-                params,
-                filterStartDate,
-                filterEndDate
-            );
-
-            setCompareChartData(mockData);
         }
-    }, [compareMode, compareDevice, filterStartDate, filterEndDate, selectedParameter2, deviceObjects]);
-
-    // Generate second comparison data when second compare mode is active
-    useEffect(() => {
-        if (compareMode2 && compareDevice2 && filterStartDate && filterEndDate) {
-            // Find the device ID based on the device name
-            const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice2);
-            if (!selectedDevice) {
-                console.error('Second comparison device not found. Compare device2:', compareDevice2, 'Device objects:', deviceObjects);
-                return;
-            }
-
-            // Default to all parameters if none selected
-            const params = selectedParameter3.length > 0 ? selectedParameter3 : ['water_consumption', 'flow_rate'];
-
-            // Generate mock analytics data
-            const mockData = generateMockAnalyticsData(
-                selectedDevice.slave_id,
-                params,
-                filterStartDate,
-                filterEndDate
-            );
-
-            setCompareChartData2(mockData);
-        }
-    }, [compareMode2, compareDevice2, filterStartDate, filterEndDate, selectedParameter3, deviceObjects]);
+    };
 
     // Process the filtered chart data to create chart series and categories
     const processedFilteredData = React.useMemo(() => {
@@ -313,23 +414,17 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Create series for the filtered data
         const series = [];
 
-        // Handle multiple selected parameters
-        const parametersToProcess = Array.isArray(selectedParameter) && selectedParameter.length > 0
-            ? selectedParameter
-            : ['water_consumption', 'flow_rate']; // Default to all parameters
-
-        console.log('Parameters to process:', parametersToProcess);
-
-        parametersToProcess.forEach(param => {
+        // Process only the selected parameter
+        if (selectedParameter) {
             // Extract values from the filtered data based on selected parameter and format to 2 decimal places
             const values = filteredChartData.map((item, index) => {
                 let value = 0;
 
                 // If a specific parameter is selected, use that field
-                if (param) {
-                    switch (param) {
-                        case 'water_consumption':
-                            value = parseFloat(item.water_consumption) || 0;
+                if (selectedParameter) {
+                    switch (selectedParameter) {
+                        case 'consumption': // Changed from 'water_consumption' to 'consumption'
+                            value = parseFloat(item.consumption) || 0;
                             break;
                         case 'flow_rate':
                             value = parseFloat(item.flow_rate) || 0;
@@ -337,9 +432,6 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                         default:
                             value = 0;
                     }
-                } else {
-                    // If no parameter selected, use the default logic (water_consumption)
-                    value = parseFloat(item.water_consumption) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -348,15 +440,13 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
 
             // Always create a series if we have data, even if all values are 0
             if (filteredChartData.length > 0) {
-                const parameterLabel = param
-                    ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                    : filterDevice;
+                const parameterLabel = parameterOptions.find(opt => opt.value === selectedParameter)?.label || selectedParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 series.push({
                     name: parameterLabel,
                     data: values
                 });
             }
-        });
+        }
 
         console.log('Processed series:', series);
         console.log('Processed categories:', categories);
@@ -384,21 +474,18 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Create series for the comparison data
         const series = [];
 
-        // Handle multiple selected parameters
-        const parametersToProcess = Array.isArray(selectedParameter2) && selectedParameter2.length > 0
-            ? selectedParameter2
-            : ['water_consumption', 'flow_rate']; // Default to all parameters
-
-        parametersToProcess.forEach(param => {
+        // Process only the selected parameter
+        const paramToUse = selectedParameter2 || selectedParameter;
+        if (paramToUse) {
             // Extract values from the comparison data based on selected parameter and format to 2 decimal places
             const values = compareChartData.map((item, index) => {
                 let value = 0;
 
                 // If a specific parameter is selected, use that field
-                if (param) {
-                    switch (param) {
-                        case 'water_consumption':
-                            value = parseFloat(item.water_consumption) || 0;
+                if (paramToUse) {
+                    switch (paramToUse) {
+                        case 'consumption': // Changed from 'water_consumption' to 'consumption'
+                            value = parseFloat(item.consumption) || 0;
                             break;
                         case 'flow_rate':
                             value = parseFloat(item.flow_rate) || 0;
@@ -406,9 +493,6 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                         default:
                             value = 0;
                     }
-                } else {
-                    // If no parameter selected, use the default logic (water_consumption)
-                    value = parseFloat(item.water_consumption) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -417,18 +501,16 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
 
             // Always create a series if we have data, even if all values are 0
             if (compareChartData.length > 0) {
-                const parameterLabel = param
-                    ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                    : compareDevice;
+                const parameterLabel = parameterOptions.find(opt => opt.value === paramToUse)?.label || paramToUse.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 series.push({
                     name: parameterLabel,
                     data: values
                 });
             }
-        });
+        }
 
         return { series, categories };
-    }, [compareChartData, compareDevice, selectedParameter2, filterDevice2]);
+    }, [compareChartData, compareDevice, selectedParameter2, selectedParameter, filterDevice2]);
 
     // Process the second comparison chart data to create chart series and categories
     const processedCompareData2 = React.useMemo(() => {
@@ -450,21 +532,18 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Create series for the second comparison data
         const series = [];
 
-        // Handle multiple selected parameters
-        const parametersToProcess = Array.isArray(selectedParameter3) && selectedParameter3.length > 0
-            ? selectedParameter3
-            : ['water_consumption', 'flow_rate']; // Default to all parameters
-
-        parametersToProcess.forEach(param => {
+        // Process only the selected parameter
+        const paramToUse = selectedParameter3 || selectedParameter;
+        if (paramToUse) {
             // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
             const values = compareChartData2.map((item, index) => {
                 let value = 0;
 
                 // If a specific parameter is selected, use that field
-                if (param) {
-                    switch (param) {
-                        case 'water_consumption':
-                            value = parseFloat(item.water_consumption) || 0;
+                if (paramToUse) {
+                    switch (paramToUse) {
+                        case 'consumption': // Changed from 'water_consumption' to 'consumption'
+                            value = parseFloat(item.consumption) || 0;
                             break;
                         case 'flow_rate':
                             value = parseFloat(item.flow_rate) || 0;
@@ -472,9 +551,6 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                         default:
                             value = 0;
                     }
-                } else {
-                    // If no parameter selected, use the default logic (water_consumption)
-                    value = parseFloat(item.water_consumption) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -483,18 +559,16 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
 
             // Always create a series if we have data, even if all values are 0
             if (compareChartData2.length > 0) {
-                const parameterLabel = param
-                    ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                    : compareDevice2;
+                const parameterLabel = parameterOptions.find(opt => opt.value === paramToUse)?.label || paramToUse.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 series.push({
                     name: parameterLabel,
                     data: values
                 });
             }
-        });
+        }
 
         return { series, categories };
-    }, [compareChartData2, compareDevice2, selectedParameter3, filterDevice3]);
+    }, [compareChartData2, compareDevice2, selectedParameter3, selectedParameter, filterDevice3]);
 
     // Debug useEffect to monitor state changes
     useEffect(() => {
@@ -667,194 +741,143 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                     <CardContent sx={{ p: 1 }}>
                         <Box className="logs-header">
                             <Box className="logs-filters">
-                                <FormControl size="small" sx={{ minWidth: 300 }}>
-                                    <InputLabel>Select Machine</InputLabel>
-                                    <Select
-                                        value={filterDevice}
-                                        label="Select Machine"
-                                        onChange={(e) => setFilterDevice(e.target.value)}
-                                    >
-                                        {devices.map((device) => (
-                                            <MenuItem key={device} value={device}>
-                                                {device === 'all' ? 'Select Machine' : device}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                                <FormControl size="small" sx={{ minWidth: 200, mr: 1 }}>
-                                    <InputLabel>Select Parameters</InputLabel>
-                                    <Select
-                                        multiple
-                                        value={selectedParameter}
-                                        onChange={(e) => {
-                                            const value = e.target.value;
-                                            // If "All Parameters" is selected, clear all other selections
-                                            if (value.includes('all')) {
-                                                setSelectedParameter([]);
-                                            } else {
-                                                // Remove "all" from selection if other items are selected
-                                                const filteredValue = value.filter(item => item !== 'all');
-                                                setSelectedParameter(filteredValue);
-                                            }
-                                        }}
-                                        label="Select Parameters"
-                                        renderValue={(selected) => (
-                                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                {selected.slice(0, 2).map((value) => (
-                                                    <Chip
-                                                        key={value}
-                                                        label={parameterOptions.find(p => p.value === value)?.label || value.replace(/_/g, ' ')}
-                                                        size="small"
-                                                        sx={{
-                                                            height: '20px',
-                                                            fontSize: '10px',
-                                                            textTransform: 'capitalize'
-                                                        }}
-                                                    />
+                                {loading ? (
+                                    <Box style={styles.loadingContainer}>
+                                        <CircularProgress />
+                                    </Box>
+                                ) : error ? (
+                                    <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+                                ) : (
+                                    <>
+                                        <FormControl size="small" sx={{ minWidth: 300 }}>
+                                            <InputLabel>Select Machine</InputLabel>
+                                            <Select
+                                                value={filterDevice}
+                                                label="Select Machine"
+                                                onChange={(e) => setFilterDevice(e.target.value)}
+                                            >
+                                                {devices.map((device) => (
+                                                    <MenuItem key={device} value={device}>
+                                                        {device === 'all' ? 'Select Machine' : device}
+                                                    </MenuItem>
                                                 ))}
-                                                {selected.length > 2 && (
-                                                    <Chip
-                                                        label={`+${selected.length - 2} more`}
-                                                        size="small"
-                                                        sx={{
-                                                            height: '20px',
-                                                            fontSize: '10px',
-                                                            backgroundColor: '#0156a6',
-                                                            color: '#fff',
-                                                            fontWeight: 'bold'
-                                                        }}
-                                                    />
-                                                )}
-                                            </Box>
-                                        )}
-                                        MenuProps={
-                                            {
-                                                PaperProps: {
-                                                    style: { maxHeight: 300, width: 20 },
-                                                },
-                                            }
-                                        }
-                                    >
-                                        {parameterOptions.map((option) => (
-                                            <MenuItem key={option.value} value={option.value} sx={{
-                                                py: 0.2, // Tight vertical padding for the list item
-                                                px: 1,
-                                                minHeight: '32px', // Forces a slim row height
-                                            }}>
-                                                <Checkbox checked={selectedParameter.indexOf(option.value) > -1}
-                                                    sx={{
-                                                        p: 0.5,   // Removes the 9px default padding
-                                                        mr: 0.5,   // Adds spacing between box and text
-                                                        transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
-                                                        '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
-                                                    }} />
-                                                <ListItemText primary={option.label} primaryTypographyProps={{
-                                                    fontSize: '12px', // Smaller font to match the small checkbox
-                                                    lineHeight: 1.2
+                                            </Select>
+                                        </FormControl>
+                                        <FormControl size="small" sx={{ minWidth: 200, mr: 1 }}>
+                                            <InputLabel>Select Parameter</InputLabel>
+                                            <Select
+                                                value={selectedParameter}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    setSelectedParameter(value);
                                                 }}
-                                                    secondaryTypographyProps={{
-                                                        fontSize: '10px',
-                                                        color: 'text.secondary'
-                                                    }} />
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
+                                                label="Select Parameter"
+                                            >
+                                                <MenuItem value="">
+                                                    <em>Select parameter</em>
+                                                </MenuItem>
+                                                {parameterOptions.map((option) => (
+                                                    <MenuItem key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
 
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DateTimePicker
-                                        open={openStart}
-                                        onOpen={() => setOpenStart(true)}
-                                        onClose={() => setOpenStart(false)}
-                                        value={filterStartDate}
-                                        onChange={(newValue) => setFilterStartDate(newValue)}
-                                        format="DD/MM/YYYY hh:mm A"
-                                        slotProps={{
-                                            textField: {
-                                                size: 'small',
-                                                sx: { minWidth: 220, mr: 2, borderRadius: 2 },
-                                                onClick: () => setOpenStart(true), // 🔥 input click opens picker
-                                            },
-                                        }}
-                                    />
-                                </LocalizationProvider>
-
-
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DateTimePicker
-                                        open={openEnd}
-                                        onOpen={() => setOpenEnd(true)}
-                                        onClose={() => setOpenEnd(false)}
-                                        value={filterEndDate}
-                                        onChange={(newValue) => setFilterEndDate(newValue)}
-                                        format="DD/MM/YYYY hh:mm A"
-                                        slotProps={{
-                                            textField: {
-                                                size: 'small',
-                                                sx: { minWidth: 220, mr: 2, borderRadius: 2 },
-                                                onClick: () => setOpenEnd(true), // 🔥 input click opens picker
-                                            },
-                                        }}
-                                    />
-                                </LocalizationProvider>
+                                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                            <DateTimePicker
+                                                open={openStart}
+                                                onOpen={() => setOpenStart(true)}
+                                                onClose={() => setOpenStart(false)}
+                                                value={filterStartDate}
+                                                onChange={(newValue) => setFilterStartDate(newValue)}
+                                                format="DD/MM/YYYY hh:mm A"
+                                                slotProps={{
+                                                    textField: {
+                                                        size: 'small',
+                                                        sx: { minWidth: 220, mr: 2, borderRadius: 2 },
+                                                        onClick: () => setOpenStart(true), // 🔥 input click opens picker
+                                                    },
+                                                }}
+                                            />
+                                        </LocalizationProvider>
 
 
-                                <Button
-                                    variant="contained"
-                                    startIcon={<SearchIcon />}
-                                    onClick={handleSearch}
-                                    sx={{
-                                        backgroundColor: '#2F6FB0',
-                                        '&:hover': {
-                                            backgroundColor: '#1E4A7C',
-                                        },
-                                        minWidth: 'auto',
-                                        width: '32px', // Smaller width
-                                        height: '32px', // Smaller height
-                                        padding: '6px', // Even smaller padding
-                                        borderRadius: '4px', // Square with rounded corners
-                                        '& .MuiButton-startIcon': {
-                                            margin: 0,
-                                        }
-                                    }}
-                                >
-                                </Button>
+                                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                            <DateTimePicker
+                                                open={openEnd}
+                                                onOpen={() => setOpenEnd(true)}
+                                                onClose={() => setOpenEnd(false)}
+                                                value={filterEndDate}
+                                                onChange={(newValue) => setFilterEndDate(newValue)}
+                                                format="DD/MM/YYYY hh:mm A"
+                                                slotProps={{
+                                                    textField: {
+                                                        size: 'small',
+                                                        sx: { minWidth: 220, mr: 2, borderRadius: 2 },
+                                                        onClick: () => setOpenEnd(true), // 🔥 input click opens picker
+                                                    },
+                                                }}
+                                            />
+                                        </LocalizationProvider>
 
-                                <Button
-                                    variant="outlined"
-                                    startIcon={<RefreshIcon />}
-                                    onClick={() => {
-                                        handleResetFilters();
-                                        setSelectedParameter([]); // Reset main chart parameter
-                                        setSelectedParameter2([]); // Reset first comparison parameter
-                                        setSelectedParameter3([]); // Reset second comparison parameter
-                                        setFilterDevice2('all'); // Reset first comparison machine
-                                        setFilterDevice3('all'); // Reset second comparison machine
-                                        setCompareParameter(''); // Reset first comparison parameter
-                                        setCompareParameter2(''); // Reset second comparison parameter
-                                    }}
-                                    sx={{
-                                        borderColor: '#6c757d',
-                                        color: '#6c757d',
-                                        '&:hover': {
-                                            borderColor: '#5a6268',
-                                            color: '#5a6268',
-                                        },
-                                        minWidth: 'auto',
-                                        width: '32px', // Smaller width
-                                        height: '32px', // Smaller height
-                                        padding: '4px', // Even smaller padding
-                                        borderRadius: '4px',
-                                        '& .MuiButton-startIcon': {
-                                            margin: 0,
-                                        }
-                                    }}
-                                >
-                                </Button>
+
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<SearchIcon />}
+                                            onClick={handleSearch}
+                                            sx={{
+                                                backgroundColor: '#2F6FB0',
+                                                '&:hover': {
+                                                    backgroundColor: '#1E4A7C',
+                                                },
+                                                minWidth: 'auto',
+                                                width: '32px', // Smaller width
+                                                height: '32px', // Smaller height
+                                                padding: '6px', // Even smaller padding
+                                                borderRadius: '4px', // Square with rounded corners
+                                                '& .MuiButton-startIcon': {
+                                                    margin: 0,
+                                                }
+                                            }}
+                                        >
+                                        </Button>
+
+                                        <Button
+                                            variant="outlined"
+                                            startIcon={<RefreshIcon />}
+                                            onClick={() => {
+                                                handleResetFilters();
+                                            }}
+                                            sx={{
+                                                borderColor: '#6c757d',
+                                                color: '#6c757d',
+                                                '&:hover': {
+                                                    borderColor: '#5a6268',
+                                                    color: '#5a6268',
+                                                },
+                                                minWidth: 'auto',
+                                                width: '32px', // Smaller width
+                                                height: '32px', // Smaller height
+                                                padding: '4px', // Even smaller padding
+                                                borderRadius: '4px',
+                                                '& .MuiButton-startIcon': {
+                                                    margin: 0,
+                                                }
+                                            }}
+                                        >
+                                        </Button>
+                                    </>
+                                )}
                             </Box>
                         </Box>
+                        
                         {searchClicked ? (
-                            processedFilteredData.series.length > 0 ? (
+                            dataLoading ? (
+                                <Box style={styles.loadingContainer}>
+                                    <CircularProgress />
+                                </Box>
+                            ) : processedFilteredData.series.length > 0 ? (
                                 <>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                                         <Typography
@@ -866,10 +889,8 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 mb: 0
                                             }}
                                         >
-                                            {Array.isArray(selectedParameter) && selectedParameter.length > 0
-                                                ? `${filterDevice} - ${selectedParameter.length > 1
-                                                    ? `${selectedParameter.length} Parameters Selected`
-                                                    : parameterOptions.find(opt => opt.value === selectedParameter[0])?.label || selectedParameter[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                            {selectedParameter
+                                                ? `${filterDevice} - ${parameterOptions.find(opt => opt.value === selectedParameter)?.label || selectedParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                 : (filterDevice !== 'all' ? `${filterDevice}` : 'Water Analytics')}
                                         </Typography>
                                         <Box>
@@ -897,10 +918,7 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                         <Select
                                                             value={compareDevice}
                                                             label="Select Machine to Compare"
-                                                            onChange={(e) => {
-                                                                setCompareDevice(e.target.value);
-                                                                setCompareMode(true);
-                                                            }}
+                                                            onChange={(e) => handleCompareDeviceChange(e.target.value)}
                                                         >
                                                             {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice2).map((device) => (
                                                                 <MenuItem key={device} value={device}>
@@ -923,7 +941,7 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         type="line"
                                         height={420}
                                     />
-                                    {compareMode && compareDevice && processedCompareData.series.length > 0 && (
+                                    {compareMode && compareDevice && (
                                         <Box sx={{ mt: 4 }}>
                                             <Typography
                                                 gutterBottom
@@ -934,299 +952,228 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     mb: 1
                                                 }}
                                             >
-                                                {Array.isArray(selectedParameter2) && selectedParameter2.length > 0
-                                                    ? `${compareDevice} - ${selectedParameter2.length > 1
-                                                        ? `${selectedParameter2.length} Parameters Selected`
-                                                        : parameterOptions.find(opt => opt.value === selectedParameter2[0])?.label || selectedParameter2[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                {(selectedParameter2 || selectedParameter)
+                                                    ? `${compareDevice} - ${parameterOptions.find(opt => opt.value === (selectedParameter2 || selectedParameter))?.label || (selectedParameter2 || selectedParameter).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                     : compareDevice}
                                             </Typography>
-                                            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                                                    <FormControl size="small" sx={{ minWidth: 300 }}>
-                                                        <InputLabel>Select Machine</InputLabel>
-                                                        <Select
-                                                            value={compareDevice}
-                                                            label="Select Machine"
-                                                            onChange={(e) => {
-                                                                setCompareDevice(e.target.value);
-                                                                // Set compare mode to true when machine is selected
-                                                                setCompareMode(true);
-                                                            }}
-                                                        >
-                                                            {devices.map((device) => (
-                                                                <MenuItem key={device} value={device}>
-                                                                    {device === 'all' ? 'Select Machine' : device}
-                                                                </MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                    </FormControl>
-                                                    <FormControl size="small" sx={{ minWidth: 200, mr: 1 }}>
-                                                        <InputLabel>Select Parameters</InputLabel>
-                                                        <Select
-                                                            multiple
-                                                            value={selectedParameter2}
-                                                            onChange={(e) => {
-                                                                const value = e.target.value;
-                                                                // If "All Parameters" is selected, clear all other selections
-                                                                if (value.includes('all')) {
-                                                                    setSelectedParameter2([]);
-                                                                } else {
-                                                                    // Remove "all" from selection if other items are selected
-                                                                    const filteredValue = value.filter(item => item !== 'all');
-                                                                    setSelectedParameter2(filteredValue);
-                                                                }
-                                                            }}
-                                                            label="Select Parameters"
-                                                            renderValue={(selected) => (
-                                                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                                    {selected.slice(0, 2).map((value) => (
-                                                                        <Chip
-                                                                            key={value}
-                                                                            label={parameterOptions.find(p => p.value === value)?.label || value.replace(/_/g, ' ')}
-                                                                            size="small"
-                                                                            sx={{
-                                                                                height: '20px',
-                                                                                fontSize: '10px',
-                                                                                textTransform: 'capitalize'
-                                                                            }}
-                                                                        />
+                                            {compareLoading ? (
+                                                <Box style={styles.loadingContainer}>
+                                                    <CircularProgress />
+                                                </Box>
+                                            ) : processedCompareData.series.length > 0 ? (
+                                                <>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                                            <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                                <InputLabel>Select Machine</InputLabel>
+                                                                <Select
+                                                                    value={compareDevice}
+                                                                    label="Select Machine"
+                                                                    onChange={(e) => handleCompareDeviceChange(e.target.value)}
+                                                                >
+                                                                    {devices.map((device) => (
+                                                                        <MenuItem key={device} value={device}>
+                                                                            {device === 'all' ? 'Select Machine' : device}
+                                                                        </MenuItem>
                                                                     ))}
-                                                                    {selected.length > 2 && (
-                                                                        <Chip
-                                                                            label={`+${selected.length - 2} more`}
-                                                                            size="small"
-                                                                            sx={{
-                                                                                height: '20px',
-                                                                                fontSize: '10px',
-                                                                                backgroundColor: '#0156a6',
-                                                                                color: '#fff',
-                                                                                fontWeight: 'bold'
-                                                                            }}
-                                                                        />
-                                                                    )}
-                                                                </Box>
-                                                            )}
-                                                            MenuProps={
-                                                                {
-                                                                    PaperProps: {
-                                                                        style: { maxHeight: 300, width: 20 },
-                                                                    },
-                                                                }
-                                                            }
-                                                        >
-                                                            {parameterOptions.map((option) => (
-                                                                <MenuItem key={option.value} value={option.value}
-                                                                    sx={{
-                                                                        py: 0.2, // Tight vertical padding for the list item
-                                                                        px: 1,
-                                                                        minHeight: '32px', // Forces a slim row height
-                                                                    }}>
-                                                                    <Checkbox checked={selectedParameter2.indexOf(option.value) > -1}
-                                                                        sx={{
-                                                                            p: 0.5,   // Removes the 9px default padding
-                                                                            mr: 0.5,   // Adds spacing between box and text
-                                                                            transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
-                                                                            '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
-                                                                        }} />
-                                                                    <ListItemText primary={option.label}
-                                                                        primaryTypographyProps={{
-                                                                            fontSize: '12px', // Smaller font to match the small checkbox
-                                                                            lineHeight: 1.2
-                                                                        }}
-                                                                        secondaryTypographyProps={{
-                                                                            fontSize: '10px',
-                                                                            color: 'text.secondary'
-                                                                        }} />
-                                                                </MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                    </FormControl>
+                                                                </Select>
+                                                            </FormControl>
+                                                            <FormControl size="small" sx={{ minWidth: 200, mr: 1 }}>
+                                                                <InputLabel>Select Parameter</InputLabel>
+                                                                <Select
+                                                                    value={selectedParameter2 || selectedParameter}
+                                                                    onChange={(e) => {
+                                                                        const value = e.target.value;
+                                                                        setSelectedParameter2(value);
+                                                                        
+                                                                        // If we already have data for this device, update it with new parameter
+                                                                        if (compareMode && compareDevice && searchClicked) {
+                                                                            setCompareLoading(true);
+                                                                            fetchAnalyticsData(
+                                                                                compareDevice, 
+                                                                                value, 
+                                                                                filterStartDate, 
+                                                                                filterEndDate
+                                                                            ).then(data => {
+                                                                                setCompareChartData(data);
+                                                                            }).catch(err => {
+                                                                                console.error('Error updating comparison data:', err);
+                                                                                setSnackbarMessage(err.message || 'Failed to update comparison data');
+                                                                                setSnackbarOpen(true);
+                                                                            }).finally(() => {
+                                                                                setCompareLoading(false);
+                                                                            });
+                                                                        }
+                                                                    }}
+                                                                    label="Select Parameter"
+                                                                >
+                                                                    <MenuItem value="">
+                                                                        <em>Select parameter</em>
+                                                                    </MenuItem>
+                                                                    {parameterOptions.map((option) => (
+                                                                        <MenuItem key={option.value} value={option.value}>
+                                                                            {option.label}
+                                                                        </MenuItem>
+                                                                    ))}
+                                                                </Select>
+                                                            </FormControl>
 
-                                                    {compareMode2 ? (
-                                                        <Button
-                                                            variant="outlined"
-                                                            size="small"
-                                                            onClick={() => setCompareMode2(false)}
-                                                            sx={{
-                                                                borderColor: '#d32f2f',
-                                                                color: '#d32f2f',
-                                                                '&:hover': {
-                                                                    borderColor: '#b71c1c',
-                                                                    color: '#b71c1c',
-                                                                }
-                                                            }}
-                                                        >
-                                                            Cancel Compare
-                                                        </Button>
-                                                    ) : (
+                                                            {compareMode2 ? (
+                                                                <Button
+                                                                    variant="outlined"
+                                                                    size="small"
+                                                                    onClick={() => setCompareMode2(false)}
+                                                                    sx={{
+                                                                        borderColor: '#d32f2f',
+                                                                        color: '#d32f2f',
+                                                                        '&:hover': {
+                                                                            borderColor: '#b71c1c',
+                                                                            color: '#b71c1c',
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    Cancel Compare
+                                                                </Button>
+                                                            ) : (
+                                                                <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                                    <InputLabel>Select Second Machine to Compare</InputLabel>
+                                                                    <Select
+                                                                        value={compareDevice2}
+                                                                        label="Select Second Machine to Compare"
+                                                                        onChange={(e) => handleCompareDevice2Change(e.target.value)}
+                                                                    >
+                                                                        {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice).map((device) => (
+                                                                            <MenuItem key={device} value={device}>
+                                                                                {device}
+                                                                            </MenuItem>
+                                                                        ))}
+                                                                    </Select>
+                                                                </FormControl>
+                                                            )}
+                                                        </Box>
+                                                    </Box>
+                                                    <Chart
+                                                        options={getChartOptions(
+                                                            processedCompareData,
+                                                            compareChartData
+                                                        )}
+                                                        series={processedCompareData.series}
+                                                        type="line"
+                                                        height={420}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <Alert severity="info" sx={{ m: 2 }}>No data available for comparison</Alert>
+                                            )}
+                                        </Box>
+                                    )}
+                                    {compareMode2 && compareDevice2 && (
+                                        <Box sx={{ mt: 4 }}>
+                                            <Typography
+                                                gutterBottom
+                                                sx={{
+                                                    fontSize: '14px',
+                                                    fontWeight: 'bold',
+                                                    color: '#50342c',
+                                                    mb: 1
+                                                }}
+                                            >
+                                                {(selectedParameter3 || selectedParameter)
+                                                    ? `${compareDevice2} - ${parameterOptions.find(opt => opt.value === (selectedParameter3 || selectedParameter))?.label || (selectedParameter3 || selectedParameter).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
+                                                    : compareDevice2}
+                                            </Typography>
+                                            {compareLoading2 ? (
+                                                <Box style={styles.loadingContainer}>
+                                                    <CircularProgress />
+                                                </Box>
+                                            ) : processedCompareData2.series.length > 0 ? (
+                                                <>
+                                                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                                                         <FormControl size="small" sx={{ minWidth: 300 }}>
-                                                            <InputLabel>Select Second Machine to Compare</InputLabel>
+                                                            <InputLabel>Select Machine</InputLabel>
                                                             <Select
                                                                 value={compareDevice2}
-                                                                label="Select Second Machine to Compare"
-                                                                onChange={(e) => {
-                                                                    setCompareDevice2(e.target.value);
-                                                                    setCompareMode2(true);
-                                                                }}
+                                                                label="Select Machine"
+                                                                onChange={(e) => handleCompareDevice2Change(e.target.value)}
                                                             >
-                                                                {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice).map((device) => (
+                                                                {devices.map((device) => (
                                                                     <MenuItem key={device} value={device}>
-                                                                        {device}
+                                                                        {device === 'all' ? 'Select Machine' : device}
                                                                     </MenuItem>
                                                                 ))}
                                                             </Select>
                                                         </FormControl>
-                                                    )}
-                                                </Box>
-                                            </Box>
-                                            <Chart
-                                                options={getChartOptions(
-                                                    processedCompareData,
-                                                    compareChartData
-                                                )}
-                                                series={processedCompareData.series}
-                                                type="line"
-                                                height={420}
-                                            />
-                                        </Box>
-                                    )}
-                                    {compareMode2 && compareDevice2 && processedCompareData2.series.length > 0 && (
-                                        <Box sx={{ mt: 4 }}>
-                                            <Typography
-                                                gutterBottom
-                                                sx={{
-                                                    fontSize: '14px',
-                                                    fontWeight: 'bold',
-                                                    color: '#50342c',
-                                                    mb: 1
-                                                }}
-                                            >
-                                                {Array.isArray(selectedParameter3) && selectedParameter3.length > 0
-                                                    ? `${compareDevice2} - ${selectedParameter3.length > 1
-                                                        ? `${selectedParameter3.length} Parameters Selected`
-                                                        : parameterOptions.find(opt => opt.value === selectedParameter3[0])?.label || selectedParameter3[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
-                                                    : compareDevice2}
-                                            </Typography>
-                                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                                                <FormControl size="small" sx={{ minWidth: 300 }}>
-                                                    <InputLabel>Select Machine</InputLabel>
-                                                    <Select
-                                                        value={compareDevice2}
-                                                        label="Select Machine"
-                                                        onChange={(e) => {
-                                                            setCompareDevice2(e.target.value);
-                                                            // Set compare mode to true when machine is selected
-                                                            setCompareMode2(true);
-                                                        }}
-                                                    >
-                                                        {devices.map((device) => (
-                                                            <MenuItem key={device} value={device}>
-                                                                {device === 'all' ? 'Select Machine' : device}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
-                                                <FormControl size="small" sx={{ minWidth: 200 }}>
-                                                    <InputLabel>Select Parameters</InputLabel>
-                                                    <Select
-                                                        multiple
-                                                        value={selectedParameter3}
-                                                        onChange={(e) => {
-                                                            const value = e.target.value;
-                                                            // If "All Parameters" is selected, clear all other selections
-                                                            if (value.includes('all')) {
-                                                                setSelectedParameter3([]);
-                                                            } else {
-                                                                // Remove "all" from selection if other items are selected
-                                                                const filteredValue = value.filter(item => item !== 'all');
-                                                                setSelectedParameter3(filteredValue);
-                                                            }
-                                                        }}
-                                                        label="Select Parameters"
-                                                        renderValue={(selected) => (
-                                                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                                {selected.slice(0, 2).map((value) => (
-                                                                    <Chip
-                                                                        key={value}
-                                                                        label={parameterOptions.find(p => p.value === value)?.label || value.replace(/_/g, ' ')}
-                                                                        size="small"
-                                                                        sx={{
-                                                                            height: '20px',
-                                                                            fontSize: '10px',
-                                                                            textTransform: 'capitalize'
-                                                                        }}
-                                                                    />
+                                                        <FormControl size="small" sx={{ minWidth: 200 }}>
+                                                            <InputLabel>Select Parameter</InputLabel>
+                                                            <Select
+                                                                value={selectedParameter3 || selectedParameter}
+                                                                onChange={(e) => {
+                                                                    const value = e.target.value;
+                                                                    setSelectedParameter3(value);
+                                                                    
+                                                                    // If we already have data for this device, update it with new parameter
+                                                                    if (compareMode2 && compareDevice2 && searchClicked) {
+                                                                        setCompareLoading2(true);
+                                                                        fetchAnalyticsData(
+                                                                            compareDevice2, 
+                                                                            value, 
+                                                                            filterStartDate, 
+                                                                            filterEndDate
+                                                                        ).then(data => {
+                                                                            setCompareChartData2(data);
+                                                                        }).catch(err => {
+                                                                            console.error('Error updating second comparison data:', err);
+                                                                            setSnackbarMessage(err.message || 'Failed to update second comparison data');
+                                                                            setSnackbarOpen(true);
+                                                                        }).finally(() => {
+                                                                            setCompareLoading2(false);
+                                                                        });
+                                                                    }
+                                                                }}
+                                                                label="Select Parameter"
+                                                            >
+                                                                <MenuItem value="">
+                                                                    <em>Select parameter</em>
+                                                                </MenuItem>
+                                                                {parameterOptions.map((option) => (
+                                                                    <MenuItem key={option.value} value={option.value}>
+                                                                        {option.label}
+                                                                    </MenuItem>
                                                                 ))}
-                                                                {selected.length > 2 && (
-                                                                    <Chip
-                                                                        label={`+${selected.length - 2} more`}
-                                                                        size="small"
-                                                                        sx={{
-                                                                            height: '20px',
-                                                                            fontSize: '10px',
-                                                                            backgroundColor: '#0156a6',
-                                                                            color: '#fff',
-                                                                            fontWeight: 'bold'
-                                                                        }}
-                                                                    />
-                                                                )}
-                                                            </Box>
+                                                            </Select>
+                                                        </FormControl>
+                                                    </Box>
+                                                    <Chart
+                                                        options={getChartOptions(
+                                                            processedCompareData2,
+                                                            compareChartData2
                                                         )}
-                                                        MenuProps={
-                                                            {
-                                                                PaperProps: {
-                                                                    style: { maxHeight: 300, width: 20 },
-                                                                },
-                                                            }
-                                                        }
-                                                    >
-                                                        {parameterOptions.map((option) => (
-                                                            <MenuItem key={option.value} value={option.value}
-                                                                sx={{
-                                                                    py: 0.2, // Tight vertical padding for the list item
-                                                                    px: 1,
-                                                                    minHeight: '32px', // Forces a slim row height
-                                                                }}>
-                                                                <Checkbox checked={selectedParameter3.indexOf(option.value) > -1}
-                                                                    sx={{
-                                                                        p: 0.5,   // Removes the 9px default padding
-                                                                        mr: 0.5,   // Adds spacing between box and text
-                                                                        transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
-                                                                        '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
-                                                                    }} />
-                                                                <ListItemText primary={option.label}
-                                                                    primaryTypographyProps={{
-                                                                        fontSize: '12px', // Smaller font to match the small checkbox
-                                                                        lineHeight: 1.2
-                                                                    }}
-                                                                    secondaryTypographyProps={{
-                                                                        fontSize: '10px',
-                                                                        color: 'text.secondary'
-                                                                    }} />
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
-                                            </Box>
-                                            <Chart
-                                                options={getChartOptions(
-                                                    processedCompareData2,
-                                                    compareChartData2
-                                                )}
-                                                series={processedCompareData2.series}
-                                                type="line"
-                                                height={420}
-                                            />
+                                                        series={processedCompareData2.series}
+                                                        type="line"
+                                                        height={420}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <Alert severity="info" sx={{ m: 2 }}>No data available for comparison</Alert>
+                                            )}
                                         </Box>
                                     )}
                                 </>
                             ) : (
-                                <div></div>
+                                <Alert severity="info" sx={{ m: 2 }}>No data available for the selected period</Alert>
                             )
                         ) : null}
                     </CardContent>
                 </Card>
             </Box>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={() => setSnackbarOpen(false)}
+                message={snackbarMessage}
+            />
         </Box>
     )
 }
