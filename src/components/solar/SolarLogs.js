@@ -24,7 +24,10 @@ import {
   Pagination,
   Checkbox,
   ListItemText,
-  Divider
+  Divider,
+  CircularProgress,
+  Alert,
+  Snackbar,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -36,51 +39,8 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 
-// Mock solar device data
-const mockDevices = [
-  { slave_id: 1, slave_name: 'VAM' },
-  { slave_id: 2, slave_name: 'Tower1' },
-  { slave_id: 3, slave_name: 'Tower2' }
-];
-
-// Function to generate mock solar logs data
-const generateMockLogs = (slaveId, startDate, endDate) => {
-  const logs = [];
-  const start = dayjs(startDate);
-  const end = dayjs(endDate);
-  const minutesDiff = end.diff(start, 'minute');
-  
-  // Generate a log entry every 5 minutes
-  for (let i = 0; i <= minutesDiff; i += 5) {
-    const timestamp = start.add(i, 'minute').toISOString();
-    
-    // Generate random values for solar parameters
-    let flowRate, inletTemp, outletTemp;
-    
-    // Different parameters based on device type
-    if (slaveId === 1) { // VAM
-      flowRate = 40 + Math.random() * 20; // 40-60 m³/hr
-      inletTemp = 55 + Math.random() * 10; // 55-65°C
-      outletTemp = 75 + Math.random() * 10; // 75-85°C
-    } else { // Tower1 or Tower2
-      flowRate = 45 + Math.random() * 15; // 45-60 m³/hr
-      inletTemp = 105 + Math.random() * 10; // 105-115°C
-      outletTemp = 95 + Math.random() * 10; // 95-105°C
-    }
-    
-    logs.push({
-      id: `${slaveId}-${i}`,
-      slave_id: slaveId,
-      slave_name: `Slave ${slaveId}`,
-      timestamp: timestamp,
-      flowRate: parseFloat(flowRate.toFixed(2)),
-      inletTemp: parseFloat(inletTemp.toFixed(2)),
-      outletTemp: parseFloat(outletTemp.toFixed(2))
-    });
-  }
-  
-  return logs;
-};
+// Import API functions
+import { getSolarSlaves, getSolarLogs } from '../../auth/solar/SolarLogsApi';
 
 function SolarLogs({ onSidebarToggle, sidebarVisible }) {
   // State variables
@@ -88,6 +48,11 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [deviceObjects, setDeviceObjects] = useState([]);
+  const [totalLogs, setTotalLogs] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // State variables
   const [searchTerm, setSearchTerm] = useState('');
@@ -105,37 +70,58 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
   // Define all available parameters for solar
   const allParameters = [
     { val: 'timestamp', label: 'Timestamp' },
-    { val: 'flowRate', label: 'Flow Rate (m³/hr)' },
-    { val: 'inletTemp', label: 'Inlet Temperature (°C)' },
-    { val: 'outletTemp', label: 'Outlet Temperature (°C)' }
+    { val: 'flowrate', label: 'Flow Rate (m³/hr)' },
+    { val: 'inlet_temperature', label: 'Inlet Temperature (°C)' },
+    { val: 'outlet_temperature', label: 'Outlet Temperature (°C)' }
   ];
 
   // Get all parameter values for easy reference
   const allParameterValues = allParameters.map(param => param.val);
 
-  // Initialize devices on component mount
+  // Fetch devices on component mount
   useEffect(() => {
-    const deviceNames = mockDevices.map(device => device.slave_name);
-    setDevices(['all', ...deviceNames]);
-    
-    // Set the first device as default if available
-    if (mockDevices.length > 0) {
-      setFilterDevice(mockDevices[0].slave_name);
-    }
+    fetchDevices();
   }, []);
 
+  // Function to fetch devices
+  const fetchDevices = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const slaves = await getSolarSlaves();
+      setDeviceObjects(slaves);
+      const deviceNames = slaves.map(device => device.slave_name);
+      setDevices(['all', ...deviceNames]);
+      
+      // Set the first device as default if available
+      if (slaves.length > 0) {
+        setFilterDevice(slaves[0].slave_name);
+      }
+    } catch (err) {
+      console.error('Error fetching devices:', err);
+      setError(err.message || 'Failed to fetch devices');
+      setSnackbarMessage(err.message || 'Failed to fetch devices');
+      setSnackbarOpen(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle search button click
-  const handleSearch = () => {
-    if (!filterDevice) {
-      alert('Please select a device');
+  const handleSearch = async () => {
+    if (!filterDevice || filterDevice === 'all') {
+      setSnackbarMessage('Please select a device');
+      setSnackbarOpen(true);
       return;
     }
     if (!filterStartDate) {
-      alert('Please select a start date');
+      setSnackbarMessage('Please select a start date');
+      setSnackbarOpen(true);
       return;
     }
     if (!filterEndDate) {
-      alert('Please select an end date');
+      setSnackbarMessage('Please select an end date');
+      setSnackbarOpen(true);
       return;
     }
 
@@ -144,37 +130,87 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
     setLoading(true);
 
     try {
-      // If 'all' is selected, we'll generate logs for all devices
-      if (filterDevice === 'all') {
-        let allLogs = [];
-        mockDevices.forEach(device => {
-          const deviceLogs = generateMockLogs(
-            device.slave_id,
-            filterStartDate,
-            filterEndDate
-          );
-          allLogs = [...allLogs, ...deviceLogs];
-        });
-        
-        // Sort logs by timestamp
-        allLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        setLogs(allLogs);
-      } else {
-        // Find the device ID for the selected device name
-        const selectedDevice = mockDevices.find(device => device.slave_name === filterDevice);
-        if (selectedDevice) {
-          const deviceLogs = generateMockLogs(
-            selectedDevice.slave_id,
-            filterStartDate,
-            filterEndDate
-          );
-          setLogs(deviceLogs);
-        }
+      // Find the device ID for the selected device name
+      const selectedDevice = deviceObjects.find(device => device.slave_name === filterDevice);
+      if (!selectedDevice) {
+        throw new Error('Device not found');
       }
+
+      // Format dates for API
+      const startDatetime = filterStartDate.format('YYYY-MM-DD HH:mm:ss');
+      const endDatetime = filterEndDate.format('YYYY-MM-DD HH:mm:ss');
+      
+      // Fetch logs from API
+      const logsData = await getSolarLogs(
+        selectedDevice.slave_id,
+        startDatetime,
+        endDatetime,
+        rowsPerPage,
+        0 // First page
+      );
+      
+      // Add device name to each log
+      const enrichedLogs = logsData.data.logs.map(log => ({
+        ...log,
+        slave_name: filterDevice,
+        id: `${selectedDevice.slave_id}-${log.timestamp}`
+      }));
+      
+      setLogs(enrichedLogs);
+      setTotalLogs(logsData.meta.total || logsData.data.logs.length);
+      setHasMore(logsData.meta.has_more || false);
     } catch (err) {
-      console.error('Error generating logs:', err);
-      setError(err.message || 'Failed to generate logs');
+      console.error('Error fetching logs:', err);
+      setError(err.message || 'Failed to fetch logs');
+      setSnackbarMessage(err.message || 'Failed to fetch logs');
+      setSnackbarOpen(true);
       setLogs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle page change
+  const handlePageChange = async (event, value) => {
+    setPage(value);
+    setLoading(true);
+
+    try {
+      // Find the device ID for the selected device name
+      const selectedDevice = deviceObjects.find(device => device.slave_name === filterDevice);
+      if (!selectedDevice) {
+        throw new Error('Device not found');
+      }
+
+      // Format dates for API
+      const startDatetime = filterStartDate.format('YYYY-MM-DD HH:mm:ss');
+      const endDatetime = filterEndDate.format('YYYY-MM-DD HH:mm:ss');
+      
+      // Calculate offset for pagination
+      const offset = (value - 1) * rowsPerPage;
+      
+      // Fetch logs from API
+      const logsData = await getSolarLogs(
+        selectedDevice.slave_id,
+        startDatetime,
+        endDatetime,
+        rowsPerPage,
+        offset
+      );
+      
+      // Add device name to each log
+      const enrichedLogs = logsData.data.logs.map(log => ({
+        ...log,
+        slave_name: filterDevice,
+        id: `${selectedDevice.slave_id}-${log.timestamp}`
+      }));
+      
+      setLogs(enrichedLogs);
+    } catch (err) {
+      console.error('Error fetching page logs:', err);
+      setError(err.message || 'Failed to fetch logs');
+      setSnackbarMessage(err.message || 'Failed to fetch logs');
+      setSnackbarOpen(true);
     } finally {
       setLoading(false);
     }
@@ -187,9 +223,9 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
     return (
       log.timestamp.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.slave_name && log.slave_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.flowRate !== undefined && log.flowRate.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.inletTemp !== undefined && log.inletTemp.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.outletTemp !== undefined && log.outletTemp.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+      (log.flowrate !== undefined && log.flowrate.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.inlet_temperature !== undefined && log.inlet_temperature.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.outlet_temperature !== undefined && log.outlet_temperature.toString().toLowerCase().includes(searchTerm.toLowerCase()))
     );
   });
 
@@ -202,8 +238,8 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
   // Function to reset all filters
   const handleResetFilters = () => {
     setSearchTerm('');
-    if (devices.length > 1) {
-      setFilterDevice(devices[1]); // Reset to first device (excluding 'all')
+    if (deviceObjects.length > 0) {
+      setFilterDevice(deviceObjects[0].slave_name); // Reset to first device
     }
     setFilterDate('');
     setFilterStartDate(dayjs().subtract(1, 'hour'));
@@ -212,11 +248,8 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
     setSearchClicked(false);
     setSelectedColumn([]);
     setLogs([]);
-  };
-
-  // Handle page change
-  const handlePageChange = (event, value) => {
-    setPage(value);
+    setTotalLogs(0);
+    setHasMore(false);
   };
 
   // Handle parameter selection
@@ -251,6 +284,12 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
       margin: '0',
       transition: 'all 0.3s ease',
     },
+    loadingContainer: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '50vh',
+    },
   }
 
   // Show loading indicator
@@ -259,7 +298,9 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
       <Box style={styles.mainContent} id="main-content">
         <Card className="logs-card" sx={{ marginTop: '' }}>
           <CardContent>
-            <Typography variant="h6" align="center">Loading devices...</Typography>
+            <Box style={styles.loadingContainer}>
+              <CircularProgress />
+            </Box>
           </CardContent>
         </Card>
       </Box>
@@ -270,15 +311,10 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
     <Box style={styles.mainContent} id="main-content">
       <Card className="logs-card" sx={{ marginTop: '' }}>
         <CardContent>
-          {loading && searchClicked && (
-            <Typography variant="body2" align="center" gutterBottom>
-              Loading logs...
-            </Typography>
-          )}
           {error && (
-            <Typography color="error" align="center" gutterBottom>
+            <Alert severity="error" sx={{ mb: 2 }}>
               Error: {error}
-            </Typography>
+            </Alert>
           )}
           <Box className="logs-header">
             <Box className="logs-filters">
@@ -502,104 +538,119 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
           </Box>
 
           {searchClicked && (
-            <TableContainer
-              component={Paper}
-              className="logs-table-container"
-              style={{ overflow: 'auto' }}
-            >
-              <Table stickyHeader style={{ tableLayout: 'fixed', width: '100%' }}>
-                <TableHead>
-                  <TableRow className="log-table-header">
-                    {selectedColumn.length > 0 ? (
-                      selectedColumn.map((col) => (
-                        <TableCell key={col} className="log-header-cell" sx={{ textTransform: 'capitalize' }}>
-                          {allParameters.find(p => p.val === col)?.label || col.replace(/_/g, ' ')}
-                        </TableCell>
-                      ))
-                    ) : (
-                      <>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Timestamp</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Flow Rate (m³/hr)</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Inlet Temperature (°C)</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Outlet Temperature (°C)</TableCell>
-                      </>
-                    )}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {paginatedLogs.length > 0 ? (
-                    paginatedLogs.map((log) => {
-                      const timestamp = new Date(log.timestamp).toLocaleString();
-                      const flowRate = log.flowRate;
-                      const inletTemp = log.inletTemp;
-                      const outletTemp = log.outletTemp;
-                      console.log(log);
+            <>
+              {loading ? (
+                <Box style={styles.loadingContainer}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <TableContainer
+                  component={Paper}
+                  className="logs-table-container"
+                  style={{ overflow: 'auto' }}
+                >
+                  <Table stickyHeader style={{ tableLayout: 'fixed', width: '100%' }}>
+                    <TableHead>
+                      <TableRow className="log-table-header">
+                        {selectedColumn.length > 0 ? (
+                          selectedColumn.map((col) => (
+                            <TableCell key={col} className="log-header-cell" sx={{ textTransform: 'capitalize' }}>
+                              {allParameters.find(p => p.val === col)?.label || col.replace(/_/g, ' ')}
+                            </TableCell>
+                          ))
+                        ) : (
+                          <>
+                            <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Timestamp</TableCell>
+                            <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Flow Rate (m³/hr)</TableCell>
+                            <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Inlet Temperature (°C)</TableCell>
+                            <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Outlet Temperature (°C)</TableCell>
+                          </>
+                        )}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {paginatedLogs.length > 0 ? (
+                        paginatedLogs.map((log) => {
+                          const timestamp = new Date(log.timestamp).toLocaleString();
+                          const flowrate = log.flowrate;
+                          const inletTemp = log.inlet_temperature;
+                          const outletTemp = log.outlet_temperature;
 
-                      return (
-                        <TableRow key={log.id} hover className="log-table-row">
-                          {selectedColumn.length > 0 ? (
-                            // DYNAMIC MULTI-COLUMN VIEW
-                            // This loops through whatever you checked in the dropdown
-                            selectedColumn.map((col) => (
-                              <TableCell key={col} className="log-table-cell">
-                                {col === 'timestamp' && timestamp}
-                                {col === 'flowRate' && (typeof flowRate === 'number' ? flowRate.toFixed(2) : flowRate)}
-                                {col === 'inletTemp' && (typeof inletTemp === 'number' ? inletTemp.toFixed(2) : inletTemp)}
-                                {col === 'outletTemp' && (typeof outletTemp === 'number' ? outletTemp.toFixed(2) : outletTemp)}
-                              </TableCell>
-                            ))
-                          ) : (
-                            // DEFAULT "ALL COLUMNS" VIEW (When nothing is selected)
-                            <>
-                              <TableCell className="log-table-cell" title={timestamp}>
-                                {timestamp}
-                              </TableCell>
-                              <TableCell className="log-table-cell">
-                                {typeof flowRate === 'number' ? flowRate.toFixed(2) : flowRate}
-                              </TableCell>
-                              <TableCell className="log-table-cell">
-                                {typeof inletTemp === 'number' ? inletTemp.toFixed(2) : inletTemp}
-                              </TableCell>
-                              <TableCell className="log-table-cell">
-                                {typeof outletTemp === 'number' ? outletTemp.toFixed(2) : outletTemp}
-                              </TableCell>
-                            </>
-                          )}
+                          return (
+                            <TableRow key={log.id} hover className="log-table-row">
+                              {selectedColumn.length > 0 ? (
+                                // DYNAMIC MULTI-COLUMN VIEW
+                                // This loops through whatever you checked in the dropdown
+                                selectedColumn.map((col) => (
+                                  <TableCell key={col} className="log-table-cell">
+                                    {col === 'timestamp' && timestamp}
+                                    {col === 'flowrate' && (typeof flowrate === 'number' ? flowrate.toFixed(2) : flowrate)}
+                                    {col === 'inlet_temperature' && (typeof inletTemp === 'number' ? inletTemp.toFixed(2) : inletTemp)}
+                                    {col === 'outlet_temperature' && (typeof outletTemp === 'number' ? outletTemp.toFixed(2) : outletTemp)}
+                                  </TableCell>
+                                ))
+                              ) : (
+                                // DEFAULT "ALL COLUMNS" VIEW (When nothing is selected)
+                                <>
+                                  <TableCell className="log-table-cell" title={timestamp}>
+                                    {timestamp}
+                                  </TableCell>
+                                  <TableCell className="log-table-cell">
+                                    {typeof flowrate === 'number' ? flowrate.toFixed(2) : flowrate}
+                                  </TableCell>
+                                  <TableCell className="log-table-cell">
+                                    {typeof inletTemp === 'number' ? inletTemp.toFixed(2) : inletTemp}
+                                  </TableCell>
+                                  <TableCell className="log-table-cell">
+                                    {typeof outletTemp === 'number' ? outletTemp.toFixed(2) : outletTemp}
+                                  </TableCell>
+                                </>
+                              )}
+                            </TableRow>
+                          );
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={selectedColumn ? selectedColumn.length : 4} align="center">
+                            {paginatedLogs.length === 0 ? 'No logs found matching your filters' : ''}
+                          </TableCell>
                         </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={selectedColumn ? selectedColumn.length : 4} align="center">
-                        {paginatedLogs.length === 0 ? 'No logs found matching your filters' : ''}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
 
-          {/* Pagination */}
-          {searchClicked && (
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-              <Typography variant="body2" color="textSecondary">
-                Showing {(page - 1) * rowsPerPage + 1} to {Math.min(page * rowsPerPage, logs.length)} of {logs.length} entries
-              </Typography>
-              <Pagination
-                count={Math.ceil(logs.length / rowsPerPage)}
-                page={page}
-                onChange={handlePageChange}
-                color="primary"
-                showFirstButton
-                showLastButton
-                size="small"
-              />
-            </Box>
+              {/* Pagination */}
+              {!loading && (
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+                  <Typography variant="body2" color="textSecondary">
+                    Showing {(page - 1) * rowsPerPage + 1} to {Math.min(page * rowsPerPage, logs.length)} of {totalLogs} entries
+                  </Typography>
+                  <Pagination
+                    count={Math.ceil(totalLogs / rowsPerPage)}
+                    page={page}
+                    onChange={handlePageChange}
+                    color="primary"
+                    showFirstButton
+                    showLastButton
+                    size="small"
+                  />
+                </Box>
+              )}
+            </>
           )}
 
         </CardContent>
       </Card>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+      />
     </Box>
   );
 }
