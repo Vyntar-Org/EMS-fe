@@ -23,7 +23,10 @@ import {
     MenuItem,
     Checkbox,
     ListItemText,
-    Divider
+    Divider,
+    CircularProgress,
+    Alert,
+    Snackbar
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -54,7 +57,12 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [openStart, setOpenStart] = useState(false);
     const [openEnd, setOpenEnd] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [dataLoading, setDataLoading] = useState(false);
+    const [compareLoading, setCompareLoading] = useState(false);
+    const [compareLoading2, setCompareLoading2] = useState(false);
     const [error, setError] = useState(null);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
     const [compareMode, setCompareMode] = useState(false); // Track if compare mode is active
     const [compareChartData, setCompareChartData] = useState([]); // Chart data for comparison device
     const [compareMode2, setCompareMode2] = useState(false); // Track if second compare mode is active
@@ -178,6 +186,12 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         inactiveStatus: {
             color: '#e34d4d',
             backgroundColor: '#fae8e8',
+        },
+        loadingContainer: {
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '50vh',
         }
     };
 
@@ -185,6 +199,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     useEffect(() => {
         const fetchDevices = async () => {
             try {
+                setLoading(true);
                 const slaves = await getDevices();
                 setDeviceObjects(slaves);
                 const deviceNames = slaves.map(slave => slave.slave_name);
@@ -196,19 +211,20 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 }
             } catch (error) {
                 console.error('Error fetching devices:', error);
-                setError('Failed to fetch devices');
+                setError(error.message || 'Failed to fetch devices');
+                setSnackbarMessage(error.message || 'Failed to fetch devices');
+                setSnackbarOpen(true);
+            } finally {
+                setLoading(false);
             }
         };
 
         fetchDevices();
     }, []);
 
-    // Fetch analytics data when search is clicked
+    // Function to fetch analytics data for a specific device
     const fetchAnalyticsData = async (slaveId, parameters, startDate, endDate) => {
         try {
-            setLoading(true);
-            setError(null);
-            
             // Format dates to API expected format
             const fromDatetime = dayjs(startDate).format('YYYY-MM-DD HH:mm:ss');
             const toDatetime = dayjs(endDate).format('YYYY-MM-DD HH:mm:ss');
@@ -219,27 +235,29 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         } catch (error) {
             console.error('Error fetching analytics data:', error);
             throw error;
-        } finally {
-            setLoading(false);
         }
     };
 
     // Handle search button click
     const handleSearch = async () => {
         if (!filterDevice || filterDevice === 'all') {
-            setError('Please select a device');
+            setSnackbarMessage('Please select a device');
+            setSnackbarOpen(true);
             return;
         }
         if (!filterStartDate) {
-            setError('Please select a start date');
+            setSnackbarMessage('Please select a start date');
+            setSnackbarOpen(true);
             return;
         }
         if (!filterEndDate) {
-            setError('Please select an end date');
+            setSnackbarMessage('Please select an end date');
+            setSnackbarOpen(true);
             return;
         }
 
         try {
+            setDataLoading(true);
             setSearchClicked(true);
             
             // Find the device ID based on the device name
@@ -261,15 +279,67 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             );
             
             setFilteredChartData(data);
+            
+            // If comparison mode is active, fetch comparison data
+            if (compareMode && compareDevice) {
+                setCompareLoading(true);
+                try {
+                    const compareDeviceObj = deviceObjects.find(device => device.slave_name === compareDevice);
+                    if (compareDeviceObj) {
+                        const compareParams = selectedParameter2.length > 0 ? selectedParameter2 : allParameters;
+                        const compareData = await fetchAnalyticsData(
+                            compareDeviceObj.slave_id,
+                            compareParams,
+                            filterStartDate,
+                            filterEndDate
+                        );
+                        setCompareChartData(compareData);
+                    }
+                } catch (err) {
+                    console.error('Error fetching comparison data:', err);
+                    setSnackbarMessage(err.message || 'Failed to fetch comparison data');
+                    setSnackbarOpen(true);
+                } finally {
+                    setCompareLoading(false);
+                }
+            }
+            
+            // If second comparison mode is active, fetch second comparison data
+            if (compareMode2 && compareDevice2) {
+                setCompareLoading2(true);
+                try {
+                    const compareDevice2Obj = deviceObjects.find(device => device.slave_name === compareDevice2);
+                    if (compareDevice2Obj) {
+                        const compareParams2 = selectedParameter3.length > 0 ? selectedParameter3 : allParameters;
+                        const compareData2 = await fetchAnalyticsData(
+                            compareDevice2Obj.slave_id,
+                            compareParams2,
+                            filterStartDate,
+                            filterEndDate
+                        );
+                        setCompareChartData2(compareData2);
+                    }
+                } catch (err) {
+                    console.error('Error fetching second comparison data:', err);
+                    setSnackbarMessage(err.message || 'Failed to fetch second comparison data');
+                    setSnackbarOpen(true);
+                } finally {
+                    setCompareLoading2(false);
+                }
+            }
         } catch (error) {
             setError(error.message || 'Failed to fetch analytics data');
+            setSnackbarMessage(error.message || 'Failed to fetch analytics data');
+            setSnackbarOpen(true);
+        } finally {
+            setDataLoading(false);
         }
     };
 
     // Function to reset all filters
     const handleResetFilters = () => {
         setSearchTerm('');
-        setFilterDevice('all');
+        setFilterDevice(deviceObjects.length > 0 ? deviceObjects[0].slave_name : 'all');
         // Reset to default dates
         setFilterStartDate(dayjs().subtract(1, 'day'));
         setFilterEndDate(dayjs());
@@ -286,71 +356,65 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         setCompareChartData2([]); // Clear second comparison chart data
     };
 
-    // Fetch comparison data when compare mode is active
-    useEffect(() => {
-        if (compareMode && compareDevice && filterStartDate && filterEndDate) {
-            const fetchComparisonData = async () => {
-                try {
-                    // Find the device ID based on the device name
-                    const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice);
-                    if (!selectedDevice) {
-                        console.error('Comparison device not found');
-                        return;
-                    }
-
-                    // Default to all parameters if none selected
-                    const params = selectedParameter2.length > 0 ? selectedParameter2 : allParameters;
-
-                    // Fetch analytics data
-                    const data = await fetchAnalyticsData(
-                        selectedDevice.slave_id,
-                        params,
+    // Handle comparison device selection
+    const handleCompareDeviceChange = async (deviceName) => {
+        setCompareDevice(deviceName);
+        setCompareMode(true);
+        
+        // If main data is already loaded, fetch comparison data immediately
+        if (searchClicked && filteredChartData.length > 0) {
+            setCompareLoading(true);
+            try {
+                const compareDeviceObj = deviceObjects.find(device => device.slave_name === deviceName);
+                if (compareDeviceObj) {
+                    const compareParams = selectedParameter2.length > 0 ? selectedParameter2 : allParameters;
+                    const compareData = await fetchAnalyticsData(
+                        compareDeviceObj.slave_id,
+                        compareParams,
                         filterStartDate,
                         filterEndDate
                     );
-
-                    setCompareChartData(data);
-                } catch (error) {
-                    console.error('Error fetching comparison data:', error);
+                    setCompareChartData(compareData);
                 }
-            };
-
-            fetchComparisonData();
+            } catch (err) {
+                console.error('Error fetching comparison data:', err);
+                setSnackbarMessage(err.message || 'Failed to fetch comparison data');
+                setSnackbarOpen(true);
+            } finally {
+                setCompareLoading(false);
+            }
         }
-    }, [compareMode, compareDevice, filterStartDate, filterEndDate, selectedParameter2, deviceObjects]);
+    };
 
-    // Fetch second comparison data when second compare mode is active
-    useEffect(() => {
-        if (compareMode2 && compareDevice2 && filterStartDate && filterEndDate) {
-            const fetchSecondComparisonData = async () => {
-                try {
-                    // Find the device ID based on the device name
-                    const selectedDevice = deviceObjects.find(device => device.slave_name === compareDevice2);
-                    if (!selectedDevice) {
-                        console.error('Second comparison device not found');
-                        return;
-                    }
-
-                    // Default to all parameters if none selected
-                    const params = selectedParameter3.length > 0 ? selectedParameter3 : allParameters;
-
-                    // Fetch analytics data
-                    const data = await fetchAnalyticsData(
-                        selectedDevice.slave_id,
-                        params,
+    // Handle second comparison device selection
+    const handleCompareDevice2Change = async (deviceName) => {
+        setCompareDevice2(deviceName);
+        setCompareMode2(true);
+        
+        // If main data is already loaded, fetch comparison data immediately
+        if (searchClicked && filteredChartData.length > 0) {
+            setCompareLoading2(true);
+            try {
+                const compareDevice2Obj = deviceObjects.find(device => device.slave_name === deviceName);
+                if (compareDevice2Obj) {
+                    const compareParams2 = selectedParameter3.length > 0 ? selectedParameter3 : allParameters;
+                    const compareData2 = await fetchAnalyticsData(
+                        compareDevice2Obj.slave_id,
+                        compareParams2,
                         filterStartDate,
                         filterEndDate
                     );
-
-                    setCompareChartData2(data);
-                } catch (error) {
-                    console.error('Error fetching second comparison data:', error);
+                    setCompareChartData2(compareData2);
                 }
-            };
-
-            fetchSecondComparisonData();
+            } catch (err) {
+                console.error('Error fetching second comparison data:', err);
+                setSnackbarMessage(err.message || 'Failed to fetch second comparison data');
+                setSnackbarOpen(true);
+            } finally {
+                setCompareLoading2(false);
+            }
         }
-    }, [compareMode2, compareDevice2, filterStartDate, filterEndDate, selectedParameter3, deviceObjects]);
+    };
 
     // Process the filtered chart data to create chart series and categories
     const processedFilteredData = React.useMemo(() => {
@@ -715,195 +779,205 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                     <CardContent sx={{ p: 1 }}>
                         <Box className="logs-header">
                             <Box className="logs-filters">
-                                <FormControl size="small" sx={{ minWidth: 300 }}>
-                                    <InputLabel>Select Machine</InputLabel>
-                                    <Select
-                                        value={filterDevice}
-                                        label="Select Machine"
-                                        onChange={(e) => setFilterDevice(e.target.value)}
-                                    >
-                                        {devices.map((device) => (
-                                            <MenuItem key={device} value={device}>
-                                                {device === 'all' ? 'Select Machine' : device}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                                <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
-                                    <InputLabel>Select Parameters</InputLabel>
-                                    <Select
-                                        multiple
-                                        value={getSelectedCategories(selectedParameter)}
-                                        onChange={(e) => handleParameterChange(e, setSelectedParameter)}
-                                        label="Select Parameters"
-                                        renderValue={(selected) => (
-                                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                {/* Show "All Categories" if all are selected */}
-                                                {isAllParametersSelected(selectedParameter) ? (
-                                                    <Chip
-                                                        label="All Categories"
-                                                        size="small"
-                                                        sx={{ height: '20px', fontSize: '10px' }}
-                                                    />
-                                                ) : (
-                                                    /* Show the first 2 items as Chips */
-                                                    selected.slice(0, 2).map((value) => (
-                                                        <Chip
-                                                            key={value}
-                                                            label={parameterCategories[value]?.label || value}
-                                                            size="small"
+                                {loading ? (
+                                    <Box style={styles.loadingContainer}>
+                                        <CircularProgress />
+                                    </Box>
+                                ) : error ? (
+                                    <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+                                ) : (
+                                    <>
+                                        <FormControl size="small" sx={{ minWidth: 300 }}>
+                                            <InputLabel>Select Machine</InputLabel>
+                                            <Select
+                                                value={filterDevice}
+                                                label="Select Machine"
+                                                onChange={(e) => setFilterDevice(e.target.value)}
+                                            >
+                                                {devices.map((device) => (
+                                                    <MenuItem key={device} value={device}>
+                                                        {device === 'all' ? 'Select Machine' : device}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                        <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
+                                            <InputLabel>Select Parameters</InputLabel>
+                                            <Select
+                                                multiple
+                                                value={getSelectedCategories(selectedParameter)}
+                                                onChange={(e) => handleParameterChange(e, setSelectedParameter)}
+                                                label="Select Parameters"
+                                                renderValue={(selected) => (
+                                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
+                                                        {/* Show "All Categories" if all are selected */}
+                                                        {isAllParametersSelected(selectedParameter) ? (
+                                                            <Chip
+                                                                label="All Categories"
+                                                                size="small"
+                                                                sx={{ height: '20px', fontSize: '10px' }}
+                                                            />
+                                                        ) : (
+                                                            /* Show the first 2 items as Chips */
+                                                            selected.slice(0, 2).map((value) => (
+                                                                <Chip
+                                                                    key={value}
+                                                                    label={parameterCategories[value]?.label || value}
+                                                                    size="small"
+                                                                    sx={{
+                                                                        height: '20px',
+                                                                        fontSize: '10px'
+                                                                    }}
+                                                                />
+                                                            ))
+                                                        )}
+
+                                                        {/* If more than 2 items and not all selected, show the +X counter */}
+                                                        {!isAllParametersSelected(selectedParameter) && selected.length > 2 && (
+                                                            <Chip
+                                                                label={`+${selected.length - 2} more`}
+                                                                size="small"
+                                                                sx={{
+                                                                    height: '20px',
+                                                                    fontSize: '10px',
+                                                                    backgroundColor: '#0156a6',
+                                                                    color: '#fff',
+                                                                    fontWeight: 'bold'
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </Box>
+                                                )}
+                                                MenuProps={
+                                                    {
+                                                        PaperProps: {
+                                                            style: { maxHeight: 300, width: 250 },
+                                                        },
+                                                    }
+                                                }
+                                            >
+                                               
+                                                {/* Category options */}
+                                                {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
+                                                    <MenuItem key={categoryKey} value={categoryKey} sx={{
+                                                        py: 0.2, // Tight vertical padding for the list item
+                                                        px: 1,
+                                                        minHeight: '32px', // Forces a slim row height
+                                                    }}>
+                                                        <Checkbox 
+                                                            checked={categoryData.parameters.every(param => selectedParameter.includes(param))} 
                                                             sx={{
-                                                                height: '20px',
-                                                                fontSize: '10px'
+                                                                p: 0.5,   // Removes the 9px default padding
+                                                                mr: 0.5,   // Adds spacing between box and text
+                                                                transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
+                                                                '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
+                                                            }} 
+                                                        />
+                                                        <ListItemText 
+                                                            primary={categoryData.label} 
+                                                            primaryTypographyProps={{
+                                                                fontSize: '12px', // Smaller font to match the small checkbox
+                                                                lineHeight: 1.2
+                                                            }}
+                                                            secondaryTypographyProps={{
+                                                                fontSize: '10px',
+                                                                color: 'text.secondary'
                                                             }}
                                                         />
-                                                    ))
-                                                )}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
 
-                                                {/* If more than 2 items and not all selected, show the +X counter */}
-                                                {!isAllParametersSelected(selectedParameter) && selected.length > 2 && (
-                                                    <Chip
-                                                        label={`+${selected.length - 2} more`}
-                                                        size="small"
-                                                        sx={{
-                                                            height: '20px',
-                                                            fontSize: '10px',
-                                                            backgroundColor: '#0156a6',
-                                                            color: '#fff',
-                                                            fontWeight: 'bold'
-                                                        }}
-                                                    />
-                                                )}
-                                            </Box>
-                                        )}
-                                        MenuProps={
-                                            {
-                                                PaperProps: {
-                                                    style: { maxHeight: 300, width: 250 },
+                                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                            <DateTimePicker
+                                                open={openStart}
+                                                onOpen={() => setOpenStart(true)}
+                                                onClose={() => setOpenStart(false)}
+                                                value={filterStartDate}
+                                                onChange={(newValue) => setFilterStartDate(newValue)}
+                                                format="DD/MM/YYYY hh:mm A"
+                                                slotProps={{
+                                                    textField: {
+                                                        size: 'small',
+                                                        sx: { minWidth: 220, mr: 2, borderRadius: 2 },
+                                                        onClick: () => setOpenStart(true), // 🔥 input click opens picker
+                                                    },
+                                                }}
+                                            />
+                                        </LocalizationProvider>
+
+                                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                            <DateTimePicker
+                                                open={openEnd}
+                                                onOpen={() => setOpenEnd(true)}
+                                                onClose={() => setOpenEnd(false)}
+                                                value={filterEndDate}
+                                                onChange={(newValue) => setFilterEndDate(newValue)}
+                                                format="DD/MM/YYYY hh:mm A"
+                                                slotProps={{
+                                                    textField: {
+                                                        size: 'small',
+                                                        sx: { minWidth: 220, mr: 2, borderRadius: 2 },
+                                                        onClick: () => setOpenEnd(true), // 🔥 input click opens picker
+                                                    },
+                                                }}
+                                            />
+                                        </LocalizationProvider>
+
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<SearchIcon />}
+                                            onClick={handleSearch}
+                                            sx={{
+                                                backgroundColor: '#0156a6',
+                                                '&:hover': {
+                                                    backgroundColor: '#166aa0',
                                                 },
-                                            }
-                                        }
-                                    >
-                                       
-                                        {/* Category options */}
-                                        {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
-                                            <MenuItem key={categoryKey} value={categoryKey} sx={{
-                                                py: 0.2, // Tight vertical padding for the list item
-                                                px: 1,
-                                                minHeight: '32px', // Forces a slim row height
-                                            }}>
-                                                <Checkbox 
-                                                    checked={categoryData.parameters.every(param => selectedParameter.includes(param))} 
-                                                    sx={{
-                                                        p: 0.5,   // Removes the 9px default padding
-                                                        mr: 0.5,   // Adds spacing between box and text
-                                                        transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
-                                                        '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
-                                                    }} 
-                                                />
-                                                <ListItemText 
-                                                    primary={categoryData.label} 
-                                                    primaryTypographyProps={{
-                                                        fontSize: '12px', // Smaller font to match the small checkbox
-                                                        lineHeight: 1.2
-                                                    }}
-                                                    secondaryTypographyProps={{
-                                                        fontSize: '10px',
-                                                        color: 'text.secondary'
-                                                    }}
-                                                />
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
+                                                minWidth: 'auto',
+                                                width: '32px', // Smaller width
+                                                height: '32px', // Smaller height
+                                                padding: '6px', // Even smaller padding
+                                                borderRadius: '4px', // Square with rounded corners
+                                                '& .MuiButton-startIcon': {
+                                                    margin: 0,
+                                                }
+                                            }}
+                                        >
+                                        </Button>
 
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DateTimePicker
-                                        open={openStart}
-                                        onOpen={() => setOpenStart(true)}
-                                        onClose={() => setOpenStart(false)}
-                                        value={filterStartDate}
-                                        onChange={(newValue) => setFilterStartDate(newValue)}
-                                        format="DD/MM/YYYY hh:mm A"
-                                        slotProps={{
-                                            textField: {
-                                                size: 'small',
-                                                sx: { minWidth: 220, mr: 2, borderRadius: 2 },
-                                                onClick: () => setOpenStart(true), // 🔥 input click opens picker
-                                            },
-                                        }}
-                                    />
-                                </LocalizationProvider>
-
-                                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DateTimePicker
-                                        open={openEnd}
-                                        onOpen={() => setOpenEnd(true)}
-                                        onClose={() => setOpenEnd(false)}
-                                        value={filterEndDate}
-                                        onChange={(newValue) => setFilterEndDate(newValue)}
-                                        format="DD/MM/YYYY hh:mm A"
-                                        slotProps={{
-                                            textField: {
-                                                size: 'small',
-                                                sx: { minWidth: 220, mr: 2, borderRadius: 2 },
-                                                onClick: () => setOpenEnd(true), // 🔥 input click opens picker
-                                            },
-                                        }}
-                                    />
-                                </LocalizationProvider>
-
-                                <Button
-                                    variant="contained"
-                                    startIcon={<SearchIcon />}
-                                    onClick={handleSearch}
-                                    sx={{
-                                        backgroundColor: '#0156a6',
-                                        '&:hover': {
-                                            backgroundColor: '#166aa0',
-                                        },
-                                        minWidth: 'auto',
-                                        width: '32px', // Smaller width
-                                        height: '32px', // Smaller height
-                                        padding: '6px', // Even smaller padding
-                                        borderRadius: '4px', // Square with rounded corners
-                                        '& .MuiButton-startIcon': {
-                                            margin: 0,
-                                        }
-                                    }}
-                                >
-                                </Button>
-
-                                <Button
-                                    variant="outlined"
-                                    startIcon={<RefreshIcon />}
-                                    onClick={handleResetFilters}
-                                    sx={{
-                                        borderColor: '#6c757d',
-                                        color: '#6c757d',
-                                        '&:hover': {
-                                            borderColor: '#5a6268',
-                                            color: '#5a6268',
-                                        },
-                                        minWidth: 'auto',
-                                        width: '32px', // Smaller width
-                                        height: '32px', // Smaller height
-                                        padding: '4px', // Even smaller padding
-                                        borderRadius: '4px',
-                                        '& .MuiButton-startIcon': {
-                                            margin: 0,
-                                        }
-                                    }}
-                                >
-                                </Button>
+                                        <Button
+                                            variant="outlined"
+                                            startIcon={<RefreshIcon />}
+                                            onClick={handleResetFilters}
+                                            sx={{
+                                                borderColor: '#6c757d',
+                                                color: '#6c757d',
+                                                '&:hover': {
+                                                    borderColor: '#5a6268',
+                                                    color: '#5a6268',
+                                                },
+                                                minWidth: 'auto',
+                                                width: '32px', // Smaller width
+                                                height: '32px', // Smaller height
+                                                padding: '4px', // Even smaller padding
+                                                borderRadius: '4px',
+                                                '& .MuiButton-startIcon': {
+                                                    margin: 0,
+                                                }
+                                            }}
+                                        >
+                                        </Button>
+                                    </>
+                                )}
                             </Box>
                         </Box>
-                        {loading ? (
-                            <div>Loading...</div>
-                        ) : error ? (
-                            <div>Error: {error}</div>
-                        ) : searchClicked ? (
-                            processedFilteredData.series.length > 0 ? (
+                        {searchClicked ? (
+                            dataLoading ? (
+                                <Box style={styles.loadingContainer}>
+                                    <CircularProgress />
+                                </Box>
+                            ) : processedFilteredData.series.length > 0 ? (
                                 <>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                                         <Typography
@@ -946,10 +1020,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                         <Select
                                                             value={compareDevice}
                                                             label="Select Machine to Compare"
-                                                            onChange={(e) => {
-                                                                setCompareDevice(e.target.value);
-                                                                setCompareMode(true);
-                                                            }}
+                                                            onChange={(e) => handleCompareDeviceChange(e.target.value)}
                                                         >
                                                             {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice2).map((device) => (
                                                                 <MenuItem key={device} value={device}>
@@ -972,7 +1043,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         type="line"
                                         height={420}
                                     />
-                                    {compareMode && compareDevice && processedCompareData.series.length > 0 && (
+                                    {compareMode && compareDevice && (
                                         <Box sx={{ mt: 4 }}>
                                             <Typography
                                                 gutterBottom
@@ -989,163 +1060,198 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                         : parameterLabels[selectedParameter2[0]] || selectedParameter2[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                     : compareDevice}
                                             </Typography>
-                                            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                                                    <FormControl size="small" sx={{ minWidth: 300 }}>
-                                                        <InputLabel>Select Machine</InputLabel>
-                                                        <Select
-                                                            value={compareDevice}
-                                                            label="Select Machine"
-                                                            onChange={(e) => {
-                                                                setCompareDevice(e.target.value);
-                                                                // Set compare mode to true when machine is selected
-                                                                setCompareMode(true);
-                                                            }}
-                                                        >
-                                                            {devices.map((device) => (
-                                                                <MenuItem key={device} value={device}>
-                                                                    {device === 'all' ? 'Select Machine' : device}
-                                                                </MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                    </FormControl>
-                                                    <FormControl size="small" sx={{ minWidth: 300, mr: 1 }}>
-                                                        <InputLabel>Select Parameters</InputLabel>
-                                                        <Select
-                                                            multiple
-                                                            value={getSelectedCategories(selectedParameter2)}
-                                                            onChange={(e) => handleParameterChange(e, setSelectedParameter2)}
-                                                            label="Select Parameters"
-                                                            renderValue={(selected) => (
-                                                                <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                                    {/* Show "All Categories" if all are selected */}
-                                                                    {isAllParametersSelected(selectedParameter2) ? (
-                                                                        <Chip
-                                                                            label="All Categories"
-                                                                            size="small"
-                                                                            sx={{ height: '20px', fontSize: '10px' }}
-                                                                        />
-                                                                    ) : (
-                                                                        /* Show the first 2 items as Chips */
-                                                                        selected.slice(0, 2).map((value) => (
-                                                                            <Chip
-                                                                                key={value}
-                                                                                label={parameterCategories[value]?.label || value}
-                                                                                size="small"
+                                            {compareLoading ? (
+                                                <Box style={styles.loadingContainer}>
+                                                    <CircularProgress />
+                                                </Box>
+                                            ) : processedCompareData.series.length > 0 ? (
+                                                <>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                                            <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                                <InputLabel>Select Machine</InputLabel>
+                                                                <Select
+                                                                    value={compareDevice}
+                                                                    label="Select Machine"
+                                                                    onChange={(e) => handleCompareDeviceChange(e.target.value)}
+                                                                >
+                                                                    {devices.map((device) => (
+                                                                        <MenuItem key={device} value={device}>
+                                                                            {device === 'all' ? 'Select Machine' : device}
+                                                                        </MenuItem>
+                                                                    ))}
+                                                                </Select>
+                                                            </FormControl>
+                                                            <FormControl size="small" sx={{ minWidth: 300, mr: 1 }}>
+                                                                <InputLabel>Select Parameters</InputLabel>
+                                                                <Select
+                                                                    multiple
+                                                                    value={getSelectedCategories(selectedParameter2)}
+                                                                    onChange={(e) => {
+                                                                        handleParameterChange(e, setSelectedParameter2);
+                                                                        
+                                                                        // If we already have data for this device, update it with new parameters
+                                                                        if (compareMode && compareDevice && searchClicked) {
+                                                                            setCompareLoading(true);
+                                                                            
+                                                                            // Get all parameters from the selected categories
+                                                                            const selectedParameters = [];
+                                                                            e.target.value.forEach(category => {
+                                                                                if (parameterCategories[category]) {
+                                                                                    selectedParameters.push(...parameterCategories[category].parameters);
+                                                                                }
+                                                                            });
+                                                                            
+                                                                            const params = selectedParameters.length > 0 ? selectedParameters : allParameters;
+                                                                            
+                                                                            fetchAnalyticsData(
+                                                                                deviceObjects.find(d => d.slave_name === compareDevice)?.slave_id,
+                                                                                params,
+                                                                                filterStartDate,
+                                                                                filterEndDate
+                                                                            ).then(data => {
+                                                                                setCompareChartData(data);
+                                                                            }).catch(err => {
+                                                                                console.error('Error updating comparison data:', err);
+                                                                                setSnackbarMessage(err.message || 'Failed to update comparison data');
+                                                                                setSnackbarOpen(true);
+                                                                            }).finally(() => {
+                                                                                setCompareLoading(false);
+                                                                            });
+                                                                        }
+                                                                    }}
+                                                                    label="Select Parameters"
+                                                                    renderValue={(selected) => (
+                                                                        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
+                                                                            {/* Show "All Categories" if all are selected */}
+                                                                            {isAllParametersSelected(selectedParameter2) ? (
+                                                                                <Chip
+                                                                                    label="All Categories"
+                                                                                    size="small"
+                                                                                    sx={{ height: '20px', fontSize: '10px' }}
+                                                                                />
+                                                                            ) : (
+                                                                                /* Show the first 2 items as Chips */
+                                                                                selected.slice(0, 2).map((value) => (
+                                                                                    <Chip
+                                                                                        key={value}
+                                                                                        label={parameterCategories[value]?.label || value}
+                                                                                        size="small"
+                                                                                        sx={{
+                                                                                            height: '20px',
+                                                                                            fontSize: '10px'
+                                                                                        }}
+                                                                                    />
+                                                                                ))
+                                                                            )}
+
+                                                                            {/* If more than 2 items and not all selected, show the +X counter */}
+                                                                            {!isAllParametersSelected(selectedParameter2) && selected.length > 2 && (
+                                                                                <Chip
+                                                                                    label={`+${selected.length - 2} more`}
+                                                                                    size="small"
+                                                                                    sx={{
+                                                                                        height: '20px',
+                                                                                        fontSize: '10px',
+                                                                                        backgroundColor: '#0156a6',
+                                                                                        color: '#fff',
+                                                                                        fontWeight: 'bold'
+                                                                                    }}
+                                                                                />
+                                                                            )}
+                                                                        </Box>
+                                                                    )}
+                                                                    MenuProps={
+                                                                        {
+                                                                            PaperProps: {
+                                                                                style: { maxHeight: 300, width: 250 },
+                                                                            },
+                                                                        }
+                                                                    }
+                                                                >
+                                                                    
+                                                                    {/* Category options */}
+                                                                    {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
+                                                                        <MenuItem key={categoryKey} value={categoryKey} sx={{
+                                                                            py: 0.2, // Tight vertical padding for the list item
+                                                                            px: 1,
+                                                                            minHeight: '32px', // Forces a slim row height
+                                                                        }}>
+                                                                            <Checkbox 
+                                                                                checked={categoryData.parameters.every(param => selectedParameter2.includes(param))} 
                                                                                 sx={{
-                                                                                    height: '20px',
-                                                                                    fontSize: '10px'
+                                                                                    p: 0.5,   // Removes the 9px default padding
+                                                                                    mr: 0.5,   // Adds spacing between box and text
+                                                                                    transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
+                                                                                    '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
+                                                                                }} 
+                                                                            />
+                                                                            <ListItemText 
+                                                                                primary={categoryData.label} 
+                                                                                primaryTypographyProps={{
+                                                                                    fontSize: '12px', // Smaller font to match the small checkbox
+                                                                                    lineHeight: 1.2
+                                                                                }}
+                                                                                secondaryTypographyProps={{
+                                                                                    fontSize: '10px',
+                                                                                    color: 'text.secondary'
                                                                                 }}
                                                                             />
-                                                                        ))
-                                                                    )}
+                                                                        </MenuItem>
+                                                                    ))}
+                                                                </Select>
+                                                            </FormControl>
 
-                                                                    {/* If more than 2 items and not all selected, show the +X counter */}
-                                                                    {!isAllParametersSelected(selectedParameter2) && selected.length > 2 && (
-                                                                        <Chip
-                                                                            label={`+${selected.length - 2} more`}
-                                                                            size="small"
-                                                                            sx={{
-                                                                                height: '20px',
-                                                                                fontSize: '10px',
-                                                                                backgroundColor: '#0156a6',
-                                                                                color: '#fff',
-                                                                                fontWeight: 'bold'
-                                                                            }}
-                                                                        />
-                                                                    )}
-                                                                </Box>
+                                                            {compareMode2 ? (
+                                                                <Button
+                                                                    variant="outlined"
+                                                                    size="small"
+                                                                    onClick={() => setCompareMode2(false)}
+                                                                    sx={{
+                                                                        borderColor: '#0156a6',
+                                                                        color: '#0156a6',
+                                                                        '&:hover': {
+                                                                            borderColor: '#166aa0',
+                                                                            color: '#166aa0',
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    Cancel Compare
+                                                                </Button>
+                                                            ) : (
+                                                                <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                                    <InputLabel>Select Second Machine to Compare</InputLabel>
+                                                                    <Select
+                                                                        value={compareDevice2}
+                                                                        label="Select Second Machine to Compare"
+                                                                        onChange={(e) => handleCompareDevice2Change(e.target.value)}
+                                                                    >
+                                                                        {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice).map((device) => (
+                                                                            <MenuItem key={device} value={device}>
+                                                                                {device}
+                                                                            </MenuItem>
+                                                                        ))}
+                                                                    </Select>
+                                                                </FormControl>
                                                             )}
-                                                            MenuProps={
-                                                                {
-                                                                    PaperProps: {
-                                                                        style: { maxHeight: 300, width: 250 },
-                                                                    },
-                                                                }
-                                                            }
-                                                        >
-                                                            
-                                                            {/* Category options */}
-                                                            {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
-                                                                <MenuItem key={categoryKey} value={categoryKey} sx={{
-                                                                    py: 0.2, // Tight vertical padding for the list item
-                                                                    px: 1,
-                                                                    minHeight: '32px', // Forces a slim row height
-                                                                }}>
-                                                                    <Checkbox 
-                                                                        checked={categoryData.parameters.every(param => selectedParameter2.includes(param))} 
-                                                                        sx={{
-                                                                            p: 0.5,   // Removes the 9px default padding
-                                                                            mr: 0.5,   // Adds spacing between box and text
-                                                                            transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
-                                                                            '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
-                                                                        }} 
-                                                                    />
-                                                                    <ListItemText 
-                                                                        primary={categoryData.label} 
-                                                                        primaryTypographyProps={{
-                                                                            fontSize: '12px', // Smaller font to match the small checkbox
-                                                                            lineHeight: 1.2
-                                                                        }}
-                                                                        secondaryTypographyProps={{
-                                                                            fontSize: '10px',
-                                                                            color: 'text.secondary'
-                                                                        }}
-                                                                    />
-                                                                </MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                    </FormControl>
-
-                                                    {compareMode2 ? (
-                                                        <Button
-                                                            variant="outlined"
-                                                            size="small"
-                                                            onClick={() => setCompareMode2(false)}
-                                                            sx={{
-                                                                borderColor: '#0156a6',
-                                                                color: '#0156a6',
-                                                                '&:hover': {
-                                                                    borderColor: '#166aa0',
-                                                                    color: '#166aa0',
-                                                                }
-                                                            }}
-                                                        >
-                                                            Cancel Compare
-                                                        </Button>
-                                                    ) : (
-                                                        <FormControl size="small" sx={{ minWidth: 300 }}>
-                                                            <InputLabel>Select Second Machine to Compare</InputLabel>
-                                                            <Select
-                                                                value={compareDevice2}
-                                                                label="Select Second Machine to Compare"
-                                                                onChange={(e) => {
-                                                                    setCompareDevice2(e.target.value);
-                                                                    setCompareMode2(true);
-                                                                }}
-                                                            >
-                                                                {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice).map((device) => (
-                                                                    <MenuItem key={device} value={device}>
-                                                                        {device}
-                                                                    </MenuItem>
-                                                                ))}
-                                                            </Select>
-                                                        </FormControl>
-                                                    )}
-                                                </Box>
-                                            </Box>
-                                            <Chart
-                                                options={getChartOptions(
-                                                    processedCompareData,
-                                                    compareChartData
-                                                )}
-                                                series={processedCompareData.series}
-                                                type="line"
-                                                height={420}
-                                            />
+                                                        </Box>
+                                                    </Box>
+                                                    <Chart
+                                                        options={getChartOptions(
+                                                            processedCompareData,
+                                                            compareChartData
+                                                        )}
+                                                        series={processedCompareData.series}
+                                                        type="line"
+                                                        height={420}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <Alert severity="info" sx={{ m: 2 }}>No data available for comparison</Alert>
+                                            )}
                                         </Box>
                                     )}
-                                    {compareMode2 && compareDevice2 && processedCompareData2.series.length > 0 && (
+                                    {compareMode2 && compareDevice2 && (
                                         <Box sx={{ mt: 4 }}>
                                             <Typography
                                                 gutterBottom
@@ -1162,132 +1268,178 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                         : parameterLabels[selectedParameter3[0]] || selectedParameter3[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                     : compareDevice2}
                                             </Typography>
-                                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                                                <FormControl size="small" sx={{ minWidth: 300 }}>
-                                                    <InputLabel>Select Machine</InputLabel>
-                                                    <Select
-                                                        value={compareDevice2}
-                                                        label="Select Machine"
-                                                        onChange={(e) => {
-                                                            setCompareDevice2(e.target.value);
-                                                            // Set compare mode to true when machine is selected
-                                                            setCompareMode2(true);
-                                                        }}
-                                                    >
-                                                        {devices.map((device) => (
-                                                            <MenuItem key={device} value={device}>
-                                                                {device === 'all' ? 'Select Machine' : device}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
-                                                <FormControl size="small" sx={{ minWidth: 300 }}>
-                                                    <InputLabel>Select Parameters</InputLabel>
-                                                    <Select
-                                                        multiple
-                                                        value={getSelectedCategories(selectedParameter3)}
-                                                        onChange={(e) => handleParameterChange(e, setSelectedParameter3)}
-                                                        label="Select Parameters"
-                                                        renderValue={(selected) => (
-                                                            <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                                {/* Show "All Categories" if all are selected */}
-                                                                {isAllParametersSelected(selectedParameter3) ? (
-                                                                    <Chip
-                                                                        label="All Categories"
-                                                                        size="small"
-                                                                        sx={{ height: '20px', fontSize: '10px' }}
-                                                                    />
-                                                                ) : (
-                                                                    /* Show the first 2 items as Chips */
-                                                                    selected.slice(0, 2).map((value) => (
-                                                                        <Chip
-                                                                            key={value}
-                                                                            label={parameterCategories[value]?.label || value}
-                                                                            size="small"
+                                            {compareLoading2 ? (
+                                                <Box style={styles.loadingContainer}>
+                                                    <CircularProgress />
+                                                </Box>
+                                            ) : processedCompareData2.series.length > 0 ? (
+                                                <>
+                                                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                                                        <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                            <InputLabel>Select Machine</InputLabel>
+                                                            <Select
+                                                                value={compareDevice2}
+                                                                label="Select Machine"
+                                                                onChange={(e) => handleCompareDevice2Change(e.target.value)}
+                                                            >
+                                                                {devices.map((device) => (
+                                                                    <MenuItem key={device} value={device}>
+                                                                        {device === 'all' ? 'Select Machine' : device}
+                                                                    </MenuItem>
+                                                                ))}
+                                                            </Select>
+                                                        </FormControl>
+                                                        <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                            <InputLabel>Select Parameters</InputLabel>
+                                                            <Select
+                                                                multiple
+                                                                value={getSelectedCategories(selectedParameter3)}
+                                                                onChange={(e) => {
+                                                                    handleParameterChange(e, setSelectedParameter3);
+                                                                
+                                                                    // If we already have data for this device, update it with new parameters
+                                                                    if (compareMode2 && compareDevice2 && searchClicked) {
+                                                                        setCompareLoading2(true);
+                                                                    
+                                                                        // Get all parameters from the selected categories
+                                                                        const selectedParameters = [];
+                                                                        e.target.value.forEach(category => {
+                                                                            if (parameterCategories[category]) {
+                                                                                selectedParameters.push(...parameterCategories[category].parameters);
+                                                                            }
+                                                                        });
+                                                                    
+                                                                        const params = selectedParameters.length > 0 ? selectedParameters : allParameters;
+                                                                    
+                                                                        fetchAnalyticsData(
+                                                                            deviceObjects.find(d => d.slave_name === compareDevice2)?.slave_id,
+                                                                            params,
+                                                                            filterStartDate,
+                                                                            filterEndDate
+                                                                        ).then(data => {
+                                                                            setCompareChartData2(data);
+                                                                        }).catch(err => {
+                                                                            console.error('Error updating second comparison data:', err);
+                                                                            setSnackbarMessage(err.message || 'Failed to update second comparison data');
+                                                                            setSnackbarOpen(true);
+                                                                        }).finally(() => {
+                                                                            setCompareLoading2(false);
+                                                                        });
+                                                                    }
+                                                                }}
+                                                                label="Select Parameters"
+                                                                renderValue={(selected) => (
+                                                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
+                                                                        {/* Show "All Categories" if all are selected */}
+                                                                        {isAllParametersSelected(selectedParameter3) ? (
+                                                                            <Chip
+                                                                                label="All Categories"
+                                                                                size="small"
+                                                                                sx={{ height: '20px', fontSize: '10px' }}
+                                                                            />
+                                                                        ) : (
+                                                                            /* Show the first 2 items as Chips */
+                                                                            selected.slice(0, 2).map((value) => (
+                                                                                <Chip
+                                                                                    key={value}
+                                                                                    label={parameterCategories[value]?.label || value}
+                                                                                    size="small"
+                                                                                    sx={{
+                                                                                        height: '20px',
+                                                                                        fontSize: '10px'
+                                                                                    }}
+                                                                                />
+                                                                            ))
+                                                                        )}
+
+                                                                        {/* If more than 2 items and not all selected, show the +X counter */}
+                                                                        {!isAllParametersSelected(selectedParameter3) && selected.length > 2 && (
+                                                                            <Chip
+                                                                                label={`+${selected.length - 2} more`}
+                                                                                size="small"
+                                                                                sx={{
+                                                                                    height: '20px',
+                                                                                    fontSize: '10px',
+                                                                                    backgroundColor: '#0156a6',
+                                                                                    color: '#fff',
+                                                                                    fontWeight: 'bold'
+                                                                                }}
+                                                                             />
+                                                                        )}
+                                                                    </Box>
+                                                                )}
+                                                                MenuProps={
+                                                                    {
+                                                                        PaperProps: {
+                                                                            style: { maxHeight: 300, width: 250 },
+                                                                        },
+                                                                    }
+                                                                }
+                                                            >
+                                                                
+                                                                {/* Category options */}
+                                                                {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
+                                                                    <MenuItem key={categoryKey} value={categoryKey} sx={{
+                                                                        py: 0.2, // Tight vertical padding for the list item
+                                                                        px: 1,
+                                                                        minHeight: '32px', // Forces a slim row height
+                                                                    }}>
+                                                                        <Checkbox 
+                                                                            checked={categoryData.parameters.every(param => selectedParameter3.includes(param))} 
                                                                             sx={{
-                                                                                height: '20px',
-                                                                                fontSize: '10px'
+                                                                                p: 0.5,   // Removes the 9px default padding
+                                                                                mr: 0.5,   // Adds spacing between box and text
+                                                                                transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
+                                                                                '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
+                                                                            }} 
+                                                                        />
+                                                                        <ListItemText 
+                                                                            primary={categoryData.label} 
+                                                                            primaryTypographyProps={{
+                                                                                fontSize: '12px', // Smaller font to match the small checkbox
+                                                                                lineHeight: 1.2
+                                                                            }}
+                                                                            secondaryTypographyProps={{
+                                                                                fontSize: '10px',
+                                                                                color: 'text.secondary'
                                                                             }}
                                                                         />
-                                                                    ))
-                                                                )}
-
-                                                                {/* If more than 2 items and not all selected, show the +X counter */}
-                                                                {!isAllParametersSelected(selectedParameter3) && selected.length > 2 && (
-                                                                    <Chip
-                                                                        label={`+${selected.length - 2} more`}
-                                                                        size="small"
-                                                                        sx={{
-                                                                            height: '20px',
-                                                                            fontSize: '10px',
-                                                                            backgroundColor: '#0156a6',
-                                                                            color: '#fff',
-                                                                            fontWeight: 'bold'
-                                                                        }}
-                                                                    />
-                                                                )}
-                                                            </Box>
+                                                                    </MenuItem>
+                                                                ))}
+                                                            </Select>
+                                                        </FormControl>
+                                                    </Box>
+                                                    <Chart
+                                                        options={getChartOptions(
+                                                            processedCompareData2,
+                                                            compareChartData2
                                                         )}
-                                                        MenuProps={
-                                                            {
-                                                                PaperProps: {
-                                                                    style: { maxHeight: 300, width: 250 },
-                                                                },
-                                                            }
-                                                        }
-                                                    >
-                                                        
-                                                        {/* Category options */}
-                                                        {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
-                                                            <MenuItem key={categoryKey} value={categoryKey} sx={{
-                                                                py: 0.2, // Tight vertical padding for the list item
-                                                                px: 1,
-                                                                minHeight: '32px', // Forces a slim row height
-                                                            }}>
-                                                                <Checkbox 
-                                                                    checked={categoryData.parameters.every(param => selectedParameter3.includes(param))} 
-                                                                    sx={{
-                                                                        p: 0.5,   // Removes the 9px default padding
-                                                                        mr: 0.5,   // Adds spacing between box and text
-                                                                        transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
-                                                                        '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
-                                                                    }} 
-                                                                />
-                                                                <ListItemText 
-                                                                    primary={categoryData.label} 
-                                                                    primaryTypographyProps={{
-                                                                        fontSize: '12px', // Smaller font to match the small checkbox
-                                                                        lineHeight: 1.2
-                                                                    }}
-                                                                    secondaryTypographyProps={{
-                                                                        fontSize: '10px',
-                                                                        color: 'text.secondary'
-                                                                    }}
-                                                                />
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
-                                            </Box>
-                                            <Chart
-                                                options={getChartOptions(
-                                                    processedCompareData2,
-                                                    compareChartData2
-                                                )}
-                                                series={processedCompareData2.series}
-                                                type="line"
-                                                height={420}
-                                            />
+                                                        series={processedCompareData2.series}
+                                                        type="line"
+                                                        height={420}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <Alert severity="info" sx={{ m: 2 }}>No data available for comparison</Alert>
+                                            )}
                                         </Box>
                                     )}
                                 </>
                             ) : (
-                                <div></div>
+                                <Alert severity="info" sx={{ m: 2 }}>No data available for the selected parameters and date range</Alert>
                             )
                         ) : null}
                     </CardContent>
                 </Card>
             </Box>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={() => setSnackbarOpen(false)}
+                message={snackbarMessage}
+            />
         </Box>
     )
 }

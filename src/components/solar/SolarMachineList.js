@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Grid,
@@ -24,6 +24,9 @@ import {
     Tab,
     Divider,
     Tooltip,
+    CircularProgress,
+    Alert,
+    Snackbar,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
@@ -32,119 +35,72 @@ import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
-// Mock data for solar machine list
-const mockSolarMachineListData = {
-    data: {
-        machines: [
-            {
-                slave_id: 1,
-                name: "VAM",
-                no: "S001",
-                status: "ONLINE",
-                location: "Solar Plant - Area A",
-                last_ts: new Date(Date.now() - 5 * 60000).toISOString(), // 5 minutes ago
-                latest: {
-                    flow_rate: 45.2,
-                    inlet_temperature: 60,
-                    outlet_temperature: 80
-                },
-                energy: {
-                    today: 120.5,
-                    mtd: 3615.2
-                },
-                totalizer: {
-                    value: 1250.75,
-                    timestamp: new Date(Date.now() - 10 * 60000).toISOString(), // 10 minutes ago
-                }
-            },
-            {
-                slave_id: 2,
-                name: "Tower1",
-                no: "S002",
-                status: "ONLINE",
-                location: "Solar Plant - Area B",
-                last_ts: new Date(Date.now() - 2 * 60000).toISOString(), // 2 minutes ago
-                latest: {
-                    flow_rate: 52.8,
-                    inlet_temperature: 110,
-                    outlet_temperature: 100
-                },
-                energy: {
-                    today: 145.8,
-                    mtd: 4374.0
-                },
-                totalizer: {
-                    value: 1380.25,
-                    timestamp: new Date(Date.now() - 5 * 60000).toISOString(), // 5 minutes ago,
-                }
-            },
-            {
-                slave_id: 3,
-                name: "Tower2",
-                no: "S003",
-                status: "OFFLINE",
-                location: "Solar Plant - Area C",
-                last_ts: new Date(Date.now() - 30 * 60000).toISOString(), // 30 minutes ago
-                latest: {
-                    flow_rate: 48.5,
-                    inlet_temperature: 110,
-                    outlet_temperature: 100
-                },
-                energy: {
-                    today: 95.3,
-                    mtd: 2859.0
-                },
-                totalizer: {
-                    value: 1120.50,
-                    timestamp: new Date(Date.now() - 15 * 60000).toISOString(), // 15 minutes ago,
-                }
-            }
-        ]
-    }
-};
-
-// Function to generate mock trend data for solar machines
-const generateMockSolarTrendData = (parameter) => {
-    const data = [];
-    const now = new Date();
-    let baseValue;
-
-    // Set base value based on parameter
-    switch (parameter) {
-        case 'flow_rate':
-            baseValue = 50;
-            break;
-        case 'inlet_temperature':
-            baseValue = 90;
-            break;
-        case 'outlet_temperature':
-            baseValue = 95;
-            break;
-        default:
-            baseValue = 0;
-    }
-
-    // Generate data points for the last 6 hours (one every 30 minutes)
-    for (let i = 12; i >= 0; i--) {
-        const timestamp = new Date(now.getTime() - i * 30 * 60000);
-        // Add some random variation to the base value
-        const variation = (Math.random() - 0.5) * baseValue * 0.2;
-        const value = baseValue + variation;
-
-        data.push({
-            timestamp: timestamp.toISOString(),
-            value: parseFloat(value.toFixed(2))
-        });
-    }
-
-    return data;
-};
+// Import API functions
+import { getSolarMachineList, getSolarMachineTrend } from '../../auth/solar/SolarMachineListApi';
 
 const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
+    // State variables
+    const [solarMachineListData, setSolarMachineListData] = useState({ data: { machines: [] } });
+    const [chartModalOpen, setChartModalOpen] = useState(false);
+    const [selectedFloor, setSelectedFloor] = useState('');
+    const [trendData, setTrendData] = useState([]);
+    const [selectedParameter, setSelectedParameter] = useState('flowrate');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [trendLoading, setTrendLoading] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+
+    // Fetch solar machine list on component mount
+    useEffect(() => {
+        fetchSolarMachineList();
+    }, []);
+
+    // Function to fetch solar machine list
+    const fetchSolarMachineList = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const data = await getSolarMachineList();
+            setSolarMachineListData(data);
+        } catch (err) {
+            console.error('Error fetching solar machine list:', err);
+            setError(err.message || 'Failed to fetch solar machine data');
+            setSnackbarMessage(err.message || 'Failed to fetch solar machine data');
+            setSnackbarOpen(true);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Function to fetch trend data
+    const fetchTrendData = async (slaveId, parameter) => {
+        try {
+            setTrendLoading(true);
+            const response = await getSolarMachineTrend(slaveId, parameter, 6);
+            if (response.success && response.data && response.data.data) {
+                setTrendData(response.data.data);
+            } else {
+                setTrendData([]);
+                setSnackbarMessage('No trend data available');
+                setSnackbarOpen(true);
+            }
+            return response.data.data;
+        } catch (err) {
+            console.error('Error fetching trend data:', err);
+            setTrendData([]);
+            setSnackbarMessage(err.message || 'Failed to fetch trend data');
+            setSnackbarOpen(true);
+            return [];
+        } finally {
+            setTrendLoading(false);
+        }
+    };
+
     // Get parameter unit
     const getParameterUnit = (parameter) => {
         switch (parameter) {
-            case 'flow_rate':
+            case 'flowrate':
                 return 'm³/hr';
             case 'inlet_temperature':
                 return '°C';
@@ -158,7 +114,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Get parameter label
     const getParameterLabel = (parameter) => {
         switch (parameter) {
-            case 'flow_rate':
+            case 'flowrate':
                 return 'Flow Rate';
             case 'inlet_temperature':
                 return 'Inlet Temperature';
@@ -167,20 +123,6 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             default:
                 return 'Value';
         }
-    };
-
-    // State variables
-    const [solarMachineListData] = useState(mockSolarMachineListData);
-    const [chartModalOpen, setChartModalOpen] = useState(false);
-    const [selectedFloor, setSelectedFloor] = useState('');
-    const [trendData, setTrendData] = useState([]);
-    const [selectedParameter, setSelectedParameter] = useState('flow_rate');
-
-    // Function to fetch trend data (using mock data)
-    const fetchTrendData = (slaveId, parameter) => {
-        const mockData = generateMockSolarTrendData(parameter);
-        setTrendData(mockData);
-        return mockData;
     };
 
     // Function to format timestamp for tooltip - showing date and time
@@ -349,6 +291,12 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             top: '10px',
             right: '10px',
         },
+        loadingContainer: {
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '50vh',
+        },
     };
 
     // Chart data for trend
@@ -480,50 +428,6 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const energy = machine.energy || {};
         const totalizer = machine.totalizer || {};
 
-        // Get machine type specific parameters
-        const getMachineTypeParams = (machineName) => {
-            switch (machineName) {
-                case 'VAM':
-                    return {
-                        param1: 'VAM Inlet Temperature',
-                        param2: 'VAM Outlet Temperature',
-                        param1Unit: '°C',
-                        param2Unit: '°C',
-                        param1Value: latest.inlet_temperature,
-                        param2Value: latest.outlet_temperature
-                    };
-                case 'Tower1':
-                    return {
-                        param1: 'Tower 1 Inlet Temperature',
-                        param2: 'Tower 1 Outlet Temperature',
-                        param1Unit: '°C',
-                        param2Unit: '°C',
-                        param1Value: latest.inlet_temperature,
-                        param2Value: latest.outlet_temperature
-                    };
-                case 'Tower2':
-                    return {
-                        param1: 'Tower 2 Inlet Temperature',
-                        param2: 'Tower 2 Outlet Temperature',
-                        param1Unit: '°C',
-                        param2Unit: '°C',
-                        param1Value: latest.inlet_temperature,
-                        param2Value: latest.outlet_temperature
-                    };
-                default:
-                    return {
-                        param1: 'Parameter 1',
-                        param2: 'Parameter 2',
-                        param1Unit: '',
-                        param2Unit: '',
-                        param1Value: 0,
-                        param2Value: 0
-                    };
-            }
-        };
-
-        const machineParams = getMachineTypeParams(machine.name);
-
         return (
             <Card style={styles.floorCard}>
                 <CardContent style={{
@@ -587,37 +491,37 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     <TableCell align="right" style={styles.tableCell}>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.latest?.flow_rate || 0).toFixed(1)} m³/hr
+                                        {(machine.latest?.flow_rate || 0).toFixed(2)} m³/hr
                                     </TableCell>
                                 </TableRow>
 
-                                {/* Parameter 1 (Inlet Temperature) */}
+                                {/* Inlet Temperature */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <DeviceThermostatIcon fontSize="10px" color="error" />
-                                            {machineParams.param1}
+                                            {machine.name} Inlet Temperature
                                         </Box>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machineParams.param1Value || 0).toFixed(1)} {machineParams.param1Unit}
+                                        {(machine.latest?.inlet_temperature || 0).toFixed(2)} °C
                                     </TableCell>
                                 </TableRow>
 
-                                {/* Parameter 2 (Outlet Temperature) */}
+                                {/* Outlet Temperature */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <DeviceThermostatIcon fontSize="10px" color="warning" />
-                                            {machineParams.param2}
+                                            {machine.name} Outlet Temperature
                                         </Box>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machineParams.param2Value || 0).toFixed(1)} {machineParams.param2Unit}
+                                        {(machine.latest?.outlet_temperature || 0).toFixed(2)} °C
                                     </TableCell>
                                 </TableRow>
                             </TableBody>
@@ -666,14 +570,22 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent} id="main-content">
-            {/* Custom Grid Container for 2 cards per row */}
-            <Box style={styles.gridContainer}>
-                {solarMachineListData?.data?.machines?.map((machine, index) => (
-                    <Box style={styles.gridItem} key={machine.slave_id || index}>
-                        {renderFloorCard(machine)}
-                    </Box>
-                ))}
-            </Box>
+            {loading ? (
+                <Box style={styles.loadingContainer}>
+                    <CircularProgress />
+                </Box>
+            ) : error ? (
+                <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+            ) : (
+                /* Custom Grid Container for 2 cards per row */
+                <Box style={styles.gridContainer}>
+                    {solarMachineListData?.data?.machines?.map((machine, index) => (
+                        <Box style={styles.gridItem} key={machine.slave_id || index}>
+                            {renderFloorCard(machine)}
+                        </Box>
+                    ))}
+                </Box>
+            )}
 
             {/* Chart Modal */}
             <Modal
@@ -708,7 +620,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         }}
                                         label="Parameter"
                                     >
-                                        <MenuItem value="flow_rate">Flow Rate</MenuItem>
+                                        <MenuItem value="flowrate">Flow Rate</MenuItem>
                                         <MenuItem value="inlet_temperature">Inlet Temperature</MenuItem>
                                         <MenuItem value="outlet_temperature">Outlet Temperature</MenuItem>
                                     </Select>
@@ -723,15 +635,31 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </IconButton>
                     </Box>
                     <Box id="chart-modal-description">
-                        <Chart
-                            options={chartOptions}
-                            series={chartSeries}
-                            type="line"
-                            height={350}
-                        />
+                        {trendLoading ? (
+                            <Box style={styles.loadingContainer}>
+                                <CircularProgress />
+                            </Box>
+                        ) : trendData.length > 0 ? (
+                            <Chart
+                                options={chartOptions}
+                                series={chartSeries}
+                                type="line"
+                                height={350}
+                            />
+                        ) : (
+                            <Alert severity="info">No trend data available</Alert>
+                        )}
                     </Box>
                 </Box>
             </Modal>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={() => setSnackbarOpen(false)}
+                message={snackbarMessage}
+            />
         </Box>
     );
 };
