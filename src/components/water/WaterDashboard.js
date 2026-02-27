@@ -14,7 +14,9 @@ import {
     InputAdornment,
     CircularProgress,
     Alert,
-    Snackbar
+    Snackbar,
+    useTheme,
+    useMediaQuery
 } from '@mui/material';
 import {
     Search,
@@ -38,6 +40,9 @@ import LocalDrinkOutlinedIcon from '@mui/icons-material/LocalDrinkOutlined';
 import { fetchWaterDashboardOverview, getWaterSlaveList } from '../../auth/water/WaterDashboardApi';
 
 const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
     const [waterPositivity, setWaterPositivity] = useState(26.0);
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -211,7 +216,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         if (value >= 1e6) return (value / 1e6).toFixed(0) + "M";
         return value.toFixed(0);
     };
-    
+
     // Helper function to format timestamp as HH:MM
     const formatTimestamp = (timestampString) => {
         if (!timestampString) return '';
@@ -220,7 +225,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         const minutes = String(date.getMinutes()).padStart(2, '0');
         return `${hours}:${minutes}`;
     };
-    
+
     // Helper function to calculate appropriate y-axis values based on data range
     const calculateYAxis = (actualData, targetData) => {
         if (actualData.length === 0 && targetData.length === 0) {
@@ -453,7 +458,6 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         height: '100px',
         borderRadius: '14px',
         padding: '16px',
-        PaddingLeft: '100px',
         boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.08)',
         display: 'flex',
         flexDirection: 'column'
@@ -562,7 +566,25 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
     // Update card styles with dynamic width
     const responsiveCardStyle = {
         ...cardStyle,
-        width: getCardWidth(),
+        // Corrected Width Logic:
+        // Mobile (xs): 2 cards per row. Gap is 10px. Total width 100%.
+        // Each card = (100% - 10px) / 2 = calc(50% - 5px).
+        // Using calc(50% - 10px) provides a safe buffer to ensure they fit side-by-side.
+        width: {
+            xs: 'calc(40% - 0px)',
+            sm: 'calc(30% - 10px)',
+            md: getCardWidth()
+        },
+        padding: {
+            xs: '10px', // Reduced padding for mobile
+            md: '16px'  // Original padding for desktop
+        },
+        marginLeft: {
+            xs: '-20px',
+            sm: '5px',
+            md: '3px'
+        },
+        flexShrink: 0, // Prevent cards from shrinking
         transition: 'all 0.3s ease',
         '&:hover': {
             backgroundColor: '#fff',
@@ -599,10 +621,18 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                         paddingBottom: '10px',
                         display: 'flex',
                         justifyContent: 'center',
-                        width: '100%',
+                        // width: '100%',
                         overflow: 'hidden'
                     }}>
-                        <Box sx={{ display: 'flex', gap: '10px', marginLeft: '-35px' }}>
+                        {/* Updated Inner Box for responsiveness */}
+                        <Box sx={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '10px',
+                            marginLeft: { xs: '0px', md: '-35px' },
+                            justifyContent: { xs: 'flex-start', md: 'center' },
+                            // width: '100%'
+                        }}>
                             {/* Card 1: Raw Water Inlet */}
                             <Card sx={responsiveCardStyle}>
                                 <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -719,76 +749,29 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box sx={{ backgroundColor: '', padding: '0px', marginLeft: '-20px' }}>
                         <Grid container spacing={3} justifyContent="center" gap={'10px'}>
                             {/* Left Column - 2 Stacked Cards */}
-                            <Grid item xs={8}>
-                                {/* Sewage Inlet Card */}
-                                <Card sx={{
-                                    ...cardStyle1,
-                                    width: getChartCardWidth(),
-                                    height: '100px',
-                                    padding: '20px',
-                                    marginBottom: '10px',
-                                    transition: 'all 0.3s ease',
-                                    '&:hover': {
-                                        backgroundColor: '#fff',
-                                        boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
-                                        transform: 'translateY(-2px)',
-                                    }
+                            <Grid item xs={12} sm={12} md={8}>
+                                {/* Flex container to handle layout direction */}
+                                <Box sx={{
+                                    display: 'flex',
+                                    flexDirection: { xs: 'column', sm: 'row', md: 'column' },
+                                    gap: '10px',
+                                    width: '100%'
                                 }}>
-                                    <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                        <Box display="flex" alignItems="center" justifyContent="center">
-                                            <Typography sx={titleStyle}>Sewage Inlet</Typography>
-                                        </Box>
-                                        <Box display="flex" justifyContent="center" mb="10px">
-                                            <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
-                                                {dashboardData.sewage_inlet?.current?.toFixed(1) || '0.0'} KLD
-                                            </Typography>
-                                        </Box>
-                                        <Box display="flex" justifyContent="center">
-                                            <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
-                                                Yesterday {dashboardData.sewage_inlet?.previous?.toFixed(1) || '0.0'} KLD
-                                            </Typography>
-                                        </Box>
-                                    </CardContent>
-                                </Card>
-
-                                {/* Sewage Outlet Card */}
-                                <Card sx={{
-                                    ...cardStyle1,
-                                    width: getChartCardWidth(),
-                                    height: '100px',
-                                    padding: '20px',
-                                    marginBottom: '10px',
-                                    transition: 'all 0.3s ease',
-                                    '&:hover': {
-                                        backgroundColor: '#fff',
-                                        boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
-                                        transform: 'translateY(-2px)',
-                                    }
-                                }}>
-                                    <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                        <Box display="flex" alignItems="center" justifyContent="center">
-                                            <Typography sx={titleStyle}>Sewage Outlet</Typography>
-                                        </Box>
-                                        <Box display="flex" justifyContent="center" mb="10px">
-                                            <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
-                                                {dashboardData.sewage_outlet?.current?.toFixed(1) || '0.0'} KLD
-                                            </Typography>
-                                        </Box>
-                                        <Box display="flex" justifyContent="center">
-                                            <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
-                                                Yesterday {dashboardData.sewage_outlet?.previous?.toFixed(1) || '0.0'} KLD
-                                            </Typography>
-                                        </Box>
-                                    </CardContent>
-                                </Card>
-                                {/* Total Stations Card */}
-                                <Card sx={
-                                    {
+                                    {/* Sewage Inlet Card */}
+                                    <Card sx={{
                                         ...cardStyle1,
-                                        width: getChartCardWidth(),
+                                        width: {
+                                            xs: '85%',
+                                            sm: 'calc(100% - 7px)',
+                                            md: getChartCardWidth()
+                                        },
+                                        // width: isTablet ? 150 : getChartCardWidth1(),
                                         height: '100px',
-                                        padding: '20px',
-                                        marginBottom: '10px',
+                                        padding: {
+                                            xs: '20px',
+                                            sm: '75px',
+                                            md: '20px'
+                                        },
                                         transition: 'all 0.3s ease',
                                         '&:hover': {
                                             backgroundColor: '#fff',
@@ -796,28 +779,118 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                             transform: 'translateY(-2px)',
                                         }
                                     }}>
-                                    <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                        <Box display="flex" alignItems="center" justifyContent="center">
-                                            <LocalDrinkOutlinedIcon sx={{ color: '#0156a6', mr: 1, fontSize: '20px', }} />
-                                        </Box>
-                                        <Box display="flex" justifyContent="center" mt="10px">
-                                            <Typography sx={titleStyle}>Total Stations</Typography>
-                                        </Box>
-                                        <Box display="flex" justifyContent="center" mt="10px">
-                                            <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
-                                                {dashboardData.total_stations || slaveList.length}
-                                            </Typography>
-                                        </Box>
-                                    </CardContent>
-                                </Card>
+                                        <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                            <Box display="flex" alignItems="center" justifyContent="center">
+                                                <Typography sx={titleStyle}>Sewage Inlet</Typography>
+                                            </Box>
+                                            <Box display="flex" justifyContent="center" mb="10px">
+                                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                                    {dashboardData.sewage_inlet?.current?.toFixed(1) || '0.0'} KLD
+                                                </Typography>
+                                            </Box>
+                                            <Box display="flex" justifyContent="center">
+                                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                                    Yesterday {dashboardData.sewage_inlet?.previous?.toFixed(1) || '0.0'} KLD
+                                                </Typography>
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Sewage Outlet Card */}
+                                    <Card sx={{
+                                        ...cardStyle1,
+                                        width: {
+                                            xs: '85%',
+                                            sm: 'calc(100% - 7px)',
+                                            md: getChartCardWidth()
+                                        },
+                                        // width: isTablet ? 150 : getChartCardWidth1(),
+                                        height: '100px',
+                                        padding: {
+                                            xs: '20px',
+                                            sm: '75px',
+                                            md: '20px'
+                                        },
+                                        transition: 'all 0.3s ease',
+                                        '&:hover': {
+                                            backgroundColor: '#fff',
+                                            boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                                            transform: 'translateY(-2px)',
+                                        }
+                                    }}>
+                                        <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                            <Box display="flex" alignItems="center" justifyContent="center">
+                                                <Typography sx={titleStyle}>Sewage Outlet</Typography>
+                                            </Box>
+                                            <Box display="flex" justifyContent="center" mb="10px">
+                                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                                    {dashboardData.sewage_outlet?.current?.toFixed(1) || '0.0'} KLD
+                                                </Typography>
+                                            </Box>
+                                            <Box display="flex" justifyContent="center">
+                                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                                    Yesterday {dashboardData.sewage_outlet?.previous?.toFixed(1) || '0.0'} KLD
+                                                </Typography>
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Total Stations Card */}
+                                    <Card sx={
+                                        {
+                                            ...cardStyle1,
+                                            width: {
+                                                xs: '85%',
+                                                sm: 'calc(100% - 7px)',
+                                                md: getChartCardWidth()
+                                            },
+                                    // width: isTablet ? 150 : getChartCardWidth1(),
+                                            height: '100px',
+                                            padding: {
+                                                xs: '20px',
+                                                sm: '75px',
+                                                md: '20px'
+                                            },
+                                            transition: 'all 0.3s ease',
+                                            '&:hover': {
+                                                backgroundColor: '#fff',
+                                                boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                                                transform: 'translateY(-2px)',
+                                            }
+                                        }}>
+                                        <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                            <Box display="flex" alignItems="center" justifyContent="center">
+                                                <LocalDrinkOutlinedIcon sx={{ color: '#0156a6', mr: 1, fontSize: '20px', }} />
+                                            </Box>
+                                            <Box display="flex" justifyContent="center" mt="10px">
+                                                <Typography sx={titleStyle}>Total Stations</Typography>
+                                            </Box>
+                                            <Box display="flex" justifyContent="center" mt="10px">
+                                                <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
+                                                    {dashboardData.total_stations || slaveList.length}
+                                                </Typography>
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                </Box>
                             </Grid>
-                            {/* Right Column */}
-                            <Grid item xs={12}>
+
+                            {/* Right Column - Chart & Alerts Card */}
+                            {/* Updated Grid item to span full width on mobile/tablet */}
+                            <Grid item xs={12} sm={12} md={12}>
                                 <Card sx={{
                                     ...cardStyle1,
-                                    width: getChartCardWidth1(),
-                                    height: '399px',
-                                    padding: '20px',
+                                    // Responsive width: 100% on mobile/tablet, original fixed width on desktop
+                                    // width: { xs: '85%', sm: '100%', md: getChartCardWidth1() },
+                                    width: isMobile ? '85%' : isTablet ? '100%' : getChartCardWidth1(),
+                                    // Dynamic height for mobile to accommodate stacked layout
+                                    height: { xs: 'auto', md: '399px' },
+                                    padding: {
+                                        xs: '20px',
+                                        sm: '56px',
+                                        md: '20px'
+                                    },
+                                    marginLeft: { sm: '-54px', md: '0px' },
                                     marginBottom: '10px',
                                     transition: 'all 0.3s ease',
                                     '&:hover': {
@@ -828,7 +901,8 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                 }}>
                                     <Grid container spacing={2}>
                                         {/* Left Column - Charts */}
-                                        <Grid item xs={8}>
+                                        {/* Updated to stack on mobile/tablet (xs=12, sm=12) */}
+                                        <Grid item xs={12} sm={12} md={8}>
                                             {/* Weekly Water Consumption Chart */}
                                             <Box>
                                                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -876,18 +950,26 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                                         </button>
                                                     </Box>
                                                 </Box>
+                                                {/* Changed width to "100%" for responsiveness */}
                                                 <Chart
                                                     options={activeChart === 'bar' ? weeklyWaterBarOptions : weeklyWaterLineOptions}
                                                     series={weeklyWaterSeries}
                                                     type={activeChart}
                                                     height={350}
-                                                    width={844}
+                                                    width={isMobile ? '100%' : isTablet ? 250 : 844}
                                                 />
                                             </Box>
                                         </Grid>
 
                                         {/* Right Column - Alerts Panel */}
-                                        <Grid item xs={4} sx={{ width: getAlertsCardWidth(), padding: '10px', marginLeft: sidebarVisible ? '0px' : '0px' }}>
+                                        {/* Updated to stack on mobile/tablet (xs=12, sm=12) */}
+                                        <Grid item xs={12} sm={12} md={4} sx={{
+                                            width: { xs: '100%', md: getAlertsCardWidth() },
+                                            // width: isTablet ? '45%' : getChartCardWidth1(),
+                                            padding: '10px',
+                                            marginLeft: sidebarVisible ? '0px' : '0px',
+                                            marginTop: { xs: '20px', md: '0px' } // Add margin top on mobile for spacing
+                                        }}>
                                             <TextField
                                                 fullWidth
                                                 size="small"

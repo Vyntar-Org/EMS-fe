@@ -13,7 +13,9 @@ import {
     ListItemText,
     InputAdornment,
     Button,
-    Tooltip
+    Tooltip,
+    useTheme,
+    useMediaQuery
 } from '@mui/material';
 import {
     Search,
@@ -35,6 +37,9 @@ import LocalDrinkOutlinedIcon from '@mui/icons-material/LocalDrinkOutlined';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 
 const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
     const [fuelPositivity, setFuelPositivity] = useState(26.0);
     const truncateText = (text, length = 9) =>
         text.length > length ? text.slice(0, length) + '...' : text;
@@ -296,7 +301,7 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
     };
 
     const titleStyle1 = {
-        fontSize: '16px',
+        fontSize: { xs: '14px', sm: '16px' },
         fontWeight: 600,
         color: '#1F2937',
         fontFamily: 'sans-serif'
@@ -336,12 +341,13 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
     // Define styles based on the provided requirements
     const styles = {
         mainContent: {
-            width: sidebarVisible ? 'calc(100% - 0px)' : 'calc(100% - 0px)',
-            maxWidth: sidebarVisible ? '1600px' : '1800px',
+            width: '100%',
             minHeight: '89vh',
-            fontFamily: 'sans-serif',
+            fontFamily: 'Inter, Roboto, system-ui, sans-serif',
             fontSize: '14px',
-            marginLeft: '8px',
+            margin: '0',
+            padding: { xs: '5px', sm: '0' },
+            boxSizing: 'border-box',
         }
     };
 
@@ -395,13 +401,13 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
             {/* Main Layout Container */}
             <Box sx={{
                 display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
                 height: '100%',
-                // padding: '20px',
-                gap: '10px'
+                gap: { xs: '15px', sm: '10px' }
             }}>
                 {/* Left Column - Fuel Station Status and Generator List */}
                 <Box sx={{
-                    width: '500px',
+                    width: { xs: '100%', sm: '500px' },
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '10px'
@@ -409,14 +415,21 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     {/* Fuel Station Status Card */}
                     <Card sx={{
                         ...cardStyle1,
-                        padding: '20px',
+                        padding: { xs: '15px', sm: '20px' },
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        height: '200px'
+                        height: { xs: 'auto', sm: '200px' }
                     }}>
                         <Typography
-                            sx={{ ...titleStyle1, textAlign: 'left', width: '100%' }} mb={2}>
+                            sx={{
+                                fontSize: { xs: '14px', sm: '16px' },
+                                fontWeight: 600,
+                                textAlign: 'left',
+                                width: '100%',
+                                mb: 2
+                            }}
+                        >
                             Fuel Station
                         </Typography>
 
@@ -429,10 +442,10 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                         />
                     </Card>
 
-                    {/* Generator List Card - Corrected */}
+                    {/* Generator List Card */}
                     <Card sx={{
                         ...cardStyle1,
-                        padding: '20px',
+                        padding: { xs: '15px', sm: '20px' },
                         display: 'flex',
                         flexDirection: 'column',
                     }}>
@@ -446,7 +459,7 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                 marginBottom: '8px',
                                 '& .MuiOutlinedInput-root': {
                                     borderRadius: '8px',
-                                    height: '30px'
+                                    height: '36px'
                                 }
                             }}
                             InputProps={{
@@ -458,7 +471,18 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                             }}
                         />
 
-                        <Box sx={{ maxHeight: "300px", overflowY: "auto", scrollbarWidth: "thin" }}>
+                        <Box sx={{
+                            maxHeight: { xs: '250px', sm: '300px' },
+                            overflowY: 'auto',
+                            scrollbarWidth: 'thin',
+                            '&::-webkit-scrollbar': {
+                                width: '4px',
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                backgroundColor: '#ccc',
+                                borderRadius: '4px',
+                            }
+                        }}>
                             {Array.isArray(slaveList) ? (
                                 slaveList
                                     .filter(slave => slave.slave_name && slave.slave_name.toLowerCase().includes(searchTerm))
@@ -466,7 +490,7 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                         <Box
                                             key={slave.slave_id}
                                             sx={{
-                                                padding: '10px 12px',
+                                                padding: { xs: '8px 10px', sm: '10px 12px' },
                                                 borderRadius: '8px',
                                                 marginBottom: '6px',
                                                 display: 'flex',
@@ -499,7 +523,7 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                             >
                                                 <Typography
                                                     sx={{
-                                                        fontSize: '14px',
+                                                        fontSize: { xs: '13px', sm: '14px' },
                                                         color: '#444444',
                                                         fontWeight: 'bold',
                                                         fontFamily: 'ubuntu, sans-serif',
@@ -526,18 +550,32 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 <Box sx={{
                     flex: 1,
                     display: 'flex',
-                    flexDirection: 'column'
+                    flexDirection: 'column',
+                    width: { xs: '100%', sm: 'auto' }
                 }}>
                     <Card sx={{
                         ...cardStyle1,
-                        padding: '20px',
+                        padding: { xs: '15px', sm: '20px' },
                         height: '100%',
-                        width: '94%',
+                        width: { xs: '100%', sm: '94%' },
                         display: 'flex',
                         flexDirection: 'column',
                     }}>
-                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                            <Typography sx={titleStyle1}>{selectedSlave.slave_name}, February 2026</Typography>
+                        <Box
+                            display="flex"
+                            flexDirection={{ xs: 'column', sm: 'row' }}
+                            justifyContent="space-between"
+                            alignItems={{ xs: 'flex-start', sm: 'center' }}
+                            mb={2}
+                            gap={{ xs: 1, sm: 0 }}
+                        >
+                            <Typography sx={{
+                                fontSize: { xs: '13px', sm: '16px' },
+                                fontWeight: 600,
+                                color: '#1F2937'
+                            }}>
+                                {selectedSlave.slave_name}, February 2026
+                            </Typography>
                             <Box display="flex" gap={1}>
                                 <button
                                     onClick={() => setActiveChart('bar')}
@@ -581,13 +619,19 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                 </button>
                             </Box>
                         </Box>
-                        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <Box sx={{
+                            flex: 1,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            overflow: 'hidden'
+                        }}>
                             <Chart
                                 options={activeChart === 'bar' ? dailyFuelBarOptions : dailyFuelLineOptions}
                                 series={dailyFuelSeries}
                                 type={activeChart}
-                                height={400}
-                                width={800}
+                                height={350}
+                                width={isMobile ? '100%' : isTablet ? 350 : 800}
                             />
                         </Box>
                     </Card>

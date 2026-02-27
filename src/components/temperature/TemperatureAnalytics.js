@@ -83,16 +83,18 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '14px',
             color: '#5A5A5A',
             marginBottom: '20px',
+            padding: { xs: '5px', sm: '0' },
+            boxSizing: 'border-box',
         },
         container: {
-            // padding: '0 15px',
+            padding: { xs: '5px', sm: '0' },
         },
         blockHeader: {
-            // padding: '10px 0',
+            padding: { xs: '5px 0', sm: '10px 0' },
         },
         headerTitle: {
             margin: '0',
-            fontSize: '24px',
+            fontSize: { xs: '18px', sm: '24px' },
             fontWeight: '400',
             color: '#515151',
         },
@@ -100,8 +102,7 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             backgroundColor: '#fff',
             borderRadius: '4px',
             boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
-            padding: '15px',
-            // marginTop: '10px',
+            padding: { xs: '10px', sm: '15px' },
         },
         statusChip: {
             fontWeight: 'bold',
@@ -642,7 +643,8 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                         fontSize: '12px',
                     },
                     show: true,
-                    
+                    rotate: -45,
+                    rotateAlways: true,
                 },
                 tickAmount: 6,
                 tickPlacement: 'on',
@@ -761,12 +763,21 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     };
 
     return (
-        <Box style={styles.mainContent} id="main-content">
-            <Box style={styles.container}>
-                <Card style={styles.tableCard}>
-                    <CardContent sx={{ p: 1 }}>
+        <Box sx={styles.mainContent} id="main-content">
+            <Box sx={styles.container}>
+                <Card sx={styles.tableCard}>
+                    <CardContent sx={{ p: { xs: 1, sm: 1 } }}>
                         <Box className="logs-header">
-                            <Box className="logs-filters">
+                            <Box 
+                                className="logs-filters"
+                                sx={{
+                                    display: 'flex',
+                                    flexDirection: { xs: 'column', sm: 'row' },
+                                    flexWrap: 'wrap',
+                                    gap: { xs: 2, sm: 2 },
+                                    alignItems: { xs: 'stretch', sm: 'center' },
+                                }}
+                            >
                                 {loading ? (
                                     <Box style={styles.loadingContainer}>
                                         <CircularProgress />
@@ -775,7 +786,14 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                     <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
                                 ) : (
                                     <>
-                                        <FormControl size="small" sx={{ minWidth: 300 }}>
+                                        {/* Machine Select */}
+                                        <FormControl 
+                                            size="small" 
+                                            sx={{ 
+                                                minWidth: { xs: '100%', sm: 300 },
+                                                order: { xs: 1, sm: 1 }
+                                            }}
+                                        >
                                             <InputLabel>Select Machine</InputLabel>
                                             <Select
                                                 value={filterDevice}
@@ -789,7 +807,16 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 ))}
                                             </Select>
                                         </FormControl>
-                                        <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
+
+                                        {/* Parameters Select */}
+                                        <FormControl 
+                                            size="small" 
+                                            sx={{ 
+                                                minWidth: { xs: '100%', sm: 300 }, 
+                                                mr: { sm: 2 },
+                                                order: { xs: 2, sm: 2 }
+                                            }}
+                                        >
                                             <InputLabel>Select Parameters</InputLabel>
                                             <Select
                                                 multiple
@@ -870,96 +897,125 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             </Select>
                                         </FormControl>
 
-                                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                            <DateTimePicker
-                                                open={openStart}
-                                                onOpen={() => setOpenStart(true)}
-                                                onClose={() => setOpenStart(false)}
-                                                value={filterStartDate}
-                                                onChange={(newValue) => setFilterStartDate(newValue)}
-                                                format="DD/MM/YYYY hh:mm A"
-                                                slotProps={{
-                                                    textField: {
-                                                        size: 'small',
-                                                        sx: { minWidth: 220, mr: 2, borderRadius: 2 },
-                                                        onClick: () => setOpenStart(true), // 🔥 input click opens picker
-                                                    },
-                                                }}
-                                            />
-                                        </LocalizationProvider>
-
-
-                                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                            <DateTimePicker
-                                                open={openEnd}
-                                                onOpen={() => setOpenEnd(true)}
-                                                onClose={() => setOpenEnd(false)}
-                                                value={filterEndDate}
-                                                onChange={(newValue) => setFilterEndDate(newValue)}
-                                                format="DD/MM/YYYY hh:mm A"
-                                                slotProps={{
-                                                    textField: {
-                                                        size: 'small',
-                                                        sx: { minWidth: 220, mr: 2, borderRadius: 2 },
-                                                        onClick: () => setOpenEnd(true), // 🔥 input click opens picker
-                                                    },
-                                                }}
-                                            />
-                                        </LocalizationProvider>
-
-
-                                        <Button
-                                            variant="contained"
-                                            startIcon={<SearchIcon />}
-                                            onClick={handleSearch}
+                                        {/* Date Pickers Row */}
+                                        <Box 
                                             sx={{
-                                                backgroundColor: '#0156a6',
-                                                '&:hover': {
-                                                    backgroundColor: '#166aa0',
-                                                },
-                                                minWidth: 'auto',
-                                                width: '32px', // Smaller width
-                                                height: '32px', // Smaller height
-                                                padding: '6px', // Even smaller padding
-                                                borderRadius: '4px', // Square with rounded corners
-                                                '& .MuiButton-startIcon': {
-                                                    margin: 0,
-                                                }
+                                                display: 'flex',
+                                                flexDirection: { xs: 'column', sm: 'row' },
+                                                gap: { xs: 2, sm: 2 },
+                                                order: { xs: 3, sm: 3 },
+                                                width: { xs: '100%', sm: 'auto' }
                                             }}
                                         >
-                                        </Button>
+                                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                                <DateTimePicker
+                                                    open={openStart}
+                                                    onOpen={() => setOpenStart(true)}
+                                                    onClose={() => setOpenStart(false)}
+                                                    value={filterStartDate}
+                                                    onChange={(newValue) => setFilterStartDate(newValue)}
+                                                    format="DD/MM/YYYY hh:mm A"
+                                                    slotProps={{
+                                                        textField: {
+                                                            size: 'small',
+                                                            sx: { 
+                                                                minWidth: { xs: '100%', sm: 220 }, 
+                                                                mr: { sm: 2 }, 
+                                                                borderRadius: 2 
+                                                            },
+                                                            onClick: () => setOpenStart(true), // 🔥 input click opens picker
+                                                        },
+                                                    }}
+                                                />
+                                            </LocalizationProvider>
 
-                                        <Button
-                                            variant="outlined"
-                                            startIcon={<RefreshIcon />}
-                                            onClick={() => {
-                                                handleResetFilters();
-                                                setSelectedParameter([]); // Reset main chart parameter
-                                                setSelectedParameter2([]); // Reset first comparison parameter
-                                                setSelectedParameter3([]); // Reset second comparison parameter
-                                                setFilterDevice2('all'); // Reset first comparison machine
-                                                setFilterDevice3('all'); // Reset second comparison machine
-                                                setCompareParameter(''); // Reset first comparison parameter
-                                                setCompareParameter2(''); // Reset second comparison parameter
-                                            }}
+
+                                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                                <DateTimePicker
+                                                    open={openEnd}
+                                                    onOpen={() => setOpenEnd(true)}
+                                                    onClose={() => setOpenEnd(false)}
+                                                    value={filterEndDate}
+                                                    onChange={(newValue) => setFilterEndDate(newValue)}
+                                                    format="DD/MM/YYYY hh:mm A"
+                                                    slotProps={{
+                                                        textField: {
+                                                            size: 'small',
+                                                            sx: { 
+                                                                minWidth: { xs: '100%', sm: 220 }, 
+                                                                mr: { sm: 2 }, 
+                                                                borderRadius: 2 
+                                                            },
+                                                            onClick: () => setOpenEnd(true), // 🔥 input click opens picker
+                                                        },
+                                                    }}
+                                                />
+                                            </LocalizationProvider>
+                                        </Box>
+
+                                        {/* Buttons Row */}
+                                        <Box 
                                             sx={{
-                                                borderColor: '#6c757d',
-                                                color: '#6c757d',
-                                                '&:hover': {
-                                                    borderColor: '#5a6268',
-                                                    color: '#5a6268',
-                                                },
-                                                minWidth: 'auto',
-                                                width: '32px', // Smaller width
-                                                height: '32px', // Smaller height
-                                                padding: '4px', // Even smaller padding
-                                                borderRadius: '4px',
-                                                '& .MuiButton-startIcon': {
-                                                    margin: 0,
-                                                }
+                                                display: 'flex',
+                                                flexDirection: 'row',
+                                                gap: 1,
+                                                order: { xs: 4, sm: 4 },
+                                                justifyContent: { xs: 'flex-start', sm: 'flex-start' }
                                             }}
                                         >
-                                        </Button>
+                                            <Button
+                                                variant="contained"
+                                                startIcon={<SearchIcon />}
+                                                onClick={handleSearch}
+                                                sx={{
+                                                    backgroundColor: '#0156a6',
+                                                    '&:hover': {
+                                                        backgroundColor: '#166aa0',
+                                                    },
+                                                    minWidth: 'auto',
+                                                    width: { xs: 'auto', sm: '32px' }, // Smaller width
+                                                    height: '32px', // Smaller height
+                                                    padding: { xs: '6px 16px', sm: '6px' }, // Even smaller padding
+                                                    borderRadius: '4px', // Square with rounded corners
+                                                    '& .MuiButton-startIcon': {
+                                                        margin: { sm: 0 },
+                                                    }
+                                                }}
+                                            >
+                                            </Button>
+
+                                            <Button
+                                                variant="outlined"
+                                                startIcon={<RefreshIcon />}
+                                                onClick={() => {
+                                                    handleResetFilters();
+                                                    setSelectedParameter([]); // Reset main chart parameter
+                                                    setSelectedParameter2([]); // Reset first comparison parameter
+                                                    setSelectedParameter3([]); // Reset second comparison parameter
+                                                    setFilterDevice2('all'); // Reset first comparison machine
+                                                    setFilterDevice3('all'); // Reset second comparison machine
+                                                    setCompareParameter(''); // Reset first comparison parameter
+                                                    setCompareParameter2(''); // Reset second comparison parameter
+                                                }}
+                                                sx={{
+                                                    borderColor: '#6c757d',
+                                                    color: '#6c757d',
+                                                    '&:hover': {
+                                                        borderColor: '#5a6268',
+                                                        color: '#5a6268',
+                                                    },
+                                                    minWidth: 'auto',
+                                                    width: { xs: 'auto', sm: '32px' }, // Smaller width
+                                                    height: '32px', // Smaller height
+                                                    padding: { xs: '6px 16px', sm: '4px' }, // Even smaller padding
+                                                    borderRadius: '4px',
+                                                    '& .MuiButton-startIcon': {
+                                                        margin: { sm: 0 },
+                                                    }
+                                                }}
+                                            >
+                                            </Button>
+                                        </Box>
                                     </>
                                 )}
                             </Box>
@@ -971,11 +1027,18 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 </Box>
                             ) : processedFilteredData.series.length > 0 ? (
                                 <>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        justifyContent: 'space-between', 
+                                        alignItems: { xs: 'flex-start', sm: 'center' }, 
+                                        mb: 1,
+                                        gap: { xs: 1, sm: 0 }
+                                    }}>
                                         <Typography
                                             gutterBottom
                                             sx={{
-                                                fontSize: '14px',
+                                                fontSize: { xs: '12px', sm: '14px' },
                                                 fontWeight: 'bold',
                                                 color: '#50342c',
                                                 mb: 0
@@ -987,8 +1050,13 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     : parameterOptions.find(opt => opt.value === selectedParameter[0])?.label || selectedParameter[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                 : (filterDevice !== 'all' ? `${filterDevice}` : 'Temperature Analytics')}
                                         </Typography>
-                                        <Box>
-                                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                        <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                                            <Box sx={{ 
+                                                display: 'flex', 
+                                                flexDirection: { xs: 'column', sm: 'row' },
+                                                gap: { xs: 1, sm: 2 }, 
+                                                alignItems: { xs: 'stretch', sm: 'center' } 
+                                            }}>
                                                 {compareMode ? (
                                                     <Button
                                                         variant="outlined"
@@ -1001,13 +1069,20 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 borderColor: '#166aa0',
                                                                 color: '#166aa0',
                                                             },
-                                                            mr: 1
+                                                            mr: { sm: 1 },
+                                                            width: { xs: '100%', sm: 'auto' }
                                                         }}
                                                     >
                                                         Cancel Compare
                                                     </Button>
                                                 ) : (
-                                                    <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                    <FormControl 
+                                                        size="small" 
+                                                        sx={{ 
+                                                            minWidth: { xs: '100%', sm: 300 },
+                                                            width: { xs: '100%', sm: 'auto' }
+                                                        }}
+                                                    >
                                                         <InputLabel>Select Machine to Compare</InputLabel>
                                                         <Select
                                                             value={compareDevice}
@@ -1023,24 +1098,26 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     </FormControl>
                                                 )}
                                             </Box>
-                                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}></Box>
                                         </Box>
                                     </Box>
-                                    <Chart
-                                        options={getChartOptions(
-                                            processedFilteredData,
-                                            filteredChartData
-                                        )}
-                                        series={processedFilteredData.series}
-                                        type="line"
-                                        height={420}
-                                    />
+                                    <Box sx={{ width: '100%', overflow: 'auto' }}>
+                                        <Chart
+                                            options={getChartOptions(
+                                                processedFilteredData,
+                                                filteredChartData
+                                            )}
+                                            series={processedFilteredData.series}
+                                            type="line"
+                                            height={420}
+                                            width="100%"
+                                        />
+                                    </Box>
                                     {compareMode && compareDevice && (
                                         <Box sx={{ mt: 4 }}>
                                             <Typography
                                                 gutterBottom
                                                 sx={{
-                                                    fontSize: '14px',
+                                                    fontSize: { xs: '12px', sm: '14px' },
                                                     fontWeight: 'bold',
                                                     color: '#50342c',
                                                     mb: 1
@@ -1058,9 +1135,27 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 </Box>
                                             ) : processedCompareData.series.length > 0 ? (
                                                 <>
-                                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                                                            <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                    <Box sx={{ 
+                                                        display: 'flex', 
+                                                        flexDirection: { xs: 'column', sm: 'row' },
+                                                        justifyContent: 'flex-end',
+                                                        gap: { xs: 1, sm: 0 },
+                                                        mb: 2
+                                                    }}>
+                                                        <Box sx={{ 
+                                                            display: 'flex', 
+                                                            flexDirection: { xs: 'column', sm: 'row' },
+                                                            gap: { xs: 1, sm: 2 }, 
+                                                            alignItems: { xs: 'stretch', sm: 'center' },
+                                                            width: { xs: '100%', sm: 'auto' }
+                                                        }}>
+                                                            <FormControl 
+                                                                size="small" 
+                                                                sx={{ 
+                                                                    minWidth: { xs: '100%', sm: 300 },
+                                                                    width: { xs: '100%', sm: 'auto' }
+                                                                }}
+                                                            >
                                                                 <InputLabel>Select Machine</InputLabel>
                                                                 <Select
                                                                     value={compareDevice}
@@ -1074,7 +1169,14 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                     ))}
                                                                 </Select>
                                                             </FormControl>
-                                                            <FormControl size="small" sx={{ minWidth: 300, mr: 1 }}>
+                                                            <FormControl 
+                                                                size="small" 
+                                                                sx={{ 
+                                                                    minWidth: { xs: '100%', sm: 300 }, 
+                                                                    mr: { sm: 1 },
+                                                                    width: { xs: '100%', sm: 'auto' }
+                                                                }}
+                                                            >
                                                                 <InputLabel>Select Parameters</InputLabel>
                                                                 <Select
                                                                     multiple
@@ -1186,13 +1288,20 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                         '&:hover': {
                                                                             borderColor: '#166aa0',
                                                                             color: '#166aa0',
-                                                                        }
+                                                                        },
+                                                                        width: { xs: '100%', sm: 'auto' }
                                                                     }}
                                                                 >
                                                                     Cancel Compare
                                                                 </Button>
                                                             ) : (
-                                                                <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                                <FormControl 
+                                                                    size="small" 
+                                                                    sx={{ 
+                                                                        minWidth: { xs: '100%', sm: 300 },
+                                                                        width: { xs: '100%', sm: 'auto' }
+                                                                    }}
+                                                                >
                                                                     <InputLabel>Select Second Machine to Compare</InputLabel>
                                                                     <Select
                                                                         value={compareDevice2}
@@ -1209,15 +1318,18 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             )}
                                                         </Box>
                                                     </Box>
-                                                    <Chart
-                                                        options={getChartOptions(
-                                                            processedCompareData,
-                                                            compareChartData
-                                                        )}
-                                                        series={processedCompareData.series}
-                                                        type="line"
-                                                        height={420}
-                                                    />
+                                                    <Box sx={{ width: '100%', overflow: 'auto' }}>
+                                                        <Chart
+                                                            options={getChartOptions(
+                                                                processedCompareData,
+                                                                compareChartData
+                                                            )}
+                                                            series={processedCompareData.series}
+                                                            type="line"
+                                                            height={420}
+                                                            width="100%"
+                                                        />
+                                                    </Box>
                                                 </>
                                             ) : (
                                                 <Alert severity="info" sx={{ m: 2 }}>No data available for comparison</Alert>
@@ -1229,7 +1341,7 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             <Typography
                                                 gutterBottom
                                                 sx={{
-                                                    fontSize: '14px',
+                                                    fontSize: { xs: '12px', sm: '14px' },
                                                     fontWeight: 'bold',
                                                     color: '#50342c',
                                                     mb: 1
@@ -1247,8 +1359,20 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 </Box>
                                             ) : processedCompareData2.series.length > 0 ? (
                                                 <>
-                                                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                                                        <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                    <Box sx={{ 
+                                                        display: 'flex', 
+                                                        flexDirection: { xs: 'column', sm: 'row' },
+                                                        gap: { xs: 1, sm: 2 },
+                                                        justifyContent: 'flex-end',
+                                                        mb: 2
+                                                    }}>
+                                                        <FormControl 
+                                                            size="small" 
+                                                            sx={{ 
+                                                                minWidth: { xs: '100%', sm: 300 },
+                                                                width: { xs: '100%', sm: 'auto' }
+                                                            }}
+                                                        >
                                                             <InputLabel>Select Machine</InputLabel>
                                                             <Select
                                                                 value={compareDevice2}
@@ -1262,7 +1386,13 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 ))}
                                                             </Select>
                                                         </FormControl>
-                                                        <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                        <FormControl 
+                                                            size="small" 
+                                                            sx={{ 
+                                                                minWidth: { xs: '100%', sm: 300 },
+                                                                width: { xs: '100%', sm: 'auto' }
+                                                            }}
+                                                        >
                                                             <InputLabel>Select Parameters</InputLabel>
                                                             <Select
                                                                 multiple
@@ -1363,15 +1493,18 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             </Select>
                                                         </FormControl>
                                                     </Box>
-                                                    <Chart
-                                                        options={getChartOptions(
-                                                            processedCompareData2,
-                                                            compareChartData2
-                                                        )}
-                                                        series={processedCompareData2.series}
-                                                        type="line"
-                                                        height={420}
-                                                    />
+                                                    <Box sx={{ width: '100%', overflow: 'auto' }}>
+                                                        <Chart
+                                                            options={getChartOptions(
+                                                                processedCompareData2,
+                                                                compareChartData2
+                                                            )}
+                                                            series={processedCompareData2.series}
+                                                            type="line"
+                                                            height={420}
+                                                            width="100%"
+                                                        />
+                                                    </Box>
                                                 </>
                                             ) : (
                                                 <Alert severity="info" sx={{ m: 2 }}>No data available for comparison</Alert>

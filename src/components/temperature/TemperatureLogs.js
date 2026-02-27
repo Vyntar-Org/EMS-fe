@@ -358,8 +358,23 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
             </Typography>
           )}
           <Box className="logs-header">
-            <Box className="logs-filters">
-              <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
+            <Box 
+              className="logs-filters"
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                flexWrap: 'wrap',
+                gap: { xs: 2, sm: 2 },
+                alignItems: { xs: 'stretch', sm: 'center' },
+              }}
+            >
+              <FormControl 
+                size="small" 
+                sx={{ 
+                  minWidth: { xs: '100%', sm: 300 },
+                  mr: { xs: 0, sm: 2 }
+                }}
+              >
                 <InputLabel>Select Machine</InputLabel>
                 <Select
                   value={filterDevice}
@@ -380,7 +395,14 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                   )}
                 </Select>
               </FormControl>
-              <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
+              
+              <FormControl 
+                size="small" 
+                sx={{ 
+                  minWidth: { xs: '100%', sm: 300 },
+                  mr: { xs: 0, sm: 2 }
+                }}
+              >
                 <InputLabel id="param-select-label">Select Parameter</InputLabel>
                 <Select
                   labelId="param-select-label"
@@ -488,93 +510,117 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                 </Select>
               </FormControl>
 
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DateTimePicker
-                  open={openStart}
-                  onOpen={() => setOpenStart(true)}
-                  onClose={() => setOpenStart(false)}
-                  value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
-                  onChange={(newValue) => setFilterStartDate(newValue)}
-                  slotProps={{
-                    textField: {
-                      size: 'small',
-                      sx: { minWidth: 220, mr: 2, borderRadius: 2 },
-                      onClick: () => setOpenStart(true), // 🔥 input click opens picker
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: { xs: 2, sm: 2 },
+                alignItems: { xs: 'stretch', sm: 'center' },
+                width: { xs: '100%', sm: 'auto' },
+              }}>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DateTimePicker
+                    open={openStart}
+                    onOpen={() => setOpenStart(true)}
+                    onClose={() => setOpenStart(false)}
+                    value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
+                    onChange={(newValue) => setFilterStartDate(newValue)}
+                    slotProps={{
+                      textField: {
+                        size: 'small',
+                        sx: { 
+                          minWidth: { xs: '100%', sm: 220 }, 
+                          mr: { xs: 0, sm: 2 }, 
+                          borderRadius: 2 
+                        },
+                        onClick: () => setOpenStart(true), // 🔥 input click opens picker
+                      },
+                    }}
+                    format="DD/MM/YYYY hh:mm A"
+                  />
+                </LocalizationProvider>
+
+
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DateTimePicker
+                    open={openEnd}
+                    onOpen={() => setOpenEnd(true)}
+                    onClose={() => setOpenEnd(false)}
+                    value={
+                      filterEndDate
+                        ? dayjs.isDayjs(filterEndDate)
+                          ? filterEndDate
+                          : dayjs(filterEndDate)
+                        : null
+                    }
+                    onChange={(newValue) => setFilterEndDate(newValue)}
+                    slotProps={{
+                      textField: {
+                        size: 'small',
+                        sx: { 
+                          minWidth: { xs: '100%', sm: 220 }, 
+                          mr: { xs: 0, sm: 2 }, 
+                          borderRadius: 2 
+                        },
+                        onClick: () => setOpenEnd(true), // 🔥 input click opens picker
+                      },
+                    }}
+                    format="DD/MM/YYYY hh:mm A"
+                  />
+                </LocalizationProvider>
+              </Box>
+
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'row', sm: 'row' },
+                gap: 1,
+                alignItems: 'center',
+                justifyContent: { xs: 'flex-start', sm: 'flex-start' },
+                width: { xs: '100%', sm: 'auto' },
+              }}>
+                <Button
+                  variant="contained"
+                  startIcon={<SearchIcon />}
+                  onClick={handleSearch}
+                  sx={{
+                    backgroundColor: '#0156a6',
+                    '&:hover': {
+                      backgroundColor: '#166aa0',
                     },
+                    minWidth: { xs: 'auto', sm: 'auto' },
+                    width: { xs: 'auto', sm: '32px' },
+                    height: '32px',
+                    padding: { xs: '6px 16px', sm: '6px' },
+                    borderRadius: '4px',
+                    '& .MuiButton-startIcon': {
+                      margin: { xs: '0 8px 0 0', sm: 0 },
+                    }
                   }}
-                  format="DD/MM/YYYY hh:mm A"
-                />
-              </LocalizationProvider>
+                >
+                </Button>
 
-
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DateTimePicker
-                  open={openEnd}
-                  onOpen={() => setOpenEnd(true)}
-                  onClose={() => setOpenEnd(false)}
-                  value={
-                    filterEndDate
-                      ? dayjs.isDayjs(filterEndDate)
-                        ? filterEndDate
-                        : dayjs(filterEndDate)
-                      : null
-                  }
-                  onChange={(newValue) => setFilterEndDate(newValue)}
-                  slotProps={{
-                    textField: {
-                      size: 'small',
-                      sx: { minWidth: 220, mr: 2, borderRadius: 2 },
-                      onClick: () => setOpenEnd(true), // 🔥 input click opens picker
+                <Button
+                  variant="outlined"
+                  startIcon={<RefreshIcon />}
+                  onClick={handleResetFilters}
+                  sx={{
+                    borderColor: '#6c757d',
+                    color: '#6c757d',
+                    '&:hover': {
+                      borderColor: '#5a6268',
+                      color: '#5a6268',
                     },
+                    minWidth: { xs: 'auto', sm: 'auto' },
+                    width: { xs: 'auto', sm: '32px' },
+                    height: '32px',
+                    padding: { xs: '6px 16px', sm: '4px' },
+                    borderRadius: '4px',
+                    '& .MuiButton-startIcon': {
+                      margin: { xs: '0 8px 0 0', sm: 0 },
+                    }
                   }}
-                  format="DD/MM/YYYY hh:mm A"
-                />
-              </LocalizationProvider>
-
-
-              <Button
-                variant="contained"
-                startIcon={<SearchIcon />}
-                onClick={handleSearch}
-                sx={{
-                  backgroundColor: '#0156a6',
-                  '&:hover': {
-                    backgroundColor: '#166aa0',
-                  },
-                  minWidth: 'auto',
-                  width: '32px', // Smaller width
-                  height: '32px', // Smaller height
-                  padding: '6px', // Even smaller padding
-                  borderRadius: '4px', // Square with rounded corners
-                  '& .MuiButton-startIcon': {
-                    margin: 0,
-                  }
-                }}
-              >
-              </Button>
-
-              <Button
-                variant="outlined"
-                startIcon={<RefreshIcon />}
-                onClick={handleResetFilters}
-                sx={{
-                  borderColor: '#6c757d',
-                  color: '#6c757d',
-                  '&:hover': {
-                    borderColor: '#5a6268',
-                    color: '#5a6268',
-                  },
-                  minWidth: 'auto',
-                  width: '32px', // Smaller width
-                  height: '32px', // Smaller height
-                  padding: '4px', // Even smaller padding
-                  borderRadius: '4px',
-                  '& .MuiButton-startIcon': {
-                    margin: 0,
-                  }
-                }}
-              >
-              </Button>
+                >
+                </Button>
+              </Box>
             </Box>
           </Box>
 
@@ -582,9 +628,12 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
             <TableContainer
               component={Paper}
               className="logs-table-container"
-              style={{ overflow: 'auto' }}
+              sx={{ 
+                overflow: 'auto',
+                maxWidth: '100%',
+              }}
             >
-              <Table stickyHeader style={{ tableLayout: 'fixed', width: '100%' }}>
+              <Table stickyHeader style={{ tableLayout: 'auto', width: '100%' }}>
                 <TableHead>
                   <TableRow className="log-table-header">
                     {selectedColumn.length > 0 ? (
@@ -659,8 +708,19 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
 
           {/* Pagination (server-side, similar to Logs.js) */}
           {shouldShowPagination && (
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-              <Typography variant="body2" color="textSecondary">
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between', 
+              alignItems: { xs: 'center', sm: 'center' }, 
+              mt: 2,
+              gap: { xs: 1, sm: 0 },
+            }}>
+              <Typography 
+                variant="body2" 
+                color="textSecondary"
+                sx={{ fontSize: { xs: '12px', sm: '14px' } }}
+              >
                 Showing {(paginationMeta.offset || 0) + 1} to {Math.min(
                   (paginationMeta.offset || 0) + (paginationMeta.limit || rowsPerPage),
                   paginationMeta.total || realLogs.length
@@ -674,6 +734,14 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                 showFirstButton
                 showLastButton
                 size="small"
+                siblingCount={1}
+                boundaryCount={1}
+                sx={{
+                  '& .MuiPagination-ul': {
+                    flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                    justifyContent: { xs: 'center', sm: 'flex-end' },
+                  }
+                }}
               />
             </Box>
           )}

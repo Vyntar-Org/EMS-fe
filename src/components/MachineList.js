@@ -117,15 +117,15 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         },
         grid: {
             borderColor: '#ebe5e5',
-            strokeDashArray: 0, // Changed from 4 to 0 for solid lines (if you want to keep the lines)
+            strokeDashArray: 0,
             xaxis: {
                 lines: {
-                    show: false, // Set to false to remove x-axis grid lines
+                    show: false,
                 },
             },
             yaxis: {
                 lines: {
-                    show: false, // Set to false to remove y-axis grid lines
+                    show: false,
                 },
             },
         },
@@ -153,11 +153,10 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 },
                 rotate: -45,
                 formatter: function (val) {
-                    // Format to match the image style (e.g., "05:49 AM")
                     return val;
                 },
             },
-            tickAmount: 6, // Increased to show more time points across the 6-hour period
+            tickAmount: 6,
             tooltip: {
                 enabled: false,
                 formatter: function (val) {
@@ -190,10 +189,9 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             style: {
                 fontSize: '12px',
             },
-            shared: true, // Enable shared tooltip to show all series at once
-            intersect: false, // Show tooltip when hovering anywhere on the x-axis
+            shared: true,
+            intersect: false,
             custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-                // Get the original date from the data based on chart type
                 let originalDate = '';
                 let currentData = [];
 
@@ -218,11 +216,9 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     }
                 }
 
-                // Build the tooltip content
                 let tooltipContent = `<div class="apexcharts-tooltip-custom" style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
                 <div style="font-weight: bold; margin-bottom: 8px; color: lightgray; font-size: 14px; padding: 10px; background-color: #f4f7f6">${originalDate}</div>`;
 
-                // Add each series with its color dot and value
                 w.globals.seriesNames.forEach((name, index) => {
                     const value = series[index][dataPointIndex];
                     const color = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'][index % 6];
@@ -242,30 +238,30 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             show: true,
         },
     };
-    const formatTimestampForTooltip = (timestamp) => {
-    if (!timestamp) return 'N/A';
     
-    try {
-        const date = new Date(timestamp);
-        // Check if the date is valid
-        if (isNaN(date.getTime())) {
-            return 'Invalid Date';
-        }
+    const formatTimestampForTooltip = (timestamp) => {
+        if (!timestamp) return 'N/A';
         
-        return date.toLocaleString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        });
-    } catch (error) {
-        console.error('Error formatting timestamp:', error);
-        return 'Error';
-    }
-};
+        try {
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) {
+                return 'Invalid Date';
+            }
+            
+            return date.toLocaleString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        } catch (error) {
+            console.error('Error formatting timestamp:', error);
+            return 'Error';
+        }
+    };
 
     // Function to fetch active power chart data
     const fetchActivePowerData = async (slaveId) => {
@@ -370,68 +366,62 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Chart series based on selected chart type
     const getCurrentChartSeries = () => {
         if (chartType === 'activePower') {
-            // Use real API data for active power chart
             const activePowerValues = activePowerData.map(item => item.value);
             return [{
                 name: `${selectedFloor} Active Power`,
                 data: activePowerValues
             }];
         } else if (chartType === 'voltage') {
-            // Use real API data for voltage chart - show all three phases
             return [
                 {
                     name: 'R-Voltage',
                     data: voltageData.map(item => item.rv),
-                    color: '#E34D4D' // Red
+                    color: '#E34D4D'
                 },
                 {
                     name: 'Y-Voltage',
                     data: voltageData.map(item => item.yv),
-                    color: '#F8C537' // Yellow
+                    color: '#F8C537'
                 },
                 {
                     name: 'B-Voltage',
                     data: voltageData.map(item => item.bv),
-                    color: '#4A90E2' // Blue
+                    color: '#4A90E2'
                 }
             ];
         } else if (chartType === 'current') {
-            // Use real API data for current chart - show all three phases
             return [
                 {
                     name: 'R-Current',
                     data: currentData.map(item => item.i_r),
-                    color: '#E34D4D' // Red
+                    color: '#E34D4D'
                 },
                 {
                     name: 'Y-Current',
                     data: currentData.map(item => item.i_y),
-                    color: '#F8C537' // Yellow
+                    color: '#F8C537'
                 },
                 {
                     name: 'B-Current',
                     data: currentData.map(item => item.i_b),
-                    color: '#4A90E2' // Blue
+                    color: '#4A90E2'
                 }
             ];
         } else if (chartType === 'powerFactor') {
-            // Use real API data for power factor chart
             const powerFactorValues = powerFactorData.map(item => item.value);
             return [{
                 name: `${selectedFloor} Power Factor`,
                 data: powerFactorValues,
-                color: '#9C27B0' // Purple
+                color: '#9C27B0'
             }];
         } else if (chartType === 'frequency') {
-            // Use real API data for frequency chart
             const frequencyValues = frequencyData.map(item => item.value);
             return [{
                 name: `${selectedFloor} Frequency`,
                 data: frequencyValues,
-                color: '#FF9800' // Orange
+                color: '#FF9800'
             }];
         } else if (chartType === 'keyParameters') {
-            // Sample data for key parameters
             return [
                 {
                     name: 'Voltage',
@@ -447,7 +437,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 }
             ];
         }
-        // Default to active power if no chart type is selected
         const activePowerValues = activePowerData.map(item => item.value);
         return [{
             name: `${selectedFloor} Active Power`,
@@ -457,7 +446,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     const chartSeries = getCurrentChartSeries();
 
-    // Define styles
+    // Define styles - UPDATED FOR MOBILE RESPONSIVENESS
     const styles = {
         mainContent: {
             width: '100%',
@@ -467,6 +456,8 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             color: '#5A5A5A',
             marginBottom: '20px',
             marginLeft: '5px',
+            padding: '10px',
+            boxSizing: 'border-box',
         },
         headerContainer: {
             display: 'flex',
@@ -507,11 +498,14 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '10px',
+            flexWrap: 'wrap',
+            gap: '8px',
         },
         onlineStatus: {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
+            flexWrap: 'wrap',
         },
         onlineIndicator: {
             width: '10px',
@@ -581,13 +575,13 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             marginRight: '4px',
         },
         phaseR: {
-            backgroundColor: '#E34D4D', // Red
+            backgroundColor: '#E34D4D',
         },
         phaseY: {
-            backgroundColor: '#F8C537', // Yellow
+            backgroundColor: '#F8C537',
         },
         phaseB: {
-            backgroundColor: '#4A90E2', // Blue
+            backgroundColor: '#4A90E2',
         },
         modal: {
             display: 'flex',
@@ -598,17 +592,23 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             backgroundColor: 'white',
             borderRadius: '8px',
             padding: '20px',
-            width: '80%',
+            width: '95%',
             maxWidth: '800px',
-            maxHeight: '80%',
+            maxHeight: '90%',
             overflow: 'auto',
             position: 'relative',
+            margin: '10px',
         },
         modalHeader: {
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             marginBottom: '20px',
+            flexDirection: {
+                xs: 'column',
+                sm: 'row'
+            },
+            gap: '10px',
         },
         closeButton: {
             position: 'absolute',
@@ -636,17 +636,21 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontWeight: 600,
             color: '#1F2937',
         },
+        // UPDATED: Responsive grid container
         gridContainer: {
             display: 'flex',
             flexDirection: 'row',
             flexWrap: 'wrap',
-            justifyContent: '',
-            gap: '20px 50px',
-            marginLeft: '30px'
+            justifyContent: 'center',
+            gap: '20px',
+            marginLeft: '0',
+            padding: '0 10px',
         },
+        // UPDATED: Responsive grid item
         gridItem: {
-            width: '30%',
+            width: '100%', // Mobile: 1 card per row
             marginBottom: '15px',
+            // Tablet and desktop handled via sx prop
         },
         tableCell: {
             padding: '4px 8px',
@@ -669,39 +673,34 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const renderFloorCard = (machine) => {
         if (!machine) return null;
 
-        // Check if the last timestamp is within the last 15 minutes
         const isWithinTimeLimit = (lastTs) => {
             if (!lastTs) return false;
 
             const lastTime = new Date(lastTs);
             const currentTime = new Date();
-            const timeDiff = (currentTime - lastTime) / (1000 * 60); // Difference in minutes
+            const timeDiff = (currentTime - lastTime) / (1000 * 60);
 
-            return timeDiff <= 15; // Within 15 minutes
+            return timeDiff <= 15;
         };
 
         const isOnline = isWithinTimeLimit(machine.latest.last_ts);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
 
-        // Apply the conditional logic for values
         const getConditionalValue = (value, isAllowedField = false) => {
             if (isOnline) {
-                // If online, return the actual value
                 return value;
             } else {
-                // If offline (more than 15 mins old), only show specific fields
                 if (isAllowedField) {
                     return value;
                 } else {
-                    return 0; // Return 0 for all other fields
+                    return 0;
                 }
             }
         };
 
-        // Determine which fields are allowed when offline
         const conditionalLatest = {
-            acte_im: getConditionalValue(latest.acte_im, true), // Allowed when offline
+            acte_im: getConditionalValue(latest.acte_im, true),
             rv: getConditionalValue(latest.rv, false),
             ir: getConditionalValue(latest.ir, false),
             yv: getConditionalValue(latest.yv, false),
@@ -723,8 +722,8 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
 
         const conditionalEnergy = {
-            today: getConditionalValue(energy.today, true), // Allowed when offline
-            mtd: getConditionalValue(energy.mtd, true), // Allowed when offline
+            today: getConditionalValue(energy.today, true),
+            mtd: getConditionalValue(energy.mtd, true),
         };
 
         return (
@@ -742,7 +741,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             {machine.name}
                         </Typography>
                         <Box style={styles.onlineStatus}>
-                            {/* <Box style={isOnline ? styles.onlineIndicator : styles.offlineIndicator}></Box> */}
                             <Typography style={{ fontSize: '11px', color: getConditionalStatus(isOnline) === 'Online' ? '#30b44a' : '#e34d4d', border: '1px solid ' + (getConditionalStatus(isOnline) === 'Online' ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
                                 {getConditionalStatus(isOnline)}
                             </Typography>
@@ -852,7 +850,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     setChartType('activePower');
                                     setChartModalOpen(true);
 
-                                    // Find the selected machine by name to get its slave_id
                                     const selectedMachine = machineListData?.data?.machines?.find(
                                         m => m.name === machine.name
                                     );
@@ -873,72 +870,81 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent} id="main-content">
-            {/* Header with Title and Hierarchy Selection */}
-            {/* <Box style={styles.headerContainer}>
-                <Box>
-                    <Typography
-                        variant="h6"
-                        className="logs-title"
-                        style={{
-                            color: '#0F2A44',
-                            fontWeight: 600,
-                            fontFamily: 'sans-serif',
-                            marginTop: '-5px'
-                        }}
-                    >
-                        <span
-                            onClick={onSidebarToggle}
-                            style={{
-                                fontSize: '14px',
-                                lineHeight: 1,
-                                marginLeft: '-2px',
-                                fontWeight: '400',
-                                display: 'inline-block',
-                                cursor: 'pointer',
-                                marginRight: '8px',
-                                userSelect: 'none',
-                                color: '#007bff'
-                            }}
-                        >
-                            <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i>
-                        </span>
-                        Machine List
-                    </Typography>
-                </Box>
-            </Box> */}
-
-            {/* Custom Grid Container for 2 cards per row */}
-            <Box style={styles.gridContainer}>
+            {/* Custom Grid Container for responsive cards */}
+            <Box 
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    justifyContent: 'center',
+                    gap: { xs: '15px', sm: '20px', md: '20px 50px' },
+                    padding: { xs: '0 5px', sm: '0 15px', md: '0 30px' },
+                }}
+            >
                 {loading && <Typography>Loading...</Typography>}
                 {error && <Typography color="error">{error}</Typography>}
                 {!loading && !error && machineListData?.data?.machines?.map((machine, index) => (
-                    <Box style={styles.gridItem} key={machine.slave_id || index}>
+                    <Box 
+                        key={machine.slave_id || index}
+                        sx={{
+                            width: { 
+                                xs: '100%',      // Mobile: 1 card per row
+                                sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
+                                md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
+                            },
+                            // marginBottom: '15px',
+                            // '@media (min-width: 1200px)': {
+                            //     width: 'calc(30% - 35px)'
+                            // }
+                        }}
+                    >
                         {renderFloorCard(machine)}
                     </Box>
                 ))}
             </Box>
 
-            {/* Chart Modal */}
+            {/* Chart Modal - Also made responsive */}
             <Modal
                 open={chartModalOpen}
                 onClose={() => setChartModalOpen(false)}
                 aria-labelledby="chart-modal-title"
                 aria-describedby="chart-modal-description"
-                style={styles.modal}
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
             >
-                <Box style={styles.modalPaper}>
-                    <Box style={styles.modalHeader}>
+                <Box sx={{
+                    backgroundColor: 'white',
+                    borderRadius: '8px',
+                    padding: { xs: '15px', sm: '20px' },
+                    width: { xs: '95%', sm: '90%', md: '80%' },
+                    maxWidth: '800px',
+                    maxHeight: { xs: '95%', sm: '90%' },
+                    overflow: 'auto',
+                    position: 'relative',
+                    margin: '10px',
+                }}>
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        justifyContent: 'space-between',
+                        alignItems: { xs: 'flex-start', sm: 'flex-start' },
+                        marginBottom: '20px',
+                        gap: '10px',
+                        flexWrap: 'wrap',
+                    }}>
                         <Box>
-                            <Typography id="chart-modal-title" variant="h6" component="h2">
+                            <Typography id="chart-modal-title" variant="h6" component="h2" sx={{ fontSize: { xs: '16px', sm: '18px', md: '20px' } }}>
                                 {selectedFloor} - {chartType === 'keyParameters' ? chartName : `Last 6 hours ${chartName} data`}
                             </Typography>
-                            <Box style={{ marginTop: '10px' }}>
+                            <Box sx={{ marginTop: '10px' }}>
                                 <Tabs
                                     value={chartType === 'activePower' ? 0 : 1}
                                     onChange={async (event, newValue) => {
                                         if (newValue === 0) {
                                             setChartType('activePower');
-                                            // Find the selected machine by name to get its slave_id
                                             const selectedMachine = machineListData?.data?.machines?.find(
                                                 machine => machine.name === selectedFloor
                                             );
@@ -954,9 +960,10 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         },
                                         '& .MuiTab-root': {
                                             minHeight: '36px',
-                                            fontSize: '14px',
+                                            fontSize: { xs: '12px', sm: '14px' },
                                             textTransform: 'none',
                                             fontWeight: chartType === 'activePower' ? 600 : 400,
+                                            padding: { xs: '6px 10px', sm: '6px 16px' },
                                         }
                                     }}
                                 >
@@ -985,8 +992,13 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Box>
                         </Box>
                         {['keyParameters', 'voltage', 'current', 'powerFactor', 'frequency'].includes(chartType) && (
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <FormControl size="small" sx={{ minWidth: 120, height: '32px', marginTop: "40px" }}>
+                            <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center',
+                                marginTop: { xs: '10px', sm: '40px' },
+                                width: { xs: '100%', sm: 'auto' }
+                            }}>
+                                <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 120 }, height: '32px' }}>
                                     <Select
                                         value={keyParameter}
                                         onChange={async (e) => {
@@ -995,7 +1007,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
                                             if (selectedValue === 'voltage') {
                                                 setChartType('voltage');
-                                                // Find the selected machine by name to get its slave_id
                                                 const selectedMachine = machineListData?.data?.machines?.find(
                                                     m => m.name === selectedFloor
                                                 );
@@ -1004,7 +1015,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                                 }
                                             } else if (selectedValue === 'current') {
                                                 setChartType('current');
-                                                // Find the selected machine by name to get its slave_id
                                                 const selectedMachine = machineListData?.data?.machines?.find(
                                                     m => m.name === selectedFloor
                                                 );
@@ -1013,7 +1023,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                                 }
                                             } else if (selectedValue === 'pf') {
                                                 setChartType('powerFactor');
-                                                // Find the selected machine by name to get its slave_id
                                                 const selectedMachine = machineListData?.data?.machines?.find(
                                                     m => m.name === selectedFloor
                                                 );
@@ -1022,7 +1031,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                                 }
                                             } else if (selectedValue === 'frequency') {
                                                 setChartType('frequency');
-                                                // Find the selected machine by name to get its slave_id
                                                 const selectedMachine = machineListData?.data?.machines?.find(
                                                     m => m.name === selectedFloor
                                                 );
@@ -1063,9 +1071,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             }
                                         }}
                                     >
-                                        {/* <MenuItem value="" sx={{ fontSize: '13px', minHeight: '32px' }}>
-                                            Key Parameters
-                                        </MenuItem> */}
                                         <MenuItem value="voltage" sx={{ fontSize: '13px', minHeight: '32px' }}>Voltage (V)</MenuItem>
                                         <MenuItem value="current" sx={{ fontSize: '13px', minHeight: '32px' }}>Current (A)</MenuItem>
                                         <MenuItem value="pf" sx={{ fontSize: '13px', minHeight: '32px' }}>Power Factor (PF)</MenuItem>
@@ -1075,7 +1080,11 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Box>
                         )}
                         <IconButton
-                            style={styles.closeButton}
+                            sx={{
+                                position: 'absolute',
+                                top: '10px',
+                                right: '10px',
+                            }}
                             onClick={() => setChartModalOpen(false)}
                         >
                             <CloseIcon />
@@ -1083,7 +1092,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     </Box>
                     <Box id="chart-modal-description">
                         {chartType === 'keyParameters' ? (
-                            <Box sx={{ textAlign: 'center', padding: '100px' }}>
+                            <Box sx={{ textAlign: 'center', padding: { xs: '50px', sm: '100px' } }}>
                             </Box>
                         ) : (
                             <Chart

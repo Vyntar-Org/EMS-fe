@@ -139,7 +139,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         });
     };
 
-    // Define styles
+    // Define styles - UPDATED FOR MOBILE RESPONSIVENESS
     const styles = {
         mainContent: {
             width: '100%',
@@ -149,6 +149,8 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             color: '#5A5A5A',
             marginBottom: '20px',
             marginLeft: '5px',
+            padding: '10px',
+            boxSizing: 'border-box',
         },
         headerContainer: {
             display: 'flex',
@@ -176,11 +178,14 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '10px',
+            flexWrap: 'wrap',
+            gap: '8px',
         },
         onlineStatus: {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
+            flexWrap: 'wrap',
         },
         onlineIndicator: {
             width: '10px',
@@ -231,16 +236,19 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontWeight: 600,
             color: '#1F2937',
         },
+        // UPDATED: Responsive grid container - using sx prop instead
         gridContainer: {
             display: 'flex',
             flexDirection: 'row',
             flexWrap: 'wrap',
-            justifyContent: 'left',
-            gap: '20px 50px',
-            marginLeft: '30px'
+            justifyContent: 'center',
+            gap: '20px',
+            marginLeft: '0',
+            padding: '0 10px',
         },
+        // UPDATED: Responsive grid item - using sx prop instead
         gridItem: {
-            width: '30%',
+            width: '100%', // Mobile: 1 card per row
             marginBottom: '15px',
         },
         tableCell: {
@@ -274,17 +282,20 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             backgroundColor: 'white',
             borderRadius: '8px',
             padding: '20px',
-            width: '80%',
+            width: '95%',
             maxWidth: '800px',
-            maxHeight: '80%',
+            maxHeight: '90%',
             overflow: 'auto',
             position: 'relative',
+            margin: '10px',
         },
         modalHeader: {
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             marginBottom: '20px',
+            flexDirection: 'column',
+            gap: '10px',
         },
         closeButton: {
             position: 'absolute',
@@ -439,20 +450,20 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     flexGrow: 1
                 }}>
                     <Box style={styles.commonHeader}>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             {/* The Text Container */}
-                            <div>
+                            <Box>
                                 {/* Main Title */}
                                 <Typography style={styles.floorTitle}>
                                     {machine.name}
                                 </Typography>
-                            </div>
-                        </div>
+                            </Box>
+                        </Box>
                         <Box style={styles.onlineStatus}>
                             <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: '10px' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: { xs: '0', sm: '10px' }, marginTop: { xs: '5px', sm: '0' } }}>
                                 <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
                                     {machine.last_ts
                                         ? new Date(machine.last_ts).toLocaleString('en-GB', {
@@ -534,14 +545,16 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        py: 0.5
+                        py: 0.5,
+                        // flexDirection: { xs: 'column', sm: 'row' },
+                        // gap: { xs: 1, sm: 0 }
                     }}>
-                        <Box style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            {/* <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {/* <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
                                 MTD : {(machine.energy?.mtd || 0).toFixed(1)} kWh
                             </Typography> */}
                         </Box>
-                        <Box style={{ ...styles.metricsRow, display: 'flex', justifyContent: 'right' }}>
+                        <Box style={{ ...styles.metricsRow, display: 'flex', justifyContent: 'right', marginTop: 0 }}>
                             <Button
                                 variant="contained"
                                 style={styles.chartButton}
@@ -577,32 +590,81 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             ) : error ? (
                 <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
             ) : (
-                /* Custom Grid Container for 2 cards per row */
-                <Box style={styles.gridContainer}>
+                /* Custom Grid Container - RESPONSIVE using sx prop */
+                <Box 
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                        justifyContent: 'left',
+                        gap: { xs: '15px', sm: '20px', md: '20px 50px' },
+                        padding: { xs: '0 5px', sm: '0 15px', md: '0 30px' },
+                    }}
+                >
                     {solarMachineListData?.data?.machines?.map((machine, index) => (
-                        <Box style={styles.gridItem} key={machine.slave_id || index}>
+                        <Box 
+                            key={machine.slave_id || index}
+                            sx={{
+                                width: { 
+                                    xs: '100%',              // Mobile: 1 card per row
+                                    sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
+                                    md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
+                                },
+                                // marginBottom: '15px',
+                                // '@media (min-width: 1200px)': {
+                                //     width: 'calc(30% - 35px)'
+                                // }
+                            }}
+                        >
                             {renderFloorCard(machine)}
                         </Box>
                     ))}
                 </Box>
             )}
 
-            {/* Chart Modal */}
+            {/* Chart Modal - RESPONSIVE */}
             <Modal
                 open={chartModalOpen}
                 onClose={() => setChartModalOpen(false)}
                 aria-labelledby="chart-modal-title"
                 aria-describedby="chart-modal-description"
-                style={styles.modal}
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
             >
-                <Box style={styles.modalPaper}>
-                    <Box style={styles.modalHeader}>
-                        <Box>
-                            <Typography id="chart-modal-title" variant="h6" component="h2">
+                <Box sx={{
+                    backgroundColor: 'white',
+                    borderRadius: '8px',
+                    padding: { xs: '15px', sm: '20px' },
+                    width: { xs: '95%', sm: '90%', md: '80%' },
+                    maxWidth: '800px',
+                    maxHeight: { xs: '95%', sm: '90%' },
+                    overflow: 'auto',
+                    position: 'relative',
+                    margin: '10px',
+                }}>
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        justifyContent: 'space-between',
+                        alignItems: { xs: 'flex-start', sm: 'flex-start' },
+                        marginBottom: '20px',
+                        gap: '10px',
+                        flexWrap: 'wrap',
+                    }}>
+                        <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                            <Typography 
+                                id="chart-modal-title" 
+                                variant="h6" 
+                                component="h2"
+                                sx={{ fontSize: { xs: '16px', sm: '18px', md: '20px' } }}
+                            >
                                 {selectedFloor} - Last 6 hours {getParameterLabel(selectedParameter)} data
                             </Typography>
-                            <Box style={{ marginTop: '10px' }}>
-                                <FormControl size="small" sx={{ minWidth: 200, marginBottom: 2 }}>
+                            <Box sx={{ marginTop: '10px' }}>
+                                <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 }, marginBottom: 2 }}>
                                     <InputLabel>Parameter</InputLabel>
                                     <Select
                                         value={selectedParameter}
@@ -628,7 +690,11 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Box>
                         </Box>
                         <IconButton
-                            style={styles.closeButton}
+                            sx={{
+                                position: 'absolute',
+                                top: '10px',
+                                right: '10px',
+                            }}
                             onClick={() => setChartModalOpen(false)}
                         >
                             <CloseIcon />

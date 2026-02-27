@@ -24,7 +24,8 @@ import {
   Pagination,
   Checkbox,
   ListItemText,
-  Divider
+  Divider,
+  CircularProgress
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -206,6 +207,7 @@ function FuelLogs({ onSidebarToggle, sidebarVisible }) {
     setSearchClicked(false);
     setSelectedColumn([]);
     setLogs([]);
+    setError(null);
   };
 
   // Handle page change
@@ -237,23 +239,31 @@ function FuelLogs({ onSidebarToggle, sidebarVisible }) {
 
   const styles = {
     mainContent: {
-      width: sidebarVisible ? 'calc(100% - 0px)' : 'calc(100% - 0px)',
-      maxWidth: sidebarVisible ? '1600px' : '1800px',
+      width: '100%',
       minHeight: '89vh',
       fontFamily: 'Inter, Roboto, system-ui, sans-serif',
       fontSize: '14px',
       margin: '0',
-      transition: 'all 0.3s ease',
+      padding: { xs: '5px', sm: '0' },
+      boxSizing: 'border-box',
+    },
+    loadingContainer: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '50vh',
     },
   }
 
   // Show loading indicator
   if (loading && !searchClicked) {
     return (
-      <Box style={styles.mainContent} id="main-content">
+      <Box sx={styles.mainContent} id="main-content">
         <Card className="logs-card" sx={{ marginTop: '' }}>
           <CardContent>
-            <Typography variant="h6" align="center">Loading devices...</Typography>
+            <Box style={styles.loadingContainer}>
+              <CircularProgress />
+            </Box>
           </CardContent>
         </Card>
       </Box>
@@ -261,9 +271,9 @@ function FuelLogs({ onSidebarToggle, sidebarVisible }) {
   }
 
   return (
-    <Box style={styles.mainContent} id="main-content">
+    <Box sx={styles.mainContent} id="main-content">
       <Card className="logs-card" sx={{ marginTop: '' }}>
-        <CardContent>
+        <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
           {loading && searchClicked && (
             <Typography variant="body2" align="center" gutterBottom>
               Loading logs...
@@ -275,8 +285,25 @@ function FuelLogs({ onSidebarToggle, sidebarVisible }) {
             </Typography>
           )}
           <Box className="logs-header">
-            <Box className="logs-filters">
-              <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
+            <Box 
+              className="logs-filters"
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                flexWrap: 'wrap',
+                gap: { xs: 2, sm: 2 },
+                alignItems: { xs: 'stretch', sm: 'center' },
+              }}
+            >
+              {/* Machine Select */}
+              <FormControl 
+                size="small" 
+                sx={{ 
+                  minWidth: { xs: '100%', sm: 300 }, 
+                  mr: { sm: 2 },
+                  order: { xs: 1, sm: 1 }
+                }}
+              >
                 <InputLabel>Select Machine</InputLabel>
                 <Select
                   value={filterDevice}
@@ -297,15 +324,23 @@ function FuelLogs({ onSidebarToggle, sidebarVisible }) {
                   )}
                 </Select>
               </FormControl>
-              <FormControl size="small" sx={{ minWidth: 300, mr: 2 }}>
+
+              {/* Parameters Select */}
+              <FormControl 
+                size="small" 
+                sx={{ 
+                  minWidth: { xs: '100%', sm: 300 }, 
+                  mr: { sm: 2 },
+                  order: { xs: 2, sm: 2 }
+                }}
+              >
                 <InputLabel id="param-select-label">Select Parameter</InputLabel>
                 <Select
                   labelId="param-select-label"
                   multiple
-                  value={selectedColumn} // Ensure this state is an array: []
+                  value={selectedColumn}
                   onChange={handleParameterChange}
                   label="Select Parameter"
-                  // RENDER LOGIC: Keeps input box height fixed
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
                       {/* Show "All Parameters" if all are selected */}
@@ -392,7 +427,7 @@ function FuelLogs({ onSidebarToggle, sidebarVisible }) {
                         sx={{
                           p: 0.5,
                           mr: 0.5,
-                          transform: "scale(0.8)", // Shrunk checkbox
+                          transform: "scale(0.8)",
                           '& .MuiSvgIcon-root': { fontSize: 20 }
                         }}
                       />
@@ -405,174 +440,288 @@ function FuelLogs({ onSidebarToggle, sidebarVisible }) {
                 </Select>
               </FormControl>
 
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DateTimePicker
-                  open={openStart}
-                  onOpen={() => setOpenStart(true)}
-                  onClose={() => setOpenStart(false)}
-                  value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
-                  onChange={(newValue) => setFilterStartDate(newValue)}
-                  slotProps={{
-                    textField: {
-                      size: 'small',
-                      sx: { minWidth: 220, mr: 2, borderRadius: 2 },
-                      onClick: () => setOpenStart(true), // 🔥 input click opens picker
-                    },
-                  }}
-                  format="DD/MM/YYYY hh:mm A"
-                />
-              </LocalizationProvider>
-
-
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DateTimePicker
-                  open={openEnd}
-                  onOpen={() => setOpenEnd(true)}
-                  onClose={() => setOpenEnd(false)}
-                  value={
-                    filterEndDate
-                      ? dayjs.isDayjs(filterEndDate)
-                        ? filterEndDate
-                        : dayjs(filterEndDate)
-                      : null
-                  }
-                  onChange={(newValue) => setFilterEndDate(newValue)}
-                  slotProps={{
-                    textField: {
-                      size: 'small',
-                      sx: { minWidth: 220, mr: 2, borderRadius: 2 },
-                      onClick: () => setOpenEnd(true), // 🔥 input click opens picker
-                    },
-                  }}
-                  format="DD/MM/YYYY hh:mm A"
-                />
-              </LocalizationProvider>
-
-
-              <Button
-                variant="contained"
-                startIcon={<SearchIcon />}
-                onClick={handleSearch}
+              {/* Date Pickers Row */}
+              <Box 
                 sx={{
-                  backgroundColor: '#2F6FB0',
-                  '&:hover': {
-                    backgroundColor: '#1E4A7C',
-                  },
-                  minWidth: 'auto',
-                  width: '32px', // Smaller width
-                  height: '32px', // Smaller height
-                  padding: '6px', // Even smaller padding
-                  borderRadius: '4px', // Square with rounded corners
-                  '& .MuiButton-startIcon': {
-                    margin: 0,
-                  }
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: { xs: 2, sm: 2 },
+                  order: { xs: 3, sm: 3 },
+                  width: { xs: '100%', sm: 'auto' }
                 }}
               >
-              </Button>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DateTimePicker
+                    open={openStart}
+                    onOpen={() => setOpenStart(true)}
+                    onClose={() => setOpenStart(false)}
+                    value={dayjs.isDayjs(filterStartDate) ? filterStartDate : null}
+                    onChange={(newValue) => setFilterStartDate(newValue)}
+                    slotProps={{
+                      textField: {
+                        size: 'small',
+                        sx: { 
+                          minWidth: { xs: '100%', sm: 220 }, 
+                          mr: { sm: 2 }, 
+                          borderRadius: 2 
+                        },
+                        onClick: () => setOpenStart(true),
+                      },
+                    }}
+                    format="DD/MM/YYYY hh:mm A"
+                  />
+                </LocalizationProvider>
 
-              <Button
-                variant="outlined"
-                startIcon={<RefreshIcon />}
-                onClick={handleResetFilters}
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DateTimePicker
+                    open={openEnd}
+                    onOpen={() => setOpenEnd(true)}
+                    onClose={() => setOpenEnd(false)}
+                    value={
+                      filterEndDate
+                        ? dayjs.isDayjs(filterEndDate)
+                          ? filterEndDate
+                          : dayjs(filterEndDate)
+                        : null
+                    }
+                    onChange={(newValue) => setFilterEndDate(newValue)}
+                    slotProps={{
+                      textField: {
+                        size: 'small',
+                        sx: { 
+                          minWidth: { xs: '100%', sm: 220 }, 
+                          mr: { sm: 2 }, 
+                          borderRadius: 2 
+                        },
+                        onClick: () => setOpenEnd(true),
+                      },
+                    }}
+                    format="DD/MM/YYYY hh:mm A"
+                  />
+                </LocalizationProvider>
+              </Box>
+
+              {/* Buttons Row */}
+              <Box 
                 sx={{
-                  borderColor: '#6c757d',
-                  color: '#6c757d',
-                  '&:hover': {
-                    borderColor: '#5a6268',
-                    color: '#5a6268',
-                  },
-                  minWidth: 'auto',
-                  width: '32px', // Smaller width
-                  height: '32px', // Smaller height
-                  padding: '4px', // Even smaller padding
-                  borderRadius: '4px',
-                  '& .MuiButton-startIcon': {
-                    margin: 0,
-                  }
+                  display: 'flex',
+                  flexDirection: 'row',
+                  gap: 1,
+                  order: { xs: 4, sm: 4 },
+                  justifyContent: { xs: 'flex-start', sm: 'flex-start' }
                 }}
               >
-              </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<SearchIcon />}
+                  onClick={handleSearch}
+                  sx={{
+                    backgroundColor: '#2F6FB0',
+                    '&:hover': {
+                      backgroundColor: '#1E4A7C',
+                    },
+                    minWidth: 'auto',
+                    width: { xs: 'auto', sm: '32px' },
+                    height: '32px',
+                    padding: { xs: '6px 16px', sm: '6px' },
+                    borderRadius: '4px',
+                    '& .MuiButton-startIcon': {
+                      margin: { sm: 0 },
+                    }
+                  }}
+                >   
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  startIcon={<RefreshIcon />}
+                  onClick={handleResetFilters}
+                  sx={{
+                    borderColor: '#6c757d',
+                    color: '#6c757d',
+                    '&:hover': {
+                      borderColor: '#5a6268',
+                      color: '#5a6268',
+                    },
+                    minWidth: 'auto',
+                    width: { xs: 'auto', sm: '32px' },
+                    height: '32px',
+                    padding: { xs: '6px 16px', sm: '4px' },
+                    borderRadius: '4px',
+                    '& .MuiButton-startIcon': {
+                      margin: { sm: 0 },
+                    }
+                  }}
+                >
+                </Button>
+              </Box>
             </Box>
           </Box>
 
           {searchClicked && (
-            <TableContainer
-              component={Paper}
-              className="logs-table-container"
-              style={{ overflow: 'auto' }}
-            >
-              <Table stickyHeader style={{ tableLayout: 'fixed', width: '100%' }}>
-                <TableHead>
-                  <TableRow className="log-table-header">
-                    {selectedColumn.length > 0 ? (
-                      selectedColumn.map((col) => (
-                        <TableCell key={col} className="log-header-cell" sx={{ textTransform: 'capitalize' }}>
-                          {allParameters.find(p => p.val === col)?.label || col.replace(/_/g, ' ')}
-                        </TableCell>
-                      ))
-                    ) : (
-                      <>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Timestamp</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Consumed (L)</TableCell>
-                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Temperature (°C)</TableCell>
-                      </>
-                    )}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {paginatedLogs.length > 0 ? (
-                    paginatedLogs.map((log) => {
-                      const timestamp = new Date(log.timestamp).toLocaleString();
-                      const consumed = log.consumed;
-                      const refilled = log.refilled;
-                      const temperature = log.temperature;
-                      const fuelLevel = log.fuelLevel;
-
-                      return (
-                        <TableRow key={log.id} hover className="log-table-row">
-                          {selectedColumn.length > 0 ? (
-                            // DYNAMIC MULTI-COLUMN VIEW
-                            // This loops through whatever you checked in the dropdown
-                            selectedColumn.map((col) => (
-                              <TableCell key={col} className="log-table-cell">
-                                {col === 'timestamp' && timestamp}
-                                {col === 'consumed' && (typeof consumed === 'number' ? consumed.toFixed(2) : consumed)}
-                                {col === 'temperature' && (typeof temperature === 'number' ? temperature.toFixed(2) : temperature)}
-                              </TableCell>
-                            ))
-                          ) : (
-                            // DEFAULT "ALL COLUMNS" VIEW (When nothing is selected)
-                            <>
-                              <TableCell className="log-table-cell" title={timestamp}>
-                                {timestamp}
-                              </TableCell>
-                              <TableCell className="log-table-cell">
-                                {typeof consumed === 'number' ? consumed.toFixed(2) : consumed}
-                              </TableCell>
-                              <TableCell className="log-table-cell">
-                                {typeof temperature === 'number' ? temperature.toFixed(2) : temperature}
-                              </TableCell>
-                            </>
-                          )}
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={selectedColumn ? selectedColumn.length : 5} align="center">
-                        {paginatedLogs.length === 0 ? 'No logs found matching your filters' : ''}
-                      </TableCell>
+            <Box sx={{ width: '100%', overflow: 'auto' }}>
+              <TableContainer
+                component={Paper}
+                className="logs-table-container"
+                sx={{ 
+                  overflow: 'auto',
+                  '& .MuiTableCell-root': {
+                    whiteSpace: 'nowrap',
+                    minWidth: { xs: '100px', sm: 'auto' }
+                  }
+                }}
+              >
+                <Table stickyHeader sx={{ tableLayout: 'auto', width: '100%' }}>
+                  <TableHead>
+                    <TableRow className="log-table-header">
+                      {selectedColumn.length > 0 ? (
+                        selectedColumn.map((col) => (
+                          <TableCell 
+                            key={col} 
+                            className="log-header-cell" 
+                            sx={{ 
+                              textTransform: 'capitalize',
+                              fontSize: { xs: '11px', sm: '14px' },
+                              padding: { xs: '8px 4px', sm: '16px' }
+                            }}
+                          >
+                            {allParameters.find(p => p.val === col)?.label || col.replace(/_/g, ' ')}
+                          </TableCell>
+                        ))
+                      ) : (
+                        <>
+                          <TableCell 
+                            className="log-header-cell" 
+                            sx={{ 
+                              textTransform: 'capitalize',
+                              fontSize: { xs: '11px', sm: '14px' },
+                              padding: { xs: '8px 4px', sm: '16px' }
+                            }}
+                          >
+                            Timestamp
+                          </TableCell>
+                          <TableCell 
+                            className="log-header-cell" 
+                            sx={{ 
+                              textTransform: 'capitalize',
+                              fontSize: { xs: '11px', sm: '14px' },
+                              padding: { xs: '8px 4px', sm: '16px' }
+                            }}
+                          >
+                            Consumed (L)
+                          </TableCell>
+                          <TableCell 
+                            className="log-header-cell" 
+                            sx={{ 
+                              textTransform: 'capitalize',
+                              fontSize: { xs: '11px', sm: '14px' },
+                              padding: { xs: '8px 4px', sm: '16px' }
+                            }}
+                          >
+                            Temp (°C)
+                          </TableCell>
+                        </>
+                      )}
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {paginatedLogs.length > 0 ? (
+                      paginatedLogs.map((log) => {
+                        const timestamp = new Date(log.timestamp).toLocaleString();
+                        const consumed = log.consumed;
+                        const refilled = log.refilled;
+                        const temperature = log.temperature;
+                        const fuelLevel = log.fuelLevel;
+
+                        return (
+                          <TableRow key={log.id} hover className="log-table-row">
+                            {selectedColumn.length > 0 ? (
+                              // DYNAMIC MULTI-COLUMN VIEW
+                              selectedColumn.map((col) => (
+                                <TableCell 
+                                  key={col} 
+                                  className="log-table-cell"
+                                  sx={{
+                                    fontSize: { xs: '11px', sm: '14px' },
+                                    padding: { xs: '8px 4px', sm: '16px' }
+                                  }}
+                                >
+                                  {col === 'timestamp' && timestamp}
+                                  {col === 'consumed' && (typeof consumed === 'number' ? consumed.toFixed(2) : consumed)}
+                                  {col === 'temperature' && (typeof temperature === 'number' ? temperature.toFixed(2) : temperature)}
+                                </TableCell>
+                              ))
+                            ) : (
+                              // DEFAULT "ALL COLUMNS" VIEW
+                              <>
+                                <TableCell 
+                                  className="log-table-cell" 
+                                  title={timestamp}
+                                  sx={{
+                                    fontSize: { xs: '11px', sm: '14px' },
+                                    padding: { xs: '8px 4px', sm: '16px' }
+                                  }}
+                                >
+                                  {timestamp}
+                                </TableCell>
+                                <TableCell 
+                                  className="log-table-cell"
+                                  sx={{
+                                    fontSize: { xs: '11px', sm: '14px' },
+                                    padding: { xs: '8px 4px', sm: '16px' }
+                                  }}
+                                >
+                                  {typeof consumed === 'number' ? consumed.toFixed(2) : consumed}
+                                </TableCell>
+                                <TableCell 
+                                  className="log-table-cell"
+                                  sx={{
+                                    fontSize: { xs: '11px', sm: '14px' },
+                                    padding: { xs: '8px 4px', sm: '16px' }
+                                  }}
+                                >
+                                  {typeof temperature === 'number' ? temperature.toFixed(2) : temperature}
+                                </TableCell>
+                              </>
+                            )}
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell 
+                          colSpan={selectedColumn.length > 0 ? selectedColumn.length : 3} 
+                          align="center"
+                          sx={{
+                            fontSize: { xs: '12px', sm: '14px' },
+                            padding: { xs: '16px 8px', sm: '16px' }
+                          }}
+                        >
+                          No logs found matching your filters
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
           )}
 
           {/* Pagination */}
           {searchClicked && (
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-              <Typography variant="body2" color="textSecondary">
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between', 
+              alignItems: { xs: 'center', sm: 'center' }, 
+              mt: 2,
+              gap: { xs: 1, sm: 0 }
+            }}>
+              <Typography 
+                variant="body2" 
+                color="textSecondary"
+                sx={{ fontSize: { xs: '11px', sm: '14px' } }}
+              >
                 Showing {(page - 1) * rowsPerPage + 1} to {Math.min(page * rowsPerPage, logs.length)} of {logs.length} entries
               </Typography>
               <Pagination
@@ -583,6 +732,13 @@ function FuelLogs({ onSidebarToggle, sidebarVisible }) {
                 showFirstButton
                 showLastButton
                 size="small"
+                sx={{
+                  '& .MuiPaginationItem-root': {
+                    fontSize: { xs: '11px', sm: '14px' },
+                    minWidth: { xs: '28px', sm: '32px' },
+                    height: { xs: '28px', sm: '32px' }
+                  }
+                }}
               />
             </Box>
           )}
