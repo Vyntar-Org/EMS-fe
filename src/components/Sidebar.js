@@ -11,7 +11,6 @@ function Sidebar({ mobileOpen, onClose, visible, onSidebarHide, onSidebarToggle,
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Determines what links to show
   const menuItems = activeApp ? (
     activeApp.code === 'TEMPERATURE' ? [
       { id: 1, name: 'Machine List', path: '/temperature/machine-list', icon: 'list' },
@@ -37,6 +36,10 @@ function Sidebar({ mobileOpen, onClose, visible, onSidebarHide, onSidebarToggle,
       { id: 1, name: 'Machine List', path: '/solar/machine-list', icon: 'list' },
       { id: 2, name: 'Analytics', path: '/solar/analytics', icon: 'bar-chart' },
       { id: 3, name: 'Logs', path: '/solar/logs', icon: 'file-text' },
+    ] : activeApp.code === 'COMPRESSOR' ? [
+      { id: 1, name: 'Machine List', path: '/compressor/machine-list', icon: 'list' },
+      { id: 2, name: 'Analytics', path: '/compressor/analytics', icon: 'bar-chart' },
+      { id: 3, name: 'Logs', path: '/compressor/logs', icon: 'file-text' },
     ] : [ // Default (ENERGY)
       { id: 1, name: 'Dashboard', path: '/dashboard', icon: 'home' },
       { id: 2, name: 'Machine List', path: '/machine-list', icon: 'list' },
@@ -126,8 +129,8 @@ function Sidebar({ mobileOpen, onClose, visible, onSidebarHide, onSidebarToggle,
       {isMobile && (
         <Drawer
           variant="temporary"
-          open={mobileOpen} // This is controlled by App.js state
-          onClose={onClose} // This is handleMenuClose from App.js
+          open={mobileOpen}
+          onClose={onClose}
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', md: 'none' },
