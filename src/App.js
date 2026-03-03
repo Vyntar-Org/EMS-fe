@@ -33,6 +33,11 @@ import FuelReports from './components/fuel/FuelReports';
 import SolarMachineList from './components/solar/SolarMachineList';
 import SolarAnalytics from './components/solar/SolarAnalytics';
 import SolarLogs from './components/solar/SolarLogs';
+// Import Compressor components
+import CompressorMachineList from './components/compressor/CompressorMachineList';
+import CompressorAnalytics from './components/compressor/CompressorAnalytics';
+import CompressorLogs from './components/compressor/CompressorLogs';
+
 import './App.css';
 
 function App() {
@@ -112,6 +117,8 @@ function AppContent() {
             return <Navigate to="/fuel/dashboard" replace />;
           } else if (defaultApp.code === 'SOLAR') {
             return <Navigate to="/solar/machine-list" replace />;
+          } else if (defaultApp.code === 'COMPRESSOR') {
+            return <Navigate to="/compressor/machine-list" replace />;
           }
         }
         return <Navigate to="/dashboard" replace />;
@@ -574,6 +581,58 @@ function AppContent() {
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <SolarLogs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+
+          {/* Compressor application routes */}
+          <Route path="/compressor/machine-list" element={
+            <ProtectedRoute requiredAppCode="COMPRESSOR">
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <CompressorMachineList onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/compressor/analytics" element={
+            <ProtectedRoute requiredAppCode="COMPRESSOR">
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <CompressorAnalytics onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/compressor/logs" element={
+            <ProtectedRoute requiredAppCode="COMPRESSOR">
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <CompressorLogs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
               </main>
             </ProtectedRoute>
           } />
