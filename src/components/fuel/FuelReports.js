@@ -751,15 +751,14 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
 
     const styles = {
         mainContent: {
-            width: sidebarVisible ? 'calc(100% - 0px)' : 'calc(100% - 0px)',
-            maxWidth: sidebarVisible ? '1600px' : '1800px',
-            minHeight: '86.2vh',
-            fontFamily: 'sans-serif',
-            fontSize: '14px',
-            margin: '0',
-            marginBottom: '20px',
-            transition: 'all 0.3s ease',
-        },
+      width: '100%',
+      minHeight: '89vh',
+      fontFamily: 'Inter, Roboto, system-ui, sans-serif',
+      fontSize: '14px',
+      margin: '0',
+      padding: { xs: '5px', sm: '0' },
+      boxSizing: 'border-box',
+    },
     };
 
     return (
@@ -770,13 +769,12 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                         <Typography
                             variant="h6"
                             className="logs-title"
-                            style={{
+                            sx={{
                                 color: '#0F2A44',
                                 fontWeight: 600,
                                 fontFamily: 'sans-serif',
-                                // marginLeft: '5px',
                                 backgroundColor: '#fff',
-                                width: '150%'
+                                width: { xs: '100%', lg: '150%' }
                             }}
                         >
                             <span
@@ -787,23 +785,57 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                                         onSidebarToggle();
                                     }
                                 }}
-                                style={{
+                                sx={{
                                     fontSize: '14px',
                                     lineHeight: 1,
                                     marginLeft: '-2px',
                                     fontWeight: '400',
                                     display: 'inline-block',
                                     cursor: 'pointer',
-                                    // marginRight: '8px',
                                     userSelect: 'none',
                                     color: '#007bff',
                                     zIndex: 10,
                                     position: 'relative'
                                 }}
                             >
-                                {/* <i className={`fa ${sidebarVisible ? 'fa-arrow-left' : 'fa-arrow-right'}`}></i> */}
                             </span>
-                            <Tabs value={activeTab} onChange={handleTabChange} centered={false} sx={{ mb: 2, marginTop: '-37px' }}>
+                            <Tabs 
+                                value={activeTab} 
+                                onChange={handleTabChange} 
+                                variant="scrollable"
+                                scrollButtons="auto"
+                                allowScrollButtonsMobile
+                                centered={false} 
+                                sx={{ 
+                                    mb: 2, 
+                                    minHeight: { xs: '40px', sm: '48px' },
+                                    '& .MuiTabs-scroller': {
+                                        overflowX: 'auto',
+                                        '&::-webkit-scrollbar': {
+                                            height: '4px',
+                                        },
+                                        '&::-webkit-scrollbar-track': {
+                                            backgroundColor: '#f1f1f1',
+                                        },
+                                        '&::-webkit-scrollbar-thumb': {
+                                            backgroundColor: '#0156a6',
+                                            borderRadius: '4px',
+                                        },
+                                    },
+                                    '& .MuiTabs-flexContainer': {
+                                        flexWrap: 'nowrap',
+                                    },
+                                    '& .MuiTab-root': {
+                                        minWidth: { xs: '140px', sm: 200 },
+                                        fontSize: { xs: '11px', sm: '13px' },
+                                        // padding: { xs: '8px 12px', sm: '12px 16px' },
+                                        whiteSpace: 'nowrap',
+                                    },
+                                    '& .MuiTabs-indicator': {
+                                        backgroundColor: '#0156a6',
+                                    },
+                                }}
+                            >
                                 <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Daywise Consumption" />
                                 <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Monthwise Consumption" />
                                 <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Daily Meter Reading" />
@@ -814,24 +846,26 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                     </Grid>
                 </Grid>
             </Box>
+            
             <Box
                 sx={{
                     display: "flex",
-                    alignItems: "center",
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'stretch', sm: 'center' },
                     justifyContent: "space-between",
-                    mb: 2
+                    mb: 2,
+                    gap: { xs: 2, sm: 0 },
                 }}
             >
                 {/* LEFT SIDE – FILTERS */}
                 <Box
                     sx={{
                         display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        // background: "#f8fafc",
-                        p: 1.5,
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'stretch', sm: 'center' },
+                        gap: { xs: 1.5, sm: 2 },
+                        p: { xs: 1, sm: 1.5 },
                         borderRadius: 2,
-                        // boxShadow: "0 1px 4px rgba(0,0,0,0.08)"
                     }}
                 >
                     {/* MONTH */}
@@ -842,7 +876,10 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                             label="Month"
                             value={selectedMonth}
                             onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                            sx={{ minWidth: 150, height: '30px' }}
+                            sx={{ 
+                                minWidth: { xs: '100%', sm: 150 }, 
+                                height: '30px' 
+                            }}
                             InputProps={{
                                 sx: { height: '30px', padding: '6px 14px' },
                                 startAdornment: (
@@ -867,7 +904,10 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                         label="Year"
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(Number(e.target.value))}
-                        sx={{ minWidth: 130, height: '30px' }}
+                        sx={{ 
+                            minWidth: { xs: '100%', sm: 130 }, 
+                            height: '30px' 
+                        }}
                         InputProps={{
                             sx: { height: '30px', padding: '6px 14px' },
                             startAdornment: (
@@ -899,16 +939,17 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                             const matched = findMatchingStation(inputValue);
                             setMatchedStation(matched);
                         }}
-                        sx={{ minWidth: 200, height: '30px' }}
+                        sx={{ 
+                            minWidth: { xs: '100%', sm: 200 }, 
+                            height: '30px' 
+                        }}
                         InputProps={{
                             sx: { height: '30px', padding: '6px 14px' },
                             startAdornment: (
                                 <InputAdornment position="start">
-                                    {/* <FactoryIcon fontSize="small" /> */}
                                 </InputAdornment>
                             )
                         }}
-                    // helperText={matchedStation ? `Matches: ${matchedStation}` : (selectedStation ? 'No matching station found' : '')}
                     />
 
                     {/* SEARCH BUTTON */}
@@ -920,15 +961,17 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                         sx={{
                             bgcolor: '#0156a6',
                             color: '#fff',
-                            width: '30px',
+                            width: { xs: '100%', sm: '30px' },
                             height: '30px',
+                            borderRadius: { xs: '4px', sm: '50%' },
                             '&:hover': {
                                 bgcolor: '#0a223e',
                             }
                         }}
                         title="Search with selected filters"
                     >
-                        <SearchIcon fontSize="small" />
+                        <SearchIcon fontSize="small" sx={{ mr: { xs: 1, sm: 0 } }} />
+                        <Box sx={{ display: { xs: 'inline', sm: 'none' }, fontSize: '14px' }}>Search</Box>
                     </IconButton>
                 </Box>
 
@@ -939,48 +982,48 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                         sx={{
                             display: "flex",
                             alignItems: "center",
+                            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
                             gap: 1,
-                            // background: "#ffffff",
                             p: 1,
                             borderRadius: 2,
-                            // boxShadow: "0 1px 4px rgba(0,0,0,0.08)"
                         }}
                     >
-                        <IconButton
+                        <Button
                             onClick={exportToExcel}
+                            startIcon={<FileDownloadIcon sx={{marginLeft: '12px'}} />}
                             sx={{
                                 bgcolor: "#217346",
                                 color: "#fff",
-                                borderRadius: "8px", // Slightly rounded corners look better for export buttons
+                                borderRadius: "8px",
+                                textTransform: 'none',
                                 "&:hover": {
                                     bgcolor: "#1e6b40",
-                                    transform: "translateY(-1px)", // Subtle lift effect
                                 },
-                                transition: "all 0.2s"
+                                transition: "all 0.2s",
+                                minWidth: { xs: 'auto', sm: 'auto' },
+                                px: { xs: 2, sm: 1 },
                             }}
-                            title="Export Excel"
                         >
-                            <FileDownloadIcon sx={{ fontSize: 22 }} />
-                        </IconButton>
+                        </Button>
 
-                        <IconButton
+                        <Button
                             onClick={exportToPDF}
+                            startIcon={<PictureAsPdfIcon sx={{marginLeft: '12px'}} />}
                             sx={{
                                 bgcolor: "#EA3323",
                                 color: "#fff",
                                 borderRadius: "8px",
+                                textTransform: 'none',
                                 "&:hover": {
                                     bgcolor: "#c6281c",
-                                    transform: "translateY(-1px)",
                                 },
-                                transition: "all 0.2s"
+                                transition: "all 0.2s",
+                                minWidth: { xs: 'auto', sm: 'auto' },
+                                px: { xs: 2, sm: 1 },
                             }}
-                            title="Export PDF"
                         >
-                            <PictureAsPdfIcon sx={{ fontSize: 22 }} />
-                        </IconButton>
+                        </Button>
                     </Box>
-
                 )}
             </Box>
 
@@ -1001,11 +1044,27 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
 
             {/* Consumption Table - Show only for consumption tabs */}
             {!loading && !error && showConsumptionTables && (
-                <TableContainer component={Paper} sx={{ maxHeight: 520, height: '501px' }}>
+                <TableContainer 
+                    component={Paper} 
+                    sx={{ 
+                        maxHeight: { xs: 400, sm: 520 }, 
+                        height: { xs: '400px', sm: '501px' },
+                        overflowX: 'auto',
+                        '& .MuiTableCell-root': {
+                            fontSize: { xs: '10px', sm: '12px' },
+                            padding: { xs: '4px 2px', sm: '6px 8px' },
+                            whiteSpace: 'nowrap',
+                        },
+                        '& .MuiTableCell-head': {
+                            fontSize: { xs: '9px', sm: '12px' },
+                            fontWeight: 'bold',
+                        }
+                    }}
+                >
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>Machine</b></TableCell>
+                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 1 }}><b>Machine</b></TableCell>
                                 {(activeTab === 0 || activeTab === 3) ? (
                                     currentMonthDays.map(day => (
                                         <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}>
@@ -1019,53 +1078,52 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                                         </TableCell>
                                     ))
                                 )}
-                                {/* <TableCell align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>TOTAL</b></TableCell> */}
                             </TableRow>
                         </TableHead>
 
                         <TableBody>
                             {getRows().map((row, i) => (
                                 <TableRow key={i} sx={{ backgroundColor: i % 2 === 0 ? "#fafafa" : "inherit" }}>
-                                    <TableCell>{row.station}</TableCell>
+                                    <TableCell sx={{ position: 'sticky', left: 0, backgroundColor: i % 2 === 0 ? "#fafafa" : "#fff", zIndex: 1, fontWeight: 'bold' }}>{row.station}</TableCell>
                                     {row.data.map((val, idx) => (
                                         <TableCell
                                             key={idx}
                                             align="center"
                                             style={{ cursor: 'pointer' }}
-                                        // onClick={() => {
-                                        //     if (activeTab === 0 || activeTab === 3) {
-                                        //         // Daywise report click handler
-                                        //         if (val !== 0) {
-                                        //             alert(`Clicked on ${row.station} for Day ${currentMonthDays[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
-                                        //         }
-                                        //     } else {
-                                        //         // Monthwise report click handler
-                                        //         if (val !== "--") {
-                                        //             alert(`Clicked on ${row.station} for ${months[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
-                                        //         } else {
-                                        //             // Placeholder for handling clicks on empty cells in monthwise view
-                                        //             console.log(`${row.station} - ${months[idx]} is not configured yet`);
-                                        //         }
-                                        //     }
-                                        // }}
                                         >
                                             {typeof val === 'number' ? val.toFixed(2) : val}
                                         </TableCell>
                                     ))}
-                                    {/* <TableCell align="center">{typeof row.total === 'number' ? row.total.toFixed(2) : row.total}</TableCell> */}
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
                 </TableContainer>
             )}
+            
             {/* Reading Table - Show only for reading tabs */}
             {!loading && !error && showReadingTables && (
-                <TableContainer component={Paper} sx={{ maxHeight: 500, height: '700px' }}>
+                <TableContainer 
+                    component={Paper} 
+                    sx={{ 
+                        maxHeight: { xs: 400, sm: 500 }, 
+                        height: { xs: '400px', sm: '700px' },
+                        overflowX: 'auto',
+                        '& .MuiTableCell-root': {
+                            fontSize: { xs: '10px', sm: '12px' },
+                            padding: { xs: '4px 2px', sm: '6px 8px' },
+                            whiteSpace: 'nowrap',
+                        },
+                        '& .MuiTableCell-head': {
+                            fontSize: { xs: '9px', sm: '12px' },
+                            fontWeight: 'bold',
+                        }
+                    }}
+                >
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>Machine</b></TableCell>
+                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 1 }}><b>Machine</b></TableCell>
                                 {activeTab === 2 ? (
                                     currentMonthDays.map(day => (
                                         <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}>
@@ -1079,27 +1137,18 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                                         </TableCell>
                                     ))
                                 )}
-                                {/* <TableCell align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>TOTAL</b></TableCell> */}
                             </TableRow>
                         </TableHead>
 
                         <TableBody>
                             {getReadingRows().map((row, i) => (
                                 <TableRow key={i} sx={{ backgroundColor: i % 2 === 0 ? "#fafafa" : "inherit" }}>
-                                    <TableCell>{row.station}</TableCell>
+                                    <TableCell sx={{ position: 'sticky', left: 0, backgroundColor: i % 2 === 0 ? "#fafafa" : "#fff", zIndex: 1, fontWeight: 'bold' }}>{row.station}</TableCell>
                                     {row.data.map((val, idx) => (
                                         <TableCell
                                             key={idx}
                                             align="center"
                                             style={{ cursor: 'pointer' }}
-                                        // onClick={() => {
-                                        //     if (activeTab === 2) {
-                                        //         // Daywise report click handler
-                                        //         if (val !== 0 && val !== "--") {
-                                        //             alert(`Clicked on ${row.station} for Day ${currentMonthDays[idx]} with value ${typeof val === 'number' ? val.toFixed(2) : val}`);
-                                        //         }
-                                        //     }
-                                        // }}
                                         >
                                             {typeof val === 'number' ? val.toFixed(2) : val}
                                         </TableCell>
