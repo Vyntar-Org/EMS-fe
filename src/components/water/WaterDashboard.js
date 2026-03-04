@@ -753,9 +753,11 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                 {/* Flex container to handle layout direction */}
                                 <Box sx={{
                                     display: 'flex',
-                                    flexDirection: { xs: 'column', sm: 'row', md: 'column' },
+                                    flexDirection: { xs: 'row', sm: 'row', md: 'row', lg: 'column' },
                                     gap: '10px',
-                                    width: '100%'
+                                    width: { xs: '92%', md: '100%', sm: '130%', lg: '100%' },
+                                    marginLeft: { xs: '0px', md: '0px', sm: '-100px', lg: '0px' },
+                                    padding: { xs: '0px', md: '0px', sm: '5px', lg: '0px' },
                                 }}>
                                     {/* Sewage Inlet Card */}
                                     <Card sx={{
@@ -765,11 +767,12 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                             sm: 'calc(100% - 7px)',
                                             md: getChartCardWidth()
                                         },
+                                        width: isMobile ? '100%' : isTablet ? getChartCardWidth() : getChartCardWidth(),
                                         // width: isTablet ? 150 : getChartCardWidth1(),
                                         height: '100px',
                                         padding: {
                                             xs: '20px',
-                                            sm: '75px',
+                                            sm: '60px',
                                             md: '20px'
                                         },
                                         transition: 'all 0.3s ease',
@@ -804,11 +807,12 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                             sm: 'calc(100% - 7px)',
                                             md: getChartCardWidth()
                                         },
+                                        width: isMobile ? '100%' : isTablet ? getChartCardWidth() : getChartCardWidth(),
                                         // width: isTablet ? 150 : getChartCardWidth1(),
                                         height: '100px',
                                         padding: {
                                             xs: '20px',
-                                            sm: '75px',
+                                            sm: '60px',
                                             md: '20px'
                                         },
                                         transition: 'all 0.3s ease',
@@ -844,11 +848,12 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                                 sm: 'calc(100% - 7px)',
                                                 md: getChartCardWidth()
                                             },
-                                    // width: isTablet ? 150 : getChartCardWidth1(),
+                                            width: isMobile ? '100%' : isTablet ? getChartCardWidth() : getChartCardWidth(),
+                                            // width: isTablet ? 150 : getChartCardWidth1(),
                                             height: '100px',
                                             padding: {
                                                 xs: '20px',
-                                                sm: '75px',
+                                                sm: '60px',
                                                 md: '20px'
                                             },
                                             transition: 'all 0.3s ease',
@@ -887,10 +892,11 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                     height: { xs: 'auto', md: '399px' },
                                     padding: {
                                         xs: '20px',
-                                        sm: '56px',
-                                        md: '20px'
+                                        sm: '28px',
+                                        md: '20px',
+                                        lg: '20px'
                                     },
-                                    marginLeft: { sm: '-54px', md: '0px' },
+                                    marginLeft: { sm: '40px', md: '-20px', lg: '0px' },
                                     marginBottom: '10px',
                                     transition: 'all 0.3s ease',
                                     '&:hover': {
@@ -951,13 +957,24 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                                     </Box>
                                                 </Box>
                                                 {/* Changed width to "100%" for responsiveness */}
-                                                <Chart
-                                                    options={activeChart === 'bar' ? weeklyWaterBarOptions : weeklyWaterLineOptions}
-                                                    series={weeklyWaterSeries}
-                                                    type={activeChart}
-                                                    height={350}
-                                                    width={isMobile ? '100%' : isTablet ? 250 : 844}
-                                                />
+                                                <Box
+                                                    sx={{
+                                                        width: {
+                                                            xs: '100%',  // mobile
+                                                            sm: '240%',  // small
+                                                            md: 570,     // medium
+                                                            lg: 844,     // large
+                                                        }
+                                                    }}
+                                                >
+                                                    <Chart
+                                                        options={activeChart === 'bar' ? weeklyWaterBarOptions : weeklyWaterLineOptions}
+                                                        series={weeklyWaterSeries}
+                                                        type={activeChart}
+                                                        height={350}
+                                                        width="100%"
+                                                    />
+                                                </Box>
                                             </Box>
                                         </Grid>
 

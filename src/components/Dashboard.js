@@ -35,8 +35,8 @@ import Tooltip from '@mui/material/Tooltip';
 
 const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const theme = useTheme();
-      const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-      const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
   const truncateText = (text, length = 9) =>
     text.length > length ? text.slice(0, length) + '...' : text;
 
@@ -722,21 +722,21 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         overflow: 'hidden'
       }}>
         {/* Added flexWrap: 'wrap' to allow cards to stack on mobile/tablet */}
-        <Box sx={{ display: 'flex', gap: '10px', marginLeft: '-30px', flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'center' } }}>
+        <Box sx={{ display: 'flex', gap: '10px', marginLeft:{ lg: '-30px', md: '-15px'}, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'left' } }}>
           {/* Card 1: Devices */}
           {/* Updated width for responsive layout: 35% on mobile/tablet to sit next to Energy card */}
-          <Card sx={{ 
-            ...responsiveCardStyle, 
-            width: { 
-              xs: 'calc(85% - 5px)', 
-              sm: 'calc(30% - 5px)', 
-              md: getCardWidth() 
+          <Card sx={{
+            ...responsiveCardStyle,
+            width: {
+              xs: 'calc(85% - 5px)',
+              sm: 'calc(30% - 5px)',
+              md: getCardWidth()
             },
             marginLeft: {
-              xs: '-50px', 
-              sm: '30px', 
-              md: '0'  
-            } 
+              xs: '-50px',
+              sm: '30px',
+              md: '0'
+            }
           }}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box display="flex" alignItems="center" mb={1}>
@@ -760,15 +760,15 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
           {/* Updated width for responsive layout: 65% on mobile/tablet to fit in Row 1 */}
           <Card sx={{
             ...responsiveCardStyle,
-            width: { 
-              xs: 'calc(85% - 5px)', 
-              sm: 'calc(55% - 5px)', 
+            width: {
+              xs: 'calc(85% - 5px)',
+              sm: 'calc(55% - 5px)',
               md: getCardWidth() === '230px' ? '500px' : (parseInt(getCardWidth()) * 2) + 'px'
             },
             marginLeft: {
-              xs: '-50px', 
-              sm: '0', 
-              md: '0'  
+              xs: '-50px',
+              sm: '0',
+              md: '0'
             },
             height: '130px',
             position: 'relative',
@@ -825,18 +825,18 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
           {/* Card 4: Ener Tree */}
           {/* Updated width for responsive layout: 33.33% on mobile/tablet to fit 3 in a row */}
-          <Card sx={{ 
-            ...responsiveCardStyle, 
-            width: { 
-              xs: 'calc(85% - 7px)', 
-              sm: 'calc(30% - 7px)', 
-              md: getCardWidth() 
+          <Card sx={{
+            ...responsiveCardStyle,
+            width: {
+              xs: 'calc(85% - 7px)',
+              sm: 'calc(30% - 7px)',
+              md: getCardWidth()
             },
             marginLeft: {
-              xs: '-50px', 
-              sm: '30px', 
-              md: '0'  
-            } 
+              xs: '-50px',
+              sm: '30px',
+              md: '0'
+            }
           }}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box display="flex" alignItems="center" mb={1}>
@@ -865,18 +865,18 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
           {/* Card 5: Carbon Footprints */}
           {/* Updated width for responsive layout: 33.33% on mobile/tablet to fit 3 in a row */}
-          <Card sx={{ 
-            ...responsiveCardStyle, 
-            width: { 
-              xs: 'calc(85% - 7px)', 
-              sm: 'calc(25.5% - 7px)', 
-              md: getCardWidth() 
+          <Card sx={{
+            ...responsiveCardStyle,
+            width: {
+              xs: 'calc(85% - 7px)',
+              sm: 'calc(25.5% - 7px)',
+              md: getCardWidth()
             },
             marginLeft: {
-              xs: '-50px', 
-              sm: '0', 
-              md: '0'  
-            } 
+              xs: '-50px',
+              sm: '0',
+              md: '0'
+            }
           }}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box display="flex" alignItems="center" mb={1}>
@@ -905,18 +905,18 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
           {/* Card 6: Load Balance */}
           {/* Updated width for responsive layout: 33.33% on mobile/tablet to fit 3 in a row */}
-          <Card sx={{ 
-            ...responsiveCardStyle, 
-            width: { 
-              xs: 'calc(85% - 7px)', 
-              sm: 'calc(26% - 7px)', 
-              md: getCardWidth() 
+          <Card sx={{
+            ...responsiveCardStyle,
+            width: {
+              xs: 'calc(85% - 7px)',
+              sm: 'calc(26% - 7px)',
+              md: getCardWidth()
             },
             marginLeft: {
-              xs: '-50px', 
-              sm: '0', 
-              md: '0'  
-            } 
+              xs: '-50px',
+              sm: '0',
+              md: '0'
+            }
           }}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box display="flex" alignItems="center" mb={1}>
@@ -951,85 +951,115 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         <Grid container spacing={3} justifyContent="center" gap={'10px'}>
           {/* Left Column - 2 Stacked Cards */}
           <Grid item xs={12} sm={12} md={8}>
-                {/* Card 1: Energy Consumption (Last 24 Hours) */}
-                <Card sx={{
-                  ...cardStyle1,
-                  width: { 
-                    xs: '82%',       // Mobile: Full width (1 card per row)
-                    sm: '93%',     // Tablet: Full width (1 card per row)
-                    md: getChartCardWidth() // Desktop: Original width
-                  },
-                  height: '170px',
-                  padding: '20px',
-                  marginBottom: '10px',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    backgroundColor: '#fff',
-                    boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
-                    transform: 'translateY(-2px)',
-                  }
-                }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                    <Typography sx={titleStyle1}>Energy Consumption (Last 6 Hours)</Typography>
-                    <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>kWh</Typography>
-                  </Box>
-                  {hourlyLoading ? (
-                    <Box>
-                      {/* Loading state placeholder if needed */}
-                    </Box>
-                  ) : (
-                    <Chart
-                      options={energyConsumptionOptions}
-                      series={energyConsumptionSeries}
-                      type="line"
-                      height={150}
-                    />
-                  )}
-                </Card>
-          
-                {/* Card 2: Peak Demand Indicator */}
-                <Card sx={{
-                  ...cardStyle1,
-                  width: { 
-                    xs: '82%',      // Mobile: Full width (1 card per row)
-                    sm: '93%',       // Tablet: Full width (1 card per row)
-                    md: getChartCardWidth() // Desktop: Original width
-                  },
-                  height: '170px',
-                  padding: '20px',
-                  marginBottom: '10px',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    backgroundColor: '#fff',
-                    boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
-                    transform: 'translateY(-2px)',
-                  }
-                }}>
-                  <Typography sx={titleStyle1}> {selectedSlave ? `Demand Indicator - ${selectedSlave.slave_name}` : 'Peak Demand Indicator'}</Typography>
-                  {peakDemandLoading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '165px' }}>
-                      <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
-                        Loading peak demand data...
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <Chart
-                      options={peakDemandOptions}
-                      series={peakDemandSeries}
-                      type="line"
-                      height={150}
-                    />
-                  )}
-                </Card>
-              </Grid>
+            {/* Card 1: Energy Consumption (Last 24 Hours) */}
+            <Card sx={{
+              ...cardStyle1,
+              width: {
+                xs: '82%',       // Mobile: Full width (1 card per row)
+                sm: '93%',     // Tablet: Full width (1 card per row)
+                md: '129%', // Desktop: Original width
+                lg: getChartCardWidth() // Desktop: Original width
+              },
+              marginLeft: {
+                xs: '0px',
+                sm: '0px',
+                md: '-120px',
+                lg: '0px'
+              },
+              height: '170px',
+              padding: '20px',
+              marginBottom: '10px',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                backgroundColor: '#fff',
+                boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                transform: 'translateY(-2px)',
+              }
+            }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography sx={titleStyle1}>Energy Consumption (Last 6 Hours)</Typography>
+                <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>kWh</Typography>
+              </Box>
+              {hourlyLoading ? (
+                <Box>
+                  {/* Loading state placeholder if needed */}
+                </Box>
+              ) : (
+                <Box
+                  sx={{
+                    width: {
+                      xs: '100%',  // mobile
+                      sm: '100%',  // small
+                      md: '100%',     // medium
+                      lg: 500,     // large
+                    }
+                  }}
+                >
+                <Chart
+                  options={energyConsumptionOptions}
+                  series={energyConsumptionSeries}
+                  type="line"
+                  height={150}
+                />
+                </Box>
+              )}
+            </Card>
+
+            {/* Card 2: Peak Demand Indicator */}
+            <Card sx={{
+              ...cardStyle1,
+              width: {
+                xs: '82%',      // Mobile: Full width (1 card per row)
+                sm: '93%',       // Tablet: Full width (1 card per row)
+                md: getChartCardWidth() // Desktop: Original width
+              },
+              height: '170px',
+              padding: '20px',
+              marginBottom: '10px',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                backgroundColor: '#fff',
+                boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)',
+                transform: 'translateY(-2px)',
+              }
+            }}>
+              <Typography sx={titleStyle1}> {selectedSlave ? `Demand Indicator - ${selectedSlave.slave_name}` : 'Peak Demand Indicator'}</Typography>
+              {peakDemandLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '165px' }}>
+                  <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
+                    Loading peak demand data...
+                  </Typography>
+                </Box>
+              ) : (
+                <Box
+                  sx={{
+                    width: {
+                      xs: '100%',  // mobile
+                      sm: '230%',  // small
+                      md: '100%',     // medium
+                      lg: 500,     // large
+                    }
+                  }}
+                >
+                  <Chart
+                    options={peakDemandOptions}
+                    series={peakDemandSeries}
+                    type="line"
+                    height={150}
+                  />
+                </Box>
+              )}
+            </Card>
+          </Grid>
 
           <Grid item xs={12}>
             <Card sx={{
               ...cardStyle1,
               // Responsive width: 100% on mobile/tablet, fixed on desktop
-              width: { xs: '82%', sm: '100%', md: getChartCardWidth1() },
+              width: { xs: '82%', sm: '90%', md: getChartCardWidth1() },
               // Responsive height: auto on mobile/tablet to fit stacked content
               height: { xs: 'auto', sm: 'auto', md: '389px' },
+              marginLeft: { xs: '0px', sm: '10px', md: '0' },
               padding: '20px',
               marginBottom: '10px',
               transition: 'all 0.3s ease',
@@ -1094,46 +1124,56 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                           </button>
                         </Box>
                       </Box>
-
-                      <Chart
-                        options={{
-                          ...energyConsumptionOptions,
-                          xaxis: {
-                            ...energyConsumptionOptions.xaxis,
-                            categories: weeklyConsumptionData.length > 0
-                              ? weeklyConsumptionData.map(item => formatDate(item.date)).filter(Boolean)
-                              : ['-'],
-                            title: {
-                              text: 'Date',
-                              style: { color: '#6B7280', fontSize: '12px' }
-                            }
-                          },
-                          yaxis: {
-                            ...energyConsumptionOptions.yaxis,
-                            min: 0,
-                            max: calculateYAxis(weeklyConsumptionData).max,
-                            tickAmount: calculateYAxis(weeklyConsumptionData).tickAmount,
-                            labels: { show: true }
-                          },
-                          tooltip: {
-                            ...energyConsumptionOptions.tooltip,
-                            y: {
-                              formatter: function (val) {
-                                return (Number.isFinite(Number(val)) ? Number(val) : 0) + ' kWh';
-                              }
-                            }
+                      <Box
+                        sx={{
+                          width: {
+                            xs: '100%',  // mobile
+                            sm: '230%',  // small
+                            md: 500,     // medium
+                            lg: 500,     // large
                           }
                         }}
-                        series={[{
-                          name: 'Energy Consumption',
-                          data: weeklyConsumptionData.length > 0
-                            ? weeklyConsumptionData.map(item => (typeof item?.value === 'number' && !Number.isNaN(item.value) ? item.value : 0))
-                            : [0]
-                        }]}
-                        type="line"
-                        height={350}
-                        width={isMobile ? '100%' : isTablet ? 500 : 500}
-                      />
+                      >
+                        <Chart
+                          options={{
+                            ...energyConsumptionOptions,
+                            xaxis: {
+                              ...energyConsumptionOptions.xaxis,
+                              categories: weeklyConsumptionData.length > 0
+                                ? weeklyConsumptionData.map(item => formatDate(item.date)).filter(Boolean)
+                                : ['-'],
+                              title: {
+                                text: 'Date',
+                                style: { color: '#6B7280', fontSize: '12px' }
+                              }
+                            },
+                            yaxis: {
+                              ...energyConsumptionOptions.yaxis,
+                              min: 0,
+                              max: calculateYAxis(weeklyConsumptionData).max,
+                              tickAmount: calculateYAxis(weeklyConsumptionData).tickAmount,
+                              labels: { show: true }
+                            },
+                            tooltip: {
+                              ...energyConsumptionOptions.tooltip,
+                              y: {
+                                formatter: function (val) {
+                                  return (Number.isFinite(Number(val)) ? Number(val) : 0) + ' kWh';
+                                }
+                              }
+                            }
+                          }}
+                          series={[{
+                            name: 'Energy Consumption',
+                            data: weeklyConsumptionData.length > 0
+                              ? weeklyConsumptionData.map(item => (typeof item?.value === 'number' && !Number.isNaN(item.value) ? item.value : 0))
+                              : [0]
+                          }]}
+                          type="line"
+                          height={350}
+                          width={isMobile ? '100%' : isTablet ? 500 : 500}
+                        />
+                      </Box>
                     </Box>
                   ) : (
                     /* Machine Power Consumption Chart */
@@ -1183,23 +1223,34 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                           </button>
                         </Box>
                       </Box>
-                      <Chart
-                        options={machinePowerOptions}
-                        series={machinePowerSeries}
-                        type="bar"
-                        height={350}
-                        width={isMobile ? '100%' : isTablet ? 500 : 500}
-                      />
+                      <Box
+                        sx={{
+                          width: {
+                            xs: '100%',  // mobile
+                            sm: '230%',  // small
+                            md: 500,     // medium
+                            lg: 500,     // large
+                          }
+                        }}
+                      >
+                        <Chart
+                          options={machinePowerOptions}
+                          series={machinePowerSeries}
+                          type="bar"
+                          height={350}
+                          width='100%'
+                        />
+                      </Box>
                     </Box>
                   )}
                 </Grid>
 
                 {/* Right Column - Alerts Panel */}
                 {/* Stack on mobile/tablet (xs=12, sm=12) */}
-                <Grid item xs={12} sm={12} md={4} sx={{ 
-                  width: { xs: '100%', md: getAlertsCardWidth() }, 
-                  padding: '10px', 
-                  marginLeft: { xs: '0px', md: sidebarVisible ? '0px' : '60px' } 
+                <Grid item xs={12} sm={12} md={4} sx={{
+                  width: { xs: '100%', md: getAlertsCardWidth() },
+                  padding: '10px',
+                  marginLeft: { xs: '0px', md: sidebarVisible ? '0px' : '60px' }
                 }}>
                   <TextField
                     fullWidth

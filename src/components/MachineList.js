@@ -221,7 +221,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
                 w.globals.seriesNames.forEach((name, index) => {
                     const value = series[index][dataPointIndex];
-                    const color = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'][index % 6];
+                    const color = ['#E34D4D', '#F8C537', '#4A90E2', '#EF4444', '#8B5CF6', '#2563EB'][index % 6];
                     tooltipContent += `
                     <div style="display: flex; align-items: center; margin-bottom: 20px;">
                         <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${color}; margin-right: 8px;"></span>
@@ -369,7 +369,8 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             const activePowerValues = activePowerData.map(item => item.value);
             return [{
                 name: `${selectedFloor} Active Power`,
-                data: activePowerValues
+                data: activePowerValues,
+                color: '#4A90E2'
             }];
         } else if (chartType === 'voltage') {
             return [
@@ -412,14 +413,14 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             return [{
                 name: `${selectedFloor} Power Factor`,
                 data: powerFactorValues,
-                color: '#9C27B0'
+                color: '#E34D4D'
             }];
         } else if (chartType === 'frequency') {
             const frequencyValues = frequencyData.map(item => item.value);
             return [{
                 name: `${selectedFloor} Frequency`,
                 data: frequencyValues,
-                color: '#FF9800'
+                color: '#E34D4D'
             }];
         } else if (chartType === 'keyParameters') {
             return [
