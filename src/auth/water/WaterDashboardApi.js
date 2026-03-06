@@ -17,7 +17,6 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   async (config) => {
     try {
-      // Get a valid access token (will refresh if expired)
       const validToken = await tokenUtils.getValidAccessToken();
       
       if (validToken) {
@@ -43,15 +42,11 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       try {
-        // Attempt to refresh the token
         await tokenUtils.refreshAccessToken();
-        
-        // Retry the original request with the new token
         const newToken = localStorage.getItem('accessToken');
         error.config.headers.Authorization = `Bearer ${newToken}`;
         return apiClient.request(error.config);
       } catch (refreshError) {
-        // If token refresh fails, clear tokens and redirect to login
         localStorage.removeItem('token');
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
@@ -69,23 +64,16 @@ apiClient.interceptors.response.use(
 
 /**
  * Get water dashboard overview data
- * @returns {Promise} Promise object represents the water dashboard overview data
  */
 export const fetchWaterDashboardOverview = async () => {
   try {
-    // Get a valid access token (will refresh if expired)
     const validToken = await tokenUtils.getValidAccessToken();
     
     if (!validToken) {
-      console.warn('No authentication token found. Please log in first.');
       throw new Error('Authentication token not found. Please log in first.');
     }
     
-    console.log('Making water dashboard overview API call with token:', validToken.substring(0, 20) + '...');
-    
     const response = await apiClient.get('/dashboard-overview/');
-    
-    console.log('Water dashboard overview API response:', response);
     
     if (response.data.success) {
       return response.data;
@@ -94,39 +82,22 @@ export const fetchWaterDashboardOverview = async () => {
     }
   } catch (error) {
     console.error('Error fetching water dashboard overview:', error);
-    if (error.response) {
-      console.error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
-      console.error('Response data:', error.response.data);
-      throw new Error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
-    } else if (error.request) {
-      console.error('Network Error: No response received from server');
-      throw new Error('Network Error: Unable to connect to server');
-    } else {
-      console.error('Request Error:', error.message);
-      throw new Error(`Request Error: ${error.message}`);
-    }
+    throw error;
   }
 };
 
 /**
  * Get water slave list data
- * @returns {Promise} Promise object represents the water slave list data
  */
 export const getWaterSlaveList = async () => {
   try {
-    // Get a valid access token (will refresh if expired)
     const validToken = await tokenUtils.getValidAccessToken();
     
     if (!validToken) {
-      console.warn('No authentication token found. Please log in first.');
       throw new Error('Authentication token not found. Please log in first.');
     }
     
-    console.log('Making water slave list API call with token:', validToken.substring(0, 20) + '...');
-    
     const response = await apiClient.get('/slave-list/');
-    
-    console.log('Water slave list API response:', response);
     
     if (response.data.success) {
       return response.data.data.slaves;
@@ -135,17 +106,35 @@ export const getWaterSlaveList = async () => {
     }
   } catch (error) {
     console.error('Error fetching water slave list:', error);
-    if (error.response) {
-      console.error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
-      console.error('Response data:', error.response.data);
-      throw new Error(`Server Error: ${error.response.status} - ${error.response.statusText}`);
-    } else if (error.request) {
-      console.error('Network Error: No response received from server');
-      throw new Error('Network Error: Unable to connect to server');
-    } else {
-      console.error('Request Error:', error.message);
-      throw new Error(`Request Error: ${error.message}`);
+    throw error;
+  }
+};
+
+/**
+ * Get daily consumption data for a specific slave
+ * @param {string|number} slaveId - The ID of the slave
+ * @returns {Promise} Promise object represents the daily consumption data
+ */
+export const fetchDailyConsumption = async (slaveId) => {
+  try {
+    const validToken = await tokenUtils.getValidAccessToken();
+    
+    if (!validToken) {
+      throw new Error('Authentication token not found. Please log in first.');
     }
+    
+    console.log(`Fetching daily consumption for slave_id: ${slaveId}`);
+    
+    const response = await apiClient.get(`/daily-consumption/?slave_id=${slaveId}`);
+    
+    if (response.data.success) {
+      return response.data;
+    } else {
+      throw new Error(response.data.message || 'Failed to fetch daily consumption');
+    }
+  } catch (error) {
+    console.error('Error fetching daily consumption:', error);
+    throw error;
   }
 };
 
