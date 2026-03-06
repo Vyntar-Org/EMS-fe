@@ -766,7 +766,7 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                                 fontWeight: 600,
                                 fontFamily: 'sans-serif',
                                 backgroundColor: '#fff',
-                                width: { xs: '100%', lg: '150%' }
+                                width: { xs: '100%', lg: '250%' }
                             }}
                         >
                             <span
@@ -831,8 +831,8 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                                 <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Daywise Consumption" />
                                 <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Monthwise Consumption" />
                                 <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Daily Meter Reading" />
-                                <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Daywise Cost Consumption" />
-                                <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Monthwise Cost Consumption" />
+                                {/* <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Daywise Cost Consumption" />
+                                <Tab sx={{ fontWeight: 600, textTransform: 'capitalize' }} label="Monthwise Cost Consumption" /> */}
                             </Tabs>
                         </Typography>
                     </Grid>
