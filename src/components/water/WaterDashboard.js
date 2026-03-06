@@ -909,10 +909,10 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                         {/* Left Column - Charts */}
                                         {/* Updated to stack on mobile/tablet (xs=12, sm=12) */}
                                         <Grid item xs={12} sm={12} md={8}>
-                                            {/* Weekly Water Consumption Chart */}
+                                            {/* Monthly Water Consumption Chart */}
                                             <Box>
                                                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                                                    <Typography sx={titleStyle1}>Weekly Water Consumption</Typography>
+                                                    <Typography sx={titleStyle1}>Monthly Water Consumption</Typography>
                                                     <Box display="flex" gap={1}>
                                                         <button
                                                             onClick={() => setActiveChart('bar')}

@@ -74,6 +74,7 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
 
+    const filteredValue = 'all';
     const styles = {
         mainContent: {
             width: '100%',

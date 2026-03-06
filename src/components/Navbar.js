@@ -220,7 +220,7 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                 } else if (app.code === 'FUEL') {
                   displayName = 'Fuel';
                 } else if (app.code === 'SOLAR') {
-                  displayName = 'Solar';
+                  displayName = 'Solar HVAC';
                 } else if (app.code === 'COMPRESSOR') {
                   displayName = 'Compressor';
                 }

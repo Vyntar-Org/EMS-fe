@@ -518,14 +518,14 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box style={styles.commonHeader}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             {/* 1. The Green Square Icon */}
-                            <Box sx={{
+                            {/* <Box sx={{
                                 width: '25px',
                                 height: '25px',
                                 backgroundColor: '#10b981', // A nice modern green
                                 borderRadius: '5px',
                                 marginRight: '10px', // Space between icon and text
                                 flexShrink: 0, // Prevents the icon from shrinking
-                            }}></Box>
+                            }}></Box> */}
 
                             {/* 2. The Text Container */}
                             <Box>
@@ -541,7 +541,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: { xs: '0', sm: '10px' }, marginTop: { xs: '5px', sm: '0' } }}>
                                 <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
-                                    {machine.mtd || 0} KLD
+                                    {machine.totalizer || 0} KLD
                                 </Typography>
                                 <Tooltip
                                     title={`${formatTimestampForTooltip(machine.latest_ts)}`}
