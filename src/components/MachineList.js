@@ -752,21 +752,28 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 title={`${formatTimestampForTooltip(machine.latest?.last_ts)}`}
                                 placement="top"
                                 arrow
-                                enterDelay={500}
-                                PopperProps={{
-                                    disablePortal: true,
-                                    modifiers: [
-                                        {
-                                            name: 'offset',
-                                            options: {
-                                                offset: [0, -10],
+                                enterTouchDelay={0} // Immediately opens on touch
+                                leaveTouchDelay={3000} 
+                                 componentsProps={{
+                                        tooltip: {
+                                            sx: {
+                                                fontSize: '12px', // Ensure readable font size on mobile
                                             },
                                         },
-                                    ],
-                                }}
-                                sx={{fontSize: "14px"}}
+                                    }}
                             >
-                                <AccessTimeIcon style={styles.clockIcon} />
+                                <Box 
+                                        component="span" 
+                                        sx={{ 
+                                            display: 'inline-flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center',
+                                            // padding: '4px', // Adds padding to make it easier to tap
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <AccessTimeIcon style={styles.clockIcon} sx={{fontSize: '14px'}} />
+                                    </Box>
                             </Tooltip>
                         </Box>
                     </Box>

@@ -135,7 +135,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         });
     };
 
-    // Define styles - UPDATED FOR MOBILE RESPONSIVENESS
+    // Define styles
     const styles = {
         mainContent: {
             width: '100%',
@@ -307,7 +307,6 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontWeight: 600,
             color: '#1F2937',
         },
-        // UPDATED: Responsive grid container - using sx prop instead
         gridContainer: {
             display: 'flex',
             flexDirection: 'row',
@@ -317,9 +316,8 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             marginLeft: '0',
             padding: '0 10px',
         },
-        // UPDATED: Responsive grid item - using sx prop instead
         gridItem: {
-            width: '100%', // Mobile: 1 card per row
+            width: '100%',
             marginBottom: '15px',
         },
         tableCell: {
@@ -328,7 +326,6 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         },
         clockIcon: {
             fontSize: '16px',
-            marginLeft: '5px',
             cursor: 'pointer',
             color: '#6B7280',
             verticalAlign: 'middle',
@@ -517,19 +514,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 }}>
                     <Box style={styles.commonHeader}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {/* 1. The Green Square Icon */}
-                            {/* <Box sx={{
-                                width: '25px',
-                                height: '25px',
-                                backgroundColor: '#10b981', // A nice modern green
-                                borderRadius: '5px',
-                                marginRight: '10px', // Space between icon and text
-                                flexShrink: 0, // Prevents the icon from shrinking
-                            }}></Box> */}
-
-                            {/* 2. The Text Container */}
                             <Box>
-                                {/* Main Title */}
                                 <Typography style={styles.floorTitle}>
                                     {machine.slave_name}
                                 </Typography>
@@ -543,25 +528,38 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
                                     {machine.totalizer || 0} KLD
                                 </Typography>
+                                
+                                {/* FIX START: Updated Tooltip for Mobile/Tab Compatibility */}
                                 <Tooltip
-                                    title={`${formatTimestampForTooltip(machine.latest_ts)}`}
+                                    title={formatTimestampForTooltip(machine.latest_ts)}
                                     placement="top"
                                     arrow
-                                    enterDelay={500}
-                                    PopperProps={{
-                                        disablePortal: true,
-                                        modifiers: [
-                                            {
-                                                name: 'offset',
-                                                options: {
-                                                    offset: [0, -10],
-                                                },
+                                    enterTouchDelay={0} // Immediately opens on touch
+                                    leaveTouchDelay={3000} // Stays open for 3 seconds on touch
+                                    componentsProps={{
+                                        tooltip: {
+                                            sx: {
+                                                fontSize: '12px', // Ensure readable font size on mobile
                                             },
-                                        ],
+                                        },
                                     }}
                                 >
-                                    <AccessTimeIcon style={styles.clockIcon} />
+                                    {/* Wrapper Box increases the touch target size */}
+                                    <Box 
+                                        component="span" 
+                                        sx={{ 
+                                            display: 'inline-flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center',
+                                            padding: '4px', // Adds padding to make it easier to tap
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <AccessTimeIcon style={styles.clockIcon} />
+                                    </Box>
                                 </Tooltip>
+                                {/* FIX END */}
+
                             </Box>
                         </Box>
                     </Box>
@@ -633,8 +631,6 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         py: 0.5,
-                        // flexDirection: { xs: 'column', sm: 'row' },
-                        // gap: { xs: 1, sm: 0 }
                     }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
@@ -679,7 +675,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
             ) : (
                 <>
-                    {/* Custom Grid Container - RESPONSIVE using sx prop */}
+                    {/* Custom Grid Container */}
                     <Box 
                         sx={{
                             display: 'flex',
@@ -695,14 +691,10 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 key={machine.slave_id || index}
                                 sx={{
                                     width: { 
-                                        xs: '100%',              // Mobile: 1 card per row
-                                        sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
-                                        md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
+                                        xs: '100%',
+                                        sm: 'calc(50% - 15px)',
+                                        md: 'calc(33.33% - 35px)'
                                     },
-                                    // marginBottom: '15px',
-                                    // '@media (min-width: 1200px)': {
-                                    //     width: 'calc(30% - 35px)'
-                                    // }
                                 }}
                             >
                                 {renderFloorCard(machine)}
@@ -710,7 +702,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         ))}
                     </Box>
 
-                    {/* Chart Modal - RESPONSIVE */}
+                    {/* Chart Modal */}
                     <Modal
                         open={chartModalOpen}
                         onClose={() => setChartModalOpen(false)}
