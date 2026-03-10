@@ -27,7 +27,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
-    
+
     const [waterPositivity, setWaterPositivity] = useState(26.0);
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -37,8 +37,8 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
     const [slaveList, setSlaveList] = useState([]);
     const [slaveListLoading, setSlaveListLoading] = useState(false);
     const [selectedSlave, setSelectedSlave] = useState(null);
-    const [activeChart, setActiveChart] = useState('bar'); 
-    
+    const [activeChart, setActiveChart] = useState('bar');
+
     // State for chart data and loading
     const [weeklyWaterData, setWeeklyWaterData] = useState([]);
     const [chartLoading, setChartLoading] = useState(false);
@@ -114,11 +114,11 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
     const handleSlaveSelect = async (slave) => {
         setSelectedSlave(slave);
         setChartLoading(true);
-        
+
         try {
             console.log('Fetching consumption for slave:', slave.slave_id);
             const response = await fetchDailyConsumption(slave.slave_id);
-            
+
             if (response.success && response.data && response.data.data) {
                 // Transform API data to match chart structure
                 const formattedData = response.data.data.map(item => ({
@@ -142,24 +142,20 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Helper function to calculate appropriate y-axis values
-    const calculateYAxis = (actualData, targetData) => {
-        if (actualData.length === 0 && targetData.length === 0) {
-            return { min: 0, max: 1000, tickAmount: 5, stepSize: 200 };
-        }
+    // Logic to determine Y-Axis Max based on Slave ID
+    // If slave_id is 1 or 4, max is 50. Otherwise, max is 100.
+    // Logic to determine Y-Axis Max and Tick Amount based on Slave ID
+    const getYAxisConfig = () => {
+        // If slave_id is 1 or 4, max is 50. Otherwise, max is 100.
+        const max = (selectedSlave && (selectedSlave.slave_id === 1 || selectedSlave.slave_id === 4)) ? 50 : 100;
+        
+        // To get steps of 10 (0, 10, 20...), tickAmount must be max / 10
+        const tickAmount = max / 10;
 
-        const allValues = [...actualData, ...targetData];
-        const maxValue = Math.max(...allValues);
-
-        const max = Math.ceil(maxValue / 200) * 200; // Round up to nearest 200
-
-        return {
-            min: 0,
-            max: max < 200 ? 200 : max,
-            tickAmount: max / 200 + 1,
-            stepSize: 200
-        };
+        return { max, tickAmount };
     };
+
+    const { max: yAxisMax, tickAmount: yAxisTickAmount } = getYAxisConfig();
 
     // Dynamic chart configuration for weekly water consumption - BAR CHART
     const weeklyWaterBarOptions = {
@@ -198,20 +194,10 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 style: { color: '#6B7280', fontSize: '12px' }
             }
         },
-        yaxis: {
+         yaxis: {
             min: 0,
-            max: calculateYAxis(
-                weeklyWaterData.map(item => item.actual),
-                weeklyWaterData.map(item => item.target)
-            ).max,
-            tickAmount: calculateYAxis(
-                weeklyWaterData.map(item => item.actual),
-                weeklyWaterData.map(item => item.target)
-            ).tickAmount,
-            stepSize: calculateYAxis(
-                weeklyWaterData.map(item => item.actual),
-                weeklyWaterData.map(item => item.target)
-            ).stepSize,
+            max: yAxisMax,             // Uses 50 or 100
+            tickAmount: yAxisTickAmount, // Uses 5 or 10 to create 0, 10, 20... steps
             labels: {
                 style: { colors: '#6B7280', fontSize: '12px' },
                 formatter: (val) => val
@@ -289,20 +275,10 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 style: { color: '#6B7280', fontSize: '12px' }
             }
         },
-        yaxis: {
+         yaxis: {
             min: 0,
-            max: calculateYAxis(
-                weeklyWaterData.map(item => item.actual),
-                weeklyWaterData.map(item => item.target)
-            ).max,
-            tickAmount: calculateYAxis(
-                weeklyWaterData.map(item => item.actual),
-                weeklyWaterData.map(item => item.target)
-            ).tickAmount,
-            stepSize: calculateYAxis(
-                weeklyWaterData.map(item => item.actual),
-                weeklyWaterData.map(item => item.target)
-            ).stepSize,
+            max: yAxisMax,             // Uses 50 or 100
+            tickAmount: yAxisTickAmount, // Uses 5 or 10
             labels: {
                 style: { colors: '#6B7280', fontSize: '12px' },
                 formatter: (val) => val
@@ -587,17 +563,17 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                                         Monthly Water Consumption
                                                         {selectedSlave && <span style={{ fontSize: '14px', color: '#6B7280', marginLeft: '8px' }}>- {selectedSlave.slave_name}</span>}
                                                     </Typography>
-                                                    
+
                                                     {/* Updated Buttons with Icons */}
                                                     <Box display="flex" gap={1}>
-                                                        <button 
-                                                            onClick={() => setActiveChart('bar')} 
-                                                            style={{ 
-                                                                padding: '4px 12px', 
-                                                                backgroundColor: activeChart === 'bar' ? '#0156a6' : '#e0e0e0', 
-                                                                color: activeChart === 'bar' ? 'white' : '#333', 
-                                                                border: 'none', 
-                                                                borderRadius: '4px', 
+                                                        <button
+                                                            onClick={() => setActiveChart('bar')}
+                                                            style={{
+                                                                padding: '4px 12px',
+                                                                backgroundColor: activeChart === 'bar' ? '#0156a6' : '#e0e0e0',
+                                                                color: activeChart === 'bar' ? 'white' : '#333',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
                                                                 cursor: 'pointer',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
@@ -610,14 +586,14 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 <line x1="6" y1="20" x2="6" y2="14"></line>
                                                             </svg>
                                                         </button>
-                                                        <button 
-                                                            onClick={() => setActiveChart('line')} 
-                                                            style={{ 
-                                                                padding: '4px 12px', 
-                                                                backgroundColor: activeChart === 'line' ? '#0156a6' : '#e0e0e0', 
-                                                                color: activeChart === 'line' ? 'white' : '#333', 
-                                                                border: 'none', 
-                                                                borderRadius: '4px', 
+                                                        <button
+                                                            onClick={() => setActiveChart('line')}
+                                                            style={{
+                                                                padding: '4px 12px',
+                                                                backgroundColor: activeChart === 'line' ? '#0156a6' : '#e0e0e0',
+                                                                color: activeChart === 'line' ? 'white' : '#333',
+                                                                border: 'none',
+                                                                borderRadius: '4px',
                                                                 cursor: 'pointer',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
@@ -630,7 +606,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                                         </button>
                                                     </Box>
                                                 </Box>
-                                                
+
                                                 {/* Chart Container with Loading Overlay */}
                                                 <Box sx={{ width: { xs: '100%', sm: '240%', md: 570, lg: 844 }, position: 'relative' }}>
                                                     {chartLoading && (
