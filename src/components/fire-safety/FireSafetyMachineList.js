@@ -22,6 +22,7 @@ import {
     IconButton,
     Tabs,
     Tab,
+    Tooltip,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
@@ -33,6 +34,7 @@ import {
     getFireSafetySlaves,
     getFireSafetyMachineTrend,
 } from '../../auth/fire-safety/FireSafetyMachineListApi';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
 const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Get parameter unit
@@ -295,6 +297,12 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             padding: '4px 8px',
             fontSize: '12px',
         },
+        clockIcon: {
+            fontSize: '16px',
+            cursor: 'pointer',
+            // color: '#6B7280',
+            verticalAlign: 'middle',
+        },
     };
 
     // Chart data for trend
@@ -468,6 +476,19 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             mtd: getConditionalValue(energy.mtd, true), // Allowed when offline
         };
 
+            const formatTimestampForTooltip = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        return new Date(timestamp).toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+    };
+
         return (
             <Card style={styles.floorCard}>
                 <CardContent style={{
@@ -486,18 +507,34 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
-                            <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
-                                {machine.last_ts
-                                    ? new Date(machine.last_ts).toLocaleString('en-GB', {
-                                        day: '2-digit',
-                                        month: 'short',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        hour12: true
-                                    })
-                                    : 'N/A'}
-                            </Typography>
+                            <Tooltip
+                                    title={formatTimestampForTooltip(machine.last_ts)}
+                                    placement="top"
+                                    arrow
+                                    enterTouchDelay={0} // Immediately opens on touch
+                                    leaveTouchDelay={3000} // Stays open for 3 seconds on touch
+                                    componentsProps={{
+                                        tooltip: {
+                                            sx: {
+                                                fontSize: '12px', // Ensure readable font size on mobile
+                                            },
+                                        },
+                                    }}
+                                >
+                                    {/* Wrapper Box increases the touch target size */}
+                                    <Box 
+                                        component="span" 
+                                        sx={{ 
+                                            display: 'inline-flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center',
+                                            padding: '4px', // Adds padding to make it easier to tap
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <AccessTimeIcon style={styles.clockIcon} />
+                                    </Box>
+                                </Tooltip>
                         </Box>
                     </Box>
 

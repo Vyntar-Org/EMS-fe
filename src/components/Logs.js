@@ -542,15 +542,15 @@ function Logs({ onSidebarToggle, sidebarVisible }) {
                   mr: { xs: 0, sm: 2 }
                 }}
               >
-                <InputLabel>Select Machine</InputLabel>
+                <InputLabel>Select Device</InputLabel>
                 <Select
                   value={filterDevice}
-                  label="Select Machine"
+                  label="Select Device"
                   onChange={(e) => setFilterDevice(e.target.value)}
                 >
                   {devices.map((device) => (
                     <MenuItem key={device} value={device}>
-                      {device === 'all' ? 'Select Machine' : device}
+                      {device === 'all' ? 'Select Device' : device}
                     </MenuItem>
                   ))}
                 </Select>

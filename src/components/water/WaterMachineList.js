@@ -48,7 +48,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             case 'consumption':
                 return 'KLD';
             case 'flow_rate':
-                return 'CFM';
+                return 'm³/h';
             case 'totalizer':
                 return 'L';
             default:
@@ -327,7 +327,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         clockIcon: {
             fontSize: '16px',
             cursor: 'pointer',
-            color: '#6B7280',
+            // color: '#6B7280',
             verticalAlign: 'middle',
         },
         parameterIcon: {
@@ -601,7 +601,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     <TableCell align="right" style={styles.tableCell}>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.consumption || 0).toFixed(1)} KLD
+                                        {(machine.consumption || 0).toFixed(1)} 
                                     </TableCell>
                                 </TableRow>
 
@@ -616,7 +616,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     <TableCell align="right" style={styles.tableCell}>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.rate_of_flow || 0).toFixed(1)} CFM
+                                        {(machine.rate_of_flow || 0).toFixed(1)} m³/h
                                     </TableCell>
                                 </TableRow>
                             </TableBody>

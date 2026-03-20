@@ -142,20 +142,50 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Logic to determine Y-Axis Max based on Slave ID
-    // If slave_id is 1 or 4, max is 50. Otherwise, max is 100.
-    // Logic to determine Y-Axis Max and Tick Amount based on Slave ID
-    const getYAxisConfig = () => {
-        // If slave_id is 1 or 4, max is 50. Otherwise, max is 100.
-        const max = (selectedSlave && (selectedSlave.slave_id === 1 || selectedSlave.slave_id === 4)) ? 50 : 100;
-        
-        // To get steps of 10 (0, 10, 20...), tickAmount must be max / 10
-        const tickAmount = max / 10;
+    // Dynamic Y-Axis Calculation Logic
+    const calculateYAxisLimits = () => {
+        if (!weeklyWaterData || weeklyWaterData.length === 0) {
+            return { max: 10, tickAmount: 5 };
+        }
 
-        return { max, tickAmount };
+        // Find the maximum value between actual and target in the dataset
+        const maxValue = weeklyWaterData.reduce((max, item) => {
+            const currentMax = Math.max(item.actual || 0, item.target || 0);
+            return Math.max(max, currentMax);
+        }, 0);
+
+        if (maxValue === 0) return { max: 10, tickAmount: 5 };
+
+        // Calculate a "nice" step size aiming for roughly 5 intervals
+        const roughStep = maxValue / 5;
+
+        // Calculate magnitude (10, 100, 1000, etc.)
+        const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+
+        // Normalize the rough step to find the closest "nice" number (1, 2, 5, or 10)
+        const residual = roughStep / magnitude;
+
+        let niceStep;
+        if (residual <= 1.5) {
+            niceStep = 1 * magnitude;
+        } else if (residual <= 3) {
+            niceStep = 2 * magnitude;
+        } else if (residual <= 7) {
+            niceStep = 5 * magnitude;
+        } else {
+            niceStep = 10 * magnitude;
+        }
+
+        // Calculate the max value as a multiple of the nice step
+        const yAxisMax = Math.ceil(maxValue / niceStep) * niceStep;
+        
+        // Calculate tick amount based on the step
+        const tickAmount = yAxisMax / niceStep;
+
+        return { max: yAxisMax, tickAmount };
     };
 
-    const { max: yAxisMax, tickAmount: yAxisTickAmount } = getYAxisConfig();
+    const { max: yAxisMax, tickAmount: yAxisTickAmount } = calculateYAxisLimits();
 
     // Dynamic chart configuration for weekly water consumption - BAR CHART
     const weeklyWaterBarOptions = {
@@ -196,8 +226,8 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         },
          yaxis: {
             min: 0,
-            max: yAxisMax,             // Uses 50 or 100
-            tickAmount: yAxisTickAmount, // Uses 5 or 10 to create 0, 10, 20... steps
+            max: yAxisMax,             // Dynamic max
+            tickAmount: yAxisTickAmount, // Dynamic ticks
             labels: {
                 style: { colors: '#6B7280', fontSize: '12px' },
                 formatter: (val) => val
@@ -277,8 +307,8 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         },
          yaxis: {
             min: 0,
-            max: yAxisMax,             // Uses 50 or 100
-            tickAmount: yAxisTickAmount, // Uses 5 or 10
+            max: yAxisMax,             // Dynamic max
+            tickAmount: yAxisTickAmount, // Dynamic ticks
             labels: {
                 style: { colors: '#6B7280', fontSize: '12px' },
                 formatter: (val) => val
@@ -429,6 +459,11 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                             {dashboardData.raw_water_inlet?.current?.toFixed(1) || '0.0'} KLD
                                         </Typography>
                                     </Box>
+                                    <Box display="flex" justifyContent="center" mt="10px">
+                                        <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                            Yesterday {dashboardData.raw_water_inlet?.previous?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
                                 </CardContent>
                             </Card>
 
@@ -444,6 +479,11 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                             {dashboardData.raw_water_outlet?.current?.toFixed(1) || '0.0'} KLD
                                         </Typography>
                                     </Box>
+                                    <Box display="flex" justifyContent="center" mt="10px">
+                                        <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                            Yesterday {dashboardData.raw_water_outlet?.previous?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
                                 </CardContent>
                             </Card>
 
@@ -457,6 +497,11 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                     <Box display="flex" justifyContent="center" mt="10px">
                                         <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
                                             {dashboardData.filter_water_outlet?.current?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
+                                    <Box display="flex" justifyContent="center" mt="10px">
+                                        <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                            Yesterday {dashboardData.filter_water_outlet?.previous?.toFixed(1) || '0.0'} KLD
                                         </Typography>
                                     </Box>
                                 </CardContent>
@@ -476,6 +521,11 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                             {dashboardData.drinking_ro?.current?.toFixed(1) || '0.0'} KLD
                                         </Typography>
                                     </Box>
+                                    <Box display="flex" justifyContent="center" mt="10px">
+                                        <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                            Yesterday {dashboardData.drinking_ro?.previous?.toFixed(1) || '0.0'} KLD
+                                        </Typography>
+                                    </Box>
                                 </CardContent>
                             </Card>
 
@@ -491,6 +541,11 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                     <Box display="flex" justifyContent="center">
                                         <Typography sx={{ fontSize: '30px', fontWeight: 'bold', color: waterPositivity >= 0 ? '#16A34A' : '#DC2626' }}>
                                             {waterPositivity.toFixed(1)} KLD
+                                        </Typography>
+                                    </Box>
+                                    <Box display="flex" justifyContent="center">
+                                        <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                            Yesterday {dashboardData.water_positivity?.previous?.toFixed(1) || '0.0'} KLD
                                         </Typography>
                                     </Box>
                                 </CardContent>
@@ -515,6 +570,11 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                                     {dashboardData.sewage_inlet?.current?.toFixed(1) || '0.0'} KLD
                                                 </Typography>
                                             </Box>
+                                            <Box display="flex" justifyContent="center">
+                                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                                    Yesterday {dashboardData.sewage_inlet?.previous?.toFixed(1) || '0.0'} KLD
+                                                </Typography>
+                                            </Box>
                                         </CardContent>
                                     </Card>
 
@@ -527,6 +587,11 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                             <Box display="flex" justifyContent="center" mb="10px">
                                                 <Typography sx={{ fontSize: '20px', color: '#0156a6', fontWeight: 'bold' }}>
                                                     {dashboardData.sewage_outlet?.current?.toFixed(1) || '0.0'} KLD
+                                                </Typography>
+                                            </Box>
+                                             <Box display="flex" justifyContent="center">
+                                                <Typography sx={{ fontSize: '10px', color: '#6B7280' }}>
+                                                    Yesterday {dashboardData.sewage_outlet?.previous?.toFixed(1) || '0.0'} KLD
                                                 </Typography>
                                             </Box>
                                         </CardContent>

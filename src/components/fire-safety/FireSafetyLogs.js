@@ -353,10 +353,10 @@ function FireSafetyLogs({ onSidebarToggle, sidebarVisible }) {
                   mr: { xs: 0, sm: 2 }
                 }}
               >
-                <InputLabel>Select Machine</InputLabel>
+                <InputLabel>Select Device</InputLabel>
                 <Select
                   value={filterDevice}
-                  label="Select Machine"
+                  label="Select Device"
                   onChange={(e) => setFilterDevice(e.target.value)}
                   disabled={devices.length === 0}
                 >
