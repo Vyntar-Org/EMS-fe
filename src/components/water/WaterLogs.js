@@ -391,17 +391,17 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                   order: { xs: 1, sm: 1 }
                 }}
               >
-                <InputLabel>Select Machine</InputLabel>
+                <InputLabel>Select Device</InputLabel>
                 <Select
                   value={filterDevice}
-                  label="Select Machine"
+                  label="Select Device"
                   onChange={(e) => setFilterDevice(e.target.value)}
                   disabled={devices.length === 0}
                 >
                   {devices.length > 0 ? (
                     devices.map((device) => (
                       <MenuItem key={device} value={device}>
-                        {device === 'all' ? 'Select Machine' : device}
+                        {device === 'all' ? 'Select Device' : device}
                       </MenuItem>
                     ))
                   ) : (

@@ -770,15 +770,15 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 order: { xs: 1, sm: 1 }
                                             }}
                                         >
-                                            <InputLabel>Select Machine</InputLabel>
+                                            <InputLabel>Select Device</InputLabel>
                                             <Select
                                                 value={filterDevice}
-                                                label="Select Machine"
+                                                label="Select Device"
                                                 onChange={(e) => setFilterDevice(e.target.value)}
                                             >
                                                 {devices.map((device) => (
                                                     <MenuItem key={device} value={device}>
-                                                        {device === 'all' ? 'Select Machine' : device}
+                                                        {device === 'all' ? 'Select Device' : device}
                                                     </MenuItem>
                                                 ))}
                                             </Select>
@@ -990,10 +990,10 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             width: { xs: '100%', sm: 'auto' }
                                                         }}
                                                     >
-                                                        <InputLabel>Select Machine to Compare</InputLabel>
+                                                        <InputLabel>Select Device to Compare</InputLabel>
                                                         <Select
                                                             value={compareDevice}
-                                                            label="Select Machine to Compare"
+                                                            label="Select Device to Compare"
                                                             onChange={(e) => handleCompareDeviceChange(e.target.value)}
                                                         >
                                                             {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice2).map((device) => (
@@ -1061,15 +1061,15 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                     width: { xs: '100%', sm: 'auto' }
                                                                 }}
                                                             >
-                                                                <InputLabel>Select Machine</InputLabel>
+                                                                <InputLabel>Select Device</InputLabel>
                                                                 <Select
                                                                     value={compareDevice}
-                                                                    label="Select Machine"
+                                                                    label="Select Device"
                                                                     onChange={(e) => handleCompareDeviceChange(e.target.value)}
                                                                 >
                                                                     {devices.map((device) => (
                                                                         <MenuItem key={device} value={device}>
-                                                                            {device === 'all' ? 'Select Machine' : device}
+                                                                            {device === 'all' ? 'Select Device' : device}
                                                                         </MenuItem>
                                                                     ))}
                                                                 </Select>
@@ -1146,10 +1146,10 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                         width: { xs: '100%', sm: 'auto' }
                                                                     }}
                                                                 >
-                                                                    <InputLabel>Select Second Machine to Compare</InputLabel>
+                                                                    <InputLabel>Select Second Device to Compare</InputLabel>
                                                                     <Select
                                                                         value={compareDevice2}
-                                                                        label="Select Second Machine to Compare"
+                                                                        label="Select Second Device to Compare"
                                                                         onChange={(e) => handleCompareDevice2Change(e.target.value)}
                                                                     >
                                                                         {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice).map((device) => (
@@ -1215,15 +1215,15 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 width: { xs: '100%', sm: 'auto' }
                                                             }}
                                                         >
-                                                            <InputLabel>Select Machine</InputLabel>
+                                                            <InputLabel>Select Device</InputLabel>
                                                             <Select
                                                                 value={compareDevice2}
-                                                                label="Select Machine"
+                                                                label="Select Device"
                                                                 onChange={(e) => handleCompareDevice2Change(e.target.value)}
                                                             >
                                                                 {devices.map((device) => (
                                                                     <MenuItem key={device} value={device}>
-                                                                        {device === 'all' ? 'Select Machine' : device}
+                                                                        {device === 'all' ? 'Select Device' : device}
                                                                     </MenuItem>
                                                                 ))}
                                                             </Select>

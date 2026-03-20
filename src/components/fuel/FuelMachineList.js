@@ -404,7 +404,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '16px',
             marginLeft: '5px',
             cursor: 'pointer',
-            color: '#6B7280',
+            // color: '#6B7280',
             verticalAlign: 'middle',
         },
         progressBar: {
@@ -649,19 +649,35 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: { xs: '0', sm: '10px' }, marginTop: { xs: '5px', sm: '0' } }}>
-                                <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
-                                    {machine.last_ts
-                                        ? new Date(machine.last_ts).toLocaleString('en-GB', {
-                                            day: '2-digit',
-                                            month: 'short',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                            hour12: true
-                                        })
-                                        : 'N/A'}
-                                </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: { xs: '0', sm: '0px' }, marginTop: { xs: '5px', sm: '0' } }}>
+                                <Tooltip
+                                    title={formatTimestampForTooltip(machine.last_ts)}
+                                    placement="top"
+                                    arrow
+                                    enterTouchDelay={0} // Immediately opens on touch
+                                    leaveTouchDelay={3000} // Stays open for 3 seconds on touch
+                                    componentsProps={{
+                                        tooltip: {
+                                            sx: {
+                                                fontSize: '12px', // Ensure readable font size on mobile
+                                            },
+                                        },
+                                    }}
+                                >
+                                    {/* Wrapper Box increases the touch target size */}
+                                    <Box 
+                                        component="span" 
+                                        sx={{ 
+                                            display: 'inline-flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center',
+                                            padding: '4px', // Adds padding to make it easier to tap
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <AccessTimeIcon style={styles.clockIcon} />
+                                    </Box>
+                                </Tooltip>
                             </Box>
                         </Box>
                     </Box>

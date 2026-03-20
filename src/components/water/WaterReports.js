@@ -47,19 +47,19 @@ const generateMockConsumptionData = (month, year) => {
 
     return {
         data: {
-            "Machine 1": Array.from({ length: daysInMonth }, (_, i) => ({
+            "Device 1": Array.from({ length: daysInMonth }, (_, i) => ({
                 date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
                 consumption: Math.floor(Math.random() * 100) + 50
             })),
-            "Machine 2": Array.from({ length: daysInMonth }, (_, i) => ({
+            "Device 2": Array.from({ length: daysInMonth }, (_, i) => ({
                 date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
                 consumption: Math.floor(Math.random() * 100) + 50
             })),
-            "Machine 3": Array.from({ length: daysInMonth }, (_, i) => ({
+            "Device 3": Array.from({ length: daysInMonth }, (_, i) => ({
                 date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
                 consumption: Math.floor(Math.random() * 100) + 50
             })),
-            "Machine 4": Array.from({ length: daysInMonth }, (_, i) => ({
+            "Device 4": Array.from({ length: daysInMonth }, (_, i) => ({
                 date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
                 consumption: Math.floor(Math.random() * 100) + 50
             }))
@@ -71,19 +71,19 @@ const generateMockConsumptionData = (month, year) => {
 const generateMockMonthlyConsumptionData = () => {
     return {
         data: {
-            "Machine 1": Array.from({ length: 12 }, (_, i) => ({
+            "Device 1": Array.from({ length: 12 }, (_, i) => ({
                 month: i + 1,
                 consumption_kwh: Math.floor(Math.random() * 1000) + 500
             })),
-            "Machine 2": Array.from({ length: 12 }, (_, i) => ({
+            "Device 2": Array.from({ length: 12 }, (_, i) => ({
                 month: i + 1,
                 consumption_kwh: Math.floor(Math.random() * 1000) + 500
             })),
-            "Machine 3": Array.from({ length: 12 }, (_, i) => ({
+            "Device 3": Array.from({ length: 12 }, (_, i) => ({
                 month: i + 1,
                 consumption_kwh: Math.floor(Math.random() * 1000) + 500
             })),
-            "Machine 4": Array.from({ length: 12 }, (_, i) => ({
+            "Device 4": Array.from({ length: 12 }, (_, i) => ({
                 month: i + 1,
                 consumption_kwh: Math.floor(Math.random() * 1000) + 500
             }))
@@ -97,19 +97,19 @@ const generateMockReadingData = (month, year) => {
 
     return {
         data: {
-            "Machine 1": Array.from({ length: daysInMonth }, (_, i) => ({
+            "Device 1": Array.from({ length: daysInMonth }, (_, i) => ({
                 date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
                 first_meter_reading: Math.floor(Math.random() * 10000) + 5000
             })),
-            "Machine 2": Array.from({ length: daysInMonth }, (_, i) => ({
+            "Device 2": Array.from({ length: daysInMonth }, (_, i) => ({
                 date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
                 first_meter_reading: Math.floor(Math.random() * 10000) + 5000
             })),
-            "Machine 3": Array.from({ length: daysInMonth }, (_, i) => ({
+            "Device 3": Array.from({ length: daysInMonth }, (_, i) => ({
                 date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
                 first_meter_reading: Math.floor(Math.random() * 10000) + 5000
             })),
-            "Machine 4": Array.from({ length: daysInMonth }, (_, i) => ({
+            "Device 4": Array.from({ length: daysInMonth }, (_, i) => ({
                 date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
                 first_meter_reading: Math.floor(Math.random() * 10000) + 5000
             }))
@@ -123,19 +123,19 @@ const generateMockConsumptionCostData = (month, year) => {
 
     return {
         data: {
-            "Machine 1": Array.from({ length: daysInMonth }, (_, i) => ({
+            "Device 1": Array.from({ length: daysInMonth }, (_, i) => ({
                 date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
                 cost: Math.floor(Math.random() * 1000) + 500
             })),
-            "Machine 2": Array.from({ length: daysInMonth }, (_, i) => ({
+            "Device 2": Array.from({ length: daysInMonth }, (_, i) => ({
                 date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
                 cost: Math.floor(Math.random() * 1000) + 500
             })),
-            "Machine 3": Array.from({ length: daysInMonth }, (_, i) => ({
+            "Device 3": Array.from({ length: daysInMonth }, (_, i) => ({
                 date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
                 cost: Math.floor(Math.random() * 1000) + 500
             })),
-            "Machine 4": Array.from({ length: daysInMonth }, (_, i) => ({
+            "Device 4": Array.from({ length: daysInMonth }, (_, i) => ({
                 date: `${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
                 cost: Math.floor(Math.random() * 1000) + 500
             }))
@@ -147,19 +147,19 @@ const generateMockConsumptionCostData = (month, year) => {
 const generateMockMonthlyConsumptionCostData = () => {
     return {
         data: {
-            "Machine 1": Array.from({ length: 12 }, (_, i) => ({
+            "Device 1": Array.from({ length: 12 }, (_, i) => ({
                 month: i + 1,
                 cost: Math.floor(Math.random() * 10000) + 5000
             })),
-            "Machine 2": Array.from({ length: 12 }, (_, i) => ({
+            "Device 2": Array.from({ length: 12 }, (_, i) => ({
                 month: i + 1,
                 cost: Math.floor(Math.random() * 10000) + 5000
             })),
-            "Machine 3": Array.from({ length: 12 }, (_, i) => ({
+            "Device 3": Array.from({ length: 12 }, (_, i) => ({
                 month: i + 1,
                 cost: Math.floor(Math.random() * 10000) + 5000
             })),
-            "Machine 4": Array.from({ length: 12 }, (_, i) => ({
+            "Device 4": Array.from({ length: 12 }, (_, i) => ({
                 month: i + 1,
                 cost: Math.floor(Math.random() * 10000) + 5000
             }))
@@ -919,9 +919,9 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                     {/* STATION */}
                     <TextField
                         size="small"
-                        label="Machine"
+                        label="Device"
                         value={selectedStation}
-                        placeholder="Machine"
+                        placeholder="Device"
                         onChange={(e) => {
                             const inputValue = e.target.value;
                             setSelectedStation(inputValue);
@@ -1056,7 +1056,7 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 1 }}><b>Machine</b></TableCell>
+                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 1 }}><b>Device</b></TableCell>
                                 {(activeTab === 0 || activeTab === 3) ? (
                                     currentMonthDays.map(day => (
                                         <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}>
@@ -1115,7 +1115,7 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 1 }}><b>Machine</b></TableCell>
+                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 1 }}><b>Device</b></TableCell>
                                 {activeTab === 2 ? (
                                     currentMonthDays.map(day => (
                                         <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}>

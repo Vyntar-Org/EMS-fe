@@ -164,8 +164,15 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   // Use the new hourly energy data from API - ensure arrays exist
   const hourlyData = Array.isArray(hourlyEnergyData?.hours) ? hourlyEnergyData.hours : [];
   const hourlyValuesRaw = Array.isArray(hourlyEnergyData?.consumption) ? hourlyEnergyData.consumption : [];
+  
   // Sanitize values: ApexCharts throws parser Error on null/undefined/NaN
-  const hourlyValues = hourlyValuesRaw.map(v => (typeof v === 'number' && !Number.isNaN(v) ? v : 0));
+  // FIX: Also handle negative values by setting them to 0 for display
+  const hourlyValues = hourlyValuesRaw.map(v => {
+    if (typeof v === 'number' && !Number.isNaN(v)) {
+      return v < 0 ? 0 : v; // If value is negative, return 0 for chart display
+    }
+    return 0;
+  });
 
   // Helper function to format as 'HH.MM'
   const formatDateTime = (hourString) => {
@@ -266,7 +273,12 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         }
       },
       y: {
-        formatter: (val) => `${Number.isFinite(Number(val)) ? Number(val).toLocaleString() : '0'} kWh`
+        // FIX: Use original raw data for tooltip to show negative values
+        formatter: function (val, opts) {
+          const index = opts.dataPointIndex;
+          const originalValue = hourlyValuesRaw[index];
+          return `${Number.isFinite(Number(originalValue)) ? Number(originalValue).toLocaleString() : '0'} kWh`;
+        }
       }
     },
 
