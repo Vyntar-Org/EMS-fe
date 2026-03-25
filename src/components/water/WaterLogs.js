@@ -69,7 +69,7 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
     { val: 'timestamp', label: 'Timestamp' },
     { val: 'metric_name', label: 'Metric Name' },
     { val: 'flowrate', label: 'Flow Rate (L/min)' },
-    { val: 'totalizer', label: 'Totalizer (L)' }
+    { val: 'totalizer', label: 'Totalizer (m³)' }
   ];
 
   // Get all parameter values for easy reference
@@ -704,7 +704,7 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                               padding: { xs: '8px 4px', sm: '16px' }
                             }}
                           >
-                            Totalizer (L)
+                            Totalizer (m³)
                           </TableCell>
                         </>
                       )}
