@@ -134,7 +134,7 @@ function Sidebar({ mobileOpen, onClose, visible, onSidebarHide, onSidebarToggle,
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 250, top: '5px', height: 'calc(100vh - 60px)'},
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 250, top: '5px', height: 'calc(100vh - 0px)'},
           }}
         >
           {sidebarContent}

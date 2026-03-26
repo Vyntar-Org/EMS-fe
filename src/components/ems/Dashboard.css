@@ -1,0 +1,160 @@
+/* Mobile Responsive Styles for Dashboard */
+
+/* Base mobile styles (320px and up) */
+@media (max-width: 767px) {
+  #main-content {
+    padding: 12px !important;
+    width: 100% !important;
+  }
+  
+  .block-header {
+    padding: 0 12px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  .logs-title {
+    font-size: 18px !important;
+  }
+  
+  /* Top summary cards - show 2 per row on mobile */
+  .MuiBox-root:has(.MuiCard-root) {
+    flex-wrap: wrap !important;
+    justify-content: space-around !important;
+    gap: 12px !important;
+    margin-left: 0 !important;
+  }
+  
+  /* Summary cards - 2 per row */
+  .MuiCard-root[style*="width: 160px"],
+  .MuiCard-root[style*="width: 201px"] {
+    width: calc(50% - 9px) !important; /* 2 cards per row with gap */
+    max-width: none !important;
+    flex: 0 0 auto !important;
+  }
+  
+  /* Specific handling for summary cards */
+  .main-content [style*="gap: 18px"] > .MuiBox-root {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+  }
+  
+  .main-content [style*="gap: 18px"] > .MuiBox-root .MuiCard-root {
+    width: calc(50% - 9px) !important;
+    min-width: calc(50% - 9px) !important;
+  }
+  
+  /* Chart cards - adjust for mobile - show 1 per row */
+  .MuiGrid-container {
+    width: 100% !important;
+    flex-direction: column !important;
+  }
+  
+  .MuiGrid-item {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 16px !important;
+  }
+  
+  /* Charts - reduce height for mobile */
+  .apexcharts-canvas {
+    height: 120px !important;
+  }
+  
+  /* Alerts panel - full width on mobile */
+  .MuiCard-root:has(.MuiBadge-root) {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Alert list items - match width of alerts header card */
+  .main-content .MuiBox-root[style*="maxHeight"] {
+    width: 100% !important;
+    max-width: 200px !important; /* Match the width of the alerts header card */
+  }
+  
+  /* Individual alert items */
+  .main-content .MuiBox-root[style*="maxHeight"] .MuiBox-root[style*="height: 40px"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 6px !important;
+  }
+}
+
+/* Small mobile phones (320px - 374px) */
+@media (max-width: 374px) {
+  #main-content {
+    padding: 8px !important;
+  }
+  
+  .logs-title {
+    font-size: 16px !important;
+  }
+  
+  /* Summary cards - adjust for very small screens */
+  .main-content [style*="gap: 18px"] > .MuiBox-root .MuiCard-root {
+    width: 100% !important;
+    min-width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+  
+  /* Alert items on very small screens */
+  .main-content .MuiBox-root[style*="maxHeight"] {
+    max-width: 100% !important; /* Allow full width on very small screens */
+  }
+  
+  .main-content .MuiBox-root[style*="maxHeight"] .MuiBox-root[style*="height: 40px"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 6px !important;
+    padding: 6px 10px !important; /* Reduce padding for small screens */
+  }
+  
+  /* Reduce font sizes for very small screens */
+  .MuiTypography-root {
+    font-size: 12px !important;
+  }
+  
+  .valueStyle {
+    font-size: 24px !important;
+  }
+}
+
+/* Medium mobile phones (375px - 424px) */
+@media (min-width: 375px) and (max-width: 424px) {
+  /* Summary cards - adjust for medium mobile screens */
+  .main-content [style*="gap: 18px"] > .MuiBox-root .MuiCard-root {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  
+  /* Alert section - match alerts header card width */
+  .main-content .MuiBox-root[style*="maxHeight"] {
+    max-width: 100% !important; /* Allow full width on medium screens */
+  }
+}
+
+/* Large mobile phones (425px - 767px) */
+@media (min-width: 425px) and (max-width: 767px) {
+  /* Summary cards - keep 2 per row for larger mobile screens */
+  .main-content [style*="gap: 18px"] > .MuiBox-root .MuiCard-root {
+    width: calc(50% - 9px) !important;
+    min-width: calc(50% - 9px) !important;
+  }
+  
+  /* Alert section - match alerts header card width */
+  .main-content .MuiBox-root[style*="maxHeight"] {
+    max-width: 200px !important; /* Maintain specific width on larger mobile screens */
+  }
+}
+
+/* Landscape orientation for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .MuiCard-root {
+    height: 100px !important;
+  }
+  
+  .apexcharts-canvas {
+    height: 80px !important;
+  }
+}
