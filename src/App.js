@@ -3,12 +3,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import Logs from './components/Logs';
-import MachineList from './components/MachineList';
-import EquipmentInsight from './components/EquipmentInsight';
-import Analytics from './components/Analytics';
-import FuelConsumptionReport from './components/FuelConsumptionReport';
+import Dashboard from './components/ems/Dashboard';
+import Logs from './components/ems/Logs';
+import MachineList from './components/ems/MachineList';
+import Analytics from './components/ems/Analytics';
+import FuelConsumptionReport from './components/ems/FuelConsumptionReport';
 import Login from './components/Login';
 import TemperatureMachineList from './components/temperature/TemperatureMachineList';
 import TemperatureAnalytics from './components/temperature/TemperatureAnalytics';
@@ -205,22 +204,6 @@ function AppContent() {
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <MachineList onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
-              </main>
-            </ProtectedRoute>
-          } />
-          <Route path="/equipment-insight" element={
-            <ProtectedRoute requiredAppCode="ENERGY">
-              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
-              <Sidebar 
-                mobileOpen={mobileMenuOpen} 
-                onClose={handleMenuClose}
-                visible={sidebarVisible}
-                onSidebarHide={handleSidebarHide}
-                onSidebarToggle={handleSidebarToggle}
-                activeApp={activeApp}
-              />
-              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
-                <EquipmentInsight onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
               </main>
             </ProtectedRoute>
           } />

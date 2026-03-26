@@ -1,0 +1,190 @@
+.logs-container {
+  padding: 1px;
+}
+
+.logs-title {
+  margin-bottom: 20px;
+  color: #50342c;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.logs-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logs-header {
+  margin-bottom: 20px;
+}
+
+.logs-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.logs-table-container {
+  margin-top: 20px;
+  max-height: 600px;
+  overflow: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.logs-table-container .MuiTable-root {
+  min-width: 100%;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed; /* This helps with column width control */
+}
+
+.logs-table-container .MuiTableCell-root {
+  padding: 5px 8px;
+  font-size: 12px;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  font-family: sans-serif;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Override ellipsis for header cells to show full text */
+.logs-table-container .MuiTableHead .MuiTableCell-root {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: none !important;
+}
+
+.logs-table-container .MuiTableCell-root:last-child {
+  border-right: none;
+}
+
+/* DARK BLUE TABLE HEADER */
+.logs-table-container .MuiTableHead .MuiTableCell-root,
+.log-table-header .MuiTableCell-root,
+.log-header-cell {
+  background-color: #0156a6 !important; /* dark blue */
+  color: #ffffff !important;            /* white text */
+  font-size: 13px;
+  font-weight: bold;
+  text-align: center;
+  border-bottom: 2px solid #092035;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: none !important;
+}
+
+.logs-table-container .MuiTableHead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.log-table-header {
+  height: auto;
+  min-height: 40px;
+}
+
+.log-header-cell {
+  font-size: 0.75rem;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: none !important;
+}
+
+.log-table-row:hover {
+  background-color: #f9f9f9;
+}
+
+.log-table-row:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.log-table-row:nth-child(even):hover {
+  background-color: #f0f0f0;
+}
+
+.log-table-cell {
+  font-family: 'sans-serif';
+  color: #333;
+}
+
+.log-header-cell {
+  font-family: sans-serif;
+  text-align: center;
+}
+
+/* Column width adjustments (covering all 16 columns) */
+.logs-table-container .MuiTableCell-root:nth-child(1) { width: 170px; }  /* timestamp */
+.logs-table-container .MuiTableCell-root:nth-child(2),
+.logs-table-container .MuiTableCell-root:nth-child(3),
+.logs-table-container .MuiTableCell-root:nth-child(4),
+.logs-table-container .MuiTableCell-root:nth-child(5),
+.logs-table-container .MuiTableCell-root:nth-child(6),
+.logs-table-container .MuiTableCell-root:nth-child(7),
+.logs-table-container .MuiTableCell-root:nth-child(8),
+.logs-table-container .MuiTableCell-root:nth-child(9),
+.logs-table-container .MuiTableCell-root:nth-child(10),
+.logs-table-container .MuiTableCell-root:nth-child(11),
+.logs-table-container .MuiTableCell-root:nth-child(12),
+.logs-table-container .MuiTableCell-root:nth-child(13),
+.logs-table-container .MuiTableCell-root:nth-child(14),
+.logs-table-container .MuiTableCell-root:nth-child(15),
+.logs-table-container .MuiTableCell-root:nth-child(16) {
+  width: 120px;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Override for header cells to show full text */
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(1) { 
+  width: 170px;
+  max-width: none !important;
+}
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(2),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(3),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(4),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(5),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(6),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(7),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(8),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(9),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(10),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(11),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(12),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(13),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(14),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(15),
+.logs-table-container .MuiTableHead .MuiTableCell-root:nth-child(16) {
+  width: auto;
+  min-width: 120px;
+  max-width: none !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-wrap: break-word;
+  word-break: break-word;
+}
