@@ -327,7 +327,6 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         clockIcon: {
             fontSize: '16px',
             cursor: 'pointer',
-            // color: '#6B7280',
             verticalAlign: 'middle',
         },
         parameterIcon: {
@@ -456,18 +455,12 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const renderFloorCard = (machine) => {
         if (!machine) return null;
 
-        // Check if the last timestamp is within the last 15 minutes
-        const isWithinTimeLimit = (lastTs) => {
-            if (!lastTs) return false;
+        // UPDATED: Online/Offline logic based on Rate of Flow
+        // If rate_of_flow is 0 or null/undefined -> Offline
+        // If rate_of_flow is greater than 0 -> Online
+        const rateOfFlow = machine.rate_of_flow || 0;
+        const isOnline = rateOfFlow > 0;
 
-            const lastTime = new Date(lastTs);
-            const currentTime = new Date();
-            const timeDiff = (currentTime - lastTime) / (1000 * 60); // Difference in minutes
-
-            return timeDiff <= 15; // Within 15 minutes
-        };
-
-        const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.latest_ts);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
         const totalizer = machine.totalizer || {};
@@ -478,7 +471,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 // If online, return the actual value
                 return value;
             } else {
-                // If offline (more than 15 mins old), only show specific fields
+                // If offline (rate_of_flow is 0), only show specific fields
                 if (isAllowedField) {
                     return value;
                 } else {
@@ -506,6 +499,13 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
+                    // UPDATED: Apply gradient background only when Online
+                    ...(isOnline ? {
+                        background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
+                        backgroundColor: 'transparent', // Override the white background when using gradient
+                    } : {
+                        backgroundColor: '#FFFFFF', // Keep white background when Offline
+                    }),
                     padding: '12px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -521,44 +521,48 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Box>
                         </Box>
                         <Box style={styles.onlineStatus}>
-                            <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
+                            <Typography style={{ 
+                                fontSize: '11px', 
+                                color: isOnline ? '#30b44a' : '#e34d4d', 
+                                border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), 
+                                padding: '2px 6px', 
+                                borderRadius: '4px' 
+                            }}>
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: { xs: '0', sm: '10px' }, marginTop: { xs: '5px', sm: '0' } }}>
                                 <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
-                                    {machine.totalizer || 0} KLD
+                                    {machine.totalizer || 0} m³
                                 </Typography>
                                 
-                                {/* FIX START: Updated Tooltip for Mobile/Tab Compatibility */}
+                                {/* Tooltip for Mobile/Tab Compatibility */}
                                 <Tooltip
                                     title={formatTimestampForTooltip(machine.latest_ts)}
                                     placement="top"
                                     arrow
-                                    enterTouchDelay={0} // Immediately opens on touch
-                                    leaveTouchDelay={3000} // Stays open for 3 seconds on touch
+                                    enterTouchDelay={0}
+                                    leaveTouchDelay={3000}
                                     componentsProps={{
                                         tooltip: {
                                             sx: {
-                                                fontSize: '12px', // Ensure readable font size on mobile
+                                                fontSize: '12px',
                                             },
                                         },
                                     }}
                                 >
-                                    {/* Wrapper Box increases the touch target size */}
                                     <Box 
                                         component="span" 
                                         sx={{ 
                                             display: 'inline-flex', 
                                             alignItems: 'center', 
                                             justifyContent: 'center',
-                                            padding: '4px', // Adds padding to make it easier to tap
+                                            padding: '4px',
                                             cursor: 'pointer'
                                         }}
                                     >
                                         <AccessTimeIcon style={styles.clockIcon} />
                                     </Box>
                                 </Tooltip>
-                                {/* FIX END */}
 
                             </Box>
                         </Box>
@@ -568,7 +572,10 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={styles.phaseTableHeader}>
+                                <TableRow style={{
+    ...styles.phaseTableHeader,
+    backgroundColor: isOnline ? 'transparent' : '#f5f5f5' // Hide color if Online, show if Offline
+}}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
@@ -601,7 +608,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     <TableCell align="right" style={styles.tableCell}>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.consumption || 0).toFixed(1)} 
+                                        {(machine.consumption || 0).toFixed(1)} KLD
                                     </TableCell>
                                 </TableRow>
 

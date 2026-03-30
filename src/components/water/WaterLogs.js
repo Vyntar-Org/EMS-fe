@@ -33,7 +33,7 @@ import {
   Search as SearchIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import '../../components/Logs.css';
+import '../ems/Logs.css';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -69,7 +69,8 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
     { val: 'timestamp', label: 'Timestamp' },
     { val: 'metric_name', label: 'Metric Name' },
     { val: 'flowrate', label: 'Flow Rate (L/min)' },
-    { val: 'totalizer', label: 'Totalizer (m³)' }
+    { val: 'totalizer', label: 'Totalizer (m³)' },
+    { val: 'water_consumption', label: 'Water Consumption' } // Added Parameter
   ];
 
   // Get all parameter values for easy reference
@@ -198,7 +199,8 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
       log.timestamp.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.metric_name && log.metric_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (log.flowrate !== undefined && log.flowrate.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.totalizer !== undefined && log.totalizer.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+      (log.totalizer !== undefined && log.totalizer.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.water_consumption !== undefined && log.water_consumption.toString().toLowerCase().includes(searchTerm.toLowerCase()))
     );
   });
 
@@ -706,6 +708,16 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                           >
                             Totalizer (m³)
                           </TableCell>
+                           <TableCell 
+                            className="log-header-cell" 
+                            sx={{ 
+                              textTransform: 'capitalize',
+                              fontSize: { xs: '11px', sm: '14px' },
+                              padding: { xs: '8px 4px', sm: '16px' }
+                            }}
+                          >
+                            Water Consumption
+                          </TableCell>
                         </>
                       )}
                     </TableRow>
@@ -717,6 +729,7 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                         const metricName = log.metric_name;
                         const flowRate = log.flowrate;
                         const totalizer = log.totalizer;
+                        const waterConsumption = log.water_consumption; // Added variable
 
                         return (
                           <TableRow key={`${log.timestamp}-${index}`} hover className="log-table-row">
@@ -734,6 +747,7 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                                   {col === 'metric_name' && metricName}
                                   {col === 'flowrate' && (typeof flowRate === 'number' ? flowRate.toFixed(2) : flowRate)}
                                   {col === 'totalizer' && (typeof totalizer === 'number' ? totalizer.toFixed(2) : totalizer)}
+                                  {col === 'water_consumption' && (typeof waterConsumption === 'number' ? waterConsumption.toFixed(2) : (waterConsumption || '-'))}
                                 </TableCell>
                               ))
                             ) : (
@@ -775,6 +789,15 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                                 >
                                   {typeof totalizer === 'number' ? totalizer.toFixed(2) : totalizer}
                                 </TableCell>
+                                <TableCell 
+                                  className="log-table-cell"
+                                  sx={{
+                                    fontSize: { xs: '11px', sm: '14px' },
+                                    padding: { xs: '8px 4px', sm: '16px' }
+                                  }}
+                                >
+                                  {typeof waterConsumption === 'number' ? waterConsumption.toFixed(2) : (waterConsumption || '-')}
+                                </TableCell>
                               </>
                             )}
                           </TableRow>
@@ -783,7 +806,7 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                     ) : (
                       <TableRow>
                         <TableCell 
-                          colSpan={selectedColumn.length > 0 ? selectedColumn.length : 4} 
+                          colSpan={selectedColumn.length > 0 ? selectedColumn.length : 5} 
                           align="center"
                           sx={{
                             fontSize: { xs: '12px', sm: '14px' },

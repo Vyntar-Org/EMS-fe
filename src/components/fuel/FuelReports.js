@@ -774,7 +774,8 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                                 fontWeight: 600,
                                 fontFamily: 'sans-serif',
                                 backgroundColor: '#fff',
-                                width: { xs: '100%', lg: '150%' }
+                                width: { xs: '100%', lg: '150%' },
+                                marginLeft: { xs: '-12px', lg: 0, sm: '17px' },
                             }}
                         >
                             <span
@@ -809,6 +810,7 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                                 sx={{ 
                                     mb: 2, 
                                     minHeight: { xs: '40px', sm: '48px' },
+                                    width: { xs: '410px' ,sm: '720px', md: '100%' },
                                     '& .MuiTabs-scroller': {
                                         overflowX: 'auto',
                                         '&::-webkit-scrollbar': {
@@ -826,10 +828,10 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                                         flexWrap: 'nowrap',
                                     },
                                     '& .MuiTab-root': {
-                                        minWidth: { xs: '140px', sm: 200 },
+                                        minWidth: { xs: '', sm: 200 },
                                         fontSize: { xs: '11px', sm: '13px' },
                                         // padding: { xs: '8px 12px', sm: '12px 16px' },
-                                        whiteSpace: 'nowrap',
+                                        // whiteSpace: 'nowrap',
                                     },
                                     '& .MuiTabs-indicator': {
                                         backgroundColor: '#0156a6',
@@ -855,6 +857,8 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                     justifyContent: "space-between",
                     mb: 2,
                     gap: { xs: 2, sm: 0 },
+                    marginLeft: { sm: '10px' },
+                    padding: { sm: '10px' },
                 }}
             >
                 {/* LEFT SIDE – FILTERS */}
@@ -864,7 +868,7 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                         flexDirection: { xs: 'column', sm: 'row' },
                         alignItems: { xs: 'stretch', sm: 'center' },
                         gap: { xs: 1.5, sm: 2 },
-                        p: { xs: 1, sm: 1.5 },
+                        // p: { xs: 1, sm: 1.5 },
                         borderRadius: 2,
                     }}
                 >
@@ -1049,6 +1053,8 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                     sx={{ 
                         maxHeight: { xs: 400, sm: 520 }, 
                         height: { xs: '400px', sm: '501px' },
+                        width: { sm: '96%', md: '98%' },
+                        marginLeft: { sm: '15px' },
                         overflowX: 'auto',
                         '& .MuiTableCell-root': {
                             fontSize: { xs: '10px', sm: '12px' },
@@ -1064,7 +1070,7 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 1 }}><b>Device</b></TableCell>
+                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 10 }}><b>Device</b></TableCell>
                                 {(activeTab === 0 || activeTab === 3) ? (
                                     currentMonthDays.map(day => (
                                         <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}>
@@ -1123,7 +1129,7 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 1 }}><b>Device</b></TableCell>
+                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 10 }}><b>Device</b></TableCell>
                                 {activeTab === 2 ? (
                                     currentMonthDays.map(day => (
                                         <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}>

@@ -30,7 +30,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
 
-    // --- Dummy Data Generation ---
+    // --- Dummy Data Generation for 7 Cards ---
     const generateDummyMachines = () => {
         return [
             {
@@ -74,6 +74,62 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 },
                 downtime_history: []
             },
+            // --- Added 4 More Cards Below ---
+            {
+                slave_id: 'COMP_004',
+                name: 'COMPRESSOR 4',
+                status: 'ONLINE',
+                last_ts: new Date().toISOString(),
+                latest_downtime: {
+                    start_time: '2023-10-22 08:00',
+                    end_time: '2023-10-22 08:20',
+                    duration: '0h 20m'
+                },
+                downtime_history: [
+                    { start_time: '2023-10-22 08:00', end_time: '2023-10-22 08:20', duration: '0h 20m' }
+                ]
+            },
+            {
+                slave_id: 'COMP_005',
+                name: 'COMPRESSOR 5',
+                status: 'OFFLINE',
+                last_ts: new Date(Date.now() - 2000000).toISOString(),
+                latest_downtime: {
+                    start_time: '2023-10-28 16:00',
+                    end_time: '2023-10-28 18:30',
+                    duration: '2h 30m'
+                },
+                downtime_history: [
+                    { start_time: '2023-10-28 16:00', end_time: '2023-10-28 18:30', duration: '2h 30m' },
+                    { start_time: '2023-10-28 10:00', end_time: '2023-10-28 10:15', duration: '0h 15m' }
+                ]
+            },
+            {
+                slave_id: 'COMP_006',
+                name: 'COMPRESSOR 6',
+                status: 'ONLINE',
+                last_ts: new Date().toISOString(),
+                latest_downtime: {
+                    start_time: '2023-10-15 09:00',
+                    end_time: '2023-10-15 09:10',
+                    duration: '0h 10m'
+                },
+                downtime_history: []
+            },
+            {
+                slave_id: 'COMP_007',
+                name: 'COMPRESSOR 7',
+                status: 'ONLINE',
+                last_ts: new Date().toISOString(),
+                latest_downtime: {
+                    start_time: '2023-10-10 12:00',
+                    end_time: '2023-10-10 12:45',
+                    duration: '0h 45m'
+                },
+                downtime_history: [
+                    { start_time: '2023-10-10 12:00', end_time: '2023-10-10 12:45', duration: '0h 45m' }
+                ]
+            }
         ];
     };
 
@@ -171,7 +227,6 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         clockIcon: {
             fontSize: '16px',
             cursor: 'pointer',
-            // color: '#6B7280',
             verticalAlign: 'middle',
         },
     };
@@ -263,7 +318,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         data: trendData
     }];
 
-        const formatTimestampForTooltip = (timestamp) => {
+    const formatTimestampForTooltip = (timestamp) => {
         if (!timestamp) return 'N/A';
         return new Date(timestamp).toLocaleString('en-GB', {
             day: '2-digit',
@@ -310,24 +365,23 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     title={formatTimestampForTooltip(machine.last_ts)}
                                     placement="top"
                                     arrow
-                                    enterTouchDelay={0} // Immediately opens on touch
-                                    leaveTouchDelay={3000} // Stays open for 3 seconds on touch
+                                    enterTouchDelay={0}
+                                    leaveTouchDelay={3000}
                                     componentsProps={{
                                         tooltip: {
                                             sx: {
-                                                fontSize: '12px', // Ensure readable font size on mobile
+                                                fontSize: '12px',
                                             },
                                         },
                                     }}
                                 >
-                                    {/* Wrapper Box increases the touch target size */}
                                     <Box 
                                         component="span" 
                                         sx={{ 
                                             display: 'inline-flex', 
                                             alignItems: 'center', 
                                             justifyContent: 'center',
-                                            padding: '4px', // Adds padding to make it easier to tap
+                                            padding: '4px',
                                             cursor: 'pointer'
                                         }}
                                     >

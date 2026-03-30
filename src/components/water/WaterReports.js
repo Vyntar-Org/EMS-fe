@@ -313,7 +313,8 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                                 fontWeight: 600,
                                 fontFamily: 'sans-serif',
                                 backgroundColor: '#fff',
-                                width: { xs: '100%', lg: '250%' }
+                                width: { xs: '100%', lg: '150%' },
+                                marginLeft: { xs: '-12px', lg: 0, sm: '17px' },
                             }}
                         >
                             <Tabs
@@ -325,8 +326,9 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                                 sx={{
                                     mb: 2,
                                     minHeight: { xs: '40px', sm: '48px' },
+                                    width: { xs: '410px' ,sm: '720px', md: '100%' },
                                     '& .MuiTabs-scroller': { overflowX: 'auto' },
-                                    '& .MuiTab-root': { minWidth: { xs: '140px', sm: 200 }, fontSize: { xs: '11px', sm: '13px' } },
+                                    '& .MuiTab-root': { minWidth: { xs: '', sm: 200 }, fontSize: { xs: '11px', sm: '13px' } },
                                     '& .MuiTabs-indicator': { backgroundColor: '#0156a6' },
                                 }}
                             >
@@ -347,6 +349,8 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                     justifyContent: "space-between",
                     mb: 2,
                     gap: { xs: 2, sm: 0 },
+                    marginLeft: { sm: '10px' },
+                    padding: { sm: '10px' },
                 }}
             >
                 {/* LEFT SIDE – FILTERS */}
@@ -356,7 +360,7 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                         flexDirection: { xs: 'column', sm: 'row' },
                         alignItems: { xs: 'stretch', sm: 'center' },
                         gap: { xs: 1.5, sm: 2 },
-                        p: { xs: 1, sm: 1.5 },
+                        // p: { xs: 1, sm: 1.5 },
                         borderRadius: 2,
                     }}
                 >
@@ -468,11 +472,13 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
 
             {/* Consumption Table */}
             {!loading && !error && showConsumptionTables && (
-                <TableContainer component={Paper} sx={{ maxHeight: { xs: 400, sm: 520 }, overflowX: 'auto', '& .MuiTableCell-root': { fontSize: { xs: '10px', sm: '12px' }, padding: { xs: '4px 2px', sm: '6px 8px' }, whiteSpace: 'nowrap' } }}>
+                <TableContainer component={Paper} sx={{ maxHeight: { xs: 400, sm: 520 },
+                        width: { sm: '96%', md: '98%' },
+                        marginLeft: { sm: '15px' }, overflowX: 'auto', '& .MuiTableCell-root': { fontSize: { xs: '10px', sm: '12px' }, padding: { xs: '4px 2px', sm: '6px 8px' }, whiteSpace: 'nowrap' } }}>
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 1 }}><b>Device</b></TableCell>
+                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 10 }}><b>Device</b></TableCell>
                                 {activeTab === 0 ? (
                                     currentMonthDays.map(day => (
                                         <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>{day}</b></TableCell>
@@ -508,7 +514,7 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 1 }}><b>Device</b></TableCell>
+                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 10 }}><b>Device</b></TableCell>
                                 {currentMonthDays.map(day => (
                                     <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>{day}</b></TableCell>
                                 ))}
