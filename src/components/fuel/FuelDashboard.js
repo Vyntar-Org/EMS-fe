@@ -452,7 +452,7 @@ const FuelDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                         <TextField
                             fullWidth
                             size="small"
-                            placeholder="Search machines..."
+                            placeholder="Search Devices..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
                             sx={{

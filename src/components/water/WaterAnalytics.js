@@ -82,7 +82,8 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '14px',
             color: '#5A5A5A',
             marginBottom: '20px',
-            padding: { xs: '5px', sm: '0' },
+            paddingRight: { xs: '5px', sm: '15px' },    
+            paddingLeft: { xs: '5px', sm: '15px' },
             boxSizing: 'border-box',
         },
         container: {
@@ -938,11 +939,11 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 <>
                                     <Box sx={{ 
                                         display: 'flex', 
-                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        flexDirection: { xs: 'column', md: 'row' }, // Changed sm to md
                                         justifyContent: 'space-between', 
-                                        alignItems: { xs: 'flex-start', sm: 'center' }, 
+                                        alignItems: { xs: 'flex-start', md: 'center' }, // Changed sm to md
                                         mb: 1,
-                                        gap: { xs: 1, sm: 0 }
+                                        gap: { xs: 1, md: 0 } // Changed sm to md
                                     }}>
                                         <Typography
                                             gutterBottom
@@ -957,12 +958,12 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 ? `${filterDevice} - ${parameterOptions.find(opt => opt.value === selectedParameter)?.label || selectedParameter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                 : (filterDevice !== 'all' ? `${filterDevice}` : 'Water Analytics')}
                                         </Typography>
-                                        <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                                        <Box sx={{ width: { xs: '100%', md: 'auto' } }}> {/* Changed sm to md */}
                                             <Box sx={{ 
                                                 display: 'flex', 
-                                                flexDirection: { xs: 'column', sm: 'row' },
-                                                gap: { xs: 1, sm: 2 }, 
-                                                alignItems: { xs: 'stretch', sm: 'center' } 
+                                                flexDirection: { xs: 'column', md: 'row' }, // Changed sm to md
+                                                gap: { xs: 1, md: 2 }, 
+                                                alignItems: { xs: 'stretch', md: 'center' } 
                                             }}>
                                                 {compareMode ? (
                                                     <Button
@@ -976,8 +977,8 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 borderColor: '#b71c1c',
                                                                 color: '#b71c1c',
                                                             },
-                                                            mr: { sm: 1 },
-                                                            width: { xs: '100%', sm: 'auto' }
+                                                            mr: { md: 1 }, // Changed sm to md
+                                                            width: { xs: '100%', md: 'auto' } // Changed sm to md
                                                         }}
                                                     >
                                                         Cancel Compare
@@ -986,8 +987,8 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     <FormControl 
                                                         size="small" 
                                                         sx={{ 
-                                                            minWidth: { xs: '100%', sm: 300 },
-                                                            width: { xs: '100%', sm: 'auto' }
+                                                            minWidth: { xs: '100%', md: 300 }, // Changed sm to md
+                                                            width: { xs: '100%', md: 'auto' }
                                                         }}
                                                     >
                                                         <InputLabel>Select Device to Compare</InputLabel>
@@ -1042,23 +1043,23 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 <>
                                                     <Box sx={{ 
                                                         display: 'flex', 
-                                                        flexDirection: { xs: 'column', sm: 'row' },
+                                                        flexDirection: { xs: 'column', md: 'row' }, // Changed sm to md
                                                         justifyContent: 'flex-end',
-                                                        gap: { xs: 1, sm: 0 },
+                                                        gap: { xs: 1, md: 0 }, // Changed sm to md
                                                         mb: 2
                                                     }}>
                                                         <Box sx={{ 
                                                             display: 'flex', 
-                                                            flexDirection: { xs: 'column', sm: 'row' },
-                                                            gap: { xs: 1, sm: 2 }, 
-                                                            alignItems: { xs: 'stretch', sm: 'center' },
-                                                            width: { xs: '100%', sm: 'auto' }
+                                                            flexDirection: { xs: 'column', md: 'row' }, // Changed sm to md
+                                                            gap: { xs: 1, md: 2 }, 
+                                                            alignItems: { xs: 'stretch', md: 'center' }, // Changed sm to md
+                                                            width: { xs: '100%', md: 'auto' } // Changed sm to md
                                                         }}>
                                                             <FormControl 
                                                                 size="small" 
                                                                 sx={{ 
-                                                                    minWidth: { xs: '100%', sm: 300 },
-                                                                    width: { xs: '100%', sm: 'auto' }
+                                                                    minWidth: { xs: '100%', md: 300 }, // Changed sm to md
+                                                                    width: { xs: '100%', md: 'auto' }
                                                                 }}
                                                             >
                                                                 <InputLabel>Select Device</InputLabel>
@@ -1077,9 +1078,9 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             <FormControl 
                                                                 size="small" 
                                                                 sx={{ 
-                                                                    minWidth: { xs: '100%', sm: 200 }, 
-                                                                    mr: { sm: 1 },
-                                                                    width: { xs: '100%', sm: 'auto' }
+                                                                    minWidth: { xs: '100%', md: 200 }, // Changed sm to md
+                                                                    mr: { md: 1 }, // Changed sm to md
+                                                                    width: { xs: '100%', md: 'auto' } // Changed sm to md
                                                                 }}
                                                             >
                                                                 <InputLabel>Select Parameter</InputLabel>
@@ -1133,7 +1134,7 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                             borderColor: '#b71c1c',
                                                                             color: '#b71c1c',
                                                                         },
-                                                                        width: { xs: '100%', sm: 'auto' }
+                                                                        width: { xs: '100%', md: 'auto' } // Changed sm to md
                                                                     }}
                                                                 >
                                                                     Cancel Compare
@@ -1142,8 +1143,8 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 <FormControl 
                                                                     size="small" 
                                                                     sx={{ 
-                                                                        minWidth: { xs: '100%', sm: 300 },
-                                                                        width: { xs: '100%', sm: 'auto' }
+                                                                        minWidth: { xs: '100%', md: 300 }, // Changed sm to md
+                                                                        width: { xs: '100%', md: 'auto' }
                                                                     }}
                                                                 >
                                                                     <InputLabel>Select Second Device to Compare</InputLabel>
@@ -1203,16 +1204,16 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 <>
                                                     <Box sx={{ 
                                                         display: 'flex', 
-                                                        flexDirection: { xs: 'column', sm: 'row' },
-                                                        gap: { xs: 1, sm: 2 },
+                                                        flexDirection: { xs: 'column', md: 'row' }, // Changed sm to md
+                                                        gap: { xs: 1, md: 2 }, // Changed sm to md
                                                         justifyContent: 'flex-end',
                                                         mb: 2
                                                     }}>
                                                         <FormControl 
                                                             size="small" 
                                                             sx={{ 
-                                                                minWidth: { xs: '100%', sm: 300 },
-                                                                width: { xs: '100%', sm: 'auto' }
+                                                                minWidth: { xs: '100%', md: 300 }, // Changed sm to md
+                                                                width: { xs: '100%', md: 'auto' }
                                                             }}
                                                         >
                                                             <InputLabel>Select Device</InputLabel>
@@ -1231,8 +1232,8 @@ const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                         <FormControl 
                                                             size="small" 
                                                             sx={{ 
-                                                                minWidth: { xs: '100%', sm: 200 },
-                                                                width: { xs: '100%', sm: 'auto' }
+                                                                minWidth: { xs: '100%', md: 200 }, // Changed sm to md
+                                                                width: { xs: '100%', md: 'auto' }
                                                             }}
                                                         >
                                                             <InputLabel>Select Parameter</InputLabel>

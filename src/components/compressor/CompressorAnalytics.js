@@ -78,7 +78,8 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '14px',
             color: '#5A5A5A',
             marginBottom: '20px',
-            padding: { xs: '5px', sm: '0' },
+            paddingRight: { xs: '5px', sm: '15px' },    
+            paddingLeft: { xs: '5px', sm: '15px' },
             boxSizing: 'border-box',
         },
         container: {
@@ -145,6 +146,10 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                 { slave_id: 'COMP_001', slave_name: 'COMPRESSOR 1' },
                 { slave_id: 'COMP_002', slave_name: 'COMPRESSOR 2' },
                 { slave_id: 'COMP_003', slave_name: 'COMPRESSOR 3' },
+                { slave_id: 'COMP_004', slave_name: 'COMPRESSOR 4' },
+                { slave_id: 'COMP_005', slave_name: 'COMPRESSOR 5' },
+                { slave_id: 'COMP_006', slave_name: 'COMPRESSOR 6' },
+                { slave_id: 'COMP_007', slave_name: 'COMPRESSOR 7' },
             ];
             
             setDeviceObjects(slaves);
@@ -524,8 +529,7 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             </Select>
                                         </FormControl>
 
-                                        {/* Parameters Select (Hidden or Static since only 1 option) */}
-                                        {/* Keeping the control for consistency in UI layout if needed, or could be removed */}
+                                        {/* Parameters Select */}
                                         <FormControl 
                                             size="small" 
                                             sx={{ 
@@ -666,11 +670,11 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 <>
                                     <Box sx={{ 
                                         display: 'flex', 
-                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        flexDirection: { xs: 'column', md: 'row' }, // Changed sm to md
                                         justifyContent: 'space-between', 
-                                        alignItems: { xs: 'flex-start', sm: 'center' }, 
+                                        alignItems: { xs: 'flex-start', md: 'center' }, // Changed sm to md
                                         mb: 1, mt: 2,
-                                        gap: { xs: 1, sm: 0 }
+                                        gap: { xs: 1, md: 0 } // Changed sm to md
                                     }}>
                                         <Typography
                                             gutterBottom
@@ -683,19 +687,19 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         >
                                             {filterDevice} - Connectivity History
                                         </Typography>
-                                        <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                        <Box sx={{ width: { xs: '100%', md: 'auto' } }}> {/* Changed sm to md */}
+                                            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
                                                 {compareMode ? (
                                                     <Button
                                                         variant="outlined"
                                                         size="small"
                                                         onClick={() => setCompareMode(false)}
-                                                        sx={{ borderColor: '#d32f2f', color: '#d32f2f' }}
+                                                        sx={{ borderColor: '#d32f2f', color: '#d32f2f', width: { xs: '100%', sm: 'auto' } }}
                                                     >
                                                         Cancel Compare
                                                     </Button>
                                                 ) : (
-                                                    <FormControl size="small" sx={{ minWidth: 300 }}>
+                                                    <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 300 }, width: { xs: '100%', md: 'auto' } }}>
                                                         <InputLabel>Select Device to Compare</InputLabel>
                                                         <Select
                                                             value={compareDevice}

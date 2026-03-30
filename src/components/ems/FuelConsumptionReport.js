@@ -959,7 +959,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 1 }}><b>Device</b></TableCell>
+                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 10 }}><b>Device</b></TableCell>
                                 {(activeTab === 0 || activeTab === 3) ? (
                                     currentMonthDays.map(day => (
                                         <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}>
@@ -1018,7 +1018,7 @@ export default function FuelConsumptionReport({ onSidebarToggle, sidebarVisible 
                     <Table stickyHeader size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 1 }}><b>Device</b></TableCell>
+                                <TableCell sx={{ backgroundColor: "#0156a6", color: "#fff", position: 'sticky', left: 0, zIndex: 10 }}><b>Device</b></TableCell>
                                 {activeTab === 2 ? (
                                     currentMonthDays.map(day => (
                                         <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}>

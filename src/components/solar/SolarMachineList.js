@@ -34,6 +34,7 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import SpeedIcon from '@mui/icons-material/Speed'; // Added import for Flow Pressure
 
 // Import API functions
 import { getSolarMachineList, getSolarMachineTrend } from '../../auth/solar/SolarMachineListApi';
@@ -102,6 +103,10 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         switch (parameter) {
             case 'flowrate':
                 return 'm³/hr';
+            case 'flow_temperature':
+                return '°C';
+            case 'flow_pressure':
+                return 'bar';
             case 'inlet_temperature':
                 return '°C';
             case 'outlet_temperature':
@@ -116,6 +121,10 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         switch (parameter) {
             case 'flowrate':
                 return 'Flow Rate';
+            case 'flow_temperature':
+                return 'Flow Temperature';
+            case 'flow_pressure':
+                return 'Flow Pressure';
             case 'inlet_temperature':
                 return 'Inlet Temperature';
             case 'outlet_temperature':
@@ -236,7 +245,6 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontWeight: 600,
             color: '#1F2937',
         },
-        // UPDATED: Responsive grid container - using sx prop instead
         gridContainer: {
             display: 'flex',
             flexDirection: 'row',
@@ -246,9 +254,8 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             marginLeft: '0',
             padding: '0 10px',
         },
-        // UPDATED: Responsive grid item - using sx prop instead
         gridItem: {
-            width: '100%', // Mobile: 1 card per row
+            width: '100%',
             marginBottom: '15px',
         },
         tableCell: {
@@ -259,7 +266,6 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '16px',
             marginLeft: '5px',
             cursor: 'pointer',
-            // color: '#6B7280',
             verticalAlign: 'middle',
         },
         chartButton: {
@@ -468,12 +474,12 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     title={formatTimestampForTooltip(machine.last_ts)}
                                     placement="top"
                                     arrow
-                                    enterTouchDelay={0} // Immediately opens on touch
-                                    leaveTouchDelay={3000} // Stays open for 3 seconds on touch
+                                    enterTouchDelay={0} 
+                                    leaveTouchDelay={3000} 
                                     componentsProps={{
                                         tooltip: {
                                             sx: {
-                                                fontSize: '12px', // Ensure readable font size on mobile
+                                                fontSize: '12px', 
                                             },
                                         },
                                     }}
@@ -485,7 +491,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             display: 'inline-flex', 
                                             alignItems: 'center', 
                                             justifyContent: 'center',
-                                            padding: '4px', // Adds padding to make it easier to tap
+                                            padding: '4px', 
                                             cursor: 'pointer'
                                         }}
                                     >
@@ -519,6 +525,36 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
                                         {(machine.latest?.flow_rate || 0).toFixed(2)} m³/hr
+                                    </TableCell>
+                                </TableRow>
+
+                                {/* Flow Temperature - ADDED */}
+                                <TableRow>
+                                    <TableCell style={styles.tableCell}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <DeviceThermostatIcon fontSize="10px" color="info" />
+                                            Flow Temperature
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                        {(machine.latest?.flow_temperature || 0).toFixed(2)} °C
+                                    </TableCell>
+                                </TableRow>
+
+                                {/* Flow Pressure - ADDED */}
+                                <TableRow>
+                                    <TableCell style={styles.tableCell}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <SpeedIcon fontSize="10px" color="secondary" />
+                                            Flow Pressure
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                        {(machine.latest?.flow_pressure || 0).toFixed(2)}
                                     </TableCell>
                                 </TableRow>
 
@@ -562,13 +598,8 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         py: 0.5,
-                        // flexDirection: { xs: 'column', sm: 'row' },
-                        // gap: { xs: 1, sm: 0 }
                     }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            {/* <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
-                                MTD : {(machine.energy?.mtd || 0).toFixed(1)} kWh
-                            </Typography> */}
                         </Box>
                         <Box style={{ ...styles.metricsRow, display: 'flex', justifyContent: 'right', marginTop: 0 }}>
                             <Button
@@ -622,14 +653,10 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             key={machine.slave_id || index}
                             sx={{
                                 width: { 
-                                    xs: '100%',              // Mobile: 1 card per row
-                                    sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
-                                    md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
+                                    xs: '100%',              
+                                    sm: 'calc(50% - 15px)',  
+                                    md: 'calc(33.33% - 35px)' 
                                 },
-                                // marginBottom: '15px',
-                                // '@media (min-width: 1200px)': {
-                                //     width: 'calc(30% - 35px)'
-                                // }
                             }}
                         >
                             {renderFloorCard(machine)}
@@ -699,6 +726,8 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         label="Parameter"
                                     >
                                         <MenuItem value="flowrate">Flow Rate</MenuItem>
+                                        <MenuItem value="flow_temperature">Flow Temperature</MenuItem>
+                                        <MenuItem value="flow_pressure">Flow Pressure</MenuItem>
                                         <MenuItem value="inlet_temperature">Inlet Temperature</MenuItem>
                                         <MenuItem value="outlet_temperature">Outlet Temperature</MenuItem>
                                     </Select>

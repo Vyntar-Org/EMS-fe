@@ -67,10 +67,12 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
   const [openStart, setOpenStart] = React.useState(false);
   const [openEnd, setOpenEnd] = React.useState(false);
 
-  // Define all available parameters for solar
+  // Define all available parameters for solar (Added flow_temperature and flow_pressure below flowrate)
   const allParameters = [
     { val: 'timestamp', label: 'Timestamp' },
     { val: 'flowrate', label: 'Flow Rate (m³/hr)' },
+    { val: 'flow_temperature', label: 'Flow Temperature (°C)' },
+    { val: 'flow_pressure', label: 'Flow Pressure' },
     { val: 'inlet_temperature', label: 'Inlet Temperature (°C)' },
     { val: 'outlet_temperature', label: 'Outlet Temperature (°C)' }
   ];
@@ -224,6 +226,8 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
       log.timestamp.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.slave_name && log.slave_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (log.flowrate !== undefined && log.flowrate.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.flow_temperature !== undefined && log.flow_temperature.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.flow_pressure !== undefined && log.flow_pressure.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
       (log.inlet_temperature !== undefined && log.inlet_temperature.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
       (log.outlet_temperature !== undefined && log.outlet_temperature.toString().toLowerCase().includes(searchTerm.toLowerCase()))
     );
@@ -654,6 +658,26 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
                                   padding: { xs: '8px 4px', sm: '16px' }
                                 }}
                               >
+                                Flow Temp (°C)
+                              </TableCell>
+                              <TableCell 
+                                className="log-header-cell" 
+                                sx={{ 
+                                  textTransform: 'capitalize',
+                                  fontSize: { xs: '11px', sm: '14px' },
+                                  padding: { xs: '8px 4px', sm: '16px' }
+                                }}
+                              >
+                                Flow Pressure
+                              </TableCell>
+                              <TableCell 
+                                className="log-header-cell" 
+                                sx={{ 
+                                  textTransform: 'capitalize',
+                                  fontSize: { xs: '11px', sm: '14px' },
+                                  padding: { xs: '8px 4px', sm: '16px' }
+                                }}
+                              >
                                 Inlet Temp (°C)
                               </TableCell>
                               <TableCell 
@@ -675,6 +699,8 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
                           paginatedLogs.map((log) => {
                             const timestamp = new Date(log.timestamp).toLocaleString();
                             const flowrate = log.flowrate;
+                            const flowTemp = log.flow_temperature;       // Added variable
+                            const flowPressure = log.flow_pressure;     // Added variable
                             const inletTemp = log.inlet_temperature;
                             const outletTemp = log.outlet_temperature;
 
@@ -693,6 +719,8 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
                                     >
                                       {col === 'timestamp' && timestamp}
                                       {col === 'flowrate' && (typeof flowrate === 'number' ? flowrate.toFixed(2) : flowrate)}
+                                      {col === 'flow_temperature' && (typeof flowTemp === 'number' ? flowTemp.toFixed(2) : flowTemp)}
+                                      {col === 'flow_pressure' && (typeof flowPressure === 'number' ? flowPressure.toFixed(2) : flowPressure)}
                                       {col === 'inlet_temperature' && (typeof inletTemp === 'number' ? inletTemp.toFixed(2) : inletTemp)}
                                       {col === 'outlet_temperature' && (typeof outletTemp === 'number' ? outletTemp.toFixed(2) : outletTemp)}
                                     </TableCell>
@@ -726,6 +754,24 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
                                         padding: { xs: '8px 4px', sm: '16px' }
                                       }}
                                     >
+                                      {typeof flowTemp === 'number' ? flowTemp.toFixed(2) : flowTemp}
+                                    </TableCell>
+                                    <TableCell 
+                                      className="log-table-cell"
+                                      sx={{
+                                        fontSize: { xs: '11px', sm: '14px' },
+                                        padding: { xs: '8px 4px', sm: '16px' }
+                                      }}
+                                    >
+                                      {typeof flowPressure === 'number' ? flowPressure.toFixed(2) : flowPressure}
+                                    </TableCell>
+                                    <TableCell 
+                                      className="log-table-cell"
+                                      sx={{
+                                        fontSize: { xs: '11px', sm: '14px' },
+                                        padding: { xs: '8px 4px', sm: '16px' }
+                                      }}
+                                    >
                                       {typeof inletTemp === 'number' ? inletTemp.toFixed(2) : inletTemp}
                                     </TableCell>
                                     <TableCell 
@@ -745,7 +791,7 @@ function SolarLogs({ onSidebarToggle, sidebarVisible }) {
                         ) : (
                           <TableRow>
                             <TableCell 
-                              colSpan={selectedColumn.length > 0 ? selectedColumn.length : 4} 
+                              colSpan={selectedColumn.length > 0 ? selectedColumn.length : 6} 
                               align="center"
                               sx={{
                                 fontSize: { xs: '12px', sm: '14px' },

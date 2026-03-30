@@ -695,7 +695,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                             <TextField
                                                 fullWidth
                                                 size="small"
-                                                placeholder="Search slaves..."
+                                                placeholder="Search Devices..."
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
                                                 sx={{ marginBottom: '8px', '& .MuiOutlinedInput-root': { borderRadius: '8px', height: '40px' } }}

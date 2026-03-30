@@ -40,9 +40,11 @@ import dayjs from 'dayjs';
 // Import API functions
 import { getSolarSlaves, getSolarAnalytics } from '../../auth/solar/SolarAnalyticsApi';
 
-// Updated parameter options for solar analytics
+// Updated parameter options for solar analytics (Added flow_temperature and flow_pressure below flowrate)
 const parameterOptions = [
     { value: "flowrate", label: "Flow Rate (m³/hr)" },
+    { value: "flow_temperature", label: "Flow Temperature (°C)" },
+    { value: "flow_pressure", label: "Flow Pressure" },
     { value: "inlet_temperature", label: "Inlet Temperature (°C)" },
     { value: "outlet_temperature", label: "Outlet Temperature (°C)" }
 ];
@@ -86,7 +88,8 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '14px',
             color: '#5A5A5A',
             marginBottom: '20px',
-            padding: { xs: '5px', sm: '0' },
+            paddingRight: { xs: '5px', sm: '15px' },    
+            paddingLeft: { xs: '5px', sm: '15px' },
             boxSizing: 'border-box',
         },
         container: {
@@ -178,7 +181,7 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
 
             // Default to all parameters if none selected
-            const params = parameters.length > 0 ? parameters : ['flowrate', 'inlet_temperature', 'outlet_temperature'];
+            const params = parameters.length > 0 ? parameters : ['flowrate', 'flow_temperature', 'flow_pressure', 'inlet_temperature', 'outlet_temperature'];
             
             // Format dates for API
             const fromDateTime = startDate.format('YYYY-MM-DD HH:mm:ss');
@@ -383,7 +386,7 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter) && selectedParameter.length > 0
             ? selectedParameter
-            : ['flowrate', 'inlet_temperature', 'outlet_temperature']; // Default to all parameters
+            : ['flowrate', 'flow_temperature', 'flow_pressure', 'inlet_temperature', 'outlet_temperature']; // Default to all parameters
 
         console.log('Parameters to process:', parametersToProcess);
 
@@ -397,6 +400,12 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                     switch (param) {
                         case 'flowrate':
                             value = parseFloat(item.flowrate) || 0;
+                            break;
+                        case 'flow_temperature':
+                            value = parseFloat(item.flow_temperature) || 0;
+                            break;
+                        case 'flow_pressure':
+                            value = parseFloat(item.flow_pressure) || 0;
                             break;
                         case 'inlet_temperature':
                             value = parseFloat(item.inlet_temperature) || 0;
@@ -442,7 +451,6 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
 
         // Process the comparison data to extract timestamps and values
         const categories = compareChartData.map(item => {
-            // Format timestamp for x-axis - date and month only
             const timestamp = item.timestamp || item.created_at || item.date;
             if (timestamp) {
                 const date = new Date(timestamp);
@@ -451,24 +459,26 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             return 'N/A';
         });
 
-        // Create series for the comparison data
         const series = [];
 
-        // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter2) && selectedParameter2.length > 0
             ? selectedParameter2
-            : ['flowrate', 'inlet_temperature', 'outlet_temperature']; // Default to all parameters
+            : ['flowrate', 'flow_temperature', 'flow_pressure', 'inlet_temperature', 'outlet_temperature'];
 
         parametersToProcess.forEach(param => {
-            // Extract values from the comparison data based on selected parameter and format to 2 decimal places
             const values = compareChartData.map((item, index) => {
                 let value = 0;
 
-                // If a specific parameter is selected, use that field
                 if (param) {
                     switch (param) {
                         case 'flowrate':
                             value = parseFloat(item.flowrate) || 0;
+                            break;
+                        case 'flow_temperature':
+                            value = parseFloat(item.flow_temperature) || 0;
+                            break;
+                        case 'flow_pressure':
+                            value = parseFloat(item.flow_pressure) || 0;
                             break;
                         case 'inlet_temperature':
                             value = parseFloat(item.inlet_temperature) || 0;
@@ -480,15 +490,12 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                             value = 0;
                     }
                 } else {
-                    // If no parameter selected, use the default logic (flowrate)
                     value = parseFloat(item.flowrate) || 0;
                 }
 
-                // Format to 2 decimal places
                 return parseFloat(value.toFixed(2));
             });
 
-            // Always create a series if we have data, even if all values are 0
             if (compareChartData.length > 0) {
                 const parameterLabel = param
                     ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
@@ -509,9 +516,7 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             return { series: [], categories: [] };
         }
 
-        // Process the second comparison data to extract timestamps and values
         const categories = compareChartData2.map(item => {
-            // Format timestamp for x-axis - date and month only
             const timestamp = item.timestamp || item.created_at || item.date;
             if (timestamp) {
                 const date = new Date(timestamp);
@@ -520,24 +525,26 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             return 'N/A';
         });
 
-        // Create series for the second comparison data
         const series = [];
 
-        // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter3) && selectedParameter3.length > 0
             ? selectedParameter3
-            : ['flowrate', 'inlet_temperature', 'outlet_temperature']; // Default to all parameters
+            : ['flowrate', 'flow_temperature', 'flow_pressure', 'inlet_temperature', 'outlet_temperature'];
 
         parametersToProcess.forEach(param => {
-            // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
             const values = compareChartData2.map((item, index) => {
                 let value = 0;
 
-                // If a specific parameter is selected, use that field
                 if (param) {
                     switch (param) {
                         case 'flowrate':
                             value = parseFloat(item.flowrate) || 0;
+                            break;
+                        case 'flow_temperature':
+                            value = parseFloat(item.flow_temperature) || 0;
+                            break;
+                        case 'flow_pressure':
+                            value = parseFloat(item.flow_pressure) || 0;
                             break;
                         case 'inlet_temperature':
                             value = parseFloat(item.inlet_temperature) || 0;
@@ -549,15 +556,12 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                             value = 0;
                     }
                 } else {
-                    // If no parameter selected, use the default logic (flowrate)
                     value = parseFloat(item.flowrate) || 0;
                 }
 
-                // Format to 2 decimal places
                 return parseFloat(value.toFixed(2));
             });
 
-            // Always create a series if we have data, even if all values are 0
             if (compareChartData2.length > 0) {
                 const parameterLabel = param
                     ? parameterOptions.find(opt => opt.value === param)?.label || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
@@ -586,7 +590,7 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     }, [searchClicked, filteredChartData, processedFilteredData, selectedParameter]);
 
     // Define colors for each series to match the dots in the image
-    const seriesColors = ['#d32f2f', '#1976d2', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'];
+    const seriesColors = ['#d32f2f', '#1976d2', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB', '#10B981', '#F97316'];
 
     // Dynamic chart configuration function
     const getChartOptions = (currentProcessedData, currentData) => {
@@ -996,11 +1000,11 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 <>
                                     <Box sx={{ 
                                         display: 'flex', 
-                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        flexDirection: { xs: 'column', md: 'row' }, 
                                         justifyContent: 'space-between', 
-                                        alignItems: { xs: 'flex-start', sm: 'center' }, 
+                                        alignItems: { xs: 'flex-start', md: 'center' }, 
                                         mb: 1,
-                                        gap: { xs: 1, sm: 0 }
+                                        gap: { xs: 1, md: 0 } 
                                     }}>
                                         <Typography
                                             gutterBottom
@@ -1017,12 +1021,12 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     : parameterOptions.find(opt => opt.value === selectedParameter[0])?.label || selectedParameter[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                 : (filterDevice !== 'all' ? `${filterDevice}` : 'Solar Analytics')}
                                         </Typography>
-                                        <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                                        <Box sx={{ width: { xs: '100%', md: 'auto' } }}> 
                                             <Box sx={{ 
                                                 display: 'flex', 
-                                                flexDirection: { xs: 'column', sm: 'row' },
-                                                gap: { xs: 1, sm: 2 }, 
-                                                alignItems: { xs: 'stretch', sm: 'center' } 
+                                                flexDirection: { xs: 'column', md: 'row' }, 
+                                                gap: { xs: 1, md: 2 }, 
+                                                alignItems: { xs: 'stretch', md: 'center' } 
                                             }}>
                                                 {compareMode ? (
                                                     <Button
@@ -1036,8 +1040,8 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 borderColor: '#b71c1c',
                                                                 color: '#b71c1c',
                                                             },
-                                                            mr: { sm: 1 },
-                                                            width: { xs: '100%', sm: 'auto' }
+                                                            mr: { md: 1 }, 
+                                                            width: { xs: '100%', md: 'auto' } 
                                                         }}
                                                     >
                                                         Cancel Compare
@@ -1046,8 +1050,8 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     <FormControl 
                                                         size="small" 
                                                         sx={{ 
-                                                            minWidth: { xs: '100%', sm: 300 },
-                                                            width: { xs: '100%', sm: 'auto' }
+                                                            minWidth: { xs: '100%', md: 300 }, 
+                                                            width: { xs: '100%', md: 'auto' }
                                                         }}
                                                     >
                                                         <InputLabel>Select Device to Compare</InputLabel>
@@ -1104,23 +1108,23 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 <>
                                                     <Box sx={{ 
                                                         display: 'flex', 
-                                                        flexDirection: { xs: 'column', sm: 'row' },
+                                                        flexDirection: { xs: 'column', md: 'row' }, 
                                                         justifyContent: 'flex-end',
-                                                        gap: { xs: 1, sm: 0 },
+                                                        gap: { xs: 1, md: 0 }, 
                                                         mb: 2
                                                     }}>
                                                         <Box sx={{ 
                                                             display: 'flex', 
-                                                            flexDirection: { xs: 'column', sm: 'row' },
-                                                            gap: { xs: 1, sm: 2 }, 
-                                                            alignItems: { xs: 'stretch', sm: 'center' },
-                                                            width: { xs: '100%', sm: 'auto' }
+                                                            flexDirection: { xs: 'column', md: 'row' }, 
+                                                            gap: { xs: 1, md: 2 }, 
+                                                            alignItems: { xs: 'stretch', md: 'center' }, 
+                                                            width: { xs: '100%', md: 'auto' } 
                                                         }}>
                                                             <FormControl 
                                                                 size="small" 
                                                                 sx={{ 
-                                                                    minWidth: { xs: '100%', sm: 300 },
-                                                                    width: { xs: '100%', sm: 'auto' }
+                                                                    minWidth: { xs: '100%', md: 300 }, 
+                                                                    width: { xs: '100%', md: 'auto' }
                                                                 }}
                                                             >
                                                                 <InputLabel>Select Device</InputLabel>
@@ -1139,9 +1143,9 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             <FormControl 
                                                                 size="small" 
                                                                 sx={{ 
-                                                                    minWidth: { xs: '100%', sm: 200 }, 
-                                                                    mr: { sm: 1 },
-                                                                    width: { xs: '100%', sm: 'auto' }
+                                                                    minWidth: { xs: '100%', md: 200 }, 
+                                                                    mr: { md: 1 }, 
+                                                                    width: { xs: '100%', md: 'auto' } 
                                                                 }}
                                                             >
                                                                 <InputLabel>Select Parameters</InputLabel>
@@ -1161,7 +1165,7 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                             setCompareLoading(true);
                                                                             fetchAnalyticsData(
                                                                                 compareDevice, 
-                                                                                filteredValue.length > 0 ? filteredValue : ['flowrate', 'inlet_temperature', 'outlet_temperature'], 
+                                                                                filteredValue.length > 0 ? filteredValue : ['flowrate', 'flow_temperature', 'flow_pressure', 'inlet_temperature', 'outlet_temperature'], 
                                                                                 filterStartDate, 
                                                                                 filterEndDate
                                                                             ).then(data => {
@@ -1253,7 +1257,7 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                             borderColor: '#b71c1c',
                                                                             color: '#b71c1c',
                                                                         },
-                                                                        width: { xs: '100%', sm: 'auto' }
+                                                                        width: { xs: '100%', md: 'auto' } 
                                                                     }}
                                                                 >
                                                                     Cancel Compare
@@ -1262,8 +1266,8 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 <FormControl 
                                                                     size="small" 
                                                                     sx={{ 
-                                                                        minWidth: { xs: '100%', sm: 300 },
-                                                                        width: { xs: '100%', sm: 'auto' }
+                                                                        minWidth: { xs: '100%', md: 300 }, 
+                                                                        width: { xs: '100%', md: 'auto' }
                                                                     }}
                                                                 >
                                                                     <InputLabel>Select Second Device to Compare</InputLabel>
@@ -1325,16 +1329,16 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 <>
                                                     <Box sx={{ 
                                                         display: 'flex', 
-                                                        flexDirection: { xs: 'column', sm: 'row' },
-                                                        gap: { xs: 1, sm: 2 },
+                                                        flexDirection: { xs: 'column', md: 'row' }, 
+                                                        gap: { xs: 1, md: 2 }, 
                                                         justifyContent: 'flex-end',
                                                         mb: 2
                                                     }}>
                                                         <FormControl 
                                                             size="small" 
                                                             sx={{ 
-                                                                minWidth: { xs: '100%', sm: 300 },
-                                                                width: { xs: '100%', sm: 'auto' }
+                                                                minWidth: { xs: '100%', md: 300 }, 
+                                                                width: { xs: '100%', md: 'auto' }
                                                             }}
                                                         >
                                                             <InputLabel>Select Device</InputLabel>
@@ -1353,8 +1357,8 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                         <FormControl 
                                                             size="small" 
                                                             sx={{ 
-                                                                minWidth: { xs: '100%', sm: 200 },
-                                                                width: { xs: '100%', sm: 'auto' }
+                                                                minWidth: { xs: '100%', md: 200 }, 
+                                                                width: { xs: '100%', md: 'auto' }
                                                             }}
                                                         >
                                                             <InputLabel>Select Parameters</InputLabel>
@@ -1374,7 +1378,7 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                         setCompareLoading2(true);
                                                                         fetchAnalyticsData(
                                                                             compareDevice2, 
-                                                                            filteredValue.length > 0 ? filteredValue : ['flowrate', 'inlet_temperature', 'outlet_temperature'], 
+                                                                            filteredValue.length > 0 ? filteredValue : ['flowrate', 'flow_temperature', 'flow_pressure', 'inlet_temperature', 'outlet_temperature'], 
                                                                             filterStartDate, 
                                                                             filterEndDate
                                                                         ).then(data => {
