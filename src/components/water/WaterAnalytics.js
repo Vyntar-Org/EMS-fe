@@ -41,7 +41,7 @@ import { getWaterSlaves, getWaterAnalytics } from '../../auth/water/WaterAnalyti
 // Updated parameter options to match the API response
 const parameterOptions = [
     { value: "consumption", label: "Water Consumption (KLD)" },
-    { value: "flow_rate", label: "Flow Rate (CFM)" },
+    { value: "flow_rate", label: "Flow Rate (m³/h)" },
 ];
 
 const WaterAnalytics = ({ onSidebarToggle, sidebarVisible }) => {

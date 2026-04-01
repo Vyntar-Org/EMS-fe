@@ -532,7 +532,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: { xs: '0', sm: '10px' }, marginTop: { xs: '5px', sm: '0' } }}>
                                 <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
-                                    {machine.totalizer || 0} m³
+                                    {machine.totalizer || 0} 
                                 </Typography>
                                 
                                 {/* Tooltip for Mobile/Tab Compatibility */}

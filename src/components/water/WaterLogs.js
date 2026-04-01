@@ -68,9 +68,9 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
   const allParameters = [
     { val: 'timestamp', label: 'Timestamp' },
     { val: 'metric_name', label: 'Metric Name' },
-    { val: 'flowrate', label: 'Flow Rate (L/min)' },
-    { val: 'totalizer', label: 'Totalizer (m³)' },
-    { val: 'water_consumption', label: 'Water Consumption' } // Added Parameter
+    { val: 'flowrate', label: 'Flow Rate (m³/h)' },
+    { val: 'totalizer', label: 'Totalizer' },
+    { val: 'water_consumption', label: 'Water Consumption (KLD)' } // Added Parameter
   ];
 
   // Get all parameter values for easy reference
@@ -696,7 +696,7 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                               padding: { xs: '8px 4px', sm: '16px' }
                             }}
                           >
-                            Flow Rate (L/min)
+                            Flow Rate (m³/h)
                           </TableCell>
                           <TableCell 
                             className="log-header-cell" 
@@ -706,7 +706,7 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                               padding: { xs: '8px 4px', sm: '16px' }
                             }}
                           >
-                            Totalizer (m³)
+                            Totalizer
                           </TableCell>
                            <TableCell 
                             className="log-header-cell" 
@@ -716,7 +716,7 @@ function WaterLogs({ onSidebarToggle, sidebarVisible }) {
                               padding: { xs: '8px 4px', sm: '16px' }
                             }}
                           >
-                            Water Consumption
+                            Water Consumption (KLD)
                           </TableCell>
                         </>
                       )}
