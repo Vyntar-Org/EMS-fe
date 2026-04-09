@@ -753,21 +753,26 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         />
                         <Button
                             variant="outlined"
-                            startIcon={<FileDownloadIcon sx={{ marginLeft: '9px' }} />}
+                            startIcon={<FileDownloadIcon />}
                             onClick={handleDownload}
                             sx={{
+                                minWidth: '40px',
+                                width: '40px',
                                 height: '40px',
-                                width: '50px',
+                                borderRadius: '50%',
                                 borderColor: '#2F6FB0',
                                 color: '#fff',
-                                borderRadius: '50px',
+                                backgroundColor: '#2F6FB0',
+                                padding: 0,
                                 marginRight: '10px',
-                                backgroundColor: '#2f6fb0',
+                                '& .MuiButton-startIcon': {
+                                    margin: 0,
+                                },
                                 '&:hover': {
                                     borderColor: '#1E4A7C',
-                                    backgroundColor: 'rgba(47, 111, 176, 0.04)',
-                                    color: '#2f6fb0'
-                                }
+                                    backgroundColor: '#1E4A7C',
+                                    color: '#fff',
+                                },
                             }}
                         >
                         </Button>

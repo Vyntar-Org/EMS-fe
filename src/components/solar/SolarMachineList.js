@@ -66,7 +66,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const sanitizeTrendData = (data, parameter) => {
         return data.map(item => {
             const val = parseFloat(item.value);
-            
+
             // Filter out physically impossible values to fix chart scaling
             if (isNaN(val) || Math.abs(val) > 100000) {
                 return { ...item, value: null };
@@ -111,14 +111,14 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
         // Define CSV headers
         const headers = ['Machine Name', 'Status', 'Instant Flow (m³/hr)', 'Flow Temp (°C)', 'Pressure (bar)', 'Inlet Temp (°C)', 'Outlet Temp (°C)', 'Last Updated'];
-        
+
         // Map data to CSV rows
         const rows = filteredMachines.map(machine => {
             const isWithinTimeLimit = (lastTs) => {
                 if (!lastTs) return false;
                 const lastTime = new Date(lastTs);
                 const currentTime = new Date();
-                const timeDiff = (currentTime - lastTime) / (1000 * 60); 
+                const timeDiff = (currentTime - lastTime) / (1000 * 60);
                 return timeDiff <= 15;
             };
             const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
@@ -143,7 +143,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `solar_machines_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute('download', `solar_machines_${new Date().toISOString().slice(0, 10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -485,7 +485,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             custom: function ({ series, seriesIndex, dataPointIndex, w }) {
                 const item = trendData[dataPointIndex];
                 if (!item || item.value === null) return '';
-                
+
                 const date = new Date(item.timestamp);
                 const formattedDate = date.toLocaleString();
                 const value = series[0][dataPointIndex];
@@ -535,7 +535,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
-                      ...(isOnline ? {
+                    ...(isOnline ? {
                         background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
                         backgroundColor: 'transparent',
                     } : {
@@ -564,23 +564,23 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     title={formatTimestampForTooltip(machine.last_ts)}
                                     placement="top"
                                     arrow
-                                    enterTouchDelay={0} 
-                                    leaveTouchDelay={3000} 
+                                    enterTouchDelay={0}
+                                    leaveTouchDelay={3000}
                                     componentsProps={{
                                         tooltip: {
                                             sx: {
-                                                fontSize: '12px', 
+                                                fontSize: '12px',
                                             },
                                         },
                                     }}
                                 >
-                                    <Box 
-                                        component="span" 
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
                                             justifyContent: 'center',
-                                            padding: '4px', 
+                                            padding: '4px',
                                             cursor: 'pointer'
                                         }}
                                     >
@@ -594,7 +594,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={{...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5'}}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
@@ -732,7 +732,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </InputAdornment>
                                 ),
                             }}
-                            sx={{ 
+                            sx={{
                                 width: { xs: '100%', sm: '300px' },
                                 backgroundColor: '#fff',
                                 borderRadius: '4px',
@@ -741,27 +741,32 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         />
                         <Button
                             variant="outlined"
-                            startIcon={<FileDownloadIcon sx={{ marginLeft: '9px' }} />}
+                            startIcon={<FileDownloadIcon />}
                             onClick={handleDownload}
                             sx={{
+                                minWidth: '40px',
+                                width: '40px',
                                 height: '40px',
-                                width: '50px',
+                                borderRadius: '50%',
                                 borderColor: '#2F6FB0',
                                 color: '#fff',
-                                borderRadius: '50px',
+                                backgroundColor: '#2F6FB0',
+                                padding: 0,
                                 marginRight: '10px',
-                                backgroundColor: '#2f6fb0',
+                                '& .MuiButton-startIcon': {
+                                    margin: 0,
+                                },
                                 '&:hover': {
                                     borderColor: '#1E4A7C',
-                                    backgroundColor: 'rgba(47, 111, 176, 0.04)',
-                                    color: '#2f6fb0'
-                                }
+                                    backgroundColor: '#1E4A7C',
+                                    color: '#fff',
+                                },
                             }}
                         >
                         </Button>
                     </Box>
 
-                    <Box 
+                    <Box
                         sx={{
                             display: 'flex',
                             flexDirection: 'row',
@@ -773,13 +778,13 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     >
                         {filteredMachines.length > 0 ? (
                             filteredMachines.map((machine, index) => (
-                                <Box 
+                                <Box
                                     key={machine.slave_id || index}
                                     sx={{
-                                        width: { 
-                                            xs: '100%',              
-                                            sm: 'calc(50% - 15px)',  
-                                            md: 'calc(33.33% - 35px)' 
+                                        width: {
+                                            xs: '100%',
+                                            sm: 'calc(50% - 15px)',
+                                            md: 'calc(33.33% - 35px)'
                                         },
                                     }}
                                 >
@@ -827,9 +832,9 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         flexWrap: 'wrap',
                     }}>
                         <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                            <Typography 
-                                id="chart-modal-title" 
-                                variant="h6" 
+                            <Typography
+                                id="chart-modal-title"
+                                variant="h6"
                                 component="h2"
                                 sx={{ fontSize: { xs: '16px', sm: '18px', md: '20px' } }}
                             >

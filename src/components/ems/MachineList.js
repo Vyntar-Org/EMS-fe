@@ -111,7 +111,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
         // Define CSV headers
         const headers = ['Machine Name', 'ID', 'Status', 'R-Volts', 'Y-Volts', 'B-Volts', 'R-Amps', 'Y-Amps', 'B-Amps', 'Active Power (kW)', 'PF', 'Frequency (Hz)', 'Today (kWh)', 'MTD (kWh)', 'Last Updated'];
-        
+
         // Helper to check status
         const isWithinTimeLimit = (lastTs) => {
             if (!lastTs) return false;
@@ -126,7 +126,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             const isOnline = isWithinTimeLimit(machine.latest.last_ts);
             const latest = machine.latest || {};
             const energy = machine.energy || {};
-            
+
             // Conditional values logic (replicating the card logic)
             const getConditionalValue = (value) => {
                 // Assuming we want to show the actual value in CSV regardless of online status for reporting purposes,
@@ -134,7 +134,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 // However, to match the card's "0" behavior for offline:
                 // if (!isOnline) return 0; 
                 // For now, let's return the raw value or 0.
-                return (!isOnline && !['acte_im', 'today', 'mtd'].includes(key) ) ? 0 : (value || 0);
+                return (!isOnline && !['acte_im', 'today', 'mtd'].includes(key)) ? 0 : (value || 0);
             };
 
             return [
@@ -164,7 +164,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `machine_list_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute('download', `machine_list_${new Date().toISOString().slice(0, 10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -328,16 +328,16 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             show: true,
         },
     };
-    
+
     const formatTimestampForTooltip = (timestamp) => {
         if (!timestamp) return 'N/A';
-        
+
         try {
             const date = new Date(timestamp);
             if (isNaN(date.getTime())) {
                 return 'Invalid Date';
             }
-            
+
             return date.toLocaleString('en-GB', {
                 day: '2-digit',
                 month: 'short',
@@ -641,7 +641,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontWeight: 600,
             color: '#1F2937',
         },
-            floorTitle: {
+        floorTitle: {
             fontSize: '16px',
             fontWeight: 600,
             color: '#1F2937',
@@ -820,7 +820,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
-                      ...(isOnline ? {
+                    ...(isOnline ? {
                         background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
                         backgroundColor: 'transparent',
                     } : {
@@ -836,13 +836,13 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         <Typography style={styles.floorTitle}>
                             {machine.name}
                         </Typography>
-                        
+
                         {/* Responsive Online Status Box */}
-                        <Box 
-                            sx={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: '6px', 
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
                                 flexWrap: 'wrap',
                                 // Mobile specific changes
                                 ...(isMobile && {
@@ -854,7 +854,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             <Typography style={{ fontSize: '11px', color: getConditionalStatus(isOnline) === 'Online' ? '#30b44a' : '#e34d4d', border: '1px solid ' + (getConditionalStatus(isOnline) === 'Online' ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
                                 {getConditionalStatus(isOnline)}
                             </Typography>
-                            
+
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
                                     {conditionalLatest.acte_im?.toFixed(1)} kWh
@@ -873,11 +873,11 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         },
                                     }}
                                 >
-                                    <Box 
-                                        component="span" 
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
                                             justifyContent: 'center',
                                             cursor: 'pointer'
                                         }}
@@ -893,7 +893,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={{...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5'}}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Phase</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}>V</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}>A</TableCell>
@@ -1003,7 +1003,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </InputAdornment>
                         ),
                     }}
-                    sx={{ 
+                    sx={{
                         width: { xs: '100%', sm: '300px' },
                         backgroundColor: '#fff',
                         borderRadius: '4px',
@@ -1012,28 +1012,33 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 />
                 <Button
                     variant="outlined"
-                    startIcon={<FileDownloadIcon sx={{ marginLeft: '9px' }} />}
+                    startIcon={<FileDownloadIcon />}
                     onClick={handleDownload}
                     sx={{
-                                height: '40px',
-                                width: '50px',
-                                borderColor: '#2F6FB0',
-                                color: '#fff',
-                                borderRadius: '50px',
-                                marginRight: '10px',
-                                backgroundColor: '#2f6fb0',
-                                '&:hover': {
-                                    borderColor: '#1E4A7C',
-                                    backgroundColor: 'rgba(47, 111, 176, 0.04)',
-                                    color: '#2f6fb0'
-                                }
-                            }}
+                        minWidth: '40px',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        borderColor: '#2F6FB0',
+                        color: '#fff',
+                        backgroundColor: '#2F6FB0',
+                        padding: 0,
+                        marginRight: '10px',
+                        '& .MuiButton-startIcon': {
+                            margin: 0,
+                        },
+                        '&:hover': {
+                            borderColor: '#1E4A7C',
+                            backgroundColor: '#1E4A7C',
+                            color: '#fff',
+                        },
+                    }}
                 >
                 </Button>
             </Box>
 
             {/* Custom Grid Container for responsive cards */}
-            <Box 
+            <Box
                 sx={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -1046,11 +1051,11 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 {loading && <Typography>Loading...</Typography>}
                 {error && <Typography color="error">{error}</Typography>}
                 {!loading && !error && filteredMachines.length > 0 ? (
-                     filteredMachines.map((machine, index) => (
-                        <Box 
+                    filteredMachines.map((machine, index) => (
+                        <Box
                             key={machine.slave_id || index}
                             sx={{
-                                width: { 
+                                width: {
                                     xs: '100%',
                                     sm: 'calc(50% - 15px)',
                                     md: 'calc(33.33% - 35px)'
@@ -1158,8 +1163,8 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Box>
                         </Box>
                         {['keyParameters', 'voltage', 'current', 'powerFactor', 'frequency'].includes(chartType) && (
-                            <Box sx={{ 
-                                display: 'flex', 
+                            <Box sx={{
+                                display: 'flex',
                                 alignItems: 'center',
                                 marginTop: { xs: '10px', sm: '40px' },
                                 width: { xs: '100%', sm: 'auto' }
@@ -1271,7 +1276,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     </Box>
                 </Box>
             </Modal>
-            
+
             {/* Snackbar for notifications */}
             <Snackbar
                 open={snackbarOpen}

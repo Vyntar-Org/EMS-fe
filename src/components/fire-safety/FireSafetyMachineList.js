@@ -133,7 +133,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
         // Define CSV headers
         const headers = ['Machine Name', 'Temperature (°C)', 'Water Level (Mtrs)', 'Status', 'Last Updated'];
-        
+
         // Map data to CSV rows
         const rows = filteredMachines.map(machine => {
             // Determine status
@@ -145,7 +145,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 return timeDiff <= 15;
             };
             const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
-            
+
             const temp = machine.latest?.temperature ? machine.latest.temperature.toFixed(2) : 'N/A';
             const water = machine.latest?.water ? machine.latest.water.toFixed(2) : 'N/A';
             const date = machine.last_ts ? new Date(machine.last_ts).toLocaleString() : 'N/A';
@@ -167,7 +167,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `fire_safety_machines_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute('download', `fire_safety_machines_${new Date().toISOString().slice(0, 10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -559,7 +559,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
-                      ...(isOnline ? {
+                    ...(isOnline ? {
                         background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
                         backgroundColor: 'transparent',
                     } : {
@@ -580,32 +580,32 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
                             <Tooltip
-                                    title={formatTimestampForTooltip(machine.last_ts)}
-                                    placement="top"
-                                    arrow
-                                    enterTouchDelay={0}
-                                    leaveTouchDelay={3000}
-                                    componentsProps={{
-                                        tooltip: {
-                                            sx: {
-                                                fontSize: '12px',
-                                            },
+                                title={formatTimestampForTooltip(machine.last_ts)}
+                                placement="top"
+                                arrow
+                                enterTouchDelay={0}
+                                leaveTouchDelay={3000}
+                                componentsProps={{
+                                    tooltip: {
+                                        sx: {
+                                            fontSize: '12px',
                                         },
+                                    },
+                                }}
+                            >
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '4px',
+                                        cursor: 'pointer'
                                     }}
                                 >
-                                    <Box 
-                                        component="span" 
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
-                                            justifyContent: 'center',
-                                            padding: '4px',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        <AccessTimeIcon style={styles.clockIcon} />
-                                    </Box>
-                                </Tooltip>
+                                    <AccessTimeIcon style={styles.clockIcon} />
+                                </Box>
+                            </Tooltip>
                         </Box>
                     </Box>
 
@@ -613,7 +613,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={{...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5'}}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
@@ -624,7 +624,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                             <DeviceThermostatIcon fontSize="10px" color="error" />
+                                            <DeviceThermostatIcon fontSize="10px" color="error" />
                                             Temperature
                                         </Box>
                                     </TableCell>
@@ -717,7 +717,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </InputAdornment>
                         ),
                     }}
-                    sx={{ 
+                    sx={{
                         width: { xs: '100%', sm: '300px' },
                         backgroundColor: '#fff',
                         borderRadius: '4px',
@@ -726,28 +726,33 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 />
                 <Button
                     variant="outlined"
-                    startIcon={<FileDownloadIcon sx={{ marginLeft: '9px' }} />}
+                    startIcon={<FileDownloadIcon />}
                     onClick={handleDownload}
                     sx={{
-                                height: '40px',
-                                width: '50px',
-                                borderColor: '#2F6FB0',
-                                color: '#fff',
-                                borderRadius: '50px',
-                                marginRight: '10px',
-                                backgroundColor: '#2f6fb0',
-                                '&:hover': {
-                                    borderColor: '#1E4A7C',
-                                    backgroundColor: 'rgba(47, 111, 176, 0.04)',
-                                    color: '#2f6fb0'
-                                }
-                            }}
+                        minWidth: '40px',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        borderColor: '#2F6FB0',
+                        color: '#fff',
+                        backgroundColor: '#2F6FB0',
+                        padding: 0,
+                        marginRight: '10px',
+                        '& .MuiButton-startIcon': {
+                            margin: 0,
+                        },
+                        '&:hover': {
+                            borderColor: '#1E4A7C',
+                            backgroundColor: '#1E4A7C',
+                            color: '#fff',
+                        },
+                    }}
                 >
                 </Button>
             </Box>
 
             {/* Custom Grid Container - RESPONSIVE using sx prop */}
-            <Box 
+            <Box
                 sx={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -759,13 +764,13 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             >
                 {filteredMachines.length > 0 ? (
                     filteredMachines.map((machine, index) => (
-                        <Box 
+                        <Box
                             key={machine.slave_id || index}
                             sx={{
-                                width: { 
-                                    xs: '100%',              
-                                    sm: 'calc(50% - 15px)',  
-                                    md: 'calc(33.33% - 35px)' 
+                                width: {
+                                    xs: '100%',
+                                    sm: 'calc(50% - 15px)',
+                                    md: 'calc(33.33% - 35px)'
                                 },
                             }}
                         >
@@ -812,9 +817,9 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         flexWrap: 'wrap',
                     }}>
                         <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                            <Typography 
-                                id="chart-modal-title" 
-                                variant="h6" 
+                            <Typography
+                                id="chart-modal-title"
+                                variant="h6"
                                 component="h2"
                                 sx={{ fontSize: { xs: '16px', sm: '18px', md: '20px' } }}
                             >

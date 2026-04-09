@@ -112,7 +112,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
         // Define CSV headers
         const headers = ['Machine Name', 'Status', 'Temperature (°C)', 'Humidity (%)', 'Battery (V)', 'Last Updated'];
-        
+
         // Map data to CSV rows
         const rows = filteredMachines.map(machine => {
             // Determine status
@@ -124,7 +124,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 return timeDiff <= 15;
             };
             const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
-            
+
             const temp = machine.latest?.rv ? machine.latest.rv.toFixed(2) : 'N/A';
             const hum = machine.latest?.iy ? machine.latest.iy.toFixed(1) : 'N/A';
             const bat = machine.latest?.bv ? machine.latest.bv.toFixed(2) : 'N/A';
@@ -148,7 +148,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `temperature_machines_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute('download', `temperature_machines_${new Date().toISOString().slice(0, 10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -553,24 +553,24 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             mtd: getConditionalValue(energy.mtd, true), // Allowed when offline
         };
 
-            const formatTimestampForTooltip = (timestamp) => {
-        if (!timestamp) return 'N/A';
-        return new Date(timestamp).toLocaleString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        });
-    };
+        const formatTimestampForTooltip = (timestamp) => {
+            if (!timestamp) return 'N/A';
+            return new Date(timestamp).toLocaleString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        };
 
         return (
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
-                      ...(isOnline ? {
+                    ...(isOnline ? {
                         background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
                         backgroundColor: 'transparent',
                     } : {
@@ -591,33 +591,33 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
                             <Tooltip
-                                    title={formatTimestampForTooltip(machine.last_ts)}
-                                    placement="top"
-                                    arrow
-                                    enterTouchDelay={0} // Immediately opens on touch
-                                    leaveTouchDelay={3000} // Stays open for 3 seconds on touch
-                                    componentsProps={{
-                                        tooltip: {
-                                            sx: {
-                                                fontSize: '12px', // Ensure readable font size on mobile
-                                            },
+                                title={formatTimestampForTooltip(machine.last_ts)}
+                                placement="top"
+                                arrow
+                                enterTouchDelay={0} // Immediately opens on touch
+                                leaveTouchDelay={3000} // Stays open for 3 seconds on touch
+                                componentsProps={{
+                                    tooltip: {
+                                        sx: {
+                                            fontSize: '12px', // Ensure readable font size on mobile
                                         },
+                                    },
+                                }}
+                            >
+                                {/* Wrapper Box increases the touch target size */}
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '4px', // Adds padding to make it easier to tap
+                                        cursor: 'pointer'
                                     }}
                                 >
-                                    {/* Wrapper Box increases the touch target size */}
-                                    <Box 
-                                        component="span" 
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
-                                            justifyContent: 'center',
-                                            padding: '4px', // Adds padding to make it easier to tap
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        <AccessTimeIcon style={styles.clockIcon} />
-                                    </Box>
-                                </Tooltip>
+                                    <AccessTimeIcon style={styles.clockIcon} />
+                                </Box>
+                            </Tooltip>
                         </Box>
                     </Box>
 
@@ -625,7 +625,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={{...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5'}}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
@@ -726,7 +726,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </InputAdornment>
                         ),
                     }}
-                    sx={{ 
+                    sx={{
                         width: { xs: '100%', sm: '300px' },
                         backgroundColor: '#fff',
                         borderRadius: '4px',
@@ -735,28 +735,33 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 />
                 <Button
                     variant="outlined"
-                    startIcon={<FileDownloadIcon sx={{ marginLeft: '9px' }} />}
+                    startIcon={<FileDownloadIcon />}
                     onClick={handleDownload}
                     sx={{
-                                height: '40px',
-                                width: '50px',
-                                borderColor: '#2F6FB0',
-                                color: '#fff',
-                                borderRadius: '50px',
-                                marginRight: '10px',
-                                backgroundColor: '#2f6fb0',
-                                '&:hover': {
-                                    borderColor: '#1E4A7C',
-                                    backgroundColor: 'rgba(47, 111, 176, 0.04)',
-                                    color: '#2f6fb0'
-                                }
-                            }}
+                        minWidth: '40px',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        borderColor: '#2F6FB0',
+                        color: '#fff',
+                        backgroundColor: '#2F6FB0',
+                        padding: 0,
+                        marginRight: '10px',
+                        '& .MuiButton-startIcon': {
+                            margin: 0,
+                        },
+                        '&:hover': {
+                            borderColor: '#1E4A7C',
+                            backgroundColor: '#1E4A7C',
+                            color: '#fff',
+                        },
+                    }}
                 >
                 </Button>
             </Box>
 
             {/* Custom Grid Container - RESPONSIVE using sx prop */}
-            <Box 
+            <Box
                 sx={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -769,11 +774,11 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 {loading && <Typography>Loading...</Typography>}
                 {error && <Typography color="error">{error}</Typography>}
                 {!loading && !error && filteredMachines.length > 0 ? (
-                     filteredMachines.map((machine, index) => (
-                        <Box 
+                    filteredMachines.map((machine, index) => (
+                        <Box
                             key={machine.slave_id || index}
                             sx={{
-                                width: { 
+                                width: {
                                     xs: '100%',              // Mobile: 1 card per row
                                     sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
                                     md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
@@ -825,9 +830,9 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         flexWrap: 'wrap',
                     }}>
                         <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                            <Typography 
-                                id="chart-modal-title" 
-                                variant="h6" 
+                            <Typography
+                                id="chart-modal-title"
+                                variant="h6"
                                 component="h2"
                                 sx={{ fontSize: { xs: '16px', sm: '18px', md: '20px' } }}
                             >

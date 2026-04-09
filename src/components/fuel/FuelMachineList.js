@@ -219,7 +219,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
         // Define CSV headers
         const headers = ['Machine Name', 'Status', 'Fuel Level (%)', 'Consumed (L)', 'Refilled (L)', 'Temperature (°C)', 'Capacity (L)'];
-        
+
         // Map data to CSV rows
         const rows = filteredMachines.map(machine => {
             return [
@@ -241,7 +241,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `fuel_machines_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute('download', `fuel_machines_${new Date().toISOString().slice(0, 10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -684,7 +684,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
-                      ...(isOnline ? {
+                    ...(isOnline ? {
                         background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
                         backgroundColor: 'transparent',
                     } : {
@@ -726,11 +726,11 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     }}
                                 >
                                     {/* Wrapper Box increases the touch target size */}
-                                    <Box 
-                                        component="span" 
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
                                             justifyContent: 'center',
                                             padding: '4px', // Adds padding to make it easier to tap
                                             cursor: 'pointer'
@@ -771,7 +771,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={{...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5'}}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
@@ -782,7 +782,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <LocalGasStationIcon  fontSize="10px" color="black" /> Consumed
+                                            <LocalGasStationIcon fontSize="10px" color="black" /> Consumed
                                         </Box>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
@@ -880,7 +880,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </InputAdornment>
                         ),
                     }}
-                    sx={{ 
+                    sx={{
                         width: { xs: '100%', sm: '300px' },
                         backgroundColor: '#fff',
                         borderRadius: '4px',
@@ -889,28 +889,33 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 />
                 <Button
                     variant="outlined"
-                    startIcon={<FileDownloadIcon sx={{ marginLeft: '9px' }} />}
+                    startIcon={<FileDownloadIcon />}
                     onClick={handleDownload}
                     sx={{
-                                height: '40px',
-                                width: '50px',
-                                borderColor: '#2F6FB0',
-                                color: '#fff',
-                                borderRadius: '50px',
-                                marginRight: '10px',
-                                backgroundColor: '#2f6fb0',
-                                '&:hover': {
-                                    borderColor: '#1E4A7C',
-                                    backgroundColor: 'rgba(47, 111, 176, 0.04)',
-                                    color: '#2f6fb0'
-                                }
-                            }}
+                        minWidth: '40px',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        borderColor: '#2F6FB0',
+                        color: '#fff',
+                        backgroundColor: '#2F6FB0',
+                        padding: 0,
+                        marginRight: '10px',
+                        '& .MuiButton-startIcon': {
+                            margin: 0,
+                        },
+                        '&:hover': {
+                            borderColor: '#1E4A7C',
+                            backgroundColor: '#1E4A7C',
+                            color: '#fff',
+                        },
+                    }}
                 >
                 </Button>
             </Box>
 
             {/* Custom Grid Container - RESPONSIVE using sx prop */}
-            <Box 
+            <Box
                 sx={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -922,10 +927,10 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             >
                 {filteredMachines.length > 0 ? (
                     filteredMachines.map((machine, index) => (
-                        <Box 
+                        <Box
                             key={machine.slave_id || index}
                             sx={{
-                                width: { 
+                                width: {
                                     xs: '100%',              // Mobile: 1 card per row
                                     sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
                                     md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
@@ -975,9 +980,9 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         flexWrap: 'wrap',
                     }}>
                         <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                            <Typography 
-                                id="chart-modal-title" 
-                                variant="h6" 
+                            <Typography
+                                id="chart-modal-title"
+                                variant="h6"
                                 component="h2"
                                 sx={{ fontSize: { xs: '16px', sm: '18px', md: '20px' } }}
                             >
@@ -1029,7 +1034,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     </Box>
                 </Box>
             </Modal>
-            
+
             {/* Snackbar for notifications */}
             <Snackbar
                 open={snackbarOpen}

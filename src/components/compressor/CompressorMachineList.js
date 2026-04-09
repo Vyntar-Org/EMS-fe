@@ -159,7 +159,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
         // Define CSV headers
         const headers = ['Machine Name', 'ID', 'Status', 'Last Downtime Start', 'Last Downtime End', 'Duration', 'Last Updated'];
-        
+
         // Map data to CSV rows
         const rows = filteredMachines.map(machine => {
             const date = machine.last_ts ? new Date(machine.last_ts).toLocaleString() : 'N/A';
@@ -182,7 +182,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `compressor_machines_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute('download', `compressor_machines_${new Date().toISOString().slice(0, 10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -194,7 +194,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const now = new Date();
         for (let i = 23; i >= 0; i--) {
             const timestamp = new Date(now.getTime() - (i * 60 * 60 * 1000));
-            const status = Math.random() > 0.2 ? 1 : 0; 
+            const status = Math.random() > 0.2 ? 1 : 0;
             data.push({
                 x: timestamp.getTime(),
                 y: status
@@ -335,7 +335,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             tickAmount: 2,
             labels: {
                 style: { colors: '#6B7280', fontSize: '11px' },
-                formatter: function(val) {
+                formatter: function (val) {
                     if (val >= 0.9) return 'Online';
                     if (val <= 0.1) return 'Offline';
                     return '';
@@ -346,7 +346,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             enabled: true,
             theme: 'light',
             x: { format: 'dd MMM HH:mm' },
-            custom: function({ series, seriesIndex, dataPointIndex, w }) {
+            custom: function ({ series, seriesIndex, dataPointIndex, w }) {
                 const dataPoint = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
                 const date = new Date(dataPoint.x);
                 const formattedDate = date.toLocaleString();
@@ -398,7 +398,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
-                      ...(isOnline ? {
+                    ...(isOnline ? {
                         background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
                         backgroundColor: 'transparent',
                     } : {
@@ -438,11 +438,11 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         },
                                     }}
                                 >
-                                    <Box 
-                                        component="span" 
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
                                             justifyContent: 'center',
                                             padding: '4px',
                                             cursor: 'pointer'
@@ -460,7 +460,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={{...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5'}}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell colSpan={3} style={{ ...styles.tableCell, fontWeight: 'bold' }}>
                                         Latest Downtime
                                     </TableCell>
@@ -468,9 +468,9 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </TableHead>
                             <TableBody>
                                 <TableRow>
-                                    <TableCell style={styles.tableCell} sx={{color: '#1F2937', fontWeight: 600}}>Start Time</TableCell>
-                                    <TableCell style={styles.tableCell} sx={{color: '#1F2937', fontWeight: 600}}>End Time</TableCell>
-                                    <TableCell style={styles.tableCell} sx={{color: '#1F2937', fontWeight: 600}}>Duration</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>Start Time</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>End Time</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>Duration</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>{machine.latest_downtime?.start_time || '-'}</TableCell>
@@ -485,15 +485,15 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={{ ...styles.phaseTable, marginTop: '16px' }}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={{...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5'}}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell colSpan={3} style={{ ...styles.tableCell, fontWeight: 'bold' }}>
                                         Downtime (Last 24h)
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell style={styles.tableCell} sx={{color: '#1F2937', fontWeight: 600}}>Start Time</TableCell>
-                                    <TableCell style={styles.tableCell} sx={{color: '#1F2937', fontWeight: 600}}>End Time</TableCell>
-                                    <TableCell style={styles.tableCell} sx={{color: '#1F2937', fontWeight: 600}}>Duration</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>Start Time</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>End Time</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>Duration</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -553,7 +553,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </InputAdornment>
                         ),
                     }}
-                    sx={{ 
+                    sx={{
                         width: { xs: '100%', sm: '300px' },
                         backgroundColor: '#fff',
                         borderRadius: '4px',
@@ -562,22 +562,27 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 />
                 <Button
                     variant="outlined"
-                    startIcon={<FileDownloadIcon sx={{ marginLeft: '9px' }}  />}
+                    startIcon={<FileDownloadIcon />}
                     onClick={handleDownload}
                     sx={{
-                                height: '40px',
-                                width: '50px',
-                                borderColor: '#2F6FB0',
-                                color: '#fff',
-                                borderRadius: '50px',
-                                marginRight: '10px',
-                                backgroundColor: '#2f6fb0',
-                                '&:hover': {
-                                    borderColor: '#1E4A7C',
-                                    backgroundColor: 'rgba(47, 111, 176, 0.04)',
-                                    color: '#2f6fb0'
-                                }
-                            }}
+                        minWidth: '40px',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        borderColor: '#2F6FB0',
+                        color: '#fff',
+                        backgroundColor: '#2F6FB0',
+                        padding: 0,
+                        marginRight: '10px',
+                        '& .MuiButton-startIcon': {
+                            margin: 0,
+                        },
+                        '&:hover': {
+                            borderColor: '#1E4A7C',
+                            backgroundColor: '#1E4A7C',
+                            color: '#fff',
+                        },
+                    }}
                 >
                 </Button>
             </Box>
