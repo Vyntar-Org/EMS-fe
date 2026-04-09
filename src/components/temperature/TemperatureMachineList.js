@@ -22,7 +22,11 @@ import {
     IconButton,
     Tabs,
     Tab,
-    Tooltip
+    Tooltip,
+    TextField,
+    InputAdornment,
+    Snackbar,
+    Alert,
 } from '@mui/material';
 import axios from 'axios';
 import Chart from 'react-apexcharts';
@@ -32,6 +36,8 @@ import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import BatteryStdIcon from '@mui/icons-material/BatteryStd';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import SearchIcon from '@mui/icons-material/Search';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 
 const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
@@ -60,6 +66,9 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [selectedParameter, setSelectedParameter] = useState('temperature');
     const [trendLoading, setTrendLoading] = useState(false);
     const [trendError, setTrendError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState(''); // State for search
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
 
     // Fetch machine list data
     useEffect(() => {
@@ -84,6 +93,67 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         fetchData();
     }, []);
 
+    // Filter machines based on search term
+    const filteredMachines = machineListData?.data?.machines?.filter(machine => {
+        const term = searchTerm.toLowerCase();
+        return (
+            machine.name.toLowerCase().includes(term) ||
+            machine.slave_id.toString().includes(term)
+        );
+    }) || [];
+
+    // Function to handle CSV download
+    const handleDownload = () => {
+        if (filteredMachines.length === 0) {
+            setSnackbarMessage('No data to download');
+            setSnackbarOpen(true);
+            return;
+        }
+
+        // Define CSV headers
+        const headers = ['Machine Name', 'Status', 'Temperature (°C)', 'Humidity (%)', 'Battery (V)', 'Last Updated'];
+        
+        // Map data to CSV rows
+        const rows = filteredMachines.map(machine => {
+            // Determine status
+            const isWithinTimeLimit = (lastTs) => {
+                if (!lastTs) return false;
+                const lastTime = new Date(lastTs);
+                const currentTime = new Date();
+                const timeDiff = (currentTime - lastTime) / (1000 * 60);
+                return timeDiff <= 15;
+            };
+            const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
+            
+            const temp = machine.latest?.rv ? machine.latest.rv.toFixed(2) : 'N/A';
+            const hum = machine.latest?.iy ? machine.latest.iy.toFixed(1) : 'N/A';
+            const bat = machine.latest?.bv ? machine.latest.bv.toFixed(2) : 'N/A';
+            const date = machine.last_ts ? new Date(machine.last_ts).toLocaleString() : 'N/A';
+
+            return [
+                machine.name || 'N/A',
+                isOnline ? 'Online' : 'Offline',
+                temp,
+                hum,
+                bat,
+                date
+            ].join(',');
+        });
+
+        // Combine headers and rows
+        const csvContent = [headers.join(','), ...rows].join('\n');
+
+        // Create a blob and download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `temperature_machines_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // Function to fetch trend data
     const fetchTrendData = async (slaveId, parameter) => {
         try {
@@ -107,7 +177,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Define styles - UPDATED FOR MOBILE RESPONSIVENESS
+    // Define styles
     const styles = {
         mainContent: {
             width: '100%',
@@ -124,7 +194,9 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '15px',
+            marginBottom: '20px',
+            flexWrap: 'wrap',
+            gap: '15px',
         },
         title: {
             fontSize: '24px',
@@ -279,7 +351,6 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontWeight: 600,
             color: '#1F2937',
         },
-        // UPDATED: Responsive grid container - using sx prop instead
         gridContainer: {
             display: 'flex',
             flexDirection: 'row',
@@ -289,9 +360,8 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             marginLeft: '0',
             padding: '0 10px',
         },
-        // UPDATED: Responsive grid item - using sx prop instead
         gridItem: {
-            width: '100%', // Mobile: 1 card per row
+            width: '100%',
             marginBottom: '15px',
         },
         tableCell: {
@@ -301,7 +371,6 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         clockIcon: {
             fontSize: '16px',
             cursor: 'pointer',
-            // color: '#6B7280',
             verticalAlign: 'middle',
         },
     };
@@ -501,6 +570,12 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
+                      ...(isOnline ? {
+                        background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
+                        backgroundColor: 'transparent',
+                    } : {
+                        backgroundColor: '#FFFFFF',
+                    }),
                     padding: '12px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -550,7 +625,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={styles.phaseTableHeader}>
+                                <TableRow style={{...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5'}}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
@@ -637,6 +712,49 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent} id="main-content">
+            {/* Header with Search and Download */}
+            <Box sx={styles.headerContainer}>
+                <TextField
+                    placeholder="Search machines..."
+                    size="small"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon />
+                            </InputAdornment>
+                        ),
+                    }}
+                    sx={{ 
+                        width: { xs: '100%', sm: '300px' },
+                        backgroundColor: '#fff',
+                        borderRadius: '4px',
+                        marginLeft: { sm: '18px', md: '30px' },
+                    }}
+                />
+                <Button
+                    variant="outlined"
+                    startIcon={<FileDownloadIcon sx={{ marginLeft: '9px' }} />}
+                    onClick={handleDownload}
+                    sx={{
+                                height: '40px',
+                                width: '50px',
+                                borderColor: '#2F6FB0',
+                                color: '#fff',
+                                borderRadius: '50px',
+                                marginRight: '10px',
+                                backgroundColor: '#2f6fb0',
+                                '&:hover': {
+                                    borderColor: '#1E4A7C',
+                                    backgroundColor: 'rgba(47, 111, 176, 0.04)',
+                                    color: '#2f6fb0'
+                                }
+                            }}
+                >
+                </Button>
+            </Box>
+
             {/* Custom Grid Container - RESPONSIVE using sx prop */}
             <Box 
                 sx={{
@@ -650,24 +768,28 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             >
                 {loading && <Typography>Loading...</Typography>}
                 {error && <Typography color="error">{error}</Typography>}
-                {!loading && !error && machineListData?.data?.machines?.map((machine, index) => (
-                    <Box 
-                        key={machine.slave_id || index}
-                        sx={{
-                            width: { 
-                                xs: '100%',              // Mobile: 1 card per row
-                                sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
-                                md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
-                            },
-                            // marginBottom: '15px',
-                            // '@media (min-width: 1200px)': {
-                            //     width: 'calc(30% - 35px)'
-                            // }
-                        }}
-                    >
-                        {renderFloorCard(machine)}
-                    </Box>
-                ))}
+                {!loading && !error && filteredMachines.length > 0 ? (
+                     filteredMachines.map((machine, index) => (
+                        <Box 
+                            key={machine.slave_id || index}
+                            sx={{
+                                width: { 
+                                    xs: '100%',              // Mobile: 1 card per row
+                                    sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
+                                    md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
+                                },
+                            }}
+                        >
+                            {renderFloorCard(machine)}
+                        </Box>
+                    ))
+                ) : (
+                    !loading && !error && (
+                        <Box sx={{ width: '100%', textAlign: 'center', py: 5, color: '#888' }}>
+                            No machines found matching your search.
+                        </Box>
+                    )
+                )}
             </Box>
 
             {/* Chart Modal - RESPONSIVE */}
@@ -758,6 +880,14 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     </Box>
                 </Box>
             </Modal>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={() => setSnackbarOpen(false)}
+                message={snackbarMessage}
+            />
         </Box>
     );
 };

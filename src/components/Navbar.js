@@ -60,8 +60,9 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
             return;
           }
         }
-        const energyApp = storedUserData.applications.find(app => app.code === 'ENERGY');
-        setActiveApp(energyApp || storedUserData.applications[0]);
+        // CHANGED: Default to WATER instead of ENERGY
+        const waterApp = storedUserData.applications.find(app => app.code === 'WATER');
+        setActiveApp(waterApp || storedUserData.applications[0]);
       }
     } else {
       setUserData(contextUserData);
@@ -76,11 +77,31 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
             return;
           }
         }
-        const energyApp = contextUserData.applications.find(app => app.code === 'ENERGY');
-        setActiveApp(energyApp || contextUserData.applications[0]);
+        // CHANGED: Default to WATER instead of ENERGY
+        const waterApp = contextUserData.applications.find(app => app.code === 'WATER');
+        setActiveApp(waterApp || contextUserData.applications[0]);
       }
     }
   }, [contextUserData, activeApp, setActiveApp]);
+
+  // Define the desired order of applications
+  const getSortedApplications = (applications) => {
+    if (!applications) return [];
+    
+    // CHANGED: Moved WATER to the top of the list
+    const priorityOrder = ['WATER', 'ENERGY', 'FUEL', 'SOLAR', 'FIRE-SAFETY', 'COMPRESSOR', 'TEMPERATURE'];
+    
+    return applications.slice().sort((a, b) => {
+      const indexA = priorityOrder.indexOf(a.code);
+      const indexB = priorityOrder.indexOf(b.code);
+      
+      // If app is not in the priority list, push it to the end (index 999)
+      const weightA = indexA === -1 ? 999 : indexA;
+      const weightB = indexB === -1 ? 999 : indexB;
+      
+      return weightA - weightB;
+    });
+  };
 
   const handleMenuOpen = (event) => {
     if (isMobile) {
@@ -180,6 +201,9 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
     }
   };
 
+  // Get the sorted list for rendering
+  const sortedApplications = getSortedApplications(userData ? userData.applications : []);
+
   return (
     <>
       <nav className="navbar">
@@ -206,7 +230,7 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
           {/* APPLICATION ICONS - HIDE ON MOBILE */}
           {!isMobile && userData && userData.applications && (
             <div className="applications-icons" style={{ display: 'flex', flexDirection: 'row-reverse', alignItems: 'center', gap: '10px', marginRight: '20px' }}>
-              {userData.applications.map((app, index) => {
+              {sortedApplications.map((app, index) => {
                 const isActive = activeApp && activeApp.code === app.code;
                 let displayName = app.name.substring(0, 4);
                 if (app.code === 'ENERGY') {
@@ -357,7 +381,7 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                   },
                 }}
               >
-                {userData && userData.applications && userData.applications.map((app, index) => {
+                {sortedApplications.map((app, index) => {
                   const isActive = activeApp && activeApp.code === app.code;
                   let displayName = app.name;
                   if (app.code === 'ENERGY') {

@@ -27,6 +27,8 @@ import {
     CircularProgress,
     Alert,
     Snackbar,
+    TextField,
+    InputAdornment,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
@@ -37,11 +39,27 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SpeedIcon from '@mui/icons-material/Speed';
 import OpacityIcon from '@mui/icons-material/Opacity';
+import SearchIcon from '@mui/icons-material/Search';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 // Import API functions
 import { getWaterMachineList, getWaterMachineTrend } from '../../auth/water/WaterMachineListApi';
 
 const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
+    // State variables
+    const [searchTerm, setSearchTerm] = useState(''); // State for search
+    const [chartModalOpen, setChartModalOpen] = useState(false);
+    const [selectedFloor, setSelectedFloor] = useState('Common');
+    const [chartType, setChartType] = useState('consumption');
+    const [trendData, setTrendData] = useState([]);
+    const [selectedParameter, setSelectedParameter] = useState('flow_rate');
+    const [machineListData, setMachineListData] = useState({ data: { machines: [] } });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [trendLoading, setTrendLoading] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+
     // Get parameter unit
     const getParameterUnit = (parameter) => {
         switch (parameter) {
@@ -70,19 +88,6 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // State variables
-    const [chartModalOpen, setChartModalOpen] = useState(false);
-    const [selectedFloor, setSelectedFloor] = useState('Common');
-    const [chartType, setChartType] = useState('consumption');
-    const [trendData, setTrendData] = useState([]);
-    const [selectedParameter, setSelectedParameter] = useState('flow_rate');
-    const [machineListData, setMachineListData] = useState({ data: { machines: [] } });
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [trendLoading, setTrendLoading] = useState(false);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
-
     // Fetch machine list on component mount
     useEffect(() => {
         const fetchMachineList = async () => {
@@ -103,6 +108,54 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
         fetchMachineList();
     }, []);
+
+    // Filter machines based on search term
+    const filteredMachines = machineListData?.data?.machines?.filter(machine => {
+        const term = searchTerm.toLowerCase();
+        return (
+            machine.slave_name.toLowerCase().includes(term) ||
+            (machine.location && machine.location.toLowerCase().includes(term))
+        );
+    }) || [];
+
+    // Function to handle CSV download
+    const handleDownload = () => {
+        if (filteredMachines.length === 0) {
+            setSnackbarMessage('No data to download');
+            setSnackbarOpen(true);
+            return;
+        }
+
+        // Define CSV headers
+        const headers = ['Machine Name', 'Location', 'Consumption (KLD)', 'Rate of Flow (m³/h)', 'MTD (KLD)', 'Totalizer (m³)', 'Status'];
+
+        // Map data to CSV rows
+        const rows = filteredMachines.map(machine => {
+            const isOnline = (machine.rate_of_flow || 0) > 0;
+            return [
+                machine.slave_name || 'N/A',
+                machine.location || 'N/A',
+                (machine.consumption || 0).toFixed(2),
+                (machine.rate_of_flow || 0).toFixed(2),
+                (machine.mtd || 0).toFixed(2),
+                (machine.totalizer || 0).toFixed(2),
+                isOnline ? 'Online' : 'Offline'
+            ].join(',');
+        });
+
+        // Combine headers and rows
+        const csvContent = [headers.join(','), ...rows].join('\n');
+
+        // Create a blob and download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `water_machines_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     // Function to fetch trend data
     const fetchTrendData = async (slaveId, parameter) => {
@@ -152,7 +205,9 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '15px',
+            marginBottom: '20px',
+            flexWrap: 'wrap',
+            gap: '15px',
         },
         title: {
             fontSize: '24px',
@@ -456,8 +511,6 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         if (!machine) return null;
 
         // UPDATED: Online/Offline logic based on Rate of Flow
-        // If rate_of_flow is 0 or null/undefined -> Offline
-        // If rate_of_flow is greater than 0 -> Online
         const rateOfFlow = machine.rate_of_flow || 0;
         const isOnline = rateOfFlow > 0;
 
@@ -468,21 +521,19 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         // Apply the conditional logic for values
         const getConditionalValue = (value, isAllowedField = false) => {
             if (isOnline) {
-                // If online, return the actual value
                 return value;
             } else {
-                // If offline (rate_of_flow is 0), only show specific fields
                 if (isAllowedField) {
                     return value;
                 } else {
-                    return 0; // Return 0 for all other fields
+                    return 0;
                 }
             }
         };
 
         // Determine which fields are allowed when offline
         const conditionalLatest = {
-            acte_im: getConditionalValue(latest.acte_im, true), // Allowed when offline
+            acte_im: getConditionalValue(latest.acte_im, true),
             temperature: getConditionalValue(latest.temperature, false),
             water: getConditionalValue(latest.water, false),
             actpr_t: getConditionalValue(latest.actpr_t, false),
@@ -491,20 +542,19 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         };
 
         const conditionalEnergy = {
-            today: getConditionalValue(energy.today, true), // Allowed when offline
-            mtd: getConditionalValue(energy.mtd, true), // Allowed when offline
+            today: getConditionalValue(energy.today, true),
+            mtd: getConditionalValue(energy.mtd, true),
         };
 
         return (
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
-                    // UPDATED: Apply gradient background only when Online
                     ...(isOnline ? {
                         background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
-                        backgroundColor: 'transparent', // Override the white background when using gradient
+                        backgroundColor: 'transparent',
                     } : {
-                        backgroundColor: '#FFFFFF', // Keep white background when Offline
+                        backgroundColor: '#FFFFFF',
                     }),
                     padding: '12px',
                     display: 'flex',
@@ -521,21 +571,20 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Box>
                         </Box>
                         <Box style={styles.onlineStatus}>
-                            <Typography style={{ 
-                                fontSize: '11px', 
-                                color: isOnline ? '#30b44a' : '#e34d4d', 
-                                border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), 
-                                padding: '2px 6px', 
-                                borderRadius: '4px' 
+                            <Typography style={{
+                                fontSize: '11px',
+                                color: isOnline ? '#30b44a' : '#e34d4d',
+                                border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'),
+                                padding: '2px 6px',
+                                borderRadius: '4px'
                             }}>
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: { xs: '0', sm: '10px' }, marginTop: { xs: '5px', sm: '0' } }}>
                                 <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
-                                    {machine.totalizer || 0} 
+                                    {machine.totalizer || 0} m³
                                 </Typography>
-                                
-                                {/* Tooltip for Mobile/Tab Compatibility */}
+
                                 <Tooltip
                                     title={formatTimestampForTooltip(machine.latest_ts)}
                                     placement="top"
@@ -550,11 +599,11 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         },
                                     }}
                                 >
-                                    <Box 
-                                        component="span" 
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
                                             justifyContent: 'center',
                                             padding: '4px',
                                             cursor: 'pointer'
@@ -573,9 +622,9 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         <Table size="small">
                             <TableHead>
                                 <TableRow style={{
-    ...styles.phaseTableHeader,
-    backgroundColor: isOnline ? 'transparent' : '#f5f5f5' // Hide color if Online, show if Offline
-}}>
+                                    ...styles.phaseTableHeader,
+                                    backgroundColor: isOnline ? 'transparent' : '#f5f5f5'
+                                }}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
@@ -653,7 +702,6 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     setChartType('consumption');
                                     setChartModalOpen(true);
 
-                                    // Find the selected machine by name to get its slave_id
                                     const selectedMachine = machineListData?.data?.machines?.find(
                                         m => m.slave_name === machine.slave_name
                                     );
@@ -682,8 +730,51 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
             ) : (
                 <>
+                    {/* Header with Search and Download */}
+                    <Box sx={styles.headerContainer}>
+                        <TextField
+                            placeholder="Search machines..."
+                            size="small"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon />
+                                    </InputAdornment>
+                                ),
+                            }}
+                            sx={{
+                                width: { xs: '100%', sm: '300px' },
+                                backgroundColor: '#fff',
+                                borderRadius: '4px',
+                                marginLeft: { sm: '18px', md: '30px' },
+                            }}
+                        />
+                        <Button
+                            variant="outlined"
+                            startIcon={<FileDownloadIcon sx={{ marginLeft: '9px' }} />}
+                            onClick={handleDownload}
+                            sx={{
+                                height: '40px',
+                                width: '50px',
+                                borderColor: '#2F6FB0',
+                                color: '#fff',
+                                borderRadius: '50px',
+                                marginRight: '10px',
+                                backgroundColor: '#2f6fb0',
+                                '&:hover': {
+                                    borderColor: '#1E4A7C',
+                                    backgroundColor: 'rgba(47, 111, 176, 0.04)',
+                                    color: '#2f6fb0'
+                                }
+                            }}
+                        >
+                        </Button>
+                    </Box>
+
                     {/* Custom Grid Container */}
-                    <Box 
+                    <Box
                         sx={{
                             display: 'flex',
                             flexDirection: 'row',
@@ -693,20 +784,26 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             padding: { xs: '0 5px', sm: '0 15px', md: '0 30px' },
                         }}
                     >
-                        {machineListData?.data?.machines?.map((machine, index) => (
-                            <Box 
-                                key={machine.slave_id || index}
-                                sx={{
-                                    width: { 
-                                        xs: '100%',
-                                        sm: 'calc(50% - 15px)',
-                                        md: 'calc(33.33% - 35px)'
-                                    },
-                                }}
-                            >
-                                {renderFloorCard(machine)}
+                        {filteredMachines.length > 0 ? (
+                            filteredMachines.map((machine, index) => (
+                                <Box
+                                    key={machine.slave_id || index}
+                                    sx={{
+                                        width: {
+                                            xs: '100%',
+                                            sm: 'calc(50% - 15px)',
+                                            md: 'calc(33.33% - 35px)'
+                                        },
+                                    }}
+                                >
+                                    {renderFloorCard(machine)}
+                                </Box>
+                            ))
+                        ) : (
+                            <Box sx={{ width: '100%', textAlign: 'center', py: 5, color: '#888' }}>
+                                No machines found matching your search.
                             </Box>
-                        ))}
+                        )}
                     </Box>
 
                     {/* Chart Modal */}
@@ -742,9 +839,9 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 flexWrap: 'wrap',
                             }}>
                                 <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                                    <Typography 
-                                        id="chart-modal-title" 
-                                        variant="h6" 
+                                    <Typography
+                                        id="chart-modal-title"
+                                        variant="h6"
                                         component="h2"
                                         sx={{ fontSize: { xs: '16px', sm: '18px', md: '20px' } }}
                                     >
