@@ -40,11 +40,11 @@ import dayjs from 'dayjs';
 // Import API functions
 import { getSolarSlaves, getSolarAnalytics } from '../../auth/solar/SolarAnalyticsApi';
 
-// Updated parameter options for solar analytics (Added flow_temperature and flow_pressure below flowrate)
+// Updated parameter options to match API keys (instant_flow, pressure, etc.)
 const parameterOptions = [
-    { value: "flowrate", label: "Flow Rate (m³/hr)" },
+    { value: "instant_flow", label: "Flow Rate (m³/hr)" },
     { value: "flow_temperature", label: "Flow Temperature (°C)" },
-    { value: "flow_pressure", label: "Flow Pressure" },
+    { value: "pressure", label: "Flow Pressure (bar)" },
     { value: "inlet_temperature", label: "Inlet Temperature (°C)" },
     { value: "outlet_temperature", label: "Outlet Temperature (°C)" }
 ];
@@ -181,7 +181,8 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             }
 
             // Default to all parameters if none selected
-            const params = parameters.length > 0 ? parameters : ['flowrate', 'flow_temperature', 'flow_pressure', 'inlet_temperature', 'outlet_temperature'];
+            // Updated to use the correct API keys: instant_flow, pressure, etc.
+            const params = parameters.length > 0 ? parameters : ['instant_flow', 'flow_temperature', 'pressure', 'inlet_temperature', 'outlet_temperature'];
             
             // Format dates for API
             const fromDateTime = startDate.format('YYYY-MM-DD HH:mm:ss');
@@ -384,9 +385,10 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         const series = [];
 
         // Handle multiple selected parameters
+        // Updated default parameters to match API keys
         const parametersToProcess = Array.isArray(selectedParameter) && selectedParameter.length > 0
             ? selectedParameter
-            : ['flowrate', 'flow_temperature', 'flow_pressure', 'inlet_temperature', 'outlet_temperature']; // Default to all parameters
+            : ['instant_flow', 'flow_temperature', 'pressure', 'inlet_temperature', 'outlet_temperature'];
 
         console.log('Parameters to process:', parametersToProcess);
 
@@ -395,17 +397,17 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             const values = filteredChartData.map((item, index) => {
                 let value = 0;
 
-                // If a specific parameter is selected, use that field
+                // Updated switch case to handle API keys (instant_flow, pressure)
                 if (param) {
                     switch (param) {
-                        case 'flowrate':
-                            value = parseFloat(item.flowrate) || 0;
+                        case 'instant_flow':
+                            value = parseFloat(item.instant_flow) || 0;
                             break;
                         case 'flow_temperature':
                             value = parseFloat(item.flow_temperature) || 0;
                             break;
-                        case 'flow_pressure':
-                            value = parseFloat(item.flow_pressure) || 0;
+                        case 'pressure':
+                            value = parseFloat(item.pressure) || 0;
                             break;
                         case 'inlet_temperature':
                             value = parseFloat(item.inlet_temperature) || 0;
@@ -417,8 +419,8 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                             value = 0;
                     }
                 } else {
-                    // If no parameter selected, use the default logic (flowrate)
-                    value = parseFloat(item.flowrate) || 0;
+                    // If no parameter selected, default to instant_flow
+                    value = parseFloat(item.instant_flow) || 0;
                 }
 
                 // Format to 2 decimal places
@@ -463,22 +465,23 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
 
         const parametersToProcess = Array.isArray(selectedParameter2) && selectedParameter2.length > 0
             ? selectedParameter2
-            : ['flowrate', 'flow_temperature', 'flow_pressure', 'inlet_temperature', 'outlet_temperature'];
+            : ['instant_flow', 'flow_temperature', 'pressure', 'inlet_temperature', 'outlet_temperature'];
 
         parametersToProcess.forEach(param => {
             const values = compareChartData.map((item, index) => {
                 let value = 0;
 
+                // Updated switch case to handle API keys
                 if (param) {
                     switch (param) {
-                        case 'flowrate':
-                            value = parseFloat(item.flowrate) || 0;
+                        case 'instant_flow':
+                            value = parseFloat(item.instant_flow) || 0;
                             break;
                         case 'flow_temperature':
                             value = parseFloat(item.flow_temperature) || 0;
                             break;
-                        case 'flow_pressure':
-                            value = parseFloat(item.flow_pressure) || 0;
+                        case 'pressure':
+                            value = parseFloat(item.pressure) || 0;
                             break;
                         case 'inlet_temperature':
                             value = parseFloat(item.inlet_temperature) || 0;
@@ -490,7 +493,7 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                             value = 0;
                     }
                 } else {
-                    value = parseFloat(item.flowrate) || 0;
+                    value = parseFloat(item.instant_flow) || 0;
                 }
 
                 return parseFloat(value.toFixed(2));
@@ -529,22 +532,23 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
 
         const parametersToProcess = Array.isArray(selectedParameter3) && selectedParameter3.length > 0
             ? selectedParameter3
-            : ['flowrate', 'flow_temperature', 'flow_pressure', 'inlet_temperature', 'outlet_temperature'];
+            : ['instant_flow', 'flow_temperature', 'pressure', 'inlet_temperature', 'outlet_temperature'];
 
         parametersToProcess.forEach(param => {
             const values = compareChartData2.map((item, index) => {
                 let value = 0;
 
+                // Updated switch case to handle API keys
                 if (param) {
                     switch (param) {
-                        case 'flowrate':
-                            value = parseFloat(item.flowrate) || 0;
+                        case 'instant_flow':
+                            value = parseFloat(item.instant_flow) || 0;
                             break;
                         case 'flow_temperature':
                             value = parseFloat(item.flow_temperature) || 0;
                             break;
-                        case 'flow_pressure':
-                            value = parseFloat(item.flow_pressure) || 0;
+                        case 'pressure':
+                            value = parseFloat(item.pressure) || 0;
                             break;
                         case 'inlet_temperature':
                             value = parseFloat(item.inlet_temperature) || 0;
@@ -556,7 +560,7 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                             value = 0;
                     }
                 } else {
-                    value = parseFloat(item.flowrate) || 0;
+                    value = parseFloat(item.instant_flow) || 0;
                 }
 
                 return parseFloat(value.toFixed(2));
@@ -1165,7 +1169,7 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                             setCompareLoading(true);
                                                                             fetchAnalyticsData(
                                                                                 compareDevice, 
-                                                                                filteredValue.length > 0 ? filteredValue : ['flowrate', 'flow_temperature', 'flow_pressure', 'inlet_temperature', 'outlet_temperature'], 
+                                                                                filteredValue.length > 0 ? filteredValue : ['instant_flow', 'flow_temperature', 'pressure', 'inlet_temperature', 'outlet_temperature'], 
                                                                                 filterStartDate, 
                                                                                 filterEndDate
                                                                             ).then(data => {
@@ -1378,7 +1382,7 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                         setCompareLoading2(true);
                                                                         fetchAnalyticsData(
                                                                             compareDevice2, 
-                                                                            filteredValue.length > 0 ? filteredValue : ['flowrate', 'flow_temperature', 'flow_pressure', 'inlet_temperature', 'outlet_temperature'], 
+                                                                            filteredValue.length > 0 ? filteredValue : ['instant_flow', 'flow_temperature', 'pressure', 'inlet_temperature', 'outlet_temperature'], 
                                                                             filterStartDate, 
                                                                             filterEndDate
                                                                         ).then(data => {

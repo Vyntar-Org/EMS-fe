@@ -23,6 +23,10 @@ import {
     Tabs,
     Tab,
     Tooltip,
+    TextField,
+    InputAdornment,
+    Snackbar,
+    Alert,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
@@ -35,8 +39,24 @@ import {
     getFireSafetyMachineTrend,
 } from '../../auth/fire-safety/FireSafetyMachineListApi';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import SearchIcon from '@mui/icons-material/Search';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
+    // State variables
+    const [searchTerm, setSearchTerm] = useState(''); // State for search
+    const [chartModalOpen, setChartModalOpen] = useState(false);
+    const [selectedFloor, setSelectedFloor] = useState('Common');
+    const [chartType, setChartType] = useState('temperature');
+    const [trendData, setTrendData] = useState([]);
+    const [selectedParameter, setSelectedParameter] = useState('temperature');
+    const [machineListData, setMachineListData] = useState({ data: { machines: [] } });
+    const [slaveList, setSlaveList] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+
     // Get parameter unit
     const getParameterUnit = (parameter) => {
         switch (parameter) {
@@ -49,16 +69,17 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // State variables
-    const [chartModalOpen, setChartModalOpen] = useState(false);
-    const [selectedFloor, setSelectedFloor] = useState('Common');
-    const [chartType, setChartType] = useState('temperature');
-    const [trendData, setTrendData] = useState([]);
-    const [selectedParameter, setSelectedParameter] = useState('temperature');
-    const [machineListData, setMachineListData] = useState({ data: { machines: [] } });
-    const [slaveList, setSlaveList] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    // Get parameter label
+    const getParameterLabel = (parameter) => {
+        switch (parameter) {
+            case 'temperature':
+                return 'Temperature';
+            case 'water_level':
+                return 'Water';
+            default:
+                return 'Value';
+        }
+    };
 
     // Fetch machine list and slaves from API on mount
     useEffect(() => {
@@ -94,6 +115,64 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         fetchData();
     }, []);
 
+    // Filter machines based on search term
+    const filteredMachines = machineListData?.data?.machines?.filter(machine => {
+        const term = searchTerm.toLowerCase();
+        return (
+            machine.name.toLowerCase().includes(term)
+        );
+    }) || [];
+
+    // Function to handle CSV download
+    const handleDownload = () => {
+        if (filteredMachines.length === 0) {
+            setSnackbarMessage('No data to download');
+            setSnackbarOpen(true);
+            return;
+        }
+
+        // Define CSV headers
+        const headers = ['Machine Name', 'Temperature (°C)', 'Water Level (Mtrs)', 'Status', 'Last Updated'];
+
+        // Map data to CSV rows
+        const rows = filteredMachines.map(machine => {
+            // Determine status
+            const isWithinTimeLimit = (lastTs) => {
+                if (!lastTs) return false;
+                const lastTime = new Date(lastTs);
+                const currentTime = new Date();
+                const timeDiff = (currentTime - lastTime) / (1000 * 60);
+                return timeDiff <= 15;
+            };
+            const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
+
+            const temp = machine.latest?.temperature ? machine.latest.temperature.toFixed(2) : 'N/A';
+            const water = machine.latest?.water ? machine.latest.water.toFixed(2) : 'N/A';
+            const date = machine.last_ts ? new Date(machine.last_ts).toLocaleString() : 'N/A';
+
+            return [
+                machine.name || 'N/A',
+                temp,
+                water,
+                isOnline ? 'Online' : 'Offline',
+                date
+            ].join(',');
+        });
+
+        // Combine headers and rows
+        const csvContent = [headers.join(','), ...rows].join('\n');
+
+        // Create a blob and download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `fire_safety_machines_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // Function to fetch trend data from API for the last 6 hours
     const fetchTrendData = async (slaveId, parameter) => {
         try {
@@ -106,7 +185,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Define styles - UPDATED FOR MOBILE RESPONSIVENESS
+    // Define styles
     const styles = {
         mainContent: {
             width: '100%',
@@ -123,7 +202,9 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '15px',
+            marginBottom: '20px',
+            flexWrap: 'wrap',
+            gap: '15px',
         },
         title: {
             fontSize: '24px',
@@ -278,7 +359,6 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontWeight: 600,
             color: '#1F2937',
         },
-        // UPDATED: Responsive grid container - using sx prop instead
         gridContainer: {
             display: 'flex',
             flexDirection: 'row',
@@ -288,9 +368,8 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             marginLeft: '0',
             padding: '0 10px',
         },
-        // UPDATED: Responsive grid item - using sx prop instead
         gridItem: {
-            width: '100%', // Mobile: 1 card per row
+            width: '100%',
             marginBottom: '15px',
         },
         tableCell: {
@@ -300,7 +379,6 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         clockIcon: {
             fontSize: '16px',
             cursor: 'pointer',
-            // color: '#6B7280',
             verticalAlign: 'middle',
         },
     };
@@ -409,18 +487,6 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         colors: ['#2F6FB0'],
     };
 
-    // Get parameter label
-    const getParameterLabel = (parameter) => {
-        switch (parameter) {
-            case 'temperature':
-                return 'Temperature';
-            case 'water_level':
-                return 'Water';
-            default:
-                return 'Value';
-        }
-    };
-
     // Chart series
     const chartSeries = [{
         name: getParameterLabel(selectedParameter),
@@ -430,6 +496,19 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Function to render a floor card
     const renderFloorCard = (machine) => {
         if (!machine) return null;
+
+        const formatTimestampForTooltip = (timestamp) => {
+            if (!timestamp) return 'N/A';
+            return new Date(timestamp).toLocaleString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        };
 
         // Check if the last timestamp is within the last 15 minutes
         const isWithinTimeLimit = (lastTs) => {
@@ -476,23 +555,16 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             mtd: getConditionalValue(energy.mtd, true), // Allowed when offline
         };
 
-            const formatTimestampForTooltip = (timestamp) => {
-        if (!timestamp) return 'N/A';
-        return new Date(timestamp).toLocaleString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        });
-    };
-
         return (
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
+                    ...(isOnline ? {
+                        background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
+                        backgroundColor: 'transparent',
+                    } : {
+                        backgroundColor: '#FFFFFF',
+                    }),
                     padding: '12px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -508,33 +580,32 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
                             <Tooltip
-                                    title={formatTimestampForTooltip(machine.last_ts)}
-                                    placement="top"
-                                    arrow
-                                    enterTouchDelay={0} // Immediately opens on touch
-                                    leaveTouchDelay={3000} // Stays open for 3 seconds on touch
-                                    componentsProps={{
-                                        tooltip: {
-                                            sx: {
-                                                fontSize: '12px', // Ensure readable font size on mobile
-                                            },
+                                title={formatTimestampForTooltip(machine.last_ts)}
+                                placement="top"
+                                arrow
+                                enterTouchDelay={0}
+                                leaveTouchDelay={3000}
+                                componentsProps={{
+                                    tooltip: {
+                                        sx: {
+                                            fontSize: '12px',
                                         },
+                                    },
+                                }}
+                            >
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '4px',
+                                        cursor: 'pointer'
                                     }}
                                 >
-                                    {/* Wrapper Box increases the touch target size */}
-                                    <Box 
-                                        component="span" 
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
-                                            justifyContent: 'center',
-                                            padding: '4px', // Adds padding to make it easier to tap
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        <AccessTimeIcon style={styles.clockIcon} />
-                                    </Box>
-                                </Tooltip>
+                                    <AccessTimeIcon style={styles.clockIcon} />
+                                </Box>
+                            </Tooltip>
                         </Box>
                     </Box>
 
@@ -542,7 +613,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={styles.phaseTableHeader}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
@@ -553,7 +624,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                             <DeviceThermostatIcon fontSize="10px" color="error" />
+                                            <DeviceThermostatIcon fontSize="10px" color="error" />
                                             Temperature
                                         </Box>
                                     </TableCell>
@@ -615,9 +686,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     if (error) {
         return (
             <Box style={styles.mainContent} id="main-content">
-                <Typography color="error" variant="body2">
-                    {error}
-                </Typography>
+                <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
             </Box>
         );
     }
@@ -634,8 +703,56 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent} id="main-content">
+            {/* Header with Search and Download */}
+            <Box sx={styles.headerContainer}>
+                <TextField
+                    placeholder="Search machines..."
+                    size="small"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon />
+                            </InputAdornment>
+                        ),
+                    }}
+                    sx={{
+                        width: { xs: '100%', sm: '300px' },
+                        backgroundColor: '#fff',
+                        borderRadius: '4px',
+                        marginLeft: { sm: '18px', md: '30px' },
+                    }}
+                />
+                <Button
+                    variant="outlined"
+                    startIcon={<FileDownloadIcon />}
+                    onClick={handleDownload}
+                    sx={{
+                        minWidth: '40px',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        borderColor: '#2F6FB0',
+                        color: '#fff',
+                        backgroundColor: '#2F6FB0',
+                        padding: 0,
+                        marginRight: '10px',
+                        '& .MuiButton-startIcon': {
+                            margin: 0,
+                        },
+                        '&:hover': {
+                            borderColor: '#1E4A7C',
+                            backgroundColor: '#1E4A7C',
+                            color: '#fff',
+                        },
+                    }}
+                >
+                </Button>
+            </Box>
+
             {/* Custom Grid Container - RESPONSIVE using sx prop */}
-            <Box 
+            <Box
                 sx={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -645,24 +762,26 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     padding: { xs: '0 5px', sm: '0 15px', md: '0 30px' },
                 }}
             >
-                {machineListData?.data?.machines?.map((machine, index) => (
-                    <Box 
-                        key={machine.slave_id || index}
-                        sx={{
-                            width: { 
-                                xs: '100%',              // Mobile: 1 card per row
-                                sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
-                                md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
-                            },
-                            // marginBottom: '15px',
-                            // '@media (min-width: 1200px)': {
-                            //     width: 'calc(30% - 35px)'
-                            // }
-                        }}
-                    >
-                        {renderFloorCard(machine)}
+                {filteredMachines.length > 0 ? (
+                    filteredMachines.map((machine, index) => (
+                        <Box
+                            key={machine.slave_id || index}
+                            sx={{
+                                width: {
+                                    xs: '100%',
+                                    sm: 'calc(50% - 15px)',
+                                    md: 'calc(33.33% - 35px)'
+                                },
+                            }}
+                        >
+                            {renderFloorCard(machine)}
+                        </Box>
+                    ))
+                ) : (
+                    <Box sx={{ width: '100%', textAlign: 'center', py: 5, color: '#888' }}>
+                        No machines found matching your search.
                     </Box>
-                ))}
+                )}
             </Box>
 
             {/* Chart Modal - RESPONSIVE */}
@@ -698,9 +817,9 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         flexWrap: 'wrap',
                     }}>
                         <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                            <Typography 
-                                id="chart-modal-title" 
-                                variant="h6" 
+                            <Typography
+                                id="chart-modal-title"
+                                variant="h6"
                                 component="h2"
                                 sx={{ fontSize: { xs: '16px', sm: '18px', md: '20px' } }}
                             >
@@ -752,6 +871,14 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     </Box>
                 </Box>
             </Modal>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={() => setSnackbarOpen(false)}
+                message={snackbarMessage}
+            />
         </Box>
     );
 };

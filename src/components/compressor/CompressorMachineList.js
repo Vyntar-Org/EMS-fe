@@ -16,14 +16,19 @@ import {
     Divider,
     Alert,
     Snackbar,
-    Tooltip
+    Tooltip,
+    TextField,
+    InputAdornment,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import SearchIcon from '@mui/icons-material/Search';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // State variables
+    const [searchTerm, setSearchTerm] = useState(''); // State for search
     const [chartModalOpen, setChartModalOpen] = useState(false);
     const [selectedFloor, setSelectedFloor] = useState('');
     const [trendData, setTrendData] = useState([]);
@@ -135,20 +140,64 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     const [compressorMachineListData] = useState({ data: { machines: generateDummyMachines() } });
 
+    // Filter machines based on search term
+    const filteredMachines = compressorMachineListData?.data?.machines?.filter(machine => {
+        const term = searchTerm.toLowerCase();
+        return (
+            machine.name.toLowerCase().includes(term) ||
+            machine.slave_id.toLowerCase().includes(term)
+        );
+    }) || [];
+
+    // Function to handle CSV download
+    const handleDownload = () => {
+        if (filteredMachines.length === 0) {
+            setSnackbarMessage('No data to download');
+            setSnackbarOpen(true);
+            return;
+        }
+
+        // Define CSV headers
+        const headers = ['Machine Name', 'ID', 'Status', 'Last Downtime Start', 'Last Downtime End', 'Duration', 'Last Updated'];
+
+        // Map data to CSV rows
+        const rows = filteredMachines.map(machine => {
+            const date = machine.last_ts ? new Date(machine.last_ts).toLocaleString() : 'N/A';
+            return [
+                machine.name || 'N/A',
+                machine.slave_id || 'N/A',
+                machine.status || 'N/A',
+                machine.latest_downtime?.start_time || '-',
+                machine.latest_downtime?.end_time || '-',
+                machine.latest_downtime?.duration || '-',
+                date
+            ].join(',');
+        });
+
+        // Combine headers and rows
+        const csvContent = [headers.join(','), ...rows].join('\n');
+
+        // Create a blob and download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `compressor_machines_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // --- Updated Trend Data Generation for Connectivity ---
-    // Generates 1 for Online, 0 for Offline
     const generateDummyTrendData = () => {
         const data = [];
         const now = new Date();
-        // Generate data for last 24 hours (hourly)
         for (let i = 23; i >= 0; i--) {
             const timestamp = new Date(now.getTime() - (i * 60 * 60 * 1000));
-            // Random status: 80% chance online, 20% offline
-            const status = Math.random() > 0.2 ? 1 : 0; 
-            
+            const status = Math.random() > 0.2 ? 1 : 0;
             data.push({
-                x: timestamp.getTime(), // Timestamp for x-axis
-                y: status // 1 or 0
+                x: timestamp.getTime(),
+                y: status
             });
         }
         return data;
@@ -170,6 +219,14 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             marginLeft: '5px',
             padding: '10px',
             boxSizing: 'border-box',
+        },
+        headerContainer: {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px',
+            flexWrap: 'wrap',
+            gap: '15px',
         },
         commonSection: {
             backgroundColor: '#FFFFFF',
@@ -234,20 +291,20 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // --- Chart Options for Connectivity (Online/Offline) ---
     const chartOptions = {
         chart: {
-            type: 'area', // Area chart looks good for status
+            type: 'area',
             height: 350,
             toolbar: { show: true },
             zoom: { enabled: true },
             background: '#FFFFFF',
         },
         stroke: {
-            curve: 'stepline', // Stepline is best for On/Off status
+            curve: 'stepline',
             width: 2,
-            colors: ['#30b44a'] // Green for the line
+            colors: ['#30b44a']
         },
         fill: {
             type: 'solid',
-            colors: ['#30b44a'], // Green fill
+            colors: ['#30b44a'],
             opacity: 0.2
         },
         dataLabels: {
@@ -273,12 +330,12 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 text: 'Status',
                 style: { color: '#6B7280', fontSize: '12px' },
             },
-            min: -0.1, // Give a little padding
+            min: -0.1,
             max: 1.1,
             tickAmount: 2,
             labels: {
                 style: { colors: '#6B7280', fontSize: '11px' },
-                formatter: function(val) {
+                formatter: function (val) {
                     if (val >= 0.9) return 'Online';
                     if (val <= 0.1) return 'Offline';
                     return '';
@@ -289,7 +346,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             enabled: true,
             theme: 'light',
             x: { format: 'dd MMM HH:mm' },
-            custom: function({ series, seriesIndex, dataPointIndex, w }) {
+            custom: function ({ series, seriesIndex, dataPointIndex, w }) {
                 const dataPoint = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
                 const date = new Date(dataPoint.x);
                 const formattedDate = date.toLocaleString();
@@ -341,6 +398,12 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
+                    ...(isOnline ? {
+                        background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
+                        backgroundColor: 'transparent',
+                    } : {
+                        backgroundColor: '#FFFFFF',
+                    }),
                     padding: '12px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -375,11 +438,11 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         },
                                     }}
                                 >
-                                    <Box 
-                                        component="span" 
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
                                             justifyContent: 'center',
                                             padding: '4px',
                                             cursor: 'pointer'
@@ -397,7 +460,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={styles.phaseTableHeader}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell colSpan={3} style={{ ...styles.tableCell, fontWeight: 'bold' }}>
                                         Latest Downtime
                                     </TableCell>
@@ -405,9 +468,9 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </TableHead>
                             <TableBody>
                                 <TableRow>
-                                    <TableCell style={styles.tableCell} sx={{color: '#1F2937', fontWeight: 600}}>Start Time</TableCell>
-                                    <TableCell style={styles.tableCell} sx={{color: '#1F2937', fontWeight: 600}}>End Time</TableCell>
-                                    <TableCell style={styles.tableCell} sx={{color: '#1F2937', fontWeight: 600}}>Duration</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>Start Time</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>End Time</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>Duration</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>{machine.latest_downtime?.start_time || '-'}</TableCell>
@@ -422,15 +485,15 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={{ ...styles.phaseTable, marginTop: '16px' }}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={styles.phaseTableHeader}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell colSpan={3} style={{ ...styles.tableCell, fontWeight: 'bold' }}>
                                         Downtime (Last 24h)
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell style={styles.tableCell} sx={{color: '#1F2937', fontWeight: 600}}>Start Time</TableCell>
-                                    <TableCell style={styles.tableCell} sx={{color: '#1F2937', fontWeight: 600}}>End Time</TableCell>
-                                    <TableCell style={styles.tableCell} sx={{color: '#1F2937', fontWeight: 600}}>Duration</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>Start Time</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>End Time</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>Duration</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -476,6 +539,54 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent}>
+            {/* Header with Search and Download */}
+            <Box sx={styles.headerContainer}>
+                <TextField
+                    placeholder="Search compressors..."
+                    size="small"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon />
+                            </InputAdornment>
+                        ),
+                    }}
+                    sx={{
+                        width: { xs: '100%', sm: '300px' },
+                        backgroundColor: '#fff',
+                        borderRadius: '4px',
+                        marginLeft: { sm: '18px', md: '30px' },
+                    }}
+                />
+                <Button
+                    variant="outlined"
+                    startIcon={<FileDownloadIcon />}
+                    onClick={handleDownload}
+                    sx={{
+                        minWidth: '40px',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        borderColor: '#2F6FB0',
+                        color: '#fff',
+                        backgroundColor: '#2F6FB0',
+                        padding: 0,
+                        marginRight: '10px',
+                        '& .MuiButton-startIcon': {
+                            margin: 0,
+                        },
+                        '&:hover': {
+                            borderColor: '#1E4A7C',
+                            backgroundColor: '#1E4A7C',
+                            color: '#fff',
+                        },
+                    }}
+                >
+                </Button>
+            </Box>
+
             <Box
                 sx={{
                     display: 'flex',
@@ -486,16 +597,22 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     padding: { xs: '0 5px', sm: '0 15px', md: '0 30px' },
                 }}
             >
-                {compressorMachineListData?.data?.machines?.map((machine, index) => (
-                    <Box
-                        key={machine.slave_id || index}
-                        sx={{
-                            width: { xs: '100%', sm: 'calc(50% - 15px)', md: 'calc(33.33% - 35px)' },
-                        }}
-                    >
-                        {renderFloorCard(machine)}
+                {filteredMachines.length > 0 ? (
+                    filteredMachines.map((machine, index) => (
+                        <Box
+                            key={machine.slave_id || index}
+                            sx={{
+                                width: { xs: '100%', sm: 'calc(50% - 15px)', md: 'calc(33.33% - 35px)' },
+                            }}
+                        >
+                            {renderFloorCard(machine)}
+                        </Box>
+                    ))
+                ) : (
+                    <Box sx={{ width: '100%', textAlign: 'center', py: 5, color: '#888' }}>
+                        No compressors found matching your search.
                     </Box>
-                ))}
+                )}
             </Box>
 
             <Modal

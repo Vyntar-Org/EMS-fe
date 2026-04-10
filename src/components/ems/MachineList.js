@@ -23,12 +23,18 @@ import {
     Tab,
     Tooltip,
     useTheme,
-    useMediaQuery
+    useMediaQuery,
+    TextField,
+    InputAdornment,
+    Snackbar,
+    Alert
 } from '@mui/material';
 import axios from 'axios';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import SearchIcon from '@mui/icons-material/Search';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { getMachineList, getActivePowerChart, getVoltageChart, getCurrentChart, getPowerFactorChart, getFrequencyChart } from '../../auth/MachineList';
 
 
@@ -41,6 +47,9 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [error, setError] = useState(null);
     const [machineListData, setMachineListData] = useState(null);
     const [keyParameter, setKeyParameter] = useState('');
+    const [searchTerm, setSearchTerm] = useState(''); // State for search
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
 
     useEffect(() => {
         if (keyParameter === 'voltage') {
@@ -82,6 +91,84 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
         fetchData();
     }, []);
+
+    // Filter machines based on search term
+    const filteredMachines = machineListData?.data?.machines?.filter(machine => {
+        const term = searchTerm.toLowerCase();
+        return (
+            machine.name.toLowerCase().includes(term) ||
+            machine.slave_id.toString().includes(term)
+        );
+    }) || [];
+
+    // Function to handle CSV download
+    const handleDownload = () => {
+        if (filteredMachines.length === 0) {
+            setSnackbarMessage('No data to download');
+            setSnackbarOpen(true);
+            return;
+        }
+
+        // Define CSV headers
+        const headers = ['Machine Name', 'ID', 'Status', 'R-Volts', 'Y-Volts', 'B-Volts', 'R-Amps', 'Y-Amps', 'B-Amps', 'Active Power (kW)', 'PF', 'Frequency (Hz)', 'Today (kWh)', 'MTD (kWh)', 'Last Updated'];
+
+        // Helper to check status
+        const isWithinTimeLimit = (lastTs) => {
+            if (!lastTs) return false;
+            const lastTime = new Date(lastTs);
+            const currentTime = new Date();
+            const timeDiff = (currentTime - lastTime) / (1000 * 60);
+            return timeDiff <= 15;
+        };
+
+        // Map data to CSV rows
+        const rows = filteredMachines.map(machine => {
+            const isOnline = isWithinTimeLimit(machine.latest.last_ts);
+            const latest = machine.latest || {};
+            const energy = machine.energy || {};
+
+            // Conditional values logic (replicating the card logic)
+            const getConditionalValue = (value) => {
+                // Assuming we want to show the actual value in CSV regardless of online status for reporting purposes,
+                // or we can hide it. Usually, reports show what the sensor says.
+                // However, to match the card's "0" behavior for offline:
+                // if (!isOnline) return 0; 
+                // For now, let's return the raw value or 0.
+                return (!isOnline && !['acte_im', 'today', 'mtd'].includes(key)) ? 0 : (value || 0);
+            };
+
+            return [
+                machine.name || 'N/A',
+                machine.slave_id || 'N/A',
+                isOnline ? 'Online' : 'Offline',
+                (latest.rv || 0).toFixed(2),
+                (latest.yv || 0).toFixed(2),
+                (latest.bv || 0).toFixed(2),
+                (latest.ir || 0).toFixed(1),
+                (latest.iy || 0).toFixed(1),
+                (latest.ib || 0).toFixed(1),
+                (latest.actpr_t || 0).toFixed(2),
+                (latest.pf_t || 0).toFixed(2),
+                (latest.fq || 0).toFixed(2),
+                (energy.today || 0).toFixed(1),
+                (energy.mtd || 0).toFixed(1),
+                machine.latest?.last_ts ? new Date(machine.latest.last_ts).toLocaleString() : 'N/A'
+            ].join(',');
+        });
+
+        // Combine headers and rows
+        const csvContent = [headers.join(','), ...rows].join('\n');
+
+        // Create a blob and download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `machine_list_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     // State for modal visibility
     const [chartModalOpen, setChartModalOpen] = useState(false);
@@ -241,16 +328,16 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             show: true,
         },
     };
-    
+
     const formatTimestampForTooltip = (timestamp) => {
         if (!timestamp) return 'N/A';
-        
+
         try {
             const date = new Date(timestamp);
             if (isNaN(date.getTime())) {
                 return 'Invalid Date';
             }
-            
+
             return date.toLocaleString('en-GB', {
                 day: '2-digit',
                 month: 'short',
@@ -467,7 +554,9 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '15px',
+            marginBottom: '20px',
+            flexWrap: 'wrap',
+            gap: '15px',
         },
         title: {
             fontSize: '24px',
@@ -552,7 +641,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontWeight: 600,
             color: '#1F2937',
         },
-            floorTitle: {
+        floorTitle: {
             fontSize: '16px',
             fontWeight: 600,
             color: '#1F2937',
@@ -731,6 +820,12 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
+                    ...(isOnline ? {
+                        background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
+                        backgroundColor: 'transparent',
+                    } : {
+                        backgroundColor: '#FFFFFF',
+                    }),
                     padding: '12px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -741,13 +836,13 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         <Typography style={styles.floorTitle}>
                             {machine.name}
                         </Typography>
-                        
+
                         {/* Responsive Online Status Box */}
-                        <Box 
-                            sx={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: '6px', 
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
                                 flexWrap: 'wrap',
                                 // Mobile specific changes
                                 ...(isMobile && {
@@ -759,7 +854,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             <Typography style={{ fontSize: '11px', color: getConditionalStatus(isOnline) === 'Online' ? '#30b44a' : '#e34d4d', border: '1px solid ' + (getConditionalStatus(isOnline) === 'Online' ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
                                 {getConditionalStatus(isOnline)}
                             </Typography>
-                            
+
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
                                     {conditionalLatest.acte_im?.toFixed(1)} kWh
@@ -778,11 +873,11 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         },
                                     }}
                                 >
-                                    <Box 
-                                        component="span" 
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
                                             justifyContent: 'center',
                                             cursor: 'pointer'
                                         }}
@@ -798,7 +893,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={styles.phaseTableHeader}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Phase</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}>V</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}>A</TableCell>
@@ -894,33 +989,89 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent} id="main-content">
+            {/* Header with Search and Download */}
+            <Box sx={styles.headerContainer}>
+                <TextField
+                    placeholder="Search machines..."
+                    size="small"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon />
+                            </InputAdornment>
+                        ),
+                    }}
+                    sx={{
+                        width: { xs: '100%', sm: '300px' },
+                        backgroundColor: '#fff',
+                        borderRadius: '4px',
+                        marginLeft: { sm: '18px', md: '30px' },
+                    }}
+                />
+                <Button
+                    variant="outlined"
+                    startIcon={<FileDownloadIcon />}
+                    onClick={handleDownload}
+                    sx={{
+                        minWidth: '40px',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        borderColor: '#2F6FB0',
+                        color: '#fff',
+                        backgroundColor: '#2F6FB0',
+                        padding: 0,
+                        marginRight: '10px',
+                        '& .MuiButton-startIcon': {
+                            margin: 0,
+                        },
+                        '&:hover': {
+                            borderColor: '#1E4A7C',
+                            backgroundColor: '#1E4A7C',
+                            color: '#fff',
+                        },
+                    }}
+                >
+                </Button>
+            </Box>
+
             {/* Custom Grid Container for responsive cards */}
-            <Box 
+            <Box
                 sx={{
                     display: 'flex',
                     flexDirection: 'row',
                     flexWrap: 'wrap',
-                    justifyContent: 'center',
+                    justifyContent: 'space-between',
                     gap: { xs: '15px', sm: '20px', md: '20px 50px' },
                     padding: { xs: '0 5px', sm: '0 15px', md: '0 30px' },
                 }}
             >
                 {loading && <Typography>Loading...</Typography>}
                 {error && <Typography color="error">{error}</Typography>}
-                {!loading && !error && machineListData?.data?.machines?.map((machine, index) => (
-                    <Box 
-                        key={machine.slave_id || index}
-                        sx={{
-                            width: { 
-                                xs: '100%',
-                                sm: 'calc(50% - 15px)',
-                                md: 'calc(33.33% - 35px)'
-                            },
-                        }}
-                    >
-                        {renderFloorCard(machine)}
-                    </Box>
-                ))}
+                {!loading && !error && filteredMachines.length > 0 ? (
+                    filteredMachines.map((machine, index) => (
+                        <Box
+                            key={machine.slave_id || index}
+                            sx={{
+                                width: {
+                                    xs: '100%',
+                                    sm: 'calc(50% - 15px)',
+                                    md: 'calc(33.33% - 35px)'
+                                },
+                            }}
+                        >
+                            {renderFloorCard(machine)}
+                        </Box>
+                    ))
+                ) : (
+                    !loading && !error && (
+                        <Box sx={{ width: '100%', textAlign: 'center', py: 5, color: '#888' }}>
+                            No machines found matching your search.
+                        </Box>
+                    )
+                )}
             </Box>
 
             {/* Chart Modal */}
@@ -1012,8 +1163,8 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Box>
                         </Box>
                         {['keyParameters', 'voltage', 'current', 'powerFactor', 'frequency'].includes(chartType) && (
-                            <Box sx={{ 
-                                display: 'flex', 
+                            <Box sx={{
+                                display: 'flex',
                                 alignItems: 'center',
                                 marginTop: { xs: '10px', sm: '40px' },
                                 width: { xs: '100%', sm: 'auto' }
@@ -1125,6 +1276,14 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     </Box>
                 </Box>
             </Modal>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={() => setSnackbarOpen(false)}
+                message={snackbarMessage}
+            />
         </Box>
     );
 };

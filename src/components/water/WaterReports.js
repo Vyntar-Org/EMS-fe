@@ -260,27 +260,165 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
         document.body.removeChild(link);
     };
 
+    // Export to PDF functionality - UPDATED TO MATCH IMAGE STYLE
     const exportToPDF = () => {
-        const { headers, data, title } = getCurrentData();
-
         import("jspdf").then(({ default: jsPDF }) => {
             import("jspdf-autotable").then(({ default: autoTable }) => {
-                const doc = new jsPDF("portrait", "mm", "a4");
-                doc.setFontSize(16);
-                doc.text(title, 14, 15);
-                doc.setFontSize(10);
-                doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
+                
+                // 1. Determine Orientation based on active tab (Landscape for Daywise, Portrait for Monthwise)
+                const isDaywise = [0, 2, 3].includes(activeTab);
+                const orientation = isDaywise ? "landscape" : "portrait";
 
+                // 2. Generate Title and Unit based on Active Tab
+                let reportTitle = "";
+                let unit = "";
+
+                if (activeTab === 0) {
+                    reportTitle = "Station Daywise Data - Consumption";
+                    unit = "(in Units)";
+                } else if (activeTab === 1) {
+                    reportTitle = "Station Monthwise Data - Consumption";
+                    unit = "(in Units)";
+                } else if (activeTab === 2) {
+                    reportTitle = "Station Daywise Data - Meter Reading";
+                    unit = "(Readings)";
+                } else if (activeTab === 3) {
+                    reportTitle = "Station Daywise Data - Cost Consumption";
+                    unit = "(Currency)";
+                } else {
+                    reportTitle = "Station Monthwise Data - Cost Consumption";
+                    unit = "(Currency)";
+                }
+
+                const finalTitle = unit ? `${reportTitle} ${unit}` : reportTitle;
+
+                // 3. Generate Date Range String (e.g., "April 2026 (01/04/2026 to 30/04/2026)")
+                let dateRangeText = "";
+                if (isDaywise) {
+                    const monthName = months[selectedMonth - 1];
+                    const daysCount = getDaysInMonth(selectedMonth, selectedYear);
+                    const startStr = `01/${String(selectedMonth).padStart(2, '0')}/${selectedYear}`;
+                    const endStr = `${daysCount}/${String(selectedMonth).padStart(2, '0')}/${selectedYear}`;
+                    dateRangeText = `${monthName} ${selectedYear} (${startStr} to ${endStr})`;
+                } else {
+                    dateRangeText = `Year ${selectedYear}`;
+                }
+
+                // 4. Initialize PDF
+                const doc = new jsPDF(orientation, "mm", "a4");
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+
+                // 5. Add Header Text
+                doc.setFontSize(16);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(0, 0, 0); // Black text
+                doc.text(finalTitle, 14, 15);
+
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(60, 60, 60); // Dark gray text
+                doc.text(dateRangeText, 14, 22);
+
+                // 6. Prepare Data
+                const { data } = getCurrentData(); // Get raw data
+
+                // --- MANUAL HEADER GENERATION TO MATCH IMAGE ---
+                // We create headers manually here to ensure they are just "1", "2", "3" instead of "Day 1"
+                let pdfHeaders = [];
+                if (isDaywise) {
+                    // Daywise: ["STATION", "1", "2", "3", ..., "TOTAL"]
+                    pdfHeaders = ['STATION', ...currentMonthDays.map(d => String(d)), 'TOTAL'];
+                } else {
+                    // Monthwise: ["STATION", "Jan", "Feb", ..., "TOTAL"]
+                    pdfHeaders = ['STATION', ...months, 'TOTAL'];
+                }
+
+                // Remove TOTAL column for cleaner look (matching image style)
+                const totalIndex = pdfHeaders.indexOf("TOTAL");
+                const filteredHeaders = totalIndex >= 0 ? pdfHeaders.filter((_, index) => index !== totalIndex) : pdfHeaders;
+                
+                // Filter out TOTAL column from data rows as well
+                const filteredData = data.map(row => 
+                    totalIndex >= 0 ? row.filter((_, index) => index !== totalIndex) : row
+                );
+
+                // Format numbers to 2 decimals
+                const formattedData = filteredData.map(row =>
+                    row.map(cell =>
+                        typeof cell === "number" ? cell.toFixed(2) : cell
+                    )
+                );
+
+                // --- CALCULATE COLUMN WIDTHS TO BE EQUAL ---
+                // We set margins (14mm) and calculate the usable width.
+                // Station gets a fixed width, the rest are divided equally.
+                const margin = 14; 
+                const usableWidth = pageWidth - (margin * 2);
+                const stationWidth = 40; // Fixed width for Station column in mm
+                
+                // Calculate width for each remaining column
+                const colCount = filteredHeaders.length - 1; // Total columns minus Station
+                const dataColWidth = (usableWidth - stationWidth) / (colCount > 0 ? colCount : 1);
+
+                // Build column styles object
+                const columnStyles = {
+                    // Column 0 (Station)
+                    0: { 
+                        cellWidth: stationWidth, 
+                        fontStyle: 'bold', 
+                        halign: 'left' 
+                    }
+                };
+
+                // Apply equal width to all other columns (Days/Months)
+                for (let i = 1; i < filteredHeaders.length; i++) {
+                    columnStyles[i] = { cellWidth: dataColWidth };
+                }
+
+                // 7. Generate Table
                 autoTable(doc, {
-                    head: [headers],
-                    body: data,
+                    head: [filteredHeaders],
+                    body: formattedData,
                     startY: 28,
                     theme: "grid",
-                    styles: { fontSize: 7, cellPadding: 2, halign: "center" },
-                    headStyles: { fillColor: [1, 86, 166], textColor: 255 },
+
+                    styles: {
+                        fontSize: isDaywise ? 7 : 9, 
+                        cellPadding: 2,
+                        halign: "center",
+                        valign: "middle",
+                        overflow: 'linebreak',
+                        lineColor: [200, 200, 200], 
+                        lineWidth: 0.1
+                    },
+
+                    headStyles: {
+                        fillColor: [1, 86, 166], 
+                        textColor: 255,
+                        fontSize: isDaywise ? 8 : 10,
+                        fontStyle: 'bold',
+                        halign: 'center'
+                    },
+
+                    // Apply the calculated column styles here
+                    columnStyles: columnStyles,
+                    
+                    // Footer configuration
+                    didDrawPage: function (data) {
+                        // Add "Provided by Salieabs" at bottom left
+                        doc.setFontSize(8);
+                        doc.setTextColor(100);
+                        doc.text("Provided by Salieabs", 14, pageHeight - 10);
+                        
+                        // Add Page Number at bottom right
+                        const pageNumber = doc.internal.getNumberOfPages();
+                        doc.text(`Page ${pageNumber}`, pageWidth - 14, pageHeight - 10, { align: 'right' });
+                    }
                 });
 
-                doc.save(`${title.replace(/\s+/g, "_")}_Export.pdf`);
+                // 8. Save PDF
+                doc.save(`${finalTitle.replace(/\s+/g, "_")}.pdf`);
             });
         });
     };

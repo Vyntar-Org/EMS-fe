@@ -25,6 +25,10 @@ import {
     Divider,
     Tooltip,
     LinearProgress,
+    TextField,
+    InputAdornment,
+    Snackbar,
+    Alert,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
@@ -35,6 +39,8 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import LocalFireDepartmentOutlinedIcon from '@mui/icons-material/LocalFireDepartmentOutlined';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import SearchIcon from '@mui/icons-material/Search';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 // Mock data for machine list
 const mockMachineListData = {
@@ -143,6 +149,17 @@ const generateMockTrendData = (parameter) => {
 };
 
 const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
+    // State variables
+    const [searchTerm, setSearchTerm] = useState(''); // State for search
+    const [chartModalOpen, setChartModalOpen] = useState(false);
+    const [selectedFloor, setSelectedFloor] = useState('Common');
+    const [chartType, setChartType] = useState('consumed');
+    const [trendData, setTrendData] = useState([]);
+    const [selectedParameter, setSelectedParameter] = useState('consumed');
+    const [machineListData] = useState(mockMachineListData);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+
     // Get parameter unit
     const getParameterUnit = (parameter) => {
         switch (parameter) {
@@ -183,13 +200,52 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         return '#4caf50'; // Green for 0%-40%
     };
 
-    // State variables
-    const [chartModalOpen, setChartModalOpen] = useState(false);
-    const [selectedFloor, setSelectedFloor] = useState('Common');
-    const [chartType, setChartType] = useState('consumed');
-    const [trendData, setTrendData] = useState([]);
-    const [selectedParameter, setSelectedParameter] = useState('consumed');
-    const [machineListData] = useState(mockMachineListData);
+    // Filter machines based on search term
+    const filteredMachines = machineListData?.data?.machines?.filter(machine => {
+        const term = searchTerm.toLowerCase();
+        return (
+            machine.name.toLowerCase().includes(term) ||
+            machine.slave_id.toString().includes(term)
+        );
+    }) || [];
+
+    // Function to handle CSV download
+    const handleDownload = () => {
+        if (filteredMachines.length === 0) {
+            setSnackbarMessage('No data to download');
+            setSnackbarOpen(true);
+            return;
+        }
+
+        // Define CSV headers
+        const headers = ['Machine Name', 'Status', 'Fuel Level (%)', 'Consumed (L)', 'Refilled (L)', 'Temperature (°C)', 'Capacity (L)'];
+
+        // Map data to CSV rows
+        const rows = filteredMachines.map(machine => {
+            return [
+                machine.name || 'N/A',
+                machine.status || 'N/A',
+                (machine.fuelLevel || 0).toFixed(2),
+                (machine.consumed || 0).toFixed(2),
+                (machine.refilled || 0).toFixed(2),
+                (machine.temperature || 0).toFixed(2),
+                (machine.fuelCapacity || 0).toFixed(2)
+            ].join(',');
+        });
+
+        // Combine headers and rows
+        const csvContent = [headers.join(','), ...rows].join('\n');
+
+        // Create a blob and download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `fuel_machines_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     // Function to fetch trend data (now using mock data)
     const fetchTrendData = (slaveId, parameter) => {
@@ -209,7 +265,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         });
     };
 
-    // Define styles - UPDATED FOR MOBILE RESPONSIVENESS
+    // Define styles
     const styles = {
         mainContent: {
             width: '100%',
@@ -226,7 +282,9 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '15px',
+            marginBottom: '20px',
+            flexWrap: 'wrap',
+            gap: '15px',
         },
         title: {
             fontSize: '24px',
@@ -381,7 +439,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontWeight: 600,
             color: '#1F2937',
         },
-        // UPDATED: Responsive grid container - using sx prop instead
         gridContainer: {
             display: 'flex',
             flexDirection: 'row',
@@ -391,7 +448,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             marginLeft: '0',
             padding: '0 10px',
         },
-        // UPDATED: Responsive grid item - using sx prop instead
         gridItem: {
             width: '100%', // Mobile: 1 card per row
             marginBottom: '15px',
@@ -404,7 +460,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '16px',
             marginLeft: '5px',
             cursor: 'pointer',
-            // color: '#6B7280',
             verticalAlign: 'middle',
         },
         progressBar: {
@@ -629,6 +684,12 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
+                    ...(isOnline ? {
+                        background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
+                        backgroundColor: 'transparent',
+                    } : {
+                        backgroundColor: '#FFFFFF',
+                    }),
                     padding: '12px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -665,11 +726,11 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     }}
                                 >
                                     {/* Wrapper Box increases the touch target size */}
-                                    <Box 
-                                        component="span" 
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
                                             justifyContent: 'center',
                                             padding: '4px', // Adds padding to make it easier to tap
                                             cursor: 'pointer'
@@ -710,7 +771,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={styles.phaseTableHeader}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
@@ -721,7 +782,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <LocalGasStationIcon  fontSize="10px" color="black" /> Consumed
+                                            <LocalGasStationIcon fontSize="10px" color="black" /> Consumed
                                         </Box>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
@@ -805,8 +866,56 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent} id="main-content">
+            {/* Header with Search and Download */}
+            <Box sx={styles.headerContainer}>
+                <TextField
+                    placeholder="Search machines..."
+                    size="small"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon />
+                            </InputAdornment>
+                        ),
+                    }}
+                    sx={{
+                        width: { xs: '100%', sm: '300px' },
+                        backgroundColor: '#fff',
+                        borderRadius: '4px',
+                        marginLeft: { sm: '18px', md: '30px' },
+                    }}
+                />
+                <Button
+                    variant="outlined"
+                    startIcon={<FileDownloadIcon />}
+                    onClick={handleDownload}
+                    sx={{
+                        minWidth: '40px',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        borderColor: '#2F6FB0',
+                        color: '#fff',
+                        backgroundColor: '#2F6FB0',
+                        padding: 0,
+                        marginRight: '10px',
+                        '& .MuiButton-startIcon': {
+                            margin: 0,
+                        },
+                        '&:hover': {
+                            borderColor: '#1E4A7C',
+                            backgroundColor: '#1E4A7C',
+                            color: '#fff',
+                        },
+                    }}
+                >
+                </Button>
+            </Box>
+
             {/* Custom Grid Container - RESPONSIVE using sx prop */}
-            <Box 
+            <Box
                 sx={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -816,24 +925,26 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     padding: { xs: '0 5px', sm: '0 15px', md: '0 30px' },
                 }}
             >
-                {machineListData?.data?.machines?.map((machine, index) => (
-                    <Box 
-                        key={machine.slave_id || index}
-                        sx={{
-                            width: { 
-                                xs: '100%',              // Mobile: 1 card per row
-                                sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
-                                md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
-                            },
-                            // marginBottom: '15px',
-                            // '@media (min-width: 1200px)': {
-                            //     width: 'calc(30% - 35px)'
-                            // }
-                        }}
-                    >
-                        {renderFloorCard(machine)}
+                {filteredMachines.length > 0 ? (
+                    filteredMachines.map((machine, index) => (
+                        <Box
+                            key={machine.slave_id || index}
+                            sx={{
+                                width: {
+                                    xs: '100%',              // Mobile: 1 card per row
+                                    sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
+                                    md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
+                                },
+                            }}
+                        >
+                            {renderFloorCard(machine)}
+                        </Box>
+                    ))
+                ) : (
+                    <Box sx={{ width: '100%', textAlign: 'center', py: 5, color: '#888' }}>
+                        No machines found matching your search.
                     </Box>
-                ))}
+                )}
             </Box>
 
             {/* Chart Modal - RESPONSIVE */}
@@ -869,9 +980,9 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         flexWrap: 'wrap',
                     }}>
                         <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                            <Typography 
-                                id="chart-modal-title" 
-                                variant="h6" 
+                            <Typography
+                                id="chart-modal-title"
+                                variant="h6"
                                 component="h2"
                                 sx={{ fontSize: { xs: '16px', sm: '18px', md: '20px' } }}
                             >
@@ -923,6 +1034,14 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     </Box>
                 </Box>
             </Modal>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={() => setSnackbarOpen(false)}
+                message={snackbarMessage}
+            />
         </Box>
     );
 };

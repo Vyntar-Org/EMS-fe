@@ -118,16 +118,18 @@ export const getSolarMachineList = async () => {
           location: `Solar Plant - Area ${machine.slave_index}`, // Create a location from slave_index
           last_ts: machine.last_updated,
           latest: {
-            flow_rate: machine.flowrate,
+            instant_flow: machine.instant_flow, // Updated key
+            flow_temperature: machine.flow_temperature,
             inlet_temperature: machine.inlet_temperature,
-            outlet_temperature: machine.outlet_temperature
+            outlet_temperature: machine.outlet_temperature,
+            pressure: machine.pressure // Updated key
           },
           energy: {
-            today: machine.inlet_temperature * 2 || 0, // Using inlet_temperature * 2 as today's energy (placeholder)
-            mtd: machine.inlet_temperature * 60 || 0 // Using inlet_temperature * 60 as monthly energy (placeholder)
+            today: machine.inlet_temperature * 2 || 0, // Placeholder logic preserved
+            mtd: machine.inlet_temperature * 60 || 0
           },
           totalizer: {
-            value: machine.flowrate * 100 || 0, // Using flowrate * 100 as totalizer value (placeholder)
+            value: (machine.instant_flow || 0) * 100 || 0, // Updated to use instant_flow for placeholder
             timestamp: machine.last_updated,
           }
         };
@@ -171,7 +173,7 @@ export const getSolarMachineList = async () => {
 /**
  * Get solar machine trend data
  * @param {number} slaveId - The slave ID
- * @param {string} parameter - The parameter to fetch (flowrate, inlet_temperature, or outlet_temperature)
+ * @param {string} parameter - The parameter to fetch (instant_flow, flow_temperature, pressure, inlet_temperature, or outlet_temperature)
  * @param {number} hours - Number of hours of data to fetch
  * @returns {Promise} Promise object represents the solar trend data
  */

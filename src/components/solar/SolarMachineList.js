@@ -27,6 +27,8 @@ import {
     CircularProgress,
     Alert,
     Snackbar,
+    TextField,
+    InputAdornment,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
@@ -34,18 +36,21 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import SpeedIcon from '@mui/icons-material/Speed'; // Added import for Flow Pressure
+import SpeedIcon from '@mui/icons-material/Speed';
+import SearchIcon from '@mui/icons-material/Search';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 // Import API functions
 import { getSolarMachineList, getSolarMachineTrend } from '../../auth/solar/SolarMachineListApi';
 
 const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // State variables
+    const [searchTerm, setSearchTerm] = useState(''); // State for search
     const [solarMachineListData, setSolarMachineListData] = useState({ data: { machines: [] } });
     const [chartModalOpen, setChartModalOpen] = useState(false);
     const [selectedFloor, setSelectedFloor] = useState('');
     const [trendData, setTrendData] = useState([]);
-    const [selectedParameter, setSelectedParameter] = useState('flowrate');
+    const [selectedParameter, setSelectedParameter] = useState('instant_flow');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [trendLoading, setTrendLoading] = useState(false);
@@ -56,6 +61,19 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     useEffect(() => {
         fetchSolarMachineList();
     }, []);
+
+    // Helper: Sanitize data to remove sensor errors (Scientific notation like e+25)
+    const sanitizeTrendData = (data, parameter) => {
+        return data.map(item => {
+            const val = parseFloat(item.value);
+
+            // Filter out physically impossible values to fix chart scaling
+            if (isNaN(val) || Math.abs(val) > 100000) {
+                return { ...item, value: null };
+            }
+            return item;
+        });
+    };
 
     // Function to fetch solar machine list
     const fetchSolarMachineList = async () => {
@@ -74,13 +92,72 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
+    // Filter machines based on search term
+    const filteredMachines = solarMachineListData?.data?.machines?.filter(machine => {
+        const term = searchTerm.toLowerCase();
+        return (
+            machine.name.toLowerCase().includes(term) ||
+            machine.slave_id.toString().includes(term)
+        );
+    }) || [];
+
+    // Function to handle CSV download
+    const handleDownload = () => {
+        if (filteredMachines.length === 0) {
+            setSnackbarMessage('No data to download');
+            setSnackbarOpen(true);
+            return;
+        }
+
+        // Define CSV headers
+        const headers = ['Machine Name', 'Status', 'Instant Flow (m³/hr)', 'Flow Temp (°C)', 'Pressure (bar)', 'Inlet Temp (°C)', 'Outlet Temp (°C)', 'Last Updated'];
+
+        // Map data to CSV rows
+        const rows = filteredMachines.map(machine => {
+            const isWithinTimeLimit = (lastTs) => {
+                if (!lastTs) return false;
+                const lastTime = new Date(lastTs);
+                const currentTime = new Date();
+                const timeDiff = (currentTime - lastTime) / (1000 * 60);
+                return timeDiff <= 15;
+            };
+            const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
+
+            return [
+                machine.name || 'N/A',
+                isOnline ? 'Online' : 'Offline',
+                (machine.latest?.instant_flow || 0).toFixed(2),
+                (machine.latest?.flow_temperature || 0).toFixed(2),
+                (machine.latest?.pressure || 0).toFixed(2),
+                (machine.latest?.inlet_temperature || 0).toFixed(2),
+                (machine.latest?.outlet_temperature || 0).toFixed(2),
+                machine.last_ts ? new Date(machine.last_ts).toLocaleString() : 'N/A'
+            ].join(',');
+        });
+
+        // Combine headers and rows
+        const csvContent = [headers.join(','), ...rows].join('\n');
+
+        // Create a blob and download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `solar_machines_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // Function to fetch trend data
     const fetchTrendData = async (slaveId, parameter) => {
         try {
             setTrendLoading(true);
             const response = await getSolarMachineTrend(slaveId, parameter, 6);
             if (response.success && response.data && response.data.data) {
-                setTrendData(response.data.data);
+                // Clean the data before setting state
+                const cleanedData = sanitizeTrendData(response.data.data, parameter);
+                setTrendData(cleanedData);
             } else {
                 setTrendData([]);
                 setSnackbarMessage('No trend data available');
@@ -101,11 +178,11 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Get parameter unit
     const getParameterUnit = (parameter) => {
         switch (parameter) {
-            case 'flowrate':
+            case 'instant_flow':
                 return 'm³/hr';
             case 'flow_temperature':
                 return '°C';
-            case 'flow_pressure':
+            case 'pressure':
                 return 'bar';
             case 'inlet_temperature':
                 return '°C';
@@ -119,12 +196,12 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Get parameter label
     const getParameterLabel = (parameter) => {
         switch (parameter) {
-            case 'flowrate':
-                return 'Flow Rate';
+            case 'instant_flow':
+                return 'Instant Flow';
             case 'flow_temperature':
                 return 'Flow Temperature';
-            case 'flow_pressure':
-                return 'Flow Pressure';
+            case 'pressure':
+                return 'Pressure';
             case 'inlet_temperature':
                 return 'Inlet Temperature';
             case 'outlet_temperature':
@@ -148,7 +225,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         });
     };
 
-    // Define styles - UPDATED FOR MOBILE RESPONSIVENESS
+    // Define styles
     const styles = {
         mainContent: {
             width: '100%',
@@ -165,7 +242,9 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '15px',
+            marginBottom: '20px',
+            flexWrap: 'wrap',
+            gap: '15px',
         },
         title: {
             fontSize: '24px',
@@ -388,6 +467,11 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     fontSize: '11px',
                 },
                 formatter: function (val) {
+                    if (val === null || val === undefined) return '-';
+                    // If value is very large, use exponential notation to avoid UI breaking
+                    if (Math.abs(val) > 10000) {
+                        return val.toExponential(2);
+                    }
                     return parseFloat(val).toFixed(2);
                 }
             },
@@ -400,6 +484,8 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             },
             custom: function ({ series, seriesIndex, dataPointIndex, w }) {
                 const item = trendData[dataPointIndex];
+                if (!item || item.value === null) return '';
+
                 const date = new Date(item.timestamp);
                 const formattedDate = date.toLocaleString();
                 const value = series[0][dataPointIndex];
@@ -449,6 +535,12 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
+                    ...(isOnline ? {
+                        background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
+                        backgroundColor: 'transparent',
+                    } : {
+                        backgroundColor: '#FFFFFF',
+                    }),
                     padding: '12px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -457,9 +549,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 }}>
                     <Box style={styles.commonHeader}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {/* The Text Container */}
                             <Box>
-                                {/* Main Title */}
                                 <Typography style={styles.floorTitle}>
                                     {machine.name}
                                 </Typography>
@@ -474,24 +564,23 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     title={formatTimestampForTooltip(machine.last_ts)}
                                     placement="top"
                                     arrow
-                                    enterTouchDelay={0} 
-                                    leaveTouchDelay={3000} 
+                                    enterTouchDelay={0}
+                                    leaveTouchDelay={3000}
                                     componentsProps={{
                                         tooltip: {
                                             sx: {
-                                                fontSize: '12px', 
+                                                fontSize: '12px',
                                             },
                                         },
                                     }}
                                 >
-                                    {/* Wrapper Box increases the touch target size */}
-                                    <Box 
-                                        component="span" 
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
                                             justifyContent: 'center',
-                                            padding: '4px', 
+                                            padding: '4px',
                                             cursor: 'pointer'
                                         }}
                                     >
@@ -502,33 +591,31 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </Box>
                     </Box>
 
-                    {/* Temperature Data Table */}
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={styles.phaseTableHeader}>
+                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {/* Flow Rate */}
+                                {/* Instant Flow */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <WaterDropIcon fontSize="10px" color="primary" />
-                                            Flow Rate
+                                            Instant Flow
                                         </Box>
                                     </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}></TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                    </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.latest?.flow_rate || 0).toFixed(2)} m³/hr
+                                        {(machine.latest?.instant_flow || 0).toFixed(2)} m³/hr
                                     </TableCell>
                                 </TableRow>
 
-                                {/* Flow Temperature - ADDED */}
+                                {/* Flow Temperature */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -536,25 +623,23 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             Flow Temperature
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>
-                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}></TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
                                         {(machine.latest?.flow_temperature || 0).toFixed(2)} °C
                                     </TableCell>
                                 </TableRow>
 
-                                {/* Flow Pressure - ADDED */}
+                                {/* Pressure */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <SpeedIcon fontSize="10px" color="secondary" />
-                                            Flow Pressure
+                                            Pressure
                                         </Box>
                                     </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}></TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                    </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.latest?.flow_pressure || 0).toFixed(2)}
+                                        {(machine.latest?.pressure || 0).toFixed(2)} bar
                                     </TableCell>
                                 </TableRow>
 
@@ -566,8 +651,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             {machine.name} Inlet Temperature
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>
-                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}></TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
                                         {(machine.latest?.inlet_temperature || 0).toFixed(2)} °C
                                     </TableCell>
@@ -581,8 +665,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             {machine.name} Outlet Temperature
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>
-                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}></TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
                                         {(machine.latest?.outlet_temperature || 0).toFixed(2)} °C
                                     </TableCell>
@@ -592,15 +675,13 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     </TableContainer>
                     <Divider />
 
-                    {/* MTD and Trend Button */}
                     <Box sx={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         py: 0.5,
                     }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}></Box>
                         <Box style={{ ...styles.metricsRow, display: 'flex', justifyContent: 'right', marginTop: 0 }}>
                             <Button
                                 variant="contained"
@@ -609,7 +690,6 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     setSelectedFloor(machine.name);
                                     setChartModalOpen(true);
 
-                                    // Find the selected machine by name to get its slave_id
                                     const selectedMachine = solarMachineListData?.data?.machines?.find(
                                         m => m.name === machine.name
                                     );
@@ -637,35 +717,89 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             ) : error ? (
                 <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
             ) : (
-                /* Custom Grid Container - RESPONSIVE using sx prop */
-                <Box 
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        flexWrap: 'wrap',
-                        justifyContent: 'left',
-                        gap: { xs: '15px', sm: '20px', md: '20px 50px' },
-                        padding: { xs: '0 5px', sm: '0 15px', md: '0 30px' },
-                    }}
-                >
-                    {solarMachineListData?.data?.machines?.map((machine, index) => (
-                        <Box 
-                            key={machine.slave_id || index}
+                <>
+                    {/* Header with Search and Download */}
+                    <Box sx={styles.headerContainer}>
+                        <TextField
+                            placeholder="Search machines..."
+                            size="small"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon />
+                                    </InputAdornment>
+                                ),
+                            }}
                             sx={{
-                                width: { 
-                                    xs: '100%',              
-                                    sm: 'calc(50% - 15px)',  
-                                    md: 'calc(33.33% - 35px)' 
+                                width: { xs: '100%', sm: '300px' },
+                                backgroundColor: '#fff',
+                                borderRadius: '4px',
+                                marginLeft: { sm: '18px', md: '30px' },
+                            }}
+                        />
+                        <Button
+                            variant="outlined"
+                            startIcon={<FileDownloadIcon />}
+                            onClick={handleDownload}
+                            sx={{
+                                minWidth: '40px',
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                borderColor: '#2F6FB0',
+                                color: '#fff',
+                                backgroundColor: '#2F6FB0',
+                                padding: 0,
+                                marginRight: '10px',
+                                '& .MuiButton-startIcon': {
+                                    margin: 0,
+                                },
+                                '&:hover': {
+                                    borderColor: '#1E4A7C',
+                                    backgroundColor: '#1E4A7C',
+                                    color: '#fff',
                                 },
                             }}
                         >
-                            {renderFloorCard(machine)}
-                        </Box>
-                    ))}
-                </Box>
+                        </Button>
+                    </Box>
+
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            flexWrap: 'wrap',
+                            justifyContent: 'left',
+                            gap: { xs: '15px', sm: '20px', md: '20px 50px' },
+                            padding: { xs: '0 5px', sm: '0 15px', md: '0 30px' },
+                        }}
+                    >
+                        {filteredMachines.length > 0 ? (
+                            filteredMachines.map((machine, index) => (
+                                <Box
+                                    key={machine.slave_id || index}
+                                    sx={{
+                                        width: {
+                                            xs: '100%',
+                                            sm: 'calc(50% - 15px)',
+                                            md: 'calc(33.33% - 35px)'
+                                        },
+                                    }}
+                                >
+                                    {renderFloorCard(machine)}
+                                </Box>
+                            ))
+                        ) : (
+                            <Box sx={{ width: '100%', textAlign: 'center', py: 5, color: '#888' }}>
+                                No machines found matching your search.
+                            </Box>
+                        )}
+                    </Box>
+                </>
             )}
 
-            {/* Chart Modal - RESPONSIVE */}
             <Modal
                 open={chartModalOpen}
                 onClose={() => setChartModalOpen(false)}
@@ -698,9 +832,9 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         flexWrap: 'wrap',
                     }}>
                         <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                            <Typography 
-                                id="chart-modal-title" 
-                                variant="h6" 
+                            <Typography
+                                id="chart-modal-title"
+                                variant="h6"
                                 component="h2"
                                 sx={{ fontSize: { xs: '16px', sm: '18px', md: '20px' } }}
                             >
@@ -715,7 +849,6 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             const newParameter = e.target.value;
                                             setSelectedParameter(newParameter);
 
-                                            // Find the selected machine by name to get its slave_id
                                             const selectedMachine = solarMachineListData?.data?.machines?.find(
                                                 m => m.name === selectedFloor
                                             );
@@ -725,9 +858,9 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         }}
                                         label="Parameter"
                                     >
-                                        <MenuItem value="flowrate">Flow Rate</MenuItem>
+                                        <MenuItem value="instant_flow">Instant Flow</MenuItem>
                                         <MenuItem value="flow_temperature">Flow Temperature</MenuItem>
-                                        <MenuItem value="flow_pressure">Flow Pressure</MenuItem>
+                                        <MenuItem value="pressure">Pressure</MenuItem>
                                         <MenuItem value="inlet_temperature">Inlet Temperature</MenuItem>
                                         <MenuItem value="outlet_temperature">Outlet Temperature</MenuItem>
                                     </Select>
@@ -764,7 +897,6 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 </Box>
             </Modal>
 
-            {/* Snackbar for notifications */}
             <Snackbar
                 open={snackbarOpen}
                 autoHideDuration={6000}

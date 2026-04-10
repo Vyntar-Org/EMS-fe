@@ -501,141 +501,165 @@ function FuelReports({ onSidebarToggle, sidebarVisible }) {
     };
 
     // Export to PDF functionality
+    // Export to PDF functionality - UPDATED TO MATCH IMAGE STYLE
     const exportToPDF = () => {
-        const { headers, data, title } = getCurrentData();
-
-        // Remove TOTAL column from headers and data
-        const totalIndex = headers.indexOf("TOTAL");
-        const filteredHeaders = totalIndex >= 0 ? headers.filter((_, index) => index !== totalIndex) : headers;
-        
-        // Filter out TOTAL column from each row of data
-        const filteredData = data.map(row => 
-            totalIndex >= 0 ? row.filter((_, index) => index !== totalIndex) : row
-        );
-
-        // Format numbers to 2 decimals
-        const formattedData = filteredData.map(row =>
-            row.map(cell =>
-                typeof cell === "number"
-                    ? cell.toFixed(2)
-                    : cell
-            )
-        );
-
         import("jspdf").then(({ default: jsPDF }) => {
             import("jspdf-autotable").then(({ default: autoTable }) => {
-                const doc = new jsPDF("portrait", "mm", "a4");
+                
+                // 1. Determine Orientation based on active tab (Landscape for Daywise, Portrait for Monthwise)
+                const isDaywise = [0, 2, 3].includes(activeTab);
+                const orientation = isDaywise ? "landscape" : "portrait";
 
-                // Get page dimensions
-                const pageWidth = doc.internal.pageSize.getWidth();
-                const pageHeight = doc.internal.pageSize.getHeight();
-                const usableWidth = pageWidth - 16; // Accounting for margins (8mm on each side)
+                // 2. Generate Title and Unit based on Active Tab
+                let reportTitle = "";
+                let unit = "";
 
-                // Set up the title and date on the first page
-                doc.setFontSize(16);
-                doc.text(title, 14, 15);
-
-                doc.setFontSize(10);
-                doc.text(
-                    `Generated on: ${new Date().toLocaleDateString()}`,
-                    14,
-                    22
-                );
-
-                // Split into chunks of 11 columns
-                const columnsPerPage = 11;
-                const totalPages = Math.ceil(filteredHeaders.length / columnsPerPage);
-
-                // Create a table for each chunk of columns
-                for (let page = 0; page < totalPages; page++) {
-                    // Add new page for all pages except the first one
-                    if (page > 0) {
-                        doc.addPage();
-
-                        // Add title and date to each new page
-                        doc.setFontSize(16);
-                        doc.text(title, 14, 15);
-
-                        doc.setFontSize(10);
-                        doc.text(
-                            `Generated on: ${new Date().toLocaleDateString()} - Part ${page + 1} of ${totalPages}`,
-                            14,
-                            22
-                        );
-                    }
-
-                    // Calculate the start and end indices for this chunk
-                    const startIdx = page * columnsPerPage;
-                    const endIdx = Math.min(startIdx + columnsPerPage, filteredHeaders.length);
-
-                    // Extract the headers for this chunk
-                    const chunkHeaders = filteredHeaders.slice(startIdx, endIdx);
-
-                    // Extract the data for this chunk
-                    const chunkData = formattedData.map(row => row.slice(startIdx, endIdx));
-
-                    // Calculate column widths for this chunk
-                    // Station column gets 30% of available width
-                    const stationWidth = usableWidth * 0.3;
-
-                    // Remaining width is distributed among date columns (no TOTAL column)
-                    const remainingWidth = usableWidth - stationWidth;
-                    const dateColumnCount = chunkHeaders.length - (chunkHeaders[0] === "STATION" ? 1 : 0);
-                    const dateColumnWidth = dateColumnCount > 0 ? remainingWidth / dateColumnCount : 0;
-
-                    // Build column styles object
-                    const columnStyles = {};
-
-                    // Set width for Station column (first column)
-                    if (chunkHeaders[0] === "STATION" || chunkHeaders[0] === "Station") {
-                        columnStyles[0] = { cellWidth: stationWidth };
-                    }
-
-                    // Set width for date columns (all columns after Station)
-                    for (let i = 1; i < chunkHeaders.length; i++) {
-                        columnStyles[i] = { cellWidth: dateColumnWidth };
-                    }
-
-                    // Add the table for this chunk
-                    autoTable(doc, {
-                        head: [chunkHeaders],
-                        body: chunkData,
-                        startY: 28,
-                        theme: "grid",
-
-                        styles: {
-                            fontSize: 7,
-                            cellPadding: 2,
-                            halign: "center",
-                            valign: "middle",
-                            overflow: 'linebreak', // Ensure content fits
-                            cellWidth: 'auto' // Auto-adjust content
-                        },
-
-                        headStyles: {
-                            fillColor: [1, 86, 166],
-                            textColor: 255,
-                            fontSize: 7,
-                        },
-
-                        columnStyles: columnStyles,
-
-                        margin: { left: 8, right: 8 },
-                        showHead: "everyPage",
-                        tableWidth: 'auto', // Use full available width
-                    });
-
-                    // Add page number at the bottom
-                    doc.setFontSize(8);
-                    doc.text(
-                        `Page ${page + 1} of ${totalPages}`,
-                        pageWidth / 2,
-                        pageHeight - 10,
-                        { align: "center" }
-                    );
+                if (activeTab === 0) {
+                    reportTitle = "Station Daywise Data - Consumption";
+                    unit = "(in Units)";
+                } else if (activeTab === 1) {
+                    reportTitle = "Station Monthwise Data - Consumption";
+                    unit = "(in Units)";
+                } else if (activeTab === 2) {
+                    reportTitle = "Station Daywise Data - Meter Reading";
+                    unit = "(Readings)";
+                } else if (activeTab === 3) {
+                    reportTitle = "Station Daywise Data - Cost Consumption";
+                    unit = "(Currency)";
+                } else {
+                    reportTitle = "Station Monthwise Data - Cost Consumption";
+                    unit = "(Currency)";
                 }
 
-                doc.save(`${title.replace(/\s+/g, "_")}_Export.pdf`);
+                const finalTitle = unit ? `${reportTitle} ${unit}` : reportTitle;
+
+                // 3. Generate Date Range String (e.g., "April 2026 (01/04/2026 to 30/04/2026)")
+                let dateRangeText = "";
+                if (isDaywise) {
+                    const monthName = months[selectedMonth - 1];
+                    const daysCount = getDaysInMonth(selectedMonth, selectedYear);
+                    const startStr = `01/${String(selectedMonth).padStart(2, '0')}/${selectedYear}`;
+                    const endStr = `${daysCount}/${String(selectedMonth).padStart(2, '0')}/${selectedYear}`;
+                    dateRangeText = `${monthName} ${selectedYear} (${startStr} to ${endStr})`;
+                } else {
+                    dateRangeText = `Year ${selectedYear}`;
+                }
+
+                // 4. Initialize PDF
+                const doc = new jsPDF(orientation, "mm", "a4");
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+
+                // 5. Add Header Text
+                doc.setFontSize(16);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(0, 0, 0); // Black text
+                doc.text(finalTitle, 14, 15);
+
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(60, 60, 60); // Dark gray text
+                doc.text(dateRangeText, 14, 22);
+
+                // 6. Prepare Data
+                const { data } = getCurrentData(); // Get raw data
+
+                // --- MANUAL HEADER GENERATION TO MATCH IMAGE ---
+                // We create headers manually here to ensure they are just "1", "2", "3" instead of "Day 1"
+                let pdfHeaders = [];
+                if (isDaywise) {
+                    // Daywise: ["STATION", "1", "2", "3", ..., "TOTAL"]
+                    pdfHeaders = ['STATION', ...currentMonthDays.map(d => String(d)), 'TOTAL'];
+                } else {
+                    // Monthwise: ["STATION", "Jan", "Feb", ..., "TOTAL"]
+                    pdfHeaders = ['STATION', ...months, 'TOTAL'];
+                }
+
+                // Remove TOTAL column for cleaner look (matching image style)
+                const totalIndex = pdfHeaders.indexOf("TOTAL");
+                const filteredHeaders = totalIndex >= 0 ? pdfHeaders.filter((_, index) => index !== totalIndex) : pdfHeaders;
+                
+                // Filter out TOTAL column from data rows as well
+                const filteredData = data.map(row => 
+                    totalIndex >= 0 ? row.filter((_, index) => index !== totalIndex) : row
+                );
+
+                // Format numbers to 2 decimals
+                const formattedData = filteredData.map(row =>
+                    row.map(cell =>
+                        typeof cell === "number" ? cell.toFixed(2) : cell
+                    )
+                );
+
+                // --- CALCULATE COLUMN WIDTHS TO BE EQUAL ---
+                // We set margins (14mm) and calculate the usable width.
+                // Station gets a fixed width, the rest are divided equally.
+                const margin = 14; 
+                const usableWidth = pageWidth - (margin * 2);
+                const stationWidth = 40; // Fixed width for Station column in mm
+                
+                // Calculate width for each remaining column
+                const colCount = filteredHeaders.length - 1; // Total columns minus Station
+                const dataColWidth = (usableWidth - stationWidth) / (colCount > 0 ? colCount : 1);
+
+                // Build column styles object
+                const columnStyles = {
+                    // Column 0 (Station)
+                    0: { 
+                        cellWidth: stationWidth, 
+                        fontStyle: 'bold', 
+                        halign: 'left' 
+                    }
+                };
+
+                // Apply equal width to all other columns (Days/Months)
+                for (let i = 1; i < filteredHeaders.length; i++) {
+                    columnStyles[i] = { cellWidth: dataColWidth };
+                }
+
+                // 7. Generate Table
+                autoTable(doc, {
+                    head: [filteredHeaders],
+                    body: formattedData,
+                    startY: 28,
+                    theme: "grid",
+
+                    styles: {
+                        fontSize: isDaywise ? 7 : 9, 
+                        cellPadding: 2,
+                        halign: "center",
+                        valign: "middle",
+                        overflow: 'linebreak',
+                        lineColor: [200, 200, 200], 
+                        lineWidth: 0.1
+                    },
+
+                    headStyles: {
+                        fillColor: [1, 86, 166], 
+                        textColor: 255,
+                        fontSize: isDaywise ? 8 : 10,
+                        fontStyle: 'bold',
+                        halign: 'center'
+                    },
+
+                    // Apply the calculated column styles here
+                    columnStyles: columnStyles,
+                    
+                    // Footer configuration
+                    didDrawPage: function (data) {
+                        // Add "Provided by Salieabs" at bottom left
+                        doc.setFontSize(8);
+                        doc.setTextColor(100);
+                        doc.text("Provided by Salieabs", 14, pageHeight - 10);
+                        
+                        // Add Page Number at bottom right
+                        const pageNumber = doc.internal.getNumberOfPages();
+                        doc.text(`Page ${pageNumber}`, pageWidth - 14, pageHeight - 10, { align: 'right' });
+                    }
+                });
+
+                // 8. Save PDF
+                doc.save(`${finalTitle.replace(/\s+/g, "_")}.pdf`);
             });
         });
     };

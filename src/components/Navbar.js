@@ -43,6 +43,47 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
   // State for mobile application menu
   const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [appMenuAnchor, setAppMenuAnchor] = useState(null);
+
+  // Helper function to handle routing based on App code
+  const handleAppNavigation = (app) => {
+    if (app.default_landing_page) {
+      let route = app.default_landing_page.toLowerCase();
+      route = route.replace(/_/g, '-');
+                
+      if (app.code === 'TEMPERATURE') {
+        navigate(`/temperature/${route}`);
+      } else if (app.code === 'FIRE-SAFETY') {
+        navigate(`/fire-safety/${route}`);
+      } else if (app.code === 'WATER') {
+        navigate(`/water/${route}`);
+      } else if (app.code === 'FUEL') {
+        navigate(`/fuel/${route}`);
+      } else if (app.code === 'SOLAR') {
+        navigate(`/solar/${route}`);
+      } else if (app.code === 'COMPRESSOR') {
+        navigate(`/compressor/${route}`);
+      } else {
+        navigate(`/${route}`);
+      }
+    } else {
+      // Default fallback routes
+      if (app.code === 'TEMPERATURE') {
+        navigate('/temperature/machine-list');
+      } else if (app.code === 'FIRE-SAFETY') {
+        navigate('/fire-safety/machine-list');
+      } else if (app.code === 'WATER') {
+        navigate('/water/dashboard');
+      } else if (app.code === 'FUEL') {
+        navigate('/fuel/dashboard');
+      } else if (app.code === 'SOLAR') {
+        navigate('/solar/machine-list');
+      } else if (app.code === 'COMPRESSOR') {
+        navigate('/compressor/machine-list');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  };
     
   // Load user data from context
   useEffect(() => {
@@ -57,11 +98,17 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
           const appExists = storedUserData.applications.some(app => app.code === parsedApp.code);
           if (appExists) {
             setActiveApp(parsedApp);
+            handleAppNavigation(parsedApp); // Navigate to saved app
             return;
           }
         }
-        const energyApp = storedUserData.applications.find(app => app.code === 'ENERGY');
-        setActiveApp(energyApp || storedUserData.applications[0]);
+        // CHANGED: Default to WATER instead of ENERGY
+        const waterApp = storedUserData.applications.find(app => app.code === 'WATER');
+        const appToSet = waterApp || storedUserData.applications[0];
+        setActiveApp(appToSet);
+        
+        // FIX: Navigate to the default app (Water) immediately
+        handleAppNavigation(appToSet);
       }
     } else {
       setUserData(contextUserData);
@@ -73,14 +120,39 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
           const appExists = contextUserData.applications.some(app => app.code === parsedApp.code);
           if (appExists) {
             setActiveApp(parsedApp);
+            handleAppNavigation(parsedApp); // Navigate to saved app
             return;
           }
         }
-        const energyApp = contextUserData.applications.find(app => app.code === 'ENERGY');
-        setActiveApp(energyApp || contextUserData.applications[0]);
+        // CHANGED: Default to WATER instead of ENERGY
+        const waterApp = contextUserData.applications.find(app => app.code === 'WATER');
+        const appToSet = waterApp || contextUserData.applications[0];
+        setActiveApp(appToSet);
+        
+        // FIX: Navigate to the default app (Water) immediately
+        handleAppNavigation(appToSet);
       }
     }
-  }, [contextUserData, activeApp, setActiveApp]);
+  }, [contextUserData, activeApp, setActiveApp, navigate]);
+
+  // Define the desired order of applications
+  const getSortedApplications = (applications) => {
+    if (!applications) return [];
+    
+    // CHANGED: Moved WATER to the top of the list
+    const priorityOrder = ['WATER', 'ENERGY', 'FUEL', 'SOLAR', 'FIRE-SAFETY', 'COMPRESSOR', 'TEMPERATURE'];
+    
+    return applications.slice().sort((a, b) => {
+      const indexA = priorityOrder.indexOf(a.code);
+      const indexB = priorityOrder.indexOf(b.code);
+      
+      // If app is not in the priority list, push it to the end (index 999)
+      const weightA = indexA === -1 ? 999 : indexA;
+      const weightB = indexB === -1 ? 999 : indexB;
+      
+      return weightA - weightB;
+    });
+  };
 
   const handleMenuOpen = (event) => {
     if (isMobile) {
@@ -103,43 +175,7 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
   const handleAppSelection = (app) => {
     setActiveApp(app);
     handleAppMenuClose();
-    
-    if (app.default_landing_page) {
-      let route = app.default_landing_page.toLowerCase();
-      route = route.replace(/_/g, '-');
-                
-      if (app.code === 'TEMPERATURE') {
-        navigate(`/temperature/${route}`);
-      } else if (app.code === 'FIRE-SAFETY') {
-        navigate(`/fire-safety/${route}`);
-      } else if (app.code === 'WATER') {
-        navigate(`/water/${route}`);
-      } else if (app.code === 'FUEL') {
-        navigate(`/fuel/${route}`);
-      } else if (app.code === 'SOLAR') {
-        navigate(`/solar/${route}`);
-      } else if (app.code === 'COMPRESSOR') {
-        navigate(`/compressor/${route}`);
-      } else {
-        navigate(`/${route}`);
-      }
-    } else {
-      if (app.code === 'TEMPERATURE') {
-        navigate('/temperature/machine-list');
-      } else if (app.code === 'FIRE-SAFETY') {
-        navigate('/fire-safety/machine-list');
-      } else if (app.code === 'WATER') {
-        navigate('/water/dashboard');
-      } else if (app.code === 'FUEL') {
-        navigate('/fuel/dashboard');
-      } else if (app.code === 'SOLAR') {
-        navigate('/solar/machine-list');
-      } else if (app.code === 'COMPRESSOR') {
-        navigate('/compressor/machine-list');
-      } else {
-        navigate('/dashboard');
-      }
-    }
+    handleAppNavigation(app); // Reuse helper for navigation
   };
 
   const handleLogoutClick = () => {
@@ -180,6 +216,9 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
     }
   };
 
+  // Get the sorted list for rendering
+  const sortedApplications = getSortedApplications(userData ? userData.applications : []);
+
   return (
     <>
       <nav className="navbar">
@@ -206,7 +245,7 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
           {/* APPLICATION ICONS - HIDE ON MOBILE */}
           {!isMobile && userData && userData.applications && (
             <div className="applications-icons" style={{ display: 'flex', flexDirection: 'row-reverse', alignItems: 'center', gap: '10px', marginRight: '20px' }}>
-              {userData.applications.map((app, index) => {
+              {sortedApplications.map((app, index) => {
                 const isActive = activeApp && activeApp.code === app.code;
                 let displayName = app.name.substring(0, 4);
                 if (app.code === 'ENERGY') {
@@ -241,43 +280,7 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                     }}
                     onClick={() => {
                       setActiveApp(app);
-                                        
-                      if (app.default_landing_page) {
-                        let route = app.default_landing_page.toLowerCase();
-                        route = route.replace(/_/g, '-');
-                                          
-                        if (app.code === 'TEMPERATURE') {
-                          navigate(`/temperature/${route}`);
-                        } else if (app.code === 'FIRE-SAFETY') {
-                          navigate(`/fire-safety/${route}`);
-                        } else if (app.code === 'WATER') {
-                          navigate(`/water/${route}`);
-                        } else if (app.code === 'FUEL') {
-                          navigate(`/fuel/${route}`);
-                        } else if (app.code === 'SOLAR') {
-                          navigate(`/solar/${route}`);
-                        } else if (app.code === 'COMPRESSOR') {
-                          navigate(`/compressor/${route}`);
-                        } else {
-                          navigate(`/${route}`);
-                        }
-                      } else {
-                        if (app.code === 'TEMPERATURE') {
-                          navigate('/temperature/machine-list');
-                        } else if (app.code === 'FIRE-SAFETY') {
-                          navigate('/fire-safety/machine-list');
-                        } else if (app.code === 'WATER') {
-                          navigate('/water/dashboard');
-                        } else if (app.code === 'FUEL') {
-                          navigate('/fuel/dashboard');
-                        } else if (app.code === 'SOLAR') {
-                          navigate('/solar/machine-list');
-                        } else if (app.code === 'COMPRESSOR') {
-                          navigate('/compressor/machine-list');
-                        } else {
-                          navigate('/dashboard');
-                        }
-                      }
+                      handleAppNavigation(app);
                     }}
                   >
                     {displayName}
@@ -357,7 +360,7 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                   },
                 }}
               >
-                {userData && userData.applications && userData.applications.map((app, index) => {
+                {sortedApplications.map((app, index) => {
                   const isActive = activeApp && activeApp.code === app.code;
                   let displayName = app.name;
                   if (app.code === 'ENERGY') {

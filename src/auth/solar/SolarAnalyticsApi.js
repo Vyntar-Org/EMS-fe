@@ -106,7 +106,7 @@ export const getSolarSlaves = async () => {
 /**
  * Get solar analytics data for specific parameters
  * @param {number} slaveId - The slave ID
- * @param {string[]} parameters - Array of parameter names (flowrate, inlet_temperature, outlet_temperature)
+ * @param {string[]} parameters - Array of parameter names (instant_flow, flow_temperature, pressure, inlet_temperature, outlet_temperature)
  * @param {string} fromDateTime - Start datetime in format "YYYY-MM-DD HH:mm:ss"
  * @param {string} toDateTime - End datetime in format "YYYY-MM-DD HH:mm:ss"
  * @returns {Promise} Promise object represents the solar analytics data
