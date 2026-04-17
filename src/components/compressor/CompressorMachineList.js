@@ -227,60 +227,66 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Chart Options for Connectivity (Online/Offline)
     const chartOptions = {
         chart: {
-            type: 'line',
+            type: 'area',
             height: 350,
             toolbar: { show: true },
             zoom: { enabled: true },
             background: '#FFFFFF',
         },
         stroke: {
-            curve: 'smooth',
+            curve: 'stepline',
             width: 2,
+            colors: ['#30b44a']
         },
-        markers: {
-            size: 0,
+        fill: {
+            type: 'solid',
+            colors: ['#30b44a'],
+            opacity: 0.2
+        },
+        dataLabels: {
+            enabled: false
         },
         grid: {
             borderColor: '#ebe5e5',
             strokeDashArray: 0,
         },
         xaxis: {
+            type: 'datetime',
             title: {
                 text: 'Time',
                 style: { color: '#6B7280', fontSize: '12px' },
             },
-            categories: trendData.map(item => {
-                const date = new Date(item.timestamp);
-                return date.toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
-            }),
             labels: {
                 style: { colors: '#6B7280', fontSize: '11px' },
-                rotate: -45,
+                datetimeUTC: false
             },
-            tickAmount: 6,
         },
         yaxis: {
             title: {
                 text: 'Status',
                 style: { color: '#6B7280', fontSize: '12px' },
             },
+            min: -0.1,
+            max: 1.1,
+            tickAmount: 2,
             labels: {
                 style: { colors: '#6B7280', fontSize: '11px' },
+                formatter: function (val) {
+                    if (val >= 0.9) return 'Online';
+                    if (val <= 0.1) return 'Offline';
+                    return '';
+                }
             },
         },
         tooltip: {
             enabled: true,
             theme: 'light',
-            x: { format: 'dd/MM/yyyy HH:mm' },
+            x: { format: 'dd MMM HH:mm' },
             custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-                const item = trendData[dataPointIndex];
-                const date = new Date(item.timestamp);
+                const dataPoint = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
+                const date = new Date(dataPoint.x);
                 const formattedDate = date.toLocaleString();
-                const value = series[0][dataPointIndex];
+                const value = dataPoint.y;
                 const statusText = value === 1 ? 'Online' : 'Offline';
                 const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
 
@@ -302,7 +308,10 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Chart series
     const chartSeries = [{
         name: 'Connectivity',
-        data: trendData.map(item => item.value)
+        data: trendData.map(item => ({
+            x: new Date(item.timestamp).getTime(),
+            y: item.value
+        }))
     }];
 
     const formatTimestampForTooltip = (timestamp) => {
@@ -593,7 +602,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     <CircularProgress />
                                 </Box>
                             ) : trendData.length > 0 ? (
-                                <Chart options={chartOptions} series={chartSeries} type="line" height={300} />
+                                <Chart options={chartOptions} series={chartSeries} type="area" height={300} />
                             ) : (
                                 <Alert severity="info">No data available</Alert>
                             )}
