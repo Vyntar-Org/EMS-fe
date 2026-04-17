@@ -37,7 +37,7 @@ function Sidebar({ mobileOpen, onClose, visible, onSidebarHide, onSidebarToggle,
       { id: 2, name: 'Analytics', path: '/solar/analytics', icon: 'bar-chart' },
       { id: 3, name: 'Logs', path: '/solar/logs', icon: 'file-text' },
     ] : activeApp.code === 'COMPRESSOR' ? [
-      { id: 1, name: 'Device Hub', path: '/compressor/machine-list', icon: 'list' },
+      { id: 1, name: 'Machine Hub', path: '/compressor/machine-list', icon: 'list' },
       { id: 2, name: 'Analytics', path: '/compressor/analytics', icon: 'bar-chart' },
       { id: 3, name: 'Logs', path: '/compressor/logs', icon: 'file-text' },
     ] : [ // Default (ENERGY)
