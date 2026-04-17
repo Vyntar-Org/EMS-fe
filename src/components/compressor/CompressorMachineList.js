@@ -118,8 +118,13 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         try {
             setTrendLoading(true);
             const response = await getCompressorMachineTrend(slaveId);
-            setTrendData(response.data.data);
-            return response.data.data;
+            // Transform the API response to match the chart format
+            const transformedData = response.data.data.map(item => ({
+                timestamp: item.start,
+                value: item.status
+            }));
+            setTrendData(transformedData);
+            return transformedData;
         } catch (err) {
             console.error('Error fetching trend data:', err);
             setSnackbarMessage(err.message || 'Failed to fetch trend data');
@@ -464,10 +469,10 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </Table>
                     </TableContainer>
 
-                    {/* <Divider sx={{ my: 1 }} /> */}
+                    <Divider sx={{ my: 1 }} />
 
                     {/* Trend Button */}
-                    {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 'auto' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 'auto' }}>
                         <Button
                             variant="contained"
                             style={styles.chartButton}
@@ -479,7 +484,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         >
                             TREND
                         </Button>
-                    </Box> */}
+                    </Box>
                 </CardContent>
             </Card>
         );
