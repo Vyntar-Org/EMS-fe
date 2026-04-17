@@ -127,16 +127,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             const latest = machine.latest || {};
             const energy = machine.energy || {};
 
-            // Conditional values logic (replicating the card logic)
-            const getConditionalValue = (value) => {
-                // Assuming we want to show the actual value in CSV regardless of online status for reporting purposes,
-                // or we can hide it. Usually, reports show what the sensor says.
-                // However, to match the card's "0" behavior for offline:
-                // if (!isOnline) return 0; 
-                // For now, let's return the raw value or 0.
-                return (!isOnline && !['acte_im', 'today', 'mtd'].includes(key)) ? 0 : (value || 0);
-            };
-
             return [
                 machine.name || 'N/A',
                 machine.slave_id || 'N/A',

@@ -195,7 +195,7 @@ export const getCompressorMachineTrend = async (slaveId) => {
     
     console.log(`Making compressor trend API call for slave ${slaveId}`);
     
-    const response = await apiClient.get(`/applications/compressor/machine-trend/?slave_id=${slaveId}`);
+    const response = await apiClient.get(`/applications/compressor/machine-list-trend/?slave_id=${slaveId}`);
     
     console.log('Compressor trend API response:', response);
     
