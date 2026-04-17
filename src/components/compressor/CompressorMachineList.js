@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Card,
@@ -19,12 +19,16 @@ import {
     Tooltip,
     TextField,
     InputAdornment,
+    CircularProgress,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import SearchIcon from '@mui/icons-material/Search';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+
+// Import API functions
+import { getCompressorMachineList, getCompressorMachineTrend } from '../../auth/compressor/MachineListApi';
 
 const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // State variables
@@ -34,118 +38,39 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [trendData, setTrendData] = useState([]);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [machineListData, setMachineListData] = useState({ data: { machines: [] } });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [trendLoading, setTrendLoading] = useState(false);
+    const [expandedMachines, setExpandedMachines] = useState({});
 
-    // --- Dummy Data Generation for 7 Cards ---
-    const generateDummyMachines = () => {
-        return [
-            {
-                slave_id: 'COMP_001',
-                name: 'COMPRESSOR 1',
-                status: 'ONLINE',
-                last_ts: new Date().toISOString(),
-                latest_downtime: {
-                    start_time: '2023-10-25 14:30',
-                    end_time: '2023-10-25 15:45',
-                    duration: '1h 15m'
-                },
-                downtime_history: [
-                    { start_time: '2023-10-25 14:30', end_time: '2023-10-25 15:45', duration: '1h 15m' },
-                    { start_time: '2023-10-25 02:00', end_time: '2023-10-25 02:30', duration: '0h 30m' }
-                ]
-            },
-            {
-                slave_id: 'COMP_002',
-                name: 'COMPRESSOR 2',
-                status: 'OFFLINE',
-                last_ts: new Date(Date.now() - 1000000).toISOString(),
-                latest_downtime: {
-                    start_time: '2023-10-27 09:00',
-                    end_time: '2023-10-27 12:00',
-                    duration: '3h 00m'
-                },
-                downtime_history: [
-                    { start_time: '2023-10-27 09:00', end_time: '2023-10-27 12:00', duration: '3h 00m' }
-                ]
-            },
-            {
-                slave_id: 'COMP_003',
-                name: 'COMPRESSOR 3',
-                status: 'ONLINE',
-                last_ts: new Date().toISOString(),
-                latest_downtime: {
-                    start_time: '2023-10-20 11:00',
-                    end_time: '2023-10-20 11:30',
-                    duration: '0h 30m'
-                },
-                downtime_history: []
-            },
-            // --- Added 4 More Cards Below ---
-            {
-                slave_id: 'COMP_004',
-                name: 'COMPRESSOR 4',
-                status: 'ONLINE',
-                last_ts: new Date().toISOString(),
-                latest_downtime: {
-                    start_time: '2023-10-22 08:00',
-                    end_time: '2023-10-22 08:20',
-                    duration: '0h 20m'
-                },
-                downtime_history: [
-                    { start_time: '2023-10-22 08:00', end_time: '2023-10-22 08:20', duration: '0h 20m' }
-                ]
-            },
-            {
-                slave_id: 'COMP_005',
-                name: 'COMPRESSOR 5',
-                status: 'OFFLINE',
-                last_ts: new Date(Date.now() - 2000000).toISOString(),
-                latest_downtime: {
-                    start_time: '2023-10-28 16:00',
-                    end_time: '2023-10-28 18:30',
-                    duration: '2h 30m'
-                },
-                downtime_history: [
-                    { start_time: '2023-10-28 16:00', end_time: '2023-10-28 18:30', duration: '2h 30m' },
-                    { start_time: '2023-10-28 10:00', end_time: '2023-10-28 10:15', duration: '0h 15m' }
-                ]
-            },
-            {
-                slave_id: 'COMP_006',
-                name: 'COMPRESSOR 6',
-                status: 'ONLINE',
-                last_ts: new Date().toISOString(),
-                latest_downtime: {
-                    start_time: '2023-10-15 09:00',
-                    end_time: '2023-10-15 09:10',
-                    duration: '0h 10m'
-                },
-                downtime_history: []
-            },
-            {
-                slave_id: 'COMP_007',
-                name: 'COMPRESSOR 7',
-                status: 'ONLINE',
-                last_ts: new Date().toISOString(),
-                latest_downtime: {
-                    start_time: '2023-10-10 12:00',
-                    end_time: '2023-10-10 12:45',
-                    duration: '0h 45m'
-                },
-                downtime_history: [
-                    { start_time: '2023-10-10 12:00', end_time: '2023-10-10 12:45', duration: '0h 45m' }
-                ]
+    // Fetch machine list on component mount
+    useEffect(() => {
+        const fetchMachineList = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const response = await getCompressorMachineList();
+                setMachineListData(response);
+            } catch (err) {
+                console.error('Error fetching machine list:', err);
+                setError(err.message || 'Failed to fetch machine list');
+                setSnackbarMessage(err.message || 'Failed to fetch machine list');
+                setSnackbarOpen(true);
+            } finally {
+                setLoading(false);
             }
-        ];
-    };
+        };
 
-    const [compressorMachineListData] = useState({ data: { machines: generateDummyMachines() } });
+        fetchMachineList();
+    }, []);
 
     // Filter machines based on search term
-    const filteredMachines = compressorMachineListData?.data?.machines?.filter(machine => {
+    const filteredMachines = machineListData?.data?.machines?.filter(machine => {
         const term = searchTerm.toLowerCase();
         return (
-            machine.name.toLowerCase().includes(term) ||
-            machine.slave_id.toLowerCase().includes(term)
+            machine.slave_name.toLowerCase().includes(term) ||
+            machine.slave_id.toString().toLowerCase().includes(term)
         );
     }) || [];
 
@@ -162,9 +87,9 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
         // Map data to CSV rows
         const rows = filteredMachines.map(machine => {
-            const date = machine.last_ts ? new Date(machine.last_ts).toLocaleString() : 'N/A';
+            const date = machine.last_updated ? new Date(machine.last_updated).toLocaleString() : 'N/A';
             return [
-                machine.name || 'N/A',
+                machine.slave_name || 'N/A',
                 machine.slave_id || 'N/A',
                 machine.status || 'N/A',
                 machine.latest_downtime?.start_time || '-',
@@ -188,23 +113,29 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         document.body.removeChild(link);
     };
 
-    // --- Updated Trend Data Generation for Connectivity ---
-    const generateDummyTrendData = () => {
-        const data = [];
-        const now = new Date();
-        for (let i = 23; i >= 0; i--) {
-            const timestamp = new Date(now.getTime() - (i * 60 * 60 * 1000));
-            const status = Math.random() > 0.2 ? 1 : 0;
-            data.push({
-                x: timestamp.getTime(),
-                y: status
-            });
+    // Function to fetch trend data
+    const fetchTrendData = async (slaveId) => {
+        try {
+            setTrendLoading(true);
+            const response = await getCompressorMachineTrend(slaveId);
+            setTrendData(response.data.data);
+            return response.data.data;
+        } catch (err) {
+            console.error('Error fetching trend data:', err);
+            setSnackbarMessage(err.message || 'Failed to fetch trend data');
+            setSnackbarOpen(true);
+            throw err;
+        } finally {
+            setTrendLoading(false);
         }
-        return data;
     };
 
-    const fetchTrendData = (slaveId) => {
-        setTrendData(generateDummyTrendData());
+    // Function to toggle expanded view for downtime history
+    const toggleExpand = (slaveId) => {
+        setExpandedMachines(prev => ({
+            ...prev,
+            [slaveId]: !prev[slaveId]
+        }));
     };
 
     // Define styles
@@ -288,69 +219,63 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         },
     };
 
-    // --- Chart Options for Connectivity (Online/Offline) ---
+    // Chart Options for Connectivity (Online/Offline)
     const chartOptions = {
         chart: {
-            type: 'area',
+            type: 'line',
             height: 350,
             toolbar: { show: true },
             zoom: { enabled: true },
             background: '#FFFFFF',
         },
         stroke: {
-            curve: 'stepline',
+            curve: 'smooth',
             width: 2,
-            colors: ['#30b44a']
         },
-        fill: {
-            type: 'solid',
-            colors: ['#30b44a'],
-            opacity: 0.2
-        },
-        dataLabels: {
-            enabled: false
+        markers: {
+            size: 0,
         },
         grid: {
             borderColor: '#ebe5e5',
             strokeDashArray: 0,
         },
         xaxis: {
-            type: 'datetime',
             title: {
                 text: 'Time',
                 style: { color: '#6B7280', fontSize: '12px' },
             },
+            categories: trendData.map(item => {
+                const date = new Date(item.timestamp);
+                return date.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            }),
             labels: {
                 style: { colors: '#6B7280', fontSize: '11px' },
-                datetimeUTC: false
+                rotate: -45,
             },
+            tickAmount: 6,
         },
         yaxis: {
             title: {
                 text: 'Status',
                 style: { color: '#6B7280', fontSize: '12px' },
             },
-            min: -0.1,
-            max: 1.1,
-            tickAmount: 2,
             labels: {
                 style: { colors: '#6B7280', fontSize: '11px' },
-                formatter: function (val) {
-                    if (val >= 0.9) return 'Online';
-                    if (val <= 0.1) return 'Offline';
-                    return '';
-                }
             },
         },
         tooltip: {
             enabled: true,
             theme: 'light',
-            x: { format: 'dd MMM HH:mm' },
+            x: { format: 'dd/MM/yyyy HH:mm' },
             custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-                const dataPoint = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
-                const date = new Date(dataPoint.x);
+                const item = trendData[dataPointIndex];
+                const date = new Date(item.timestamp);
                 const formattedDate = date.toLocaleString();
-                const value = dataPoint.y;
+                const value = series[0][dataPointIndex];
                 const statusText = value === 1 ? 'Online' : 'Offline';
                 const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
 
@@ -372,7 +297,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     // Chart series
     const chartSeries = [{
         name: 'Connectivity',
-        data: trendData
+        data: trendData.map(item => item.value)
     }];
 
     const formatTimestampForTooltip = (timestamp) => {
@@ -415,7 +340,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Box>
                                 <Typography style={styles.floorTitle}>
-                                    {machine.name}
+                                    {machine.slave_name}
                                 </Typography>
                             </Box>
                         </Box>
@@ -425,7 +350,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: { xs: '0', sm: '0px' }, marginTop: { xs: '5px', sm: '0' } }}>
                                 <Tooltip
-                                    title={formatTimestampForTooltip(machine.last_ts)}
+                                    title={formatTimestampForTooltip(machine.last_updated)}
                                     placement="top"
                                     arrow
                                     enterTouchDelay={0}
@@ -497,14 +422,37 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {machine.downtime_history && machine.downtime_history.length > 0 ? (
-                                    machine.downtime_history.map((item, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell style={styles.tableCell}>{item.start_time}</TableCell>
-                                            <TableCell style={styles.tableCell}>{item.end_time}</TableCell>
-                                            <TableCell style={styles.tableCell}>{item.duration}</TableCell>
-                                        </TableRow>
-                                    ))
+                                {machine.downtime_24h && machine.downtime_24h.length > 0 ? (
+                                    <>
+                                        {machine.downtime_24h.slice(0, expandedMachines[machine.slave_id] ? machine.downtime_24h.length : 2).map((item, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell style={styles.tableCell}>{item.start_time}</TableCell>
+                                                <TableCell style={styles.tableCell}>{item.end_time || '-'}</TableCell>
+                                                <TableCell style={styles.tableCell}>{item.duration}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                        {machine.downtime_24h.length > 2 && (
+                                            <TableRow>
+                                                <TableCell colSpan={3} style={{ ...styles.tableCell, textAlign: 'center', padding: '8px' }}>
+                                                    <Button
+                                                        size="small"
+                                                        onClick={() => toggleExpand(machine.slave_id)}
+                                                        sx={{
+                                                            color: '#2F6FB0',
+                                                            fontSize: '12px',
+                                                            textTransform: 'none',
+                                                            padding: '4px 12px',
+                                                            '&:hover': {
+                                                                backgroundColor: 'rgba(47, 111, 176, 0.1)',
+                                                            }
+                                                        }}
+                                                    >
+                                                        {expandedMachines[machine.slave_id] ? 'Show Less' : `Show More (${machine.downtime_24h.length - 2} more)`}
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </>
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={3} style={{ ...styles.tableCell, textAlign: 'center' }}>
@@ -516,22 +464,22 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </Table>
                     </TableContainer>
 
-                    <Divider sx={{ my: 1 }} />
+                    {/* <Divider sx={{ my: 1 }} /> */}
 
                     {/* Trend Button */}
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 'auto' }}>
+                    {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 'auto' }}>
                         <Button
                             variant="contained"
                             style={styles.chartButton}
-                            onClick={() => {
-                                setSelectedFloor(machine.name);
+                            onClick={async () => {
+                                setSelectedFloor(machine.slave_name);
                                 setChartModalOpen(true);
-                                fetchTrendData(machine.slave_id);
+                                await fetchTrendData(machine.slave_id);
                             }}
                         >
                             TREND
                         </Button>
-                    </Box>
+                    </Box> */}
                 </CardContent>
             </Card>
         );
@@ -539,103 +487,117 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent}>
-            {/* Header with Search and Download */}
-            <Box sx={styles.headerContainer}>
-                <TextField
-                    placeholder="Search compressors..."
-                    size="small"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon />
-                            </InputAdornment>
-                        ),
-                    }}
-                    sx={{
-                        width: { xs: '100%', sm: '300px' },
-                        backgroundColor: '#fff',
-                        borderRadius: '4px',
-                        marginLeft: { sm: '18px', md: '30px' },
-                    }}
-                />
-                <Button
-                    variant="outlined"
-                    startIcon={<FileDownloadIcon />}
-                    onClick={handleDownload}
-                    sx={{
-                        minWidth: '40px',
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        borderColor: '#2F6FB0',
-                        color: '#fff',
-                        backgroundColor: '#2F6FB0',
-                        padding: 0,
-                        marginRight: '10px',
-                        '& .MuiButton-startIcon': {
-                            margin: 0,
-                        },
-                        '&:hover': {
-                            borderColor: '#1E4A7C',
-                            backgroundColor: '#1E4A7C',
-                            color: '#fff',
-                        },
-                    }}
-                >
-                </Button>
-            </Box>
-
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    flexWrap: 'wrap',
-                    justifyContent: 'left',
-                    gap: { xs: '15px', sm: '20px', md: '20px 50px' },
-                    padding: { xs: '0 5px', sm: '0 15px', md: '0 30px' },
-                }}
-            >
-                {filteredMachines.length > 0 ? (
-                    filteredMachines.map((machine, index) => (
-                        <Box
-                            key={machine.slave_id || index}
+            {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+                    <CircularProgress />
+                </Box>
+            ) : error ? (
+                <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+            ) : (
+                <>
+                    {/* Header with Search and Download */}
+                    <Box sx={styles.headerContainer}>
+                        <TextField
+                            placeholder="Search compressors..."
+                            size="small"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon />
+                                    </InputAdornment>
+                                ),
+                            }}
                             sx={{
-                                width: { xs: '100%', sm: 'calc(50% - 15px)', md: 'calc(33.33% - 35px)' },
+                                width: { xs: '100%', sm: '300px' },
+                                backgroundColor: '#fff',
+                                borderRadius: '4px',
+                                marginLeft: { sm: '18px', md: '30px' },
+                            }}
+                        />
+                        <Button
+                            variant="outlined"
+                            startIcon={<FileDownloadIcon />}
+                            onClick={handleDownload}
+                            sx={{
+                                minWidth: '40px',
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                borderColor: '#2F6FB0',
+                                color: '#fff',
+                                backgroundColor: '#2F6FB0',
+                                padding: 0,
+                                marginRight: '10px',
+                                '& .MuiButton-startIcon': {
+                                    margin: 0,
+                                },
+                                '&:hover': {
+                                    borderColor: '#1E4A7C',
+                                    backgroundColor: '#1E4A7C',
+                                    color: '#fff',
+                                },
                             }}
                         >
-                            {renderFloorCard(machine)}
+                        </Button>
+                    </Box>
+
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            flexWrap: 'wrap',
+                            justifyContent: 'left',
+                            gap: { xs: '15px', sm: '20px', md: '20px 50px' },
+                            padding: { xs: '0 5px', sm: '0 15px', md: '0 30px' },
+                        }}
+                    >
+                        {filteredMachines.length > 0 ? (
+                            filteredMachines.map((machine, index) => (
+                                <Box
+                                    key={machine.slave_id || index}
+                                    sx={{
+                                        width: { xs: '100%', sm: 'calc(50% - 15px)', md: 'calc(33.33% - 35px)' },
+                                    }}
+                                >
+                                    {renderFloorCard(machine)}
+                                </Box>
+                            ))
+                        ) : (
+                            <Box sx={{ width: '100%', textAlign: 'center', py: 5, color: '#888' }}>
+                                No compressors found matching your search.
+                            </Box>
+                        )}
+                    </Box>
+
+                    <Modal
+                        open={chartModalOpen}
+                        onClose={() => setChartModalOpen(false)}
+                    >
+                        <Box sx={{
+                            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                            width: { xs: '90%', md: '60%' }, bgcolor: 'background.paper', borderRadius: '8px', boxShadow: 24, p: 4,
+                        }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <Typography variant="h6">{selectedFloor} - Connectivity History</Typography>
+                                <IconButton onClick={() => setChartModalOpen(false)}><CloseIcon /></IconButton>
+                            </Box>
+                            {trendLoading ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '300px' }}>
+                                    <CircularProgress />
+                                </Box>
+                            ) : trendData.length > 0 ? (
+                                <Chart options={chartOptions} series={chartSeries} type="line" height={300} />
+                            ) : (
+                                <Alert severity="info">No data available</Alert>
+                            )}
                         </Box>
-                    ))
-                ) : (
-                    <Box sx={{ width: '100%', textAlign: 'center', py: 5, color: '#888' }}>
-                        No compressors found matching your search.
-                    </Box>
-                )}
-            </Box>
+                    </Modal>
 
-            <Modal
-                open={chartModalOpen}
-                onClose={() => setChartModalOpen(false)}
-            >
-                <Box sx={{
-                    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                    width: { xs: '90%', md: '60%' }, bgcolor: 'background.paper', borderRadius: '8px', boxShadow: 24, p: 4,
-                }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="h6">{selectedFloor} - Connectivity History</Typography>
-                        <IconButton onClick={() => setChartModalOpen(false)}><CloseIcon /></IconButton>
-                    </Box>
-                    {trendData.length > 0 ? (
-                        <Chart options={chartOptions} series={chartSeries} type="area" height={300} />
-                    ) : (
-                        <Alert severity="info">No data available</Alert>
-                    )}
-                </Box>
-            </Modal>
-
-            <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={() => setSnackbarOpen(false)} message={snackbarMessage} />
+                    <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={() => setSnackbarOpen(false)} message={snackbarMessage} />
+                </>
+            )}
         </Box>
     );
 };
