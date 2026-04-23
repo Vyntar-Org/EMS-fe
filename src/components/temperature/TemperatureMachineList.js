@@ -529,7 +529,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 if (isAllowedField) {
                     return value;
                 } else {
-                    return 0; // Return 0 for all other fields
+                    return value; // Return 0 for all other fields
                 }
             }
         };

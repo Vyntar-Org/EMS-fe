@@ -39,7 +39,6 @@ import { getMachineList, getActivePowerChart, getVoltageChart, getCurrentChart, 
 
 
 const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
-    // Theme and Media Query for responsive detection
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -47,38 +46,31 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [error, setError] = useState(null);
     const [machineListData, setMachineListData] = useState(null);
     const [keyParameter, setKeyParameter] = useState('');
-    const [searchTerm, setSearchTerm] = useState(''); // State for search
+    const [searchTerm, setSearchTerm] = useState('');
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
 
     useEffect(() => {
         if (keyParameter === 'voltage') {
-            // load voltage chart data
         } else if (keyParameter === 'current') {
-            // load current chart data
         } else if (keyParameter === 'pf') {
-            // load power factor chart data
         } else if (keyParameter === 'frequency') {
-            // load frequency chart data
         }
     }, [keyParameter]);
 
 
-    // Fetch machine list data
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                setError(null); // Clear any previous errors
+                setError(null);
 
-                // Fetch machine list concurrently
                 const [machineListResponse] = await Promise.all([
                     getMachineList()
                 ]);
 
                 console.log('Machine list API response:', machineListResponse);
 
-                // Set the data
                 setMachineListData(machineListResponse);
 
             } catch (err) {
@@ -92,7 +84,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         fetchData();
     }, []);
 
-    // Filter machines based on search term
     const filteredMachines = machineListData?.data?.machines?.filter(machine => {
         const term = searchTerm.toLowerCase();
         return (
@@ -101,7 +92,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         );
     }) || [];
 
-    // Function to handle CSV download
     const handleDownload = () => {
         if (filteredMachines.length === 0) {
             setSnackbarMessage('No data to download');
@@ -109,21 +99,10 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             return;
         }
 
-        // Define CSV headers
         const headers = ['Machine Name', 'ID', 'Status', 'R-Volts', 'Y-Volts', 'B-Volts', 'R-Amps', 'Y-Amps', 'B-Amps', 'Active Power (kW)', 'PF', 'Frequency (Hz)', 'Today (kWh)', 'MTD (kWh)', 'Last Updated'];
 
-        // Helper to check status
-        const isWithinTimeLimit = (lastTs) => {
-            if (!lastTs) return false;
-            const lastTime = new Date(lastTs);
-            const currentTime = new Date();
-            const timeDiff = (currentTime - lastTime) / (1000 * 60);
-            return timeDiff <= 15;
-        };
-
-        // Map data to CSV rows
         const rows = filteredMachines.map(machine => {
-            const isOnline = isWithinTimeLimit(machine.latest.last_ts);
+            const isOnline = machine.status === 'online';
             const latest = machine.latest || {};
             const energy = machine.energy || {};
 
@@ -146,10 +125,8 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             ].join(',');
         });
 
-        // Combine headers and rows
         const csvContent = [headers.join(','), ...rows].join('\n');
 
-        // Create a blob and download link
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -160,26 +137,16 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         document.body.removeChild(link);
     };
 
-    // State for modal visibility
     const [chartModalOpen, setChartModalOpen] = useState(false);
-    // State for selected floor
     const [selectedFloor, setSelectedFloor] = useState('Common');
-    // State for individual card phase selections
     const [cardPhaseSelections, setCardPhaseSelections] = useState({});
-    // State for chart type
     const [chartType, setChartType] = useState('activePower');
-    // State for active power chart data
     const [activePowerData, setActivePowerData] = useState([]);
-    // State for voltage chart data
     const [voltageData, setVoltageData] = useState([]);
-    // State for current chart data
     const [currentData, setCurrentData] = useState([]);
-    // State for power factor chart data
     const [powerFactorData, setPowerFactorData] = useState([]);
-    // State for frequency chart data
     const [frequencyData, setFrequencyData] = useState([]);
 
-    // Chart data for Kw Consumption over last 8/12 hours
     const chartOptions = {
         chart: {
             type: 'line',
@@ -343,7 +310,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Function to fetch active power chart data
     const fetchActivePowerData = async (slaveId) => {
         try {
             const response = await getActivePowerChart(slaveId);
@@ -361,7 +327,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Function to fetch voltage chart data
     const fetchVoltageData = async (slaveId) => {
         try {
             const response = await getVoltageChart(slaveId);
@@ -379,10 +344,9 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Function to fetch current chart data
     const fetchCurrentData = async (slaveId) => {
         try {
-            const response = await getCurrentChart(slaveId);
+            const response = getCurrentChart(slaveId);
 
             if (response.success) {
                 setCurrentData(response.data.data);
@@ -397,7 +361,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Function to fetch power factor chart data
     const fetchPowerFactorData = async (slaveId) => {
         try {
             const response = await getPowerFactorChart(slaveId);
@@ -415,7 +378,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Function to fetch frequency chart data
     const fetchFrequencyData = async (slaveId) => {
         try {
             const response = await getFrequencyChart(slaveId);
@@ -433,17 +395,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Phase-specific data
-    const getPhaseData = (phase) => {
-        const baseData = {
-            R: [10.5, 11.2, 11.8, 11.5, 11.9, 12.1, 11.7, 11.4, 11.6, 11.3, 11.8, 11.72],
-            Y: [9.8, 10.5, 11.1, 10.8, 11.2, 11.4, 11.0, 10.7, 10.9, 10.6, 11.1, 11.0],
-            B: [11.2, 11.9, 12.5, 12.2, 12.6, 12.8, 12.4, 12.1, 12.3, 12.0, 12.5, 12.4]
-        };
-        return baseData[phase] || baseData.R;
-    };
-
-    // Chart series based on selected chart type
     const getCurrentChartSeries = () => {
         if (chartType === 'activePower') {
             const activePowerValues = activePowerData.map(item => item.value);
@@ -527,7 +478,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     const chartSeries = getCurrentChartSeries();
 
-    // Define styles
     const styles = {
         mainContent: {
             width: '100%',
@@ -748,68 +698,48 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
     };
     const chartName = chartNameMapping[chartType] || 'Active Power';
 
+    // Helper to safely format values - handles null/undefined
+    const safeValue = (value, decimalPlaces = 2) => {
+        if (value === null || value === undefined) return '0';
+        return Number(value).toFixed(decimalPlaces);
+    };
 
     // Function to render a floor card
     const renderFloorCard = (machine) => {
         if (!machine) return null;
 
-        const isWithinTimeLimit = (lastTs) => {
-            if (!lastTs) return false;
-
-            const lastTime = new Date(lastTs);
-            const currentTime = new Date();
-            const timeDiff = (currentTime - lastTime) / (1000 * 60);
-
-            return timeDiff <= 15;
-        };
-
-        const isOnline = isWithinTimeLimit(machine.latest.last_ts);
+        // ✅ Status from API only
+        const isOnline = machine.status === 'online';
         const latest = machine.latest || {};
         const energy = machine.energy || {};
 
-        const getConditionalValue = (value, isAllowedField = false) => {
-            if (isOnline) {
-                return value;
-            } else {
-                if (isAllowedField) {
-                    return value;
-                } else {
-                    return 0;
-                }
-            }
+        // ✅ FIX: Always show original values regardless of online/offline status
+        // Card color is the ONLY thing controlled by isOnline
+        const displayLatest = {
+            acte_im: latest.acte_im,
+            rv: latest.rv,
+            ir: latest.ir,
+            yv: latest.yv,
+            iy: latest.iy,
+            bv: latest.bv,
+            ib: latest.ib,
+            actpr_t: latest.actpr_t,
+            pf_t: latest.pf_t,
+            fq: latest.fq,
         };
 
-        const conditionalLatest = {
-            acte_im: getConditionalValue(latest.acte_im, true),
-            rv: getConditionalValue(latest.rv, false),
-            ir: getConditionalValue(latest.ir, false),
-            yv: getConditionalValue(latest.yv, false),
-            iy: getConditionalValue(latest.iy, false),
-            bv: getConditionalValue(latest.bv, false),
-            ib: getConditionalValue(latest.ib, false),
-            actpr_t: getConditionalValue(latest.actpr_t, false),
-            pf_t: getConditionalValue(latest.pf_t, false),
-            fq: getConditionalValue(latest.fq, false),
-        };
+        const displayStatus = isOnline ? 'Online' : 'Offline';
 
-        const getConditionalStatus = (isOnline) => {
-            if (conditionalLatest.actpr_t > 1 && isOnline) {
-                return 'Online';
-            } else {
-                return 'Offline';
-            }
-        };
-
-
-        const conditionalEnergy = {
-            today: getConditionalValue(energy.today, true),
-            mtd: getConditionalValue(energy.mtd, true),
+        const displayEnergy = {
+            today: energy.today,
+            mtd: energy.mtd,
         };
 
         return (
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
+                    // ✅ Card background: Green gradient for online, White for offline
                     ...(isOnline ? {
                         background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
                         backgroundColor: 'transparent',
@@ -827,27 +757,31 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             {machine.name}
                         </Typography>
 
-                        {/* Responsive Online Status Box */}
                         <Box
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
                                 flexWrap: 'wrap',
-                                // Mobile specific changes
                                 ...(isMobile && {
                                     width: '100%',
                                     justifyContent: 'space-between',
                                 }),
                             }}
                         >
-                            <Typography style={{ fontSize: '11px', color: getConditionalStatus(isOnline) === 'Online' ? '#30b44a' : '#e34d4d', border: '1px solid ' + (getConditionalStatus(isOnline) === 'Online' ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
-                                {getConditionalStatus(isOnline)}
+                            <Typography style={{ 
+                                fontSize: '11px', 
+                                color: displayStatus === 'Online' ? '#30b44a' : '#e34d4d', 
+                                border: '1px solid ' + (displayStatus === 'Online' ? '#30b44a' : '#e34d4d'), 
+                                padding: '2px 6px', 
+                                borderRadius: '4px' 
+                            }}>
+                                {displayStatus}
                             </Typography>
 
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
-                                    {conditionalLatest.acte_im?.toFixed(1)} kWh
+                                    {safeValue(displayLatest.acte_im, 1)} kWh
                                 </Typography>
                                 <Tooltip
                                     title={`${formatTimestampForTooltip(machine.latest?.last_ts)}`}
@@ -883,7 +817,10 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
+                                <TableRow style={{ 
+                                    ...styles.phaseTableHeader, 
+                                    backgroundColor: isOnline ? 'rgba(87, 199, 133, 0.1)' : '#f5f5f5' 
+                                }}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Phase</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}>V</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}>A</TableCell>
@@ -897,8 +834,9 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             Phase R
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.rv?.toFixed(2)}</TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.ir?.toFixed(1)}</TableCell>
+                                    {/* ✅ Shows original value like 18325.55 instead of 0 */}
+                                    <TableCell align="right" style={styles.tableCell}>{safeValue(displayLatest.rv, 2)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{safeValue(displayLatest.ir, 1)}</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
@@ -907,8 +845,8 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             Phase Y
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.yv?.toFixed(2)}</TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.iy?.toFixed(1)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{safeValue(displayLatest.yv, 2)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{safeValue(displayLatest.iy, 1)}</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
@@ -917,8 +855,8 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             Phase B
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.bv?.toFixed(2)}</TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>{conditionalLatest.ib?.toFixed(1)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{safeValue(displayLatest.bv, 2)}</TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>{safeValue(displayLatest.ib, 1)}</TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
@@ -928,15 +866,16 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box style={{ ...styles.metricsRow, marginTop: '0px', display: 'flex', justifyContent: 'space-between' }}>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>Active power</Typography>
-                            <Typography style={styles.metricValue}>{conditionalLatest.actpr_t?.toFixed(2)} kw</Typography>
+                            {/* ✅ Shows original value like 0.05 instead of 0.00 */}
+                            <Typography style={styles.metricValue}>{safeValue(displayLatest.actpr_t, 2)} kw</Typography>
                         </Box>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>Power factor</Typography>
-                            <Typography style={styles.metricValue}>{conditionalLatest.pf_t} PF</Typography>
+                            <Typography style={styles.metricValue}>{safeValue(displayLatest.pf_t, 2)} PF</Typography>
                         </Box>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>Frequency</Typography>
-                            <Typography style={styles.metricValue}>{conditionalLatest.fq} Hz</Typography>
+                            <Typography style={styles.metricValue}>{safeValue(displayLatest.fq, 2)} Hz</Typography>
                         </Box>
                     </Box>
 
@@ -944,11 +883,11 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box style={{ ...styles.metricsRow, marginTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>Today</Typography>
-                            <Typography style={styles.metricValue}>{conditionalEnergy.today?.toFixed(1)} kWh</Typography>
+                            <Typography style={styles.metricValue}>{safeValue(displayEnergy.today, 1)} kWh</Typography>
                         </Box>
                         <Box style={styles.metricItem}>
                             <Typography style={{ ...styles.metricLabel, marginLeft: '15px' }}>MTD</Typography>
-                            <Typography style={{ ...styles.metricValue, marginLeft: '15px' }}>{conditionalEnergy.mtd?.toFixed(1)} kWh</Typography>
+                            <Typography style={{ ...styles.metricValue, marginLeft: '15px' }}>{safeValue(displayEnergy.mtd, 1)} kWh</Typography>
                         </Box>
                         <Box style={{ marginTop: 'auto' }}>
                             <Button
