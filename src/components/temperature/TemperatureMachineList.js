@@ -55,6 +55,10 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
+    // ✅ NEW: Truncate helper
+    const truncateText = (text, length = 15) =>
+        text.length > length ? text.slice(0, length) + '...' : text;
+
     // State variables
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -66,7 +70,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [selectedParameter, setSelectedParameter] = useState('temperature');
     const [trendLoading, setTrendLoading] = useState(false);
     const [trendError, setTrendError] = useState(null);
-    const [searchTerm, setSearchTerm] = useState(''); // State for search
+    const [searchTerm, setSearchTerm] = useState('');
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
 
@@ -110,12 +114,9 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             return;
         }
 
-        // Define CSV headers
         const headers = ['Machine Name', 'Status', 'Temperature (°C)', 'Humidity (%)', 'Battery (V)', 'Last Updated'];
 
-        // Map data to CSV rows
         const rows = filteredMachines.map(machine => {
-            // Determine status
             const isWithinTimeLimit = (lastTs) => {
                 if (!lastTs) return false;
                 const lastTime = new Date(lastTs);
@@ -140,10 +141,8 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             ].join(',');
         });
 
-        // Combine headers and rows
         const csvContent = [headers.join(','), ...rows].join('\n');
 
-        // Create a blob and download link
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -350,6 +349,11 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '16px',
             fontWeight: 600,
             color: '#1F2937',
+            whiteSpace: 'nowrap',       // ✅ NEW
+            overflow: 'hidden',          // ✅ NEW
+            textOverflow: 'ellipsis',    // ✅ NEW
+            maxWidth: '100%',           // ✅ NEW
+            display: 'block',            // ✅ NEW
         },
         gridContainer: {
             display: 'flex',
@@ -493,7 +497,6 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     };
 
     // Chart series
-
     const chartSeries = [{
         name: getParameterLabel(selectedParameter),
         data: trendData.map(item => item.value)
@@ -503,15 +506,18 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const renderFloorCard = (machine) => {
         if (!machine) return null;
 
-        // Check if the last timestamp is within the last 15 minutes
+        // ✅ NEW: Check if name exceeds 15 chars for tooltip
+        const isNameTruncated = machine.name && machine.name.length > 24;
+        const displayName = truncateText(machine.name, 24);
+
         const isWithinTimeLimit = (lastTs) => {
             if (!lastTs) return false;
 
             const lastTime = new Date(lastTs);
             const currentTime = new Date();
-            const timeDiff = (currentTime - lastTime) / (1000 * 60); // Difference in minutes
+            const timeDiff = (currentTime - lastTime) / (1000 * 60);
 
-            return timeDiff <= 15; // Within 15 minutes
+            return timeDiff <= 15;
         };
 
         const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
@@ -519,24 +525,21 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const energy = machine.energy || {};
 
         console.log(latest);
-        // Apply the conditional logic for values
+
         const getConditionalValue = (value, isAllowedField = false) => {
             if (isOnline) {
-                // If online, return the actual value
                 return value;
             } else {
-                // If offline (more than 15 mins old), only show specific fields
                 if (isAllowedField) {
                     return value;
                 } else {
-                    return value; // Return 0 for all other fields
+                    return value;
                 }
             }
         };
 
-        // Determine which fields are allowed when offline
         const conditionalLatest = {
-            acte_im: getConditionalValue(latest.acte_im, true), // Allowed when offline
+            acte_im: getConditionalValue(latest.acte_im, true),
             rv: getConditionalValue(latest.rv, false),
             ir: getConditionalValue(latest.ir, false),
             yv: getConditionalValue(latest.yv, false),
@@ -549,8 +552,8 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         };
 
         const conditionalEnergy = {
-            today: getConditionalValue(energy.today, true), // Allowed when offline
-            mtd: getConditionalValue(energy.mtd, true), // Allowed when offline
+            today: getConditionalValue(energy.today, true),
+            mtd: getConditionalValue(energy.mtd, true),
         };
 
         const formatTimestampForTooltip = (timestamp) => {
@@ -583,9 +586,32 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     flexGrow: 1
                 }}>
                     <Box style={styles.commonHeader}>
-                        <Typography style={styles.floorTitle}>
-                            {machine.name}
-                        </Typography>
+                        {/* ✅ CHANGED: Tooltip only when name is truncated */}
+                        {isNameTruncated ? (
+                            <Tooltip
+                                title={machine.name}
+                                placement="top"
+                                arrow
+                                enterTouchDelay={0}
+                                leaveTouchDelay={3000}
+                                componentsProps={{
+                                    tooltip: {
+                                        sx: {
+                                            fontSize: '13px',
+                                            fontWeight: 500,
+                                        },
+                                    },
+                                }}
+                            >
+                                <Typography style={styles.floorTitle}>
+                                    {displayName}
+                                </Typography>
+                            </Tooltip>
+                        ) : (
+                            <Typography style={styles.floorTitle}>
+                                {displayName}
+                            </Typography>
+                        )}
                         <Box style={styles.onlineStatus}>
                             <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
                                 {isOnline ? 'Online' : 'Offline'}
@@ -594,24 +620,23 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 title={formatTimestampForTooltip(machine.last_ts)}
                                 placement="top"
                                 arrow
-                                enterTouchDelay={0} // Immediately opens on touch
-                                leaveTouchDelay={3000} // Stays open for 3 seconds on touch
+                                enterTouchDelay={0}
+                                leaveTouchDelay={3000}
                                 componentsProps={{
                                     tooltip: {
                                         sx: {
-                                            fontSize: '12px', // Ensure readable font size on mobile
+                                            fontSize: '12px',
                                         },
                                     },
                                 }}
                             >
-                                {/* Wrapper Box increases the touch target size */}
                                 <Box
                                     component="span"
                                     sx={{
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        padding: '4px', // Adds padding to make it easier to tap
+                                        padding: '4px',
                                         cursor: 'pointer'
                                     }}
                                 >
@@ -690,7 +715,6 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     setChartType('temperature');
                                     setChartModalOpen(true);
 
-                                    // Find the selected machine by name to get its slave_id
                                     const selectedMachine = machineListData?.data?.machines?.find(
                                         m => m.name === machine.name
                                     );
@@ -760,7 +784,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 </Button>
             </Box>
 
-            {/* Custom Grid Container - RESPONSIVE using sx prop */}
+            {/* Custom Grid Container */}
             <Box
                 sx={{
                     display: 'flex',
@@ -779,9 +803,9 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             key={machine.slave_id || index}
                             sx={{
                                 width: {
-                                    xs: '100%',              // Mobile: 1 card per row
-                                    sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
-                                    md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
+                                    xs: '100%',
+                                    sm: 'calc(50% - 15px)',
+                                    md: 'calc(33.33% - 35px)'
                                 },
                             }}
                         >
@@ -797,10 +821,10 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 )}
             </Box>
 
-            {/* Chart Modal - RESPONSIVE */}
+            {/* Chart Modal */}
             <Modal
                 open={chartModalOpen}
-                onClose={() => setChartModalOpen(false)}
+                onClose={() => setChartOpen(false)}
                 aria-labelledby="chart-modal-title"
                 aria-describedby="chart-modal-description"
                 sx={{
@@ -847,7 +871,6 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             const newParameter = e.target.value;
                                             setSelectedParameter(newParameter);
 
-                                            // Find the selected machine by name to get its slave_id
                                             const selectedMachine = machineListData?.data?.machines?.find(
                                                 m => m.name === selectedFloor
                                             );

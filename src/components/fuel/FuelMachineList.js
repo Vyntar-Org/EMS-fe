@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Grid,
@@ -55,7 +55,7 @@ const mockMachineListData = {
                 refilled: 0,
                 temperature: 25,
                 fuelCapacity: 780,
-                lastActivity: new Date(Date.now() - 5 * 60000).toISOString(), // 5 minutes ago
+                lastActivity: new Date(Date.now() - 5 * 60000).toISOString(),
                 last_ts: new Date(Date.now() - 5 * 60000).toISOString()
             },
             {
@@ -67,7 +67,7 @@ const mockMachineListData = {
                 refilled: 0,
                 temperature: 24,
                 fuelCapacity: 583,
-                lastActivity: new Date(Date.now() - 10 * 60000).toISOString(), // 10 minutes ago
+                lastActivity: new Date(Date.now() - 10 * 60000).toISOString(),
                 last_ts: new Date(Date.now() - 10 * 60000).toISOString()
             },
             {
@@ -79,7 +79,7 @@ const mockMachineListData = {
                 refilled: 0,
                 temperature: 24,
                 fuelCapacity: 411,
-                lastActivity: new Date(Date.now() - 15 * 60000).toISOString(), // 15 minutes ago
+                lastActivity: new Date(Date.now() - 15 * 60000).toISOString(),
                 last_ts: new Date(Date.now() - 15 * 60000).toISOString()
             },
             {
@@ -91,7 +91,7 @@ const mockMachineListData = {
                 refilled: 0,
                 temperature: 29,
                 fuelCapacity: 1548,
-                lastActivity: new Date(Date.now() - 20 * 60000).toISOString(), // 20 minutes ago
+                lastActivity: new Date(Date.now() - 20 * 60000).toISOString(),
                 last_ts: new Date(Date.now() - 20 * 60000).toISOString()
             }
         ]
@@ -104,39 +104,35 @@ const generateMockTrendData = (parameter) => {
     const now = new Date();
     let baseValue;
 
-    // Set base value based on parameter
     switch (parameter) {
         case 'consumed':
-            baseValue = 15; // Base value for consumed fuel in liters
+            baseValue = 15;
             break;
         case 'refilled':
-            baseValue = 25; // Base value for refilled fuel in liters
+            baseValue = 25;
             break;
         case 'temperature':
-            baseValue = 25; // Base value for temperature in Celsius
+            baseValue = 25;
             break;
         case 'fuelCapacity':
-            baseValue = 50; // Base value for fuel level in percentage
+            baseValue = 50;
             break;
         default:
             baseValue = 0;
     }
 
-    // Generate data points for the last 6 hours (one every 30 minutes)
     for (let i = 12; i >= 0; i--) {
         const timestamp = new Date(now.getTime() - i * 30 * 60000);
-        // Add some random variation to the base value
         const variation = (Math.random() - 0.5) * baseValue * 0.2;
         const value = baseValue + variation;
 
-        // Ensure values stay within reasonable bounds
         let finalValue = value;
         if (parameter === 'temperature') {
-            finalValue = Math.max(20, Math.min(35, value)); // Temperature between 20-35°C
+            finalValue = Math.max(20, Math.min(35, value));
         } else if (parameter === 'fuelCapacity') {
-            finalValue = Math.max(20, Math.min(80, value)); // Fuel level between 20-80%
+            finalValue = Math.max(20, Math.min(80, value));
         } else if (parameter === 'consumed' || parameter === 'refilled') {
-            finalValue = Math.max(0, value); // Non-negative values
+            finalValue = Math.max(0, value);
         }
 
         data.push({
@@ -149,8 +145,33 @@ const generateMockTrendData = (parameter) => {
 };
 
 const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
-    // State variables
-    const [searchTerm, setSearchTerm] = useState(''); // State for search
+    const getParameterUnit = (parameter) => {
+        switch (parameter) {
+            case 'consumed': return 'L';
+            case 'refilled': return 'L';
+            case 'temperature': return '°C';
+            case 'fuelCapacity': return '%';
+            default: return '';
+        }
+    };
+
+    const getParameterLabel = (parameter) => {
+        switch (parameter) {
+            case 'consumed': return 'Consumed';
+            case 'refilled': return 'Refilled';
+            case 'temperature': return 'Temperature';
+            case 'fuelCapacity': return 'Fuel Level';
+            default: return 'Value';
+        }
+    };
+
+    const getFuelLevelColor = (level) => {
+        if (level >= 90) return '#f44336';
+        if (level >= 40) return '#ff9800';
+        return '#4caf50';
+    };
+
+    const [searchTerm, setSearchTerm] = useState('');
     const [chartModalOpen, setChartModalOpen] = useState(false);
     const [selectedFloor, setSelectedFloor] = useState('Common');
     const [chartType, setChartType] = useState('consumed');
@@ -160,47 +181,10 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
 
-    // Get parameter unit
-    const getParameterUnit = (parameter) => {
-        switch (parameter) {
-            case 'consumed':
-                return 'L';
-            case 'refilled':
-                return 'L';
-            case 'temperature':
-                return '°C';
-            case 'fuelCapacity':
-                return '%';
-            default:
-                return '';
-        }
-    };
+    // ✅ NEW: Truncate helper
+    const truncateText = (text, length = 15) =>
+        text.length > length ? text.slice(0, length) + '...' : text;
 
-    // Get parameter label
-    const getParameterLabel = (parameter) => {
-        switch (parameter) {
-            case 'consumed':
-                return 'Consumed';
-            case 'refilled':
-                return 'Refilled';
-            case 'temperature':
-                return 'Temperature';
-            case 'fuelCapacity':
-                return 'Fuel Level';
-            default:
-                return 'Value';
-        }
-    };
-
-    // Get fuel level color based on percentage
-    // Updated color scheme: 0%-40% green, 40%-90% orange, 90%-100% red
-    const getFuelLevelColor = (level) => {
-        if (level >= 90) return '#f44336'; // Red for 90%-100%
-        if (level >= 40) return '#ff9800'; // Orange for 40%-90%
-        return '#4caf50'; // Green for 0%-40%
-    };
-
-    // Filter machines based on search term
     const filteredMachines = machineListData?.data?.machines?.filter(machine => {
         const term = searchTerm.toLowerCase();
         return (
@@ -209,7 +193,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         );
     }) || [];
 
-    // Function to handle CSV download
     const handleDownload = () => {
         if (filteredMachines.length === 0) {
             setSnackbarMessage('No data to download');
@@ -217,10 +200,8 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             return;
         }
 
-        // Define CSV headers
         const headers = ['Machine Name', 'Status', 'Fuel Level (%)', 'Consumed (L)', 'Refilled (L)', 'Temperature (°C)', 'Capacity (L)'];
 
-        // Map data to CSV rows
         const rows = filteredMachines.map(machine => {
             return [
                 machine.name || 'N/A',
@@ -233,10 +214,8 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             ].join(',');
         });
 
-        // Combine headers and rows
         const csvContent = [headers.join(','), ...rows].join('\n');
 
-        // Create a blob and download link
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -247,14 +226,12 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         document.body.removeChild(link);
     };
 
-    // Function to fetch trend data (now using mock data)
     const fetchTrendData = (slaveId, parameter) => {
         const mockData = generateMockTrendData(parameter);
         setTrendData(mockData);
         return mockData;
     };
 
-    // Function to format timestamp for tooltip - showing only time
     const formatTimestampForTooltip = (timestamp) => {
         if (!timestamp) return 'N/A';
         return new Date(timestamp).toLocaleTimeString('en-GB', {
@@ -265,7 +242,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         });
     };
 
-    // Define styles
     const styles = {
         mainContent: {
             width: '100%',
@@ -380,15 +356,9 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             borderRadius: '50%',
             marginRight: '4px',
         },
-        phaseR: {
-            backgroundColor: '#E34D4D',
-        },
-        phaseY: {
-            backgroundColor: '#F8C537',
-        },
-        phaseB: {
-            backgroundColor: '#4A90E2',
-        },
+        phaseR: { backgroundColor: '#E34D4D' },
+        phaseY: { backgroundColor: '#F8C537' },
+        phaseB: { backgroundColor: '#4A90E2' },
         modal: {
             display: 'flex',
             alignItems: 'center',
@@ -421,9 +391,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         chartButton: {
             backgroundColor: '#2F6FB0',
             color: 'white',
-            '&:hover': {
-                backgroundColor: '#1E4A7C',
-            },
+            '&:hover': { backgroundColor: '#1E4A7C' },
             marginTop: 'auto',
             alignSelf: 'flex-start',
             padding: '6px 12px',
@@ -438,6 +406,11 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '16px',
             fontWeight: 600,
             color: '#1F2937',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '100%',
+            display: 'block',
         },
         gridContainer: {
             display: 'flex',
@@ -449,7 +422,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             padding: '0 10px',
         },
         gridItem: {
-            width: '100%', // Mobile: 1 card per row
+            width: '100%',
             marginBottom: '15px',
         },
         tableCell: {
@@ -518,7 +491,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         },
     };
 
-    // Chart data for trend
     const chartOptions = {
         chart: {
             type: 'line',
@@ -527,34 +499,18 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             zoom: { enabled: true },
             background: '#FFFFFF',
         },
-        stroke: {
-            curve: 'smooth',
-            width: 2,
-        },
-        markers: {
-            size: 0,
-        },
+        stroke: { curve: 'smooth', width: 2 },
+        markers: { size: 0 },
         grid: {
             borderColor: '#ebe5e5',
             strokeDashArray: 0,
-            xaxis: {
-                lines: {
-                    show: false,
-                },
-            },
-            yaxis: {
-                lines: {
-                    show: false,
-                },
-            },
+            xaxis: { lines: { show: false } },
+            yaxis: { lines: { show: false } },
         },
         xaxis: {
             title: {
                 text: 'Time',
-                style: {
-                    color: '#6B7280',
-                    fontSize: '12px',
-                },
+                style: { color: '#6B7280', fontSize: '12px' },
             },
             categories: trendData.map(item => {
                 const date = new Date(item.timestamp);
@@ -565,41 +521,26 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 });
             }),
             labels: {
-                style: {
-                    colors: '#6B7280',
-                    fontSize: '11px',
-                },
+                style: { colors: '#6B7280', fontSize: '11px' },
                 rotate: -45,
-                formatter: function (val) {
-                    return val;
-                },
+                formatter: function (val) { return val; },
             },
             tickAmount: 6,
         },
         yaxis: {
             title: {
                 text: getParameterUnit(selectedParameter),
-                style: {
-                    color: '#6B7280',
-                    fontSize: '12px',
-                },
+                style: { color: '#6B7280', fontSize: '12px' },
             },
             labels: {
-                style: {
-                    colors: '#6B7280',
-                    fontSize: '11px',
-                },
-                formatter: function (val) {
-                    return parseFloat(val).toFixed(2);
-                }
+                style: { colors: '#6B7280', fontSize: '11px' },
+                formatter: function (val) { return parseFloat(val).toFixed(2); },
             },
         },
         tooltip: {
             enabled: true,
             theme: 'light',
-            x: {
-                format: 'dd/MM/yyyy HH:mm',
-            },
+            x: { format: 'dd/MM/yyyy HH:mm' },
             custom: function ({ series, seriesIndex, dataPointIndex, w }) {
                 const item = trendData[dataPointIndex];
                 const date = new Date(item.timestamp);
@@ -616,30 +557,23 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 </div>`;
             }
         },
-        legend: {
-            show: true,
-        },
+        legend: { show: true },
     };
 
-    // Chart series
     const chartSeries = [{
         name: getParameterLabel(selectedParameter),
         data: trendData.map(item => item.value)
     }];
 
-    // Function to render a floor card
     const renderFloorCard = (machine) => {
         if (!machine) return null;
 
-        // Check if the last timestamp is within the last 15 minutes
         const isWithinTimeLimit = (lastTs) => {
             if (!lastTs) return false;
-
             const lastTime = new Date(lastTs);
             const currentTime = new Date();
-            const timeDiff = (currentTime - lastTime) / (1000 * 60); // Difference in minutes
-
-            return timeDiff <= 15; // Within 15 minutes
+            const timeDiff = (currentTime - lastTime) / (1000 * 60);
+            return timeDiff <= 15;
         };
 
         const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
@@ -647,24 +581,20 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const energy = machine.energy || {};
         const totalizer = machine.totalizer || {};
 
-        // Apply the conditional logic for values
         const getConditionalValue = (value, isAllowedField = false) => {
             if (isOnline) {
-                // If online, return the actual value
                 return value;
             } else {
-                // If offline (more than 15 mins old), only show specific fields
                 if (isAllowedField) {
                     return value;
                 } else {
-                    return 0; // Return 0 for all other fields
+                    return 0;
                 }
             }
         };
 
-        // Determine which fields are allowed when offline
         const conditionalLatest = {
-            acte_im: getConditionalValue(latest.acte_im, true), // Allowed when offline
+            acte_im: getConditionalValue(latest.acte_im, true),
             temperature: getConditionalValue(latest.temperature, false),
             water: getConditionalValue(latest.water, false),
             actpr_t: getConditionalValue(latest.actpr_t, false),
@@ -673,12 +603,15 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         };
 
         const conditionalEnergy = {
-            today: getConditionalValue(energy.today, true), // Allowed when offline
-            mtd: getConditionalValue(energy.mtd, true), // Allowed when offline
+            today: getConditionalValue(energy.today, true),
+            mtd: getConditionalValue(energy.mtd, true),
         };
 
-        // Calculate fuel level percentage
         const fuelLevelPercentage = (machine.fuelLevel / machine.fuelCapacity) * 100;
+
+        // ✅ NEW: Check if name exceeds 15 chars for tooltip
+        const isNameTruncated = machine.name && machine.name.length > 24;
+        const displayName = truncateText(machine.name, 24);
 
         return (
             <Card style={styles.floorCard}>
@@ -698,12 +631,33 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 }}>
                     <Box style={styles.commonHeader}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {/* 2. The Text Container */}
                             <Box>
-                                {/* Main Title */}
-                                <Typography style={styles.floorTitle}>
-                                    {machine.name}
-                                </Typography>
+                                {/* ✅ CHANGED: Tooltip only when name is truncated */}
+                                {isNameTruncated ? (
+                                    <Tooltip
+                                        title={machine.name}
+                                        placement="top"
+                                        arrow
+                                        enterTouchDelay={0}
+                                        leaveTouchDelay={3000}
+                                        componentsProps={{
+                                            tooltip: {
+                                                sx: {
+                                                    fontSize: '13px',
+                                                    fontWeight: 500,
+                                                },
+                                            },
+                                        }}
+                                    >
+                                        <Typography style={styles.floorTitle}>
+                                            {displayName}
+                                        </Typography>
+                                    </Tooltip>
+                                ) : (
+                                    <Typography style={styles.floorTitle}>
+                                        {displayName}
+                                    </Typography>
+                                )}
                             </Box>
                         </Box>
                         <Box style={styles.onlineStatus}>
@@ -715,24 +669,23 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     title={formatTimestampForTooltip(machine.last_ts)}
                                     placement="top"
                                     arrow
-                                    enterTouchDelay={0} // Immediately opens on touch
-                                    leaveTouchDelay={3000} // Stays open for 3 seconds on touch
+                                    enterTouchDelay={0}
+                                    leaveTouchDelay={3000}
                                     componentsProps={{
                                         tooltip: {
                                             sx: {
-                                                fontSize: '12px', // Ensure readable font size on mobile
+                                                fontSize: '12px',
                                             },
                                         },
                                     }}
                                 >
-                                    {/* Wrapper Box increases the touch target size */}
                                     <Box
                                         component="span"
                                         sx={{
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            padding: '4px', // Adds padding to make it easier to tap
+                                            padding: '4px',
                                             cursor: 'pointer'
                                         }}
                                     >
@@ -743,7 +696,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </Box>
                     </Box>
 
-                    {/* Fuel Level Progress Bar - Moved Above Table */}
+                    {/* Fuel Level Progress Bar */}
                     <Box style={styles.fuelLevelContainer}>
                         <Box style={styles.fuelLevelHeader}>
                             <Typography style={styles.fuelLevelTitle}><LocalGasStationIcon fontSize="10px" color="black" /> Fuel Level</Typography>
@@ -778,7 +731,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {/* Temperature */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -792,7 +744,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableCell>
                                 </TableRow>
 
-                                {/* Humidity */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -806,7 +757,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableCell>
                                 </TableRow>
 
-                                {/* Battery */}
                                 <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -846,7 +796,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 setChartType('consumed');
                                 setChartModalOpen(true);
 
-                                // Find the selected machine by name to get its slave_id
                                 const selectedMachine = machineListData?.data?.machines?.find(
                                     m => m.name === machine.name
                                 );
@@ -866,7 +815,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent} id="main-content">
-            {/* Header with Search and Download */}
             <Box sx={styles.headerContainer}>
                 <TextField
                     placeholder="Search machines..."
@@ -901,9 +849,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         backgroundColor: '#2F6FB0',
                         padding: 0,
                         marginRight: '10px',
-                        '& .MuiButton-startIcon': {
-                            margin: 0,
-                        },
+                        '& .MuiButton-startIcon': { margin: 0 },
                         '&:hover': {
                             borderColor: '#1E4A7C',
                             backgroundColor: '#1E4A7C',
@@ -914,7 +860,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 </Button>
             </Box>
 
-            {/* Custom Grid Container - RESPONSIVE using sx prop */}
             <Box
                 sx={{
                     display: 'flex',
@@ -931,9 +876,9 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             key={machine.slave_id || index}
                             sx={{
                                 width: {
-                                    xs: '100%',              // Mobile: 1 card per row
-                                    sm: 'calc(50% - 15px)',  // Tablet: 2 cards per row
-                                    md: 'calc(33.33% - 35px)' // Desktop: 3 cards per row
+                                    xs: '100%',
+                                    sm: 'calc(50% - 15px)',
+                                    md: 'calc(33.33% - 35px)'
                                 },
                             }}
                         >
@@ -947,7 +892,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 )}
             </Box>
 
-            {/* Chart Modal - RESPONSIVE */}
             <Modal
                 open={chartModalOpen}
                 onClose={() => setChartModalOpen(false)}
@@ -997,7 +941,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             const newParameter = e.target.value;
                                             setSelectedParameter(newParameter);
 
-                                            // Find the selected machine by name to get its slave_id
                                             const selectedMachine = machineListData?.data?.machines?.find(
                                                 m => m.name === selectedFloor
                                             );
@@ -1035,7 +978,6 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 </Box>
             </Modal>
 
-            {/* Snackbar for notifications */}
             <Snackbar
                 open={snackbarOpen}
                 autoHideDuration={6000}

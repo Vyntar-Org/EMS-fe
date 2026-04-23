@@ -43,20 +43,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
-    // State variables
-    const [searchTerm, setSearchTerm] = useState(''); // State for search
-    const [chartModalOpen, setChartModalOpen] = useState(false);
-    const [selectedFloor, setSelectedFloor] = useState('Common');
-    const [chartType, setChartType] = useState('temperature');
-    const [trendData, setTrendData] = useState([]);
-    const [selectedParameter, setSelectedParameter] = useState('temperature');
-    const [machineListData, setMachineListData] = useState({ data: { machines: [] } });
-    const [slaveList, setSlaveList] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
-
     // Get parameter unit
     const getParameterUnit = (parameter) => {
         switch (parameter) {
@@ -69,6 +55,10 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
+    // ✅ NEW: Truncate helper
+    const truncateText = (text, length = 15) =>
+        text.length > length ? text.slice(0, length) + '...' : text;
+
     // Get parameter label
     const getParameterLabel = (parameter) => {
         switch (parameter) {
@@ -80,6 +70,20 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 return 'Value';
         }
     };
+
+    // State variables
+    const [searchTerm, setSearchTerm] = useState('');
+    const [chartModalOpen, setChartModalOpen] = useState(false);
+    const [selectedFloor, setSelectedFloor] = useState('Common');
+    const [chartType, setChartType] = useState('temperature');
+    const [trendData, setTData] = useState([]);
+    const [selectedParameter, setSelectedParameter] = useState('temperature');
+    const [machineListData, setMachineListData] = useState({ data: { machines: [] } });
+    const [slaveList, setSlaveList] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
 
     // Fetch machine list and slaves from API on mount
     useEffect(() => {
@@ -131,12 +135,9 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             return;
         }
 
-        // Define CSV headers
         const headers = ['Machine Name', 'Temperature (°C)', 'Water Level (Mtrs)', 'Status', 'Last Updated'];
 
-        // Map data to CSV rows
         const rows = filteredMachines.map(machine => {
-            // Determine status
             const isWithinTimeLimit = (lastTs) => {
                 if (!lastTs) return false;
                 const lastTime = new Date(lastTs);
@@ -159,10 +160,8 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             ].join(',');
         });
 
-        // Combine headers and rows
         const csvContent = [headers.join(','), ...rows].join('\n');
 
-        // Create a blob and download link
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -358,6 +357,11 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '16px',
             fontWeight: 600,
             color: '#1F2937',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '100%',
+            display: 'block',
         },
         gridContainer: {
             display: 'flex',
@@ -516,33 +520,33 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
             const lastTime = new Date(lastTs);
             const currentTime = new Date();
-            const timeDiff = (currentTime - lastTime) / (1000 * 60); // Difference in minutes
+            const timeDiff = (currentTime - lastTime) / (1000 * 60);
 
-            return timeDiff <= 15; // Within 15 minutes
+            return timeDiff <= 15;
         };
 
         const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
 
-        // Apply the conditional logic for values
+        // ✅ NEW: Check if name exceeds 15 chars for tooltip
+        const isNameTruncated = machine.name && machine.name.length > 24;
+        const displayName = truncateText(machine.name, 24);
+
         const getConditionalValue = (value, isAllowedField = false) => {
             if (isOnline) {
-                // If online, return the actual value
                 return value;
             } else {
-                // If offline (more than 15 mins old), only show specific fields
                 if (isAllowedField) {
                     return value;
                 } else {
-                    return 0; // Return 0 for all other fields
+                    return 0;
                 }
             }
         };
 
-        // Determine which fields are allowed when offline
         const conditionalLatest = {
-            acte_im: getConditionalValue(latest.acte_im, true), // Allowed when offline
+            acte_im: getConditionalValue(latest.acte_im, true),
             temperature: getConditionalValue(latest.temperature, false),
             water: getConditionalValue(latest.water, false),
             actpr_t: getConditionalValue(latest.actpr_t, false),
@@ -551,8 +555,8 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         };
 
         const conditionalEnergy = {
-            today: getConditionalValue(energy.today, true), // Allowed when offline
-            mtd: getConditionalValue(energy.mtd, true), // Allowed when offline
+            today: getConditionalValue(energy.today, true),
+            mtd: getConditionalValue(energy.mtd, true),
         };
 
         return (
@@ -572,9 +576,32 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     flexGrow: 1
                 }}>
                     <Box style={styles.commonHeader}>
-                        <Typography style={styles.floorTitle}>
-                            {machine.name}
-                        </Typography>
+                        {/* ✅ CHANGED: Tooltip only when name is truncated */}
+                        {isNameTruncated ? (
+                            <Tooltip
+                                title={machine.name}
+                                placement="top"
+                                arrow
+                                enterTouchDelay={0}
+                                leaveTouchDelay={3000}
+                                componentsProps={{
+                                    tooltip: {
+                                        sx: {
+                                            fontSize: '13px',
+                                            fontWeight: 500,
+                                        },
+                                    },
+                                }}
+                            >
+                                <Typography style={styles.floorTitle}>
+                                    {displayName}
+                                </Typography>
+                            </Tooltip>
+                        ) : (
+                            <Typography style={styles.floorTitle}>
+                                {displayName}
+                            </Typography>
+                        )}
                         <Box style={styles.onlineStatus}>
                             <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
                                 {isOnline ? 'Online' : 'Offline'}
@@ -663,7 +690,6 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     setChartType('temperature');
                                     setChartModalOpen(true);
 
-                                    // Find the selected machine by name to get its slave_id
                                     const selectedMachine = machineListData?.data?.machines?.find(
                                         m => m.name === machine.name
                                     );
@@ -751,7 +777,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 </Button>
             </Box>
 
-            {/* Custom Grid Container - RESPONSIVE using sx prop */}
+            {/* Custom Grid Container */}
             <Box
                 sx={{
                     display: 'flex',
@@ -784,7 +810,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 )}
             </Box>
 
-            {/* Chart Modal - RESPONSIVE */}
+            {/* Chart Modal */}
             <Modal
                 open={chartModalOpen}
                 onClose={() => setChartModalOpen(false)}
@@ -834,7 +860,6 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             const newParameter = e.target.value;
                                             setSelectedParameter(newParameter);
 
-                                            // Find the selected machine by name to get its slave_id
                                             const selectedMachine = machineListData?.data?.machines?.find(
                                                 m => m.name === selectedFloor
                                             );

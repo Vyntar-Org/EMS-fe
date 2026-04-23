@@ -37,7 +37,10 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
-  const truncateText = (text, length = 9) =>
+  // ✅ FIX: 1024px separate breakpoint
+  const is1024 = useMediaQuery('(min-width:1024px) and (max-width:1080px)');
+
+  const truncateText = (text, length = 20) =>
     text.length > length ? text.slice(0, length) + '...' : text;
 
   const [dashboardData, setDashboardData] = useState(null);
@@ -48,13 +51,12 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const [selectedSlave, setSelectedSlave] = useState(null);
   const [weeklyConsumptionData, setWeeklyConsumptionData] = useState([]);
   const [slaveLoading, setSlaveLoading] = useState(false);
-  const [activeChart, setActiveChart] = useState('bar'); // 'line' or 'bar'
+  const [activeChart, setActiveChart] = useState('bar');
   const [hourlyEnergyData, setHourlyEnergyData] = useState({ hours: [], consumption: [] });
   const [hourlyLoading, setHourlyLoading] = useState(false);
   const [peakDemandData, setPeakDemandData] = useState({ timestamps: [], values: [] });
   const [peakDemandLoading, setPeakDemandLoading] = useState(false);
 
-  // Fetch dashboard data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -326,9 +328,10 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   };
 
   const getCardWidth = () => sidebarVisible ? '176px' : '206px';
-  const getChartCardWidth = () => sidebarVisible ? '500px' : '540px';
-  const getChartCardWidth1 = () => sidebarVisible ? '670px' : '810px';
-  const getAlertsCardWidth = () => sidebarVisible ? '150px' : '230px';
+  const getChartCardWidth = () => is1024 ? '100%' : (sidebarVisible ? '500px' : '540px');
+  // ✅ FIX: At 1024px, chart card takes full width
+  const getChartCardWidth1 = () => is1024 ? '119%' : (sidebarVisible ? '670px' : '810px');
+  const getAlertsCardWidth = () => is1024 ? '10%' : (sidebarVisible ? '150px' : '294px');
 
   const responsiveCardStyle = {
     ...cardStyle,
@@ -352,10 +355,10 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
   return (
     <Box style={styles.mainContent} id="main-content">
       <Box sx={{ paddingLeft: '10px', paddingRight: '10px', paddingBottom: '10px', display: 'flex', justifyContent: 'center', width: '100%', overflow: 'hidden' }}>
-        <Box sx={{ display: 'flex', gap: '10px', marginLeft: { lg: '-30px', md: '-15px', sm: '-30px' }, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'left' } }}>
+        <Box sx={{ display: 'flex', gap: '10px', marginLeft: is1024 ? '-5px' : { lg: '-30px', md: '-15px', sm: '-30px' }, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'left' } }}>
 
           {/* Card 1: Devices */}
-          <Card sx={{ ...responsiveCardStyle, width: { xs: 'calc(88% - 5px)', sm: 'calc(30% - 5px)', md: getCardWidth() }, marginLeft: { xs: '-45px', sm: '30px', md: '0' } }}>
+          <Card sx={{ ...responsiveCardStyle, width: is1024 ? '30%' :  { xs: 'calc(88% - 5px)', sm: 'calc(30% - 5px)', md: getCardWidth() }, marginLeft: { xs: '-45px', sm: '30px', md: '0' } }}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box display="flex" alignItems="center" mb={1}>
                 <DnsIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
@@ -375,7 +378,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
           </Card>
 
           {/* Card 2: Energy Consumption */}
-          <Card sx={{ ...responsiveCardStyle, width: { xs: 'calc(88% - 5px)', sm: 'calc(54% - 5px)', md: getCardWidth() === '230px' ? '500px' : (parseInt(getCardWidth()) * 2) + 'px' }, marginLeft: { xs: '-45px', sm: '0', md: '0' }, height: '130px', position: 'relative', overflow: 'hidden' }}>
+          <Card sx={{ ...responsiveCardStyle, width: is1024 ? '58.5%' :  { xs: 'calc(88% - 5px)', sm: 'calc(54% - 5px)', md: getCardWidth() === '230px' ? '500px' : (parseInt(getCardWidth()) * 2) + 'px' }, marginLeft: { xs: '-45px', sm: '0', md: '0' }, height: '130px', position: 'relative', overflow: 'hidden' }}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box display="flex" alignItems="center" mb={1.5}>
                 <FlashOnIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
@@ -385,63 +388,36 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               <Box display="flex" justifyContent="space-between" alignItems="flex-start" sx={{ flex: 1, pr: '80px' }}>
                 <Box display="flex" flexDirection="column" gap={0.8} sx={{ flex: 1, minWidth: 0 }}>
 
-                  {/* MTD Row */}
                   <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
                     <Typography sx={{ ...labelStyle, fontSize: '13px', width: { xs: '30%', md: '110px' }, flexShrink: 0 }}>MTD</Typography>
                     <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: { xs: '40%', md: '120px' }, flexShrink: 0, textAlign: 'right' }}>
                       {energyConsumption?.mtd?.value.toFixed(1)} {energyConsumptionUnit}
                     </Typography>
-
-                    {/* MTD Cost - Corrected Tooltip Logic */}
-                    <Tooltip
-                      title={`Cost: ₹${(energyConsumption?.mtd?.cost.toFixed(2))}`}
-                      placement="top"
-                      arrow
-                      disableHoverListener={true} // Disables hover on desktop
-                      enterTouchDelay={0}        // Enables instant click on mobile
-                    >
+                    <Tooltip title={`Cost: ₹${(energyConsumption?.mtd?.cost.toFixed(2))}`} placement="top" arrow disableHoverListener={true} enterTouchDelay={0}>
                       <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: { xs: '30%', md: '140px' }, flexShrink: 0, marginLeft: sidebarVisible ? '0' : '30px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         Cost: ₹{(energyConsumption?.mtd?.cost.toFixed(2))}
                       </Typography>
                     </Tooltip>
                   </Box>
 
-                  {/* Today Row */}
                   <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
                     <Typography sx={{ ...labelStyle, fontSize: '13px', width: { xs: '30%', md: '110px' }, flexShrink: 0 }}>Today </Typography>
                     <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: { xs: '40%', md: '120px' }, flexShrink: 0, textAlign: 'right' }}>
                       {(energyConsumption?.today?.value.toFixed(1))} {energyConsumptionUnit}
                     </Typography>
-
-                    {/* Today Cost - Corrected Tooltip Logic */}
-                    <Tooltip
-                      title={`Cost: ₹${(energyConsumption?.today?.cost.toFixed(2))}`}
-                      placement="top"
-                      arrow
-                      disableHoverListener={true}
-                      enterTouchDelay={0}
-                    >
+                    <Tooltip title={`Cost: ₹${(energyConsumption?.today?.cost.toFixed(2))}`} placement="top" arrow disableHoverListener={true} enterTouchDelay={0}>
                       <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: { xs: '30%', md: '140px' }, flexShrink: 0, marginLeft: sidebarVisible ? '0' : '30px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         Cost: ₹{((energyConsumption?.today?.cost.toFixed(2)))}
                       </Typography>
                     </Tooltip>
                   </Box>
 
-                  {/* Yesterday Row */}
                   <Box display="flex" alignItems="center" sx={{ width: '100%', gap: '16px' }}>
                     <Typography sx={{ ...labelStyle, fontSize: '13px', width: { xs: '30%', md: '110px' }, flexShrink: 0 }}>Yesterday </Typography>
                     <Typography sx={{ fontSize: '14px', color: '#1F2937', fontWeight: 600, width: { xs: '40%', md: '120px' }, flexShrink: 0, textAlign: 'right' }}>
                       {(energyConsumption?.yesterday?.value.toFixed(1))} {energyConsumptionUnit}
                     </Typography>
-
-                    {/* Yesterday Cost - Corrected Tooltip Logic */}
-                    <Tooltip
-                      title={`Cost: ₹${(energyConsumption?.yesterday?.cost.toFixed(2))}`}
-                      placement="top"
-                      arrow
-                      disableHoverListener={true}
-                      enterTouchDelay={0}
-                    >
+                    <Tooltip title={`Cost: ₹${(energyConsumption?.yesterday?.cost.toFixed(2))}`} placement="top" arrow disableHoverListener={true} enterTouchDelay={0}>
                       <Typography sx={{ fontSize: '12px', color: '#1F2937', fontWeight: 500, whiteSpace: 'nowrap', width: { xs: '30%', md: '140px' }, flexShrink: 0, marginLeft: sidebarVisible ? '0' : '30px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         Cost: ₹{((energyConsumption?.yesterday?.cost.toFixed(2)))}
                       </Typography>
@@ -452,9 +428,8 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
             </CardContent>
           </Card>
 
-          {/* Other Cards... */}
           {/* Card 4: Ener Tree */}
-          <Card sx={{ ...responsiveCardStyle, width: { xs: 'calc(88% - 7px)', sm: 'calc(30% - 7px)', md: getCardWidth() }, marginLeft: { xs: '-45px', sm: '30px', md: '0' } }}>
+          <Card sx={{ ...responsiveCardStyle, width: is1024 ? '30%' : { xs: 'calc(88% - 7px)', sm: 'calc(30% - 7px)', md: getCardWidth() }, marginLeft: { xs: '-45px', sm: '30px', md: '0' } }}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box display="flex" alignItems="center" mb={1}> <PowerIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} /> <Typography sx={titleStyle}>Ener Tree</Typography> </Box>
               <Box display="flex" justifyContent="space-around" mt="auto">
@@ -466,7 +441,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
           </Card>
 
           {/* Card 5: Carbon Footprints */}
-          <Card sx={{ ...responsiveCardStyle, width: { xs: 'calc(88% - 7px)', sm: 'calc(25% - 7px)', md: getCardWidth() }, marginLeft: { xs: '-45px', sm: '0', md: '0' } }}>
+          <Card sx={{ ...responsiveCardStyle, width: is1024 ? '27%' : { xs: 'calc(88% - 7px)', sm: 'calc(25% - 7px)', md: getCardWidth() }, marginLeft: { xs: '-45px', sm: '0', md: '0' } }}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box display="flex" alignItems="center" mb={1}> <Co2Icon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} /> <Typography sx={titleStyle}>Carbon Footprints</Typography> </Box>
               <Box display="flex" justifyContent="space-around" mt="auto">
@@ -478,7 +453,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
           </Card>
 
           {/* Card 6: Load Balance */}
-          <Card sx={{ ...responsiveCardStyle, width: { xs: 'calc(88% - 7px)', sm: 'calc(25% - 7px)', md: getCardWidth() }, marginLeft: { xs: '-45px', sm: '0', md: '0' } }}>
+          <Card sx={{ ...responsiveCardStyle, width: is1024 ? '27%' : { xs: 'calc(88% - 7px)', sm: 'calc(25% - 7px)', md: getCardWidth() }, marginLeft: { xs: '-45px', sm: '0', md: '0' } }}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box display="flex" alignItems="center" mb={1}> <BalanceIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} /> <Typography sx={titleStyle}>Load Balance</Typography> </Box>
               <Box mt="auto">
@@ -493,11 +468,10 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
       </Box>
 
       {/* Chart Section Layout */}
-      <Box sx={{ backgroundColor: '', padding: '0px', marginLeft: '0px' }}>
+      <Box sx={{ backgroundColor: '', padding: '0px', marginLeft: is1024 ? '-15px' : '0px' }}>
         <Grid container spacing={3} justifyContent="center" gap={'10px'}>
           <Grid item xs={12} sm={12} md={8}>
-            {/* Chart Cards... */}
-            <Card sx={{ ...cardStyle1, width: { xs: '85%', sm: '90%', md: '129%', lg: getChartCardWidth() }, marginLeft: { xs: '0px', sm: '10px', md: '-120px', lg: '0px' }, height: '170px', padding: '20px', marginBottom: '10px', transition: 'all 0.3s ease', '&:hover': { backgroundColor: '#fff', boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)', transform: 'translateY(-2px)' } }}>
+            <Card sx={{ ...cardStyle1, width: is1024 ? '91%' : { xs: '85%', sm: '90%', md: '129%', lg: getChartCardWidth() }, marginLeft: is1024 ? '20px' : { xs: '0px', sm: '10px', md: '-120px', lg: '-10px' }, height: '170px', padding: '20px', marginBottom: '10px', transition: 'all 0.3s ease', '&:hover': { backgroundColor: '#fff', boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)', transform: 'translateY(-2px)' } }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                 <Typography sx={titleStyle1}>Energy Consumption (Last 6 Hours)</Typography>
                 <Typography sx={{ fontSize: '12px', color: '#6B7280' }}>kWh</Typography>
@@ -505,16 +479,17 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
               {hourlyLoading ? <Box></Box> : <Box sx={{ width: { xs: '100%', sm: '100%', md: '100%', lg: 500 } }}> <Chart options={energyConsumptionOptions} series={energyConsumptionSeries} type="line" height={150} /> </Box>}
             </Card>
 
-            <Card sx={{ ...cardStyle1, width: { xs: '85%', sm: '90%', md: getChartCardWidth() }, marginLeft:{ sm: '10px' }, height: '170px', padding: '20px', marginBottom: '10px', transition: 'all 0.3s ease', '&:hover': { backgroundColor: '#fff', boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)', transform: 'translateY(-2px)' } }}>
+            <Card sx={{ ...cardStyle1, width: is1024 ? '91%' : { xs: '85%', sm: '90%', md: getChartCardWidth() }, marginLeft: is1024 ? '20px' : { xs: '0px', sm: '10px', md: '-120px', lg: '-10px' }, height: '170px', padding: '20px', marginBottom: '10px', transition: 'all 0.3s ease', '&:hover': { backgroundColor: '#fff', boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)', transform: 'translateY(-2px)' } }}>
               <Typography sx={titleStyle1}> {selectedSlave ? `Demand Indicator - ${selectedSlave.slave_name}` : 'Peak Demand Indicator'}</Typography>
               {peakDemandLoading ? <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '165px' }}><Typography sx={{ color: '#6B7280', fontSize: '14px' }}>Loading peak demand data...</Typography></Box> : <Box sx={{ width: { xs: '100%', sm: '230%', md: '100%', lg: 500 } }}> <Chart options={peakDemandOptions} series={peakDemandSeries} type="line" height={150} /> </Box>}
             </Card>
           </Grid>
 
           <Grid item xs={12}>
-            <Card sx={{ ...cardStyle1, width: { xs: '85%', sm: '90%', md: getChartCardWidth1() }, height: { xs: 'auto', sm: 'auto', md: '389px' }, marginLeft: { xs: '0px', sm: '10px', md: '0' }, padding: '20px', marginBottom: '10px', transition: 'all 0.3s ease', '&:hover': { backgroundColor: '#fff', boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)', transform: 'translateY(-2px)' } }}>
+            <Card sx={{ ...cardStyle1, width: { xs: '85%', sm: '90%',md: getChartCardWidth1() }, height: { xs: 'auto', sm: 'auto', md: is1024 ? 'auto' : '389px' }, marginLeft: is1024 ? '-92px' : { xs: '0px', sm: '10px', md: '0', lg: '0' }, padding: '20px', marginBottom: '10px', transition: 'all 0.3s ease', '&:hover': { backgroundColor: '#fff', boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)', transform: 'translateY(-2px)' } }}>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={12} md={8}>
+                {/* ✅ FIX: At 1024px chart takes full row, stacks separately */}
+                <Grid item xs={12} sm={12} md={is1024 ? 12 : 8}>
                   {activeChart === 'line' ? (
                     <Box sx={{ marginBottom: '20px' }}>
                       <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -544,61 +519,88 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                   )}
                 </Grid>
 
-                <Grid item xs={12} sm={12} md={4} sx={{ width: { xs: '100%', md: getAlertsCardWidth() }, padding: '10px', marginLeft: { xs: '0px', md: sidebarVisible ? '0px' : '60px' } }}>
-                  <TextField fullWidth size="small" placeholder="Search Devices..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value.toLowerCase())} sx={{ marginBottom: '8px', '& .MuiOutlinedInput-root': { borderRadius: '8px', height: '30px' } }} InputProps={{ startAdornment: (<InputAdornment position="start"> <SearchIcon /> </InputAdornment>), }} />
-                  <Box sx={{ maxHeight: "340px", overflowY: "auto", scrollbarWidth: "thin" }}>
-                    {Array.isArray(slaveList) ? (slaveList.filter(slave => slave.slave_name && slave.slave_name.toLowerCase().includes(searchTerm)).map((slave, index) => (<Tooltip
-                      title={slave.slave_name}
-                      placement={isMobile ? "top" : "right"}   // ✅ mobile = top, desktop = right
-                      arrow
-                      key={slave.slave_id}
-                      enterTouchDelay={0}                      // ✅ instant on touch
-                      disableHoverListener={isMobile}          // ❌ disable hover on mobile
-                      disableFocusListener={isMobile}
-                    >
-                      <Box
-                        onClick={() => handleSlaveSelect(slave)}
-                        sx={{
-                          height: '25px',
-                          padding: '10px 20px',
-                          borderRadius: '8px',
-                          marginBottom: '10px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          backgroundColor:
-                            selectedSlave?.slave_id === slave.slave_id
-                              ? '#E3F2FD'
-                              : index % 2 === 0
-                                ? '#F9FAFB'
-                                : '#FFFFFF',
-                          border:
-                            selectedSlave?.slave_id === slave.slave_id
-                              ? '2px solid #E5E7EB'
-                              : '1px solid #E5E7EB',
-                          transition: 'all 0.3s ease',
-                          cursor: 'pointer',
-                          '&:hover': {
-                            backgroundColor: '#F3F4F6',
-                            transform: 'translateY(-2px)',
-                          }
-                        }}
-                      >
-                        <FlashOnIcon sx={{ mr: 1 }} />
+                {/* ✅ FIX: At 1024px device list takes full row below chart, separately */}
+                <Grid item xs={12} sm={12} md={is1024 ? 12 : 4} sx={{
+                  width: { xs: '100%', md: is1024 ? '40%' : getAlertsCardWidth() },
+                  padding: '10px',
+                  marginLeft: { xs: '0px', md: is1024 ? '0px' : (sidebarVisible ? '0px' : '0px') },
+                  marginTop: is1024 ? '-10px' : { xs: '0px', md: is1024 ? '0px' : (sidebarVisible ? '0px' : '-10px') },
 
-                        <Typography
+                }}>
+                  <TextField fullWidth size="small" placeholder="Search Devices..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value.toLowerCase())} sx={{ marginBottom: '8px', '& .MuiOutlinedInput-root': { borderRadius: '8px', height: '30px' } }} InputProps={{ startAdornment: (<InputAdornment position="start"> <SearchIcon /> </InputAdornment>), }} />
+                  <Box sx={{
+                    maxHeight: is1024 ? "340px" : "340px",
+                    overflowY: "auto",
+                    scrollbarWidth: "thin"
+                  }}>
+                    {Array.isArray(slaveList) ? (slaveList.filter(slave => slave.slave_name && slave.slave_name.toLowerCase().includes(searchTerm)).map((slave, index) => {
+
+                      const isNameTruncated = slave.slave_name && slave.slave_name.length > 20;
+
+                      const slaveBox = (
+                        <Box
+                          onClick={() => handleSlaveSelect(slave)}
                           sx={{
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '90px'
+                            height: '25px',
+                            padding: '10px 20px',
+                            borderRadius: '8px',
+                            marginBottom: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            backgroundColor:
+                              selectedSlave?.slave_id === slave.slave_id
+                                ? '#E3F2FD'
+                                : index % 2 === 0
+                                  ? '#F9FAFB'
+                                  : '#FFFFFF',
+                            border:
+                              selectedSlave?.slave_id === slave.slave_id
+                                ? '2px solid #E5E7EB'
+                                : '1px solid #E5E7EB',
+                            transition: 'all 0.3s ease',
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: '#F3F4F6',
+                              transform: 'translateY(-2px)',
+                            }
                           }}
                         >
-                          {truncateText(slave.slave_name)}
-                        </Typography>
-                      </Box>
-                    </Tooltip>))) : null}
+                          <FlashOnIcon sx={{ mr: 1 }} />
+
+                          <Typography
+                            sx={{
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '160px'
+                            }}
+                          >
+                            {truncateText(slave.slave_name)}
+                          </Typography>
+                        </Box>
+                      );
+
+                      if (isNameTruncated) {
+                        return (
+                          <Tooltip
+                            key={slave.slave_id}
+                            title={slave.slave_name}
+                            placement={isMobile ? "top" : "right"}
+                            arrow
+                            enterTouchDelay={0}
+                            disableHoverListener={isMobile}
+                            disableFocusListener={isMobile}
+                          >
+                            {slaveBox}
+                          </Tooltip>
+                        );
+                      }
+
+                      return <React.Fragment key={slave.slave_id}>{slaveBox}</React.Fragment>;
+
+                    })) : null}
                   </Box>
                 </Grid>
               </Grid>

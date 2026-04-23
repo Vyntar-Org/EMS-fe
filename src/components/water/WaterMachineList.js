@@ -46,19 +46,9 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { getWaterMachineList, getWaterMachineTrend } from '../../auth/water/WaterMachineListApi';
 
 const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
-    // State variables
-    const [searchTerm, setSearchTerm] = useState(''); // State for search
-    const [chartModalOpen, setChartModalOpen] = useState(false);
-    const [selectedFloor, setSelectedFloor] = useState('Common');
-    const [chartType, setChartType] = useState('consumption');
-    const [trendData, setTrendData] = useState([]);
-    const [selectedParameter, setSelectedParameter] = useState('flow_rate');
-    const [machineListData, setMachineListData] = useState({ data: { machines: [] } });
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [trendLoading, setTrendLoading] = useState(false);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
+    // ✅ NEW: Truncate helper
+    const truncateText = (text, length = 15) =>
+        text.length > length ? text.slice(0, length) + '...' : text;
 
     // Get parameter unit
     const getParameterUnit = (parameter) => {
@@ -87,6 +77,20 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 return 'Value';
         }
     };
+
+    // State variables
+    const [searchTerm, setSearchTerm] = useState('');
+    const [chartModalOpen, setChartModalOpen] = useState(false);
+    const [selectedFloor, setSelectedFloor] = useState('Common');
+    const [chartType, setChartType] = useState('consumption');
+    const [trendData, setTrendData] = useState([]);
+    const [selectedParameter, setSelectedParameter] = useState('flow_rate');
+    const [machineListData, setMachineListData] = useState({ data: { machines: [] } });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [trendLoading, setTrendLoading] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
 
     // Fetch machine list on component mount
     useEffect(() => {
@@ -126,12 +130,11 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             return;
         }
 
-        // Define CSV headers
         const headers = ['Machine Name', 'Location', 'Consumption (KLD)', 'Rate of Flow (m³/h)', 'MTD (KLD)', 'Totalizer (m³)', 'Status'];
 
-        // Map data to CSV rows
         const rows = filteredMachines.map(machine => {
-            const isOnline = (machine.rate_of_flow || 0) > 0;
+            const rateOfFlow = machine.rate_of_flow || 0;
+            const isOnline = rateOfFlow > 0;
             return [
                 machine.slave_name || 'N/A',
                 machine.location || 'N/A',
@@ -143,10 +146,8 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             ].join(',');
         });
 
-        // Combine headers and rows
         const csvContent = [headers.join(','), ...rows].join('\n');
 
-        // Create a blob and download link
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -174,7 +175,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Function to format timestamp for tooltip - showing date and time
+    // Function to format timestamp for tooltip
     const formatTimestampForTooltip = (timestamp) => {
         if (!timestamp) return 'N/A';
         return new Date(timestamp).toLocaleString('en-GB', {
@@ -361,6 +362,11 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '16px',
             fontWeight: 600,
             color: '#1F2937',
+            whiteSpace: 'nowrap',       // ✅ NEW
+            overflow: 'hidden',          // ✅ NEW
+            textOverflow: 'ellipsis',    // ✅ NEW
+            maxWidth: '100%',           // ✅ NEW
+            display: 'block',            // ✅ NEW
         },
         gridContainer: {
             display: 'flex',
@@ -510,7 +516,10 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const renderFloorCard = (machine) => {
         if (!machine) return null;
 
-        // UPDATED: Online/Offline logic based on Rate of Flow
+        // ✅ NEW: Check if name exceeds 15 chars for tooltip
+        const isNameTruncated = machine.slave_name && machine.slave_name.length > 24;
+        const displayName = truncateText(machine.slave_name, 24);
+
         const rateOfFlow = machine.rate_of_flow || 0;
         const isOnline = rateOfFlow > 0;
 
@@ -518,7 +527,6 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const energy = machine.energy || {};
         const totalizer = machine.totalizer || {};
 
-        // Apply the conditional logic for values
         const getConditionalValue = (value, isAllowedField = false) => {
             if (isOnline) {
                 return value;
@@ -531,7 +539,6 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             }
         };
 
-        // Determine which fields are allowed when offline
         const conditionalLatest = {
             acte_im: getConditionalValue(latest.acte_im, true),
             temperature: getConditionalValue(latest.temperature, false),
@@ -565,9 +572,32 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box style={styles.commonHeader}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Box>
-                                <Typography style={styles.floorTitle}>
-                                    {machine.slave_name}
-                                </Typography>
+                                {/* ✅ CHANGED: Tooltip only when name is truncated */}
+                                {isNameTruncated ? (
+                                    <Tooltip
+                                        title={machine.slave_name}
+                                        placement="top"
+                                        arrow
+                                        enterTouchDelay={0}
+                                        leaveTouchDelay={3000}
+                                        componentsProps={{
+                                            tooltip: {
+                                                sx: {
+                                                    fontSize: '13px',
+                                                    fontWeight: 500,
+                                                },
+                                            },
+                                        }}
+                                    >
+                                        <Typography style={styles.floorTitle}>
+                                            {displayName}
+                                        </Typography>
+                                    </Tooltip>
+                                ) : (
+                                    <Typography style={styles.floorTitle}>
+                                        {displayName}
+                                    </Typography>
+                                )}
                             </Box>
                         </Box>
                         <Box style={styles.onlineStatus}>

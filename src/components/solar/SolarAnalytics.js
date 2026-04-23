@@ -140,6 +140,49 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             alignItems: 'center',
             height: '50vh',
         },
+        // Chart container styles with toolbar fixes
+        chartContainer: {
+            width: '100%',
+            overflow: 'visible',
+            '& .apexcharts-toolbar': {
+                display: 'flex !important',
+                alignItems: 'center !important',
+                gap: '4px !important',
+                padding: '4px 8px !important',
+                background: 'transparent !important',
+                border: 'none !important',
+                marginTop: {xs: '80px', sm: '0px', md:'0px'}
+            },
+            '& .apexcharts-menu': {
+                minWidth: '140px',
+            },
+            '& .apexcharts-menu-item': {
+                padding: '6px 12px',
+                fontSize: '12px',
+            },
+            // Hide the default download icon SVG and show only the menu icon
+            '& .apexcharts-toolbar .apexcharts-download-icon svg': {
+                display: 'none !important',
+            },
+            '& .apexcharts-toolbar .apexcharts-download-icon': {
+                '&::after': {
+                    content: '""',
+                    display: 'block',
+                    width: '16px',
+                    height: '14px',
+                    background: `repeating-linear-gradient(
+                        to bottom,
+                        #666,
+                        #666 2px,
+                        transparent 2px,
+                        transparent 4px
+                    )`,
+                    borderRadius: '2px',
+                    marginTop: '1px',
+                    cursor: 'pointer',
+                }
+            }
+        }
     };
 
     // Fetch devices on component mount
@@ -603,15 +646,63 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                 type: 'line',
                 height: 420,
                 toolbar: {
-                    show: false
+                    show: true,
+                    tools: {
+                        download: true,     // This shows the menu button (required for menu to work)
+                        selection: false,   // Hide selection tool
+                        zoom: true,         // Magnifying glass icon
+                        zoomin: true,       // Circle with plus icon
+                        zoomout: true,      // Circle with minus icon
+                        pan: true,          // Hand icon
+                        reset: true,        // House icon
+                        customIcons: []     // Remove any custom icons
+                    },
+                    autoSelected: 'zoom'
                 },
                 zoom: {
-                    enabled: false
+                    enabled: true,
+                    type: 'x',
+                    autoScaleYaxis: false,
+                    zoomedArea: {
+                        fill: {
+                            color: '#90CAF9',
+                            opacity: 0.4
+                        },
+                        stroke: {
+                            color: '#0D47A1',
+                            opacity: 0.8,
+                            width: 1
+                        }
+                    }
+                },
+                pan: {
+                    enabled: true,
+                    type: 'x',
+                    autoScaleYaxis: false
                 },
                 animations: {
                     enabled: false
                 },
                 background: '#FFFFFF',
+            },
+            // Export configuration - controls what appears in the menu dropdown
+            export: {
+                enabled: true,
+                csv: {
+                    filename: 'solar-analytics',
+                    columnDelimiter: ',',
+                    headerCategory: 'category',
+                    headerValue: 'value',
+                    dateFormatter: function(timestamp) {
+                        return new Date(timestamp).toDateString();
+                    }
+                },
+                svg: {
+                    filename: 'solar-analytics',
+                },
+                png: {
+                    filename: 'solar-analytics',
+                }
             },
             stroke: {
                 width: 2,
@@ -1075,7 +1166,8 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             </Box>
                                         </Box>
                                     </Box>
-                                    <Box sx={{ width: '100%', overflow: 'auto' }}>
+                                    {/* Main Chart */}
+                                    <Box sx={styles.chartContainer}>
                                         <Chart
                                             options={getChartOptions(
                                                 processedFilteredData,
@@ -1290,7 +1382,8 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             )}
                                                         </Box>
                                                     </Box>
-                                                    <Box sx={{ width: '100%', overflow: 'auto' }}>
+                                                    {/* Comparison Chart 1 */}
+                                                    <Box sx={styles.chartContainer}>
                                                         <Chart
                                                             options={getChartOptions(
                                                                 processedCompareData,
@@ -1462,7 +1555,8 @@ const SolarAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             </Select>
                                                         </FormControl>
                                                     </Box>
-                                                    <Box sx={{ width: '100%', overflow: 'auto' }}>
+                                                    {/* Comparison Chart 2 */}
+                                                    <Box sx={styles.chartContainer}>
                                                         <Chart
                                                             options={getChartOptions(
                                                                 processedCompareData2,
