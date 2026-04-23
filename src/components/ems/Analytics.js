@@ -43,17 +43,16 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     // State for filters
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDevice, setFilterDevice] = useState('all');
-    // Initialize with default dates - 7 days ago to today
     const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(1, 'day'));
     const [filterEndDate, setFilterEndDate] = useState(dayjs());
-    const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
-    const [devices, setDevices] = useState(['all']); // Initialize with 'all' as default
-    const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
-    const [selectedParameter, setSelectedParameter] = useState([]); // State for main chart parameter selection (array for multi-select)
-    const [selectedParameter2, setSelectedParameter2] = useState([]); // State for first comparison chart parameter selection (array for multi-select)
-    const [selectedParameter3, setSelectedParameter3] = useState([]); // State for second comparison chart parameter selection (array for multi-select)
-    const [compareDevice, setCompareDevice] = useState(''); // Selected device for comparison
-    const [compareDevice2, setCompareDevice2] = useState(''); // Selected device for second comparison
+    const [searchClicked, setSearchClicked] = useState(false);
+    const [devices, setDevices] = useState(['all']);
+    const [deviceObjects, setDeviceObjects] = useState([]);
+    const [selectedParameter, setSelectedParameter] = useState([]);
+    const [selectedParameter2, setSelectedParameter2] = useState([]);
+    const [selectedParameter3, setSelectedParameter3] = useState([]);
+    const [compareDevice, setCompareDevice] = useState('');
+    const [compareDevice2, setCompareDevice2] = useState('');
     const [openStart, setOpenStart] = useState(false);
     const [openEnd, setOpenEnd] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -63,11 +62,11 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [error, setError] = useState(null);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
-    const [compareMode, setCompareMode] = useState(false); // Track if compare mode is active
-    const [compareChartData, setCompareChartData] = useState([]); // Chart data for comparison device
-    const [compareMode2, setCompareMode2] = useState(false); // Track if second compare mode is active
-    const [compareChartData2, setCompareChartData2] = useState([]); // Chart data for second comparison device
-    const [filteredChartData, setFilteredChartData] = useState([]); // State for filtered chart data
+    const [compareMode, setCompareMode] = useState(false);
+    const [compareChartData, setCompareChartData] = useState([]);
+    const [compareMode2, setCompareMode2] = useState(false);
+    const [compareChartData2, setCompareChartData2] = useState([]);
+    const [filteredChartData, setFilteredChartData] = useState([]);
 
     // Define parameter categories with their associated parameters
     const parameterCategories = {
@@ -194,6 +193,49 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             justifyContent: 'center',
             alignItems: 'center',
             height: '50vh',
+        },
+        // Chart container styles
+        chartContainer: {
+            width: '100%',
+            overflow: 'visible',
+            '& .apexcharts-toolbar': {
+                display: 'flex !important',
+                alignItems: 'center !important',
+                gap: '4px !important',
+                padding: '4px 8px !important',
+                background: 'transparent !important',
+                border: 'none !important',
+                marginTop: {xs: '220px', sm: '100px', md:'70px'}
+            },
+            '& .apexcharts-menu': {
+                minWidth: '140px',
+            },
+            '& .apexcharts-menu-item': {
+                padding: '6px 12px',
+                fontSize: '12px',
+            },
+            // Hide the default download icon SVG and show only the menu icon
+            '& .apexcharts-toolbar .apexcharts-download-icon svg': {
+                display: 'none !important',
+            },
+            '& .apexcharts-toolbar .apexcharts-download-icon': {
+                '&::after': {
+                    content: '""',
+                    display: 'block',
+                    width: '16px',
+                    height: '14px',
+                    background: `repeating-linear-gradient(
+                        to bottom,
+                        #666,
+                        #666 2px,
+                        transparent 2px,
+                        transparent 4px
+                    )`,
+                    borderRadius: '2px',
+                    marginTop: '1px',
+                    cursor: 'pointer',
+                }
+            }
         }
     };
 
@@ -207,7 +249,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 const deviceNames = slaves.map(slave => slave.slave_name);
                 setDevices(['all', ...deviceNames]);
                 
-                // Set default device to the first one (not 'all')
                 if (slaves.length > 0) {
                     setFilterDevice(slaves[0].slave_name);
                 }
@@ -227,11 +268,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     // Function to fetch analytics data for a specific device
     const fetchAnalyticsData = async (slaveId, parameters, startDate, endDate) => {
         try {
-            // Format dates to API expected format
             const fromDatetime = dayjs(startDate).format('YYYY-MM-DD HH:mm:ss');
             const toDatetime = dayjs(endDate).format('YYYY-MM-DD HH:mm:ss');
-            
-            // Fetch analytics data using API function
             const data = await getEnergyAnalytics(slaveId, parameters, fromDatetime, toDatetime);
             return data;
         } catch (error) {
@@ -262,17 +300,14 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             setDataLoading(true);
             setSearchClicked(true);
             
-            // Find the device ID based on the device name
             const selectedDevice = deviceObjects.find(device => device.slave_name === filterDevice);
             if (!selectedDevice) {
                 setError(`Device '${filterDevice}' not found`);
                 return;
             }
             
-            // Default to all parameters if none selected
             const params = selectedParameter.length > 0 ? selectedParameter : allParameters;
             
-            // Fetch analytics data
             const data = await fetchAnalyticsData(
                 selectedDevice.slave_id,
                 params,
@@ -282,7 +317,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             
             setFilteredChartData(data);
             
-            // If comparison mode is active, fetch comparison data
             if (compareMode && compareDevice) {
                 setCompareLoading(true);
                 try {
@@ -306,7 +340,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 }
             }
             
-            // If second comparison mode is active, fetch second comparison data
             if (compareMode2 && compareDevice2) {
                 setCompareLoading2(true);
                 try {
@@ -342,20 +375,19 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const handleResetFilters = () => {
         setSearchTerm('');
         setFilterDevice(deviceObjects.length > 0 ? deviceObjects[0].slave_name : 'all');
-        // Reset to default dates
         setFilterStartDate(dayjs().subtract(1, 'day'));
         setFilterEndDate(dayjs());
-        setSearchClicked(false); // Reset search state
-        setSelectedParameter([]); // Reset main chart parameter
-        setSelectedParameter2([]); // Reset first comparison parameter
-        setSelectedParameter3([]); // Reset second comparison parameter
-        setCompareDevice(''); // Reset first comparison machine
-        setCompareDevice2(''); // Reset second comparison machine
-        setCompareMode(false); // Reset first compare mode
-        setCompareMode2(false); // Reset second compare mode
-        setFilteredChartData([]); // Clear chart data
-        setCompareChartData([]); // Clear comparison chart data
-        setCompareChartData2([]); // Clear second comparison chart data
+        setSearchClicked(false);
+        setSelectedParameter([]);
+        setSelectedParameter2([]);
+        setSelectedParameter3([]);
+        setCompareDevice('');
+        setCompareDevice2('');
+        setCompareMode(false);
+        setCompareMode2(false);
+        setFilteredChartData([]);
+        setCompareChartData([]);
+        setCompareChartData2([]);
     };
 
     // Handle comparison device selection
@@ -363,7 +395,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         setCompareDevice(deviceName);
         setCompareMode(true);
         
-        // If main data is already loaded, fetch comparison data immediately
         if (searchClicked && filteredChartData.length > 0) {
             setCompareLoading(true);
             try {
@@ -393,7 +424,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         setCompareDevice2(deviceName);
         setCompareMode2(true);
         
-        // If main data is already loaded, fetch comparison data immediately
         if (searchClicked && filteredChartData.length > 0) {
             setCompareLoading2(true);
             try {
@@ -418,15 +448,13 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Process the filtered chart data to create chart series and categories
+    // Process the filtered chart data
     const processedFilteredData = React.useMemo(() => {
         if (!filteredChartData || !Array.isArray(filteredChartData) || filteredChartData.length === 0) {
             return { series: [], categories: [] };
         }
 
-        // Process the filtered data to extract timestamps and values
         const categories = filteredChartData.map(item => {
-            // Format timestamp for x-axis - date and month only
             const timestamp = item.timestamp;
             if (timestamp) {
                 const date = new Date(timestamp);
@@ -435,32 +463,22 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             return 'N/A';
         });
 
-        // Create series for the filtered data
         const series = [];
-
-        // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter) && selectedParameter.length > 0
             ? selectedParameter
-            : allParameters; // Default to all parameters
+            : allParameters;
 
         parametersToProcess.forEach(param => {
-            // Extract values from the filtered data based on selected parameter and format to 2 decimal places
-            const values = filteredChartData.map((item, index) => {
+            const values = filteredChartData.map((item) => {
                 let value = 0;
-
-                // If a specific parameter is selected, use that field
                 if (param) {
                     value = parseFloat(item[param]) || 0;
                 } else {
-                    // If no parameter selected, use the default logic (ry_v)
                     value = parseFloat(item.ry_v) || 0;
                 }
-
-                // Format to 2 decimal places
                 return parseFloat(value.toFixed(2));
             });
 
-            // Always create a series if we have data, even if all values are 0
             if (filteredChartData.length > 0) {
                 const parameterLabel = parameterLabels[param] || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 series.push({
@@ -473,15 +491,13 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         return { series, categories };
     }, [filteredChartData, filterDevice, selectedParameter]);
 
-    // Process the comparison chart data to create chart series and categories
+    // Process the comparison chart data
     const processedCompareData = React.useMemo(() => {
         if (!compareChartData || !Array.isArray(compareChartData) || compareChartData.length === 0) {
             return { series: [], categories: [] };
         }
 
-        // Process the comparison data to extract timestamps and values
         const categories = compareChartData.map(item => {
-            // Format timestamp for x-axis - date and month only
             const timestamp = item.timestamp;
             if (timestamp) {
                 const date = new Date(timestamp);
@@ -490,32 +506,22 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             return 'N/A';
         });
 
-        // Create series for the comparison data
         const series = [];
-
-        // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter2) && selectedParameter2.length > 0
             ? selectedParameter2
-            : allParameters; // Default to all parameters
+            : allParameters;
 
         parametersToProcess.forEach(param => {
-            // Extract values from the comparison data based on selected parameter and format to 2 decimal places
-            const values = compareChartData.map((item, index) => {
+            const values = compareChartData.map((item) => {
                 let value = 0;
-
-                // If a specific parameter is selected, use that field
                 if (param) {
                     value = parseFloat(item[param]) || 0;
                 } else {
-                    // If no parameter selected, use the default logic (ry_v)
                     value = parseFloat(item.ry_v) || 0;
                 }
-
-                // Format to 2 decimal places
                 return parseFloat(value.toFixed(2));
             });
 
-            // Always create a series if we have data, even if all values are 0
             if (compareChartData.length > 0) {
                 const parameterLabel = parameterLabels[param] || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 series.push({
@@ -528,15 +534,13 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         return { series, categories };
     }, [compareChartData, compareDevice, selectedParameter2]);
 
-    // Process the second comparison chart data to create chart series and categories
+    // Process the second comparison chart data
     const processedCompareData2 = React.useMemo(() => {
         if (!compareChartData2 || !Array.isArray(compareChartData2) || compareChartData2.length === 0) {
             return { series: [], categories: [] };
         }
 
-        // Process the second comparison data to extract timestamps and values
         const categories = compareChartData2.map(item => {
-            // Format timestamp for x-axis - date and month only
             const timestamp = item.timestamp;
             if (timestamp) {
                 const date = new Date(timestamp);
@@ -545,32 +549,22 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
             return 'N/A';
         });
 
-        // Create series for the second comparison data
         const series = [];
-
-        // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter3) && selectedParameter3.length > 0
             ? selectedParameter3
-            : allParameters; // Default to all parameters
+            : allParameters;
 
         parametersToProcess.forEach(param => {
-            // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
-            const values = compareChartData2.map((item, index) => {
+            const values = compareChartData2.map((item) => {
                 let value = 0;
-
-                // If a specific parameter is selected, use that field
                 if (param) {
                     value = parseFloat(item[param]) || 0;
                 } else {
-                    // If no parameter selected, use the default logic (ry_v)
                     value = parseFloat(item.ry_v) || 0;
                 }
-
-                // Format to 2 decimal places
                 return parseFloat(value.toFixed(2));
             });
 
-            // Always create a series if we have data, even if all values are 0
             if (compareChartData2.length > 0) {
                 const parameterLabel = parameterLabels[param] || param.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 series.push({
@@ -583,7 +577,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
         return { series, categories };
     }, [compareChartData2, compareDevice2, selectedParameter3]);
 
-    // Define colors for each series to match the dots in the image
+    // Define colors for each series
     const seriesColors = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'];
 
     // Dynamic chart configuration function
@@ -593,22 +587,70 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 type: 'line',
                 height: 420,
                 toolbar: {
-                    show: false
+                    show: true,
+                    tools: {
+                        download: true,     // This shows the menu button (required for menu to work)
+                        selection: false,   // Hide selection tool (not in reference image)
+                        zoom: true,         // Magnifying glass icon
+                        zoomin: true,       // Circle with plus icon
+                        zoomout: true,      // Circle with minus icon
+                        pan: true,          // Hand icon
+                        reset: true,        // House icon
+                        customIcons: []     // Remove any custom icons
+                    },
+                    autoSelected: 'zoom'
                 },
                 zoom: {
-                    enabled: false
+                    enabled: true,
+                    type: 'x',
+                    autoScaleYaxis: false,
+                    zoomedArea: {
+                        fill: {
+                            color: '#90CAF9',
+                            opacity: 0.4
+                        },
+                        stroke: {
+                            color: '#0D47A1',
+                            opacity: 0.8,
+                            width: 1
+                        }
+                    }
+                },
+                pan: {
+                    enabled: true,
+                    type: 'x',
+                    autoScaleYaxis: false
                 },
                 animations: {
                     enabled: false
                 },
                 background: '#FFFFFF',
             },
+            // Export configuration - controls what appears in the menu dropdown
+            export: {
+                enabled: true,
+                csv: {
+                    filename: 'energy-analytics',
+                    columnDelimiter: ',',
+                    headerCategory: 'category',
+                    headerValue: 'value',
+                    dateFormatter: function(timestamp) {
+                        return new Date(timestamp).toDateString();
+                    }
+                },
+                svg: {
+                    filename: 'energy-analytics',
+                },
+                png: {
+                    filename: 'energy-analytics',
+                }
+            },
             stroke: {
                 width: 2,
                 curve: 'smooth'
             },
             markers: {
-                size: 0  // This removes the data points, showing only lines
+                size: 0
             },
             xaxis: {
                 categories: currentProcessedData.categories,
@@ -638,7 +680,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                         fontSize: '12px',
                     },
                     formatter: function (value) {
-                        // Format y-axis values to 2 decimal places
                         if (value !== undefined && value !== null && !isNaN(value)) {
                             return parseFloat(value).toFixed(2);
                         }
@@ -677,10 +718,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 style: {
                     fontSize: '12px',
                 },
-                shared: true, // Enable shared tooltip to show all series at once
-                intersect: false, // Show tooltip when hovering anywhere on the x-axis
+                shared: true,
+                intersect: false,
                 custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-                    // Get the original date from the data
                     let originalDate = '';
 
                     if (currentData && currentData.length > 0) {
@@ -692,11 +732,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                         }
                     }
 
-                    // Build the tooltip content
                     let tooltipContent = `<div class="apexcharts-tooltip-custom" style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
                         <div style="font-weight: bold; margin-bottom: 8px; color: lightgray; font-size: 14px; padding: 10px; background-color: #f4f7f6">${originalDate}</div>`;
 
-                    // Add each series with its color dot and value
                     w.globals.seriesNames.forEach((name, index) => {
                         const value = series[index][dataPointIndex];
                         const color = seriesColors[index % seriesColors.length];
@@ -713,14 +751,14 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                 }
             },
             legend: {
-                show: true,  // Show legend for multiple slaves
+                show: true,
                 position: 'top',
                 fontSize: '12px',
                 labels: {
                     colors: '#6B7280'
                 }
             },
-            colors: seriesColors,  // Use the defined colors for multiple slaves
+            colors: seriesColors,
             fill: {
                 type: 'solid'
             },
@@ -734,17 +772,13 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
     const handleParameterChange = (event, setSelectedParam) => {
         const value = event.target.value;
         
-        // Check if "All Categories" was selected
         if (value.includes('all_categories')) {
             if (selectedParameter.length === allParameters.length) {
-                // If all are already selected, deselect all
                 setSelectedParam([]);
             } else {
-                // Select all parameters from all categories
                 setSelectedParam([...allParameters]);
             }
         } else {
-            // Get all parameters from the selected categories
             const selectedParameters = [];
             value.forEach(category => {
                 if (parameterCategories[category]) {
@@ -838,7 +872,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 label="Select Parameters"
                                                 renderValue={(selected) => (
                                                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                        {/* Show "All Categories" if all are selected */}
                                                         {isAllParametersSelected(selectedParameter) ? (
                                                             <Chip
                                                                 label="All Categories"
@@ -846,7 +879,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 sx={{ height: '20px', fontSize: '10px' }}
                                                             />
                                                         ) : (
-                                                            /* Show the first 2 items as Chips */
                                                             selected.slice(0, 2).map((value) => (
                                                                 <Chip
                                                                     key={value}
@@ -860,7 +892,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             ))
                                                         )}
 
-                                                        {/* If more than 2 items and not all selected, show the +X counter */}
                                                         {!isAllParametersSelected(selectedParameter) && selected.length > 2 && (
                                                             <Chip
                                                                 label={`+${selected.length - 2} more`}
@@ -884,27 +915,25 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     }
                                                 }
                                             >
-                                               
-                                                {/* Category options */}
                                                 {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
                                                     <MenuItem key={categoryKey} value={categoryKey} sx={{
-                                                        py: 0.2, // Tight vertical padding for the list item
+                                                        py: 0.2,
                                                         px: 1,
-                                                        minHeight: '32px', // Forces a slim row height
+                                                        minHeight: '32px',
                                                     }}>
                                                         <Checkbox 
                                                             checked={categoryData.parameters.every(param => selectedParameter.includes(param))} 
                                                             sx={{
-                                                                p: 0.5,   // Removes the 9px default padding
-                                                                mr: 0.5,   // Adds spacing between box and text
-                                                                transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
-                                                                '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
+                                                                p: 0.5,
+                                                                mr: 0.5,
+                                                                transform: "scale(0.8)",
+                                                                '& .MuiSvgIcon-root': { fontSize: 20 }
                                                             }} 
                                                         />
                                                         <ListItemText 
                                                             primary={categoryData.label} 
                                                             primaryTypographyProps={{
-                                                                fontSize: '12px', // Smaller font to match the small checkbox
+                                                                fontSize: '12px',
                                                                 lineHeight: 1.2
                                                             }}
                                                             secondaryTypographyProps={{
@@ -943,7 +972,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 mr: { sm: 2 }, 
                                                                 borderRadius: 2 
                                                             },
-                                                            onClick: () => setOpenStart(true), // 🔥 input click opens picker
+                                                            onClick: () => setOpenStart(true),
                                                         },
                                                     }}
                                                 />
@@ -965,7 +994,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 mr: { sm: 2 }, 
                                                                 borderRadius: 2 
                                                             },
-                                                            onClick: () => setOpenEnd(true), // 🔥 input click opens picker
+                                                            onClick: () => setOpenEnd(true),
                                                         },
                                                     }}
                                                 />
@@ -992,10 +1021,10 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                         backgroundColor: '#166aa0',
                                                     },
                                                     minWidth: 'auto',
-                                                    width: { xs: 'auto', sm: '32px' }, // Smaller width
-                                                    height: '32px', // Smaller height
-                                                    padding: { xs: '6px 16px', sm: '6px' }, // Even smaller padding
-                                                    borderRadius: '4px', // Square with rounded corners
+                                                    width: { xs: 'auto', sm: '32px' },
+                                                    height: '32px',
+                                                    padding: { xs: '6px 16px', sm: '6px' },
+                                                    borderRadius: '4px',
                                                     '& .MuiButton-startIcon': {
                                                         margin: { sm: 0 },
                                                     }
@@ -1015,9 +1044,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                         color: '#5a6268',
                                                     },
                                                     minWidth: 'auto',
-                                                    width: { xs: 'auto', sm: '32px' }, // Smaller width
-                                                    height: '32px', // Smaller height
-                                                    padding: { xs: '6px 16px', sm: '4px' }, // Even smaller padding
+                                                    width: { xs: 'auto', sm: '32px' },
+                                                    height: '32px',
+                                                    padding: { xs: '6px 16px', sm: '4px' },
                                                     borderRadius: '4px',
                                                     '& .MuiButton-startIcon': {
                                                         margin: { sm: 0 },
@@ -1039,7 +1068,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 <>
                                     <Box sx={{ 
                                         display: 'flex', 
-                                        flexDirection: { xs: 'column', md: 'row' }, // Changed sm to md to fix tablet hiding
+                                        flexDirection: { xs: 'column', md: 'row' },
                                         justifyContent: 'space-between', 
                                         alignItems: { xs: 'flex-start', md: 'center' }, 
                                         mb: 1,
@@ -1060,12 +1089,12 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     : parameterLabels[selectedParameter[0]] || selectedParameter[0].replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`
                                                 : (filterDevice !== 'all' ? `${filterDevice}` : 'Energy Analytics')}
                                         </Typography>
-                                        <Box sx={{ width: { xs: '100%', md: 'auto' } }}> {/* Changed sm to md */}
+                                        <Box sx={{ width: { xs: '100%', md: 'auto' } }}>
                                             <Box sx={{ 
                                                 display: 'flex', 
-                                                flexDirection: { xs: 'column', md: 'row' }, // Changed sm to md
+                                                flexDirection: { xs: 'column', md: 'row' },
                                                 gap: { xs: 1, md: 2 }, 
-                                                alignItems: { xs: 'stretch', md: 'center' } // Changed sm to md
+                                                alignItems: { xs: 'stretch', md: 'center' }
                                             }}>
                                                 {compareMode ? (
                                                     <Button
@@ -1080,7 +1109,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 color: '#166aa0',
                                                             },
                                                             mr: { md: 1 },
-                                                            width: { xs: '100%', md: 'auto' } // Changed sm to md
+                                                            width: { xs: '100%', md: 'auto' }
                                                         }}
                                                     >
                                                         Cancel Compare
@@ -1089,8 +1118,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     <FormControl 
                                                         size="small" 
                                                         sx={{ 
-                                                            minWidth: { xs: '100%', md: 300 }, // Changed sm to md
-                                                            width: { xs: '100%', md: 'auto' } // Changed sm to md
+                                                            minWidth: { xs: '100%', md: 300 },
+                                                            width: { xs: '100%', md: 'auto' }
                                                         }}
                                                     >
                                                         <InputLabel>Select Device to Compare</InputLabel>
@@ -1110,7 +1139,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             </Box>
                                         </Box>
                                     </Box>
-                                    <Box sx={{ width: '100%', overflow: 'hidden' }}>
+                                    {/* Main Chart */}
+                                    <Box sx={styles.chartContainer}>
                                         <Chart
                                             options={getChartOptions(
                                                 processedFilteredData,
@@ -1147,23 +1177,23 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 <>
                                                     <Box sx={{ 
                                                         display: 'flex', 
-                                                        flexDirection: { xs: 'column', md: 'row' }, // Changed sm to md
+                                                        flexDirection: { xs: 'column', md: 'row' },
                                                         justifyContent: 'flex-end',
-                                                        gap: { xs: 1, md: 0 }, // Changed sm to md
+                                                        gap: { xs: 1, md: 0 },
                                                         mb: 2
                                                     }}>
                                                         <Box sx={{ 
                                                             display: 'flex', 
-                                                            flexDirection: { xs: 'column', md: 'row' }, // Changed sm to md
+                                                            flexDirection: { xs: 'column', md: 'row' },
                                                             gap: { xs: 1, md: 2 }, 
-                                                            alignItems: { xs: 'stretch', md: 'center' }, // Changed sm to md
-                                                            width: { xs: '100%', md: 'auto' } // Changed sm to md
+                                                            alignItems: { xs: 'stretch', md: 'center' },
+                                                            width: { xs: '100%', md: 'auto' }
                                                         }}>
                                                             <FormControl 
                                                                 size="small" 
                                                                 sx={{ 
-                                                                    minWidth: { xs: '100%', md: 300 }, // Changed sm to md
-                                                                    width: { xs: '100%', md: 'auto' } // Changed sm to md
+                                                                    minWidth: { xs: '100%', md: 300 },
+                                                                    width: { xs: '100%', md: 'auto' }
                                                                 }}
                                                             >
                                                                 <InputLabel>Select Device</InputLabel>
@@ -1182,9 +1212,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             <FormControl 
                                                                 size="small" 
                                                                 sx={{ 
-                                                                    minWidth: { xs: '100%', md: 300 }, // Changed sm to md
-                                                                    mr: { md: 1 }, // Changed sm to md
-                                                                    width: { xs: '100%', md: 'auto' } // Changed sm to md
+                                                                    minWidth: { xs: '100%', md: 300 },
+                                                                    mr: { md: 1 },
+                                                                    width: { xs: '100%', md: 'auto' }
                                                                 }}
                                                             >
                                                                 <InputLabel>Select Parameters</InputLabel>
@@ -1194,11 +1224,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                     onChange={(e) => {
                                                                         handleParameterChange(e, setSelectedParameter2);
                                                                         
-                                                                        // If we already have data for this device, update it with new parameters
                                                                         if (compareMode && compareDevice && searchClicked) {
                                                                             setCompareLoading(true);
                                                                             
-                                                                            // Get all parameters from the selected categories
                                                                             const selectedParameters = [];
                                                                             e.target.value.forEach(category => {
                                                                                 if (parameterCategories[category]) {
@@ -1227,7 +1255,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                     label="Select Parameters"
                                                                     renderValue={(selected) => (
                                                                         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                                            {/* Show "All Categories" if all are selected */}
                                                                             {isAllParametersSelected(selectedParameter2) ? (
                                                                                 <Chip
                                                                                     label="All Categories"
@@ -1235,7 +1262,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                                     sx={{ height: '20px', fontSize: '10px' }}
                                                                                 />
                                                                             ) : (
-                                                                                /* Show the first 2 items as Chips */
                                                                                 selected.slice(0, 2).map((value) => (
                                                                                     <Chip
                                                                                         key={value}
@@ -1249,7 +1275,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                                 ))
                                                                             )}
 
-                                                                            {/* If more than 2 items and not all selected, show the +X counter */}
                                                                             {!isAllParametersSelected(selectedParameter2) && selected.length > 2 && (
                                                                                 <Chip
                                                                                     label={`+${selected.length - 2} more`}
@@ -1274,26 +1299,25 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                     }
                                                                 >
                                                                     
-                                                                    {/* Category options */}
                                                                     {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
                                                                         <MenuItem key={categoryKey} value={categoryKey} sx={{
-                                                                            py: 0.2, // Tight vertical padding for the list item
+                                                                            py: 0.2,
                                                                             px: 1,
-                                                                            minHeight: '32px', // Forces a slim row height
+                                                                            minHeight: '32px',
                                                                         }}>
                                                                             <Checkbox 
                                                                                 checked={categoryData.parameters.every(param => selectedParameter2.includes(param))} 
                                                                                 sx={{
-                                                                                    p: 0.5,   // Removes the 9px default padding
-                                                                                    mr: 0.5,   // Adds spacing between box and text
-                                                                                    transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
-                                                                                    '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
+                                                                                    p: 0.5,
+                                                                                    mr: 0.5,
+                                                                                    transform: "scale(0.8)",
+                                                                                    '& .MuiSvgIcon-root': { fontSize: 20 }
                                                                                 }} 
                                                                             />
                                                                             <ListItemText 
                                                                                 primary={categoryData.label} 
                                                                                 primaryTypographyProps={{
-                                                                                    fontSize: '12px', // Smaller font to match the small checkbox
+                                                                                    fontSize: '12px',
                                                                                     lineHeight: 1.2
                                                                                 }}
                                                                                 secondaryTypographyProps={{
@@ -1318,7 +1342,7 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                             borderColor: '#166aa0',
                                                                             color: '#166aa0',
                                                                         },
-                                                                        width: { xs: '100%', md: 'auto' } // Changed sm to md
+                                                                        width: { xs: '100%', md: 'auto' }
                                                                     }}
                                                                 >
                                                                     Cancel Compare
@@ -1327,8 +1351,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 <FormControl 
                                                                     size="small" 
                                                                     sx={{ 
-                                                                        minWidth: { xs: '100%', md: 300 }, // Changed sm to md
-                                                                        width: { xs: '100%', md: 'auto' } // Changed sm to md
+                                                                        minWidth: { xs: '100%', md: 300 },
+                                                                        width: { xs: '100%', md: 'auto' }
                                                                     }}
                                                                 >
                                                                     <InputLabel>Select Second Device to Compare</InputLabel>
@@ -1347,7 +1371,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             )}
                                                         </Box>
                                                     </Box>
-                                                    <Box sx={{ width: '100%', overflow: '' }}>
+                                                    {/* Comparison Chart 1 */}
+                                                    <Box sx={styles.chartContainer}>
                                                         <Chart
                                                             options={getChartOptions(
                                                                 processedCompareData,
@@ -1390,16 +1415,16 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 <>
                                                     <Box sx={{ 
                                                         display: 'flex', 
-                                                        flexDirection: { xs: 'column', md: 'row' }, // Changed sm to md
-                                                        gap: { xs: 1, md: 2 }, // Changed sm to md
+                                                        flexDirection: { xs: 'column', md: 'row' },
+                                                        gap: { xs: 1, md: 2 },
                                                         justifyContent: 'flex-end',
                                                         mb: 2
                                                     }}>
                                                         <FormControl 
                                                             size="small" 
                                                             sx={{ 
-                                                                minWidth: { xs: '100%', md: 300 }, // Changed sm to md
-                                                                width: { xs: '100%', md: 'auto' } // Changed sm to md
+                                                                minWidth: { xs: '100%', md: 300 },
+                                                                width: { xs: '100%', md: 'auto' }
                                                             }}
                                                         >
                                                             <InputLabel>Select Device</InputLabel>
@@ -1418,8 +1443,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                         <FormControl 
                                                             size="small" 
                                                             sx={{ 
-                                                                minWidth: { xs: '100%', md: 300 }, // Changed sm to md
-                                                                width: { xs: '100%', md: 'auto' } // Changed sm to md
+                                                                minWidth: { xs: '100%', md: 300 },
+                                                                width: { xs: '100%', md: 'auto' }
                                                             }}
                                                         >
                                                             <InputLabel>Select Parameters</InputLabel>
@@ -1429,11 +1454,9 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 onChange={(e) => {
                                                                     handleParameterChange(e, setSelectedParameter3);
                                                                 
-                                                                    // If we already have data for this device, update it with new parameters
                                                                     if (compareMode2 && compareDevice2 && searchClicked) {
                                                                         setCompareLoading2(true);
                                                                     
-                                                                        // Get all parameters from the selected categories
                                                                         const selectedParameters = [];
                                                                         e.target.value.forEach(category => {
                                                                             if (parameterCategories[category]) {
@@ -1462,7 +1485,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 label="Select Parameters"
                                                                 renderValue={(selected) => (
                                                                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', height: '24px' }}>
-                                                                        {/* Show "All Categories" if all are selected */}
                                                                         {isAllParametersSelected(selectedParameter3) ? (
                                                                             <Chip
                                                                                 label="All Categories"
@@ -1470,7 +1492,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                                 sx={{ height: '20px', fontSize: '10px' }}
                                                                             />
                                                                         ) : (
-                                                                            /* Show the first 2 items as Chips */
                                                                             selected.slice(0, 2).map((value) => (
                                                                                 <Chip
                                                                                     key={value}
@@ -1484,7 +1505,6 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                             ))
                                                                         )}
 
-                                                                        {/* If more than 2 items and not all selected, show the +X counter */}
                                                                         {!isAllParametersSelected(selectedParameter3) && selected.length > 2 && (
                                                                             <Chip
                                                                                 label={`+${selected.length - 2} more`}
@@ -1509,26 +1529,25 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 }
                                                             >
                                                                 
-                                                                {/* Category options */}
                                                                 {Object.entries(parameterCategories).map(([categoryKey, categoryData]) => (
                                                                     <MenuItem key={categoryKey} value={categoryKey} sx={{
-                                                                        py: 0.2, // Tight vertical padding for the list item
+                                                                        py: 0.2,
                                                                         px: 1,
-                                                                        minHeight: '32px', // Forces a slim row height
+                                                                        minHeight: '32px',
                                                                     }}>
                                                                         <Checkbox 
                                                                             checked={categoryData.parameters.every(param => selectedParameter3.includes(param))} 
                                                                             sx={{
-                                                                                p: 0.5,   // Removes the 9px default padding
-                                                                                mr: 0.5,   // Adds spacing between box and text
-                                                                                transform: "scale(0.8)", // SHRINK THE CHECKBOX SIZE
-                                                                                '& .MuiSvgIcon-root': { fontSize: 20 } // Fine-tune the icon size specifically
+                                                                                p: 0.5,
+                                                                                mr: 0.5,
+                                                                                transform: "scale(0.8)",
+                                                                                '& .MuiSvgIcon-root': { fontSize: 20 }
                                                                             }} 
                                                                         />
                                                                         <ListItemText 
                                                                             primary={categoryData.label} 
                                                                             primaryTypographyProps={{
-                                                                                fontSize: '12px', // Smaller font to match the small checkbox
+                                                                                fontSize: '12px',
                                                                                 lineHeight: 1.2
                                                                             }}
                                                                             secondaryTypographyProps={{
@@ -1541,7 +1560,8 @@ const Analytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             </Select>
                                                         </FormControl>
                                                     </Box>
-                                                    <Box sx={{ width: '100%', overflow: 'auto' }}>
+                                                    {/* Comparison Chart 2 */}
+                                                    <Box sx={styles.chartContainer}>
                                                         <Chart
                                                             options={getChartOptions(
                                                                 processedCompareData2,

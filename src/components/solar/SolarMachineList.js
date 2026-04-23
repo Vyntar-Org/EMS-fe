@@ -44,8 +44,12 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { getSolarMachineList, getSolarMachineTrend } from '../../auth/solar/SolarMachineListApi';
 
 const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
+    // ✅ NEW: Truncate helper
+    const truncateText = (text, length = 15) =>
+        text.length > length ? text.slice(0, length) + '...' : text;
+
     // State variables
-    const [searchTerm, setSearchTerm] = useState(''); // State for search
+    const [searchTerm, setSearchTerm] = useState('');
     const [solarMachineListData, setSolarMachineListData] = useState({ data: { machines: [] } });
     const [chartModalOpen, setChartModalOpen] = useState(false);
     const [selectedFloor, setSelectedFloor] = useState('');
@@ -67,7 +71,6 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         return data.map(item => {
             const val = parseFloat(item.value);
 
-            // Filter out physically impossible values to fix chart scaling
             if (isNaN(val) || Math.abs(val) > 100000) {
                 return { ...item, value: null };
             }
@@ -109,10 +112,8 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             return;
         }
 
-        // Define CSV headers
         const headers = ['Machine Name', 'Status', 'Instant Flow (m³/hr)', 'Flow Temp (°C)', 'Pressure (bar)', 'Inlet Temp (°C)', 'Outlet Temp (°C)', 'Last Updated'];
 
-        // Map data to CSV rows
         const rows = filteredMachines.map(machine => {
             const isWithinTimeLimit = (lastTs) => {
                 if (!lastTs) return false;
@@ -135,10 +136,8 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             ].join(',');
         });
 
-        // Combine headers and rows
         const csvContent = [headers.join(','), ...rows].join('\n');
 
-        // Create a blob and download link
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -155,7 +154,6 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             setTrendLoading(true);
             const response = await getSolarMachineTrend(slaveId, parameter, 6);
             if (response.success && response.data && response.data.data) {
-                // Clean the data before setting state
                 const cleanedData = sanitizeTrendData(response.data.data, parameter);
                 setTrendData(cleanedData);
             } else {
@@ -211,7 +209,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Function to format timestamp for tooltip - showing date and time
+    // Function to format timestamp for tooltip
     const formatTimestampForTooltip = (timestamp) => {
         if (!timestamp) return 'N/A';
         return new Date(timestamp).toLocaleString('en-GB', {
@@ -323,6 +321,11 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '16px',
             fontWeight: 600,
             color: '#1F2937',
+            whiteSpace: 'nowrap',       // ✅ NEW
+            overflow: 'hidden',          // ✅ NEW
+            textOverflow: 'ellipsis',    // ✅ NEW
+            maxWidth: '100%',           // ✅ NEW
+            display: 'block',            // ✅ NEW
         },
         gridContainer: {
             display: 'flex',
@@ -468,7 +471,6 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 },
                 formatter: function (val) {
                     if (val === null || val === undefined) return '-';
-                    // If value is very large, use exponential notation to avoid UI breaking
                     if (Math.abs(val) > 10000) {
                         return val.toExponential(2);
                     }
@@ -521,15 +523,19 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
             const lastTime = new Date(lastTs);
             const currentTime = new Date();
-            const timeDiff = (currentTime - lastTime) / (1000 * 60); // Difference in minutes
+            const timeDiff = (currentTime - lastTime) / (1000 * 60);
 
-            return timeDiff <= 15; // Within 15 minutes
+            return timeDiff <= 15;
         };
 
         const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
         const totalizer = machine.totalizer || {};
+
+        // ✅ NEW: Check if name exceeds 15 chars for tooltip
+        const isNameTruncated = machine.name && machine.name.length > 24;
+        const displayName = truncateText(machine.name, 24);
 
         return (
             <Card style={styles.floorCard}>
@@ -550,9 +556,32 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box style={styles.commonHeader}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Box>
-                                <Typography style={styles.floorTitle}>
-                                    {machine.name}
-                                </Typography>
+                                {/* ✅ CHANGED: Tooltip only when name is truncated */}
+                                {isNameTruncated ? (
+                                    <Tooltip
+                                        title={machine.name}
+                                        placement="top"
+                                        arrow
+                                        enterTouchDelay={0}
+                                        leaveTouchDelay={3000}
+                                        componentsProps={{
+                                            tooltip: {
+                                                sx: {
+                                                    fontSize: '13px',
+                                                    fontWeight: 500,
+                                                },
+                                            },
+                                        }}
+                                    >
+                                        <Typography style={styles.floorTitle}>
+                                            {displayName}
+                                        </Typography>
+                                    </Tooltip>
+                                ) : (
+                                    <Typography style={styles.floorTitle}>
+                                        {displayName}
+                                    </Typography>
+                                )}
                             </Box>
                         </Box>
                         <Box style={styles.onlineStatus}>
@@ -648,7 +677,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <DeviceThermostatIcon fontSize="10px" color="error" />
-                                            {machine.name} Inlet Temperature
+                                            {displayName} Inlet Temperature
                                         </Box>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}></TableCell>
@@ -662,7 +691,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <DeviceThermostatIcon fontSize="10px" color="warning" />
-                                            {machine.name} Outlet Temperature
+                                            {displayName} Outlet Temperature
                                         </Box>
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}></TableCell>

@@ -380,7 +380,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
     const fetchFrequencyData = async (slaveId) => {
         try {
-            const response = await getFrequencyChart(slaveId);
+            const response = getFrequencyChart(slaveId);
 
             if (response.success) {
                 setFrequencyData(response.data.data);
@@ -585,6 +585,11 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '16px',
             fontWeight: 600,
             color: '#1F2937',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '100%',
+            display: 'block',
         },
         graphCard: {
             backgroundColor: '#FFFFFF',
@@ -704,17 +709,21 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
         return Number(value).toFixed(decimalPlaces);
     };
 
+    // ✅ Helper to truncate name to N characters with "..."
+    const truncateName = (name, maxLength = 24) => {
+        if (!name) return '';
+        if (name.length <= maxLength) return name;
+        return name.substring(0, maxLength) + '...';
+    };
+
     // Function to render a floor card
     const renderFloorCard = (machine) => {
         if (!machine) return null;
 
-        // ✅ Status from API only
         const isOnline = machine.status === 'online';
         const latest = machine.latest || {};
         const energy = machine.energy || {};
 
-        // ✅ FIX: Always show original values regardless of online/offline status
-        // Card color is the ONLY thing controlled by isOnline
         const displayLatest = {
             acte_im: latest.acte_im,
             rv: latest.rv,
@@ -735,11 +744,14 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             mtd: energy.mtd,
         };
 
+        // ✅ Check if name is truncated for tooltip logic
+        const isNameTruncated = machine.name && machine.name.length > 24;
+        const displayName = truncateName(machine.name, 24);
+
         return (
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
-                    // ✅ Card background: Green gradient for online, White for offline
                     ...(isOnline ? {
                         background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
                         backgroundColor: 'transparent',
@@ -753,9 +765,32 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     flexGrow: 1
                 }}>
                     <Box style={styles.commonHeader}>
-                        <Typography style={styles.floorTitle}>
-                            {machine.name}
-                        </Typography>
+                        {/* ✅ Tooltip shows full name only when truncated */}
+                        {isNameTruncated ? (
+                            <Tooltip
+                                title={machine.name}
+                                placement="top"
+                                arrow
+                                enterTouchDelay={0}
+                                leaveTouchDelay={3000}
+                                componentsProps={{
+                                    tooltip: {
+                                        sx: {
+                                            fontSize: '13px',
+                                            fontWeight: 500,
+                                        },
+                                    },
+                                }}
+                            >
+                                <Typography style={styles.floorTitle}>
+                                    {displayName}
+                                </Typography>
+                            </Tooltip>
+                        ) : (
+                            <Typography style={styles.floorTitle}>
+                                {displayName}
+                            </Typography>
+                        )}
 
                         <Box
                             sx={{
@@ -834,7 +869,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             Phase R
                                         </Box>
                                     </TableCell>
-                                    {/* ✅ Shows original value like 18325.55 instead of 0 */}
                                     <TableCell align="right" style={styles.tableCell}>{safeValue(displayLatest.rv, 2)}</TableCell>
                                     <TableCell align="right" style={styles.tableCell}>{safeValue(displayLatest.ir, 1)}</TableCell>
                                 </TableRow>
@@ -866,7 +900,6 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box style={{ ...styles.metricsRow, marginTop: '0px', display: 'flex', justifyContent: 'space-between' }}>
                         <Box style={styles.metricItem}>
                             <Typography style={styles.metricLabel}>Active power</Typography>
-                            {/* ✅ Shows original value like 0.05 instead of 0.00 */}
                             <Typography style={styles.metricValue}>{safeValue(displayLatest.actpr_t, 2)} kw</Typography>
                         </Box>
                         <Box style={styles.metricItem}>
