@@ -20,18 +20,19 @@ import {
     TextField,
     InputAdornment,
     CircularProgress,
+    Chip,
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import CloseIcon from '@mui/icons-material/Close';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import SearchIcon from '@mui/icons-material/Search';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import IdleIcon from '@mui/icons-material/HourglassEmpty';
 
-// Import API functions
 import { getCompressorMachineList, getCompressorMachineTrend } from '../../auth/compressor/MachineListApi';
 
 const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
-    // State variables
     const [searchTerm, setSearchTerm] = useState('');
     const [chartModalOpen, setChartModalOpen] = useState(false);
     const [selectedFloor, setSelectedFloor] = useState('');
@@ -43,16 +44,17 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [error, setError] = useState(null);
     const [trendLoading, setTrendLoading] = useState(false);
 
-    // ✅ NEW: State for downtime detail popup
     const [downtimePopupOpen, setDowntimePopupOpen] = useState(false);
     const [downtimePopupTitle, setDowntimePopupTitle] = useState('');
     const [downtimePopupData, setDowntimePopupData] = useState([]);
 
-    // ✅ NEW: Truncate helper
+    const [stoppageChartOpen, setStoppageChartOpen] = useState(false);
+    const [stoppageChartTitle, setStoppageChartTitle] = useState('');
+    const [stoppageChartTimeRange, setStoppageChartTimeRange] = useState('');
+
     const truncateText = (text, length = 15) =>
         text.length > length ? text.slice(0, length) + '...' : text;
 
-    // Fetch machine list on component mount
     useEffect(() => {
         const fetchMachineList = async () => {
             try {
@@ -69,20 +71,18 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 setLoading(false);
             }
         };
-
         fetchMachineList();
     }, []);
 
-    // Filter machines based on search term
     const filteredMachines = machineListData?.data?.machines?.filter(machine => {
         const term = searchTerm.toLowerCase();
         return (
             machine.slave_name.toLowerCase().includes(term) ||
-            machine.slave_id.toString().toLowerCase().includes(term)
+            machine.slave_id.toString().toLowerCase().includes(term) ||
+            (machine.compressor_no && machine.compressor_no.toLowerCase().includes(term))
         );
     }) || [];
 
-    // Function to handle CSV download
     const handleDownload = () => {
         if (filteredMachines.length === 0) {
             setSnackbarMessage('No data to download');
@@ -90,23 +90,42 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             return;
         }
 
-        const headers = ['Machine Name', 'ID', 'Status', 'Last Downtime Start', 'Last Downtime End', 'Duration', 'Last Updated'];
+        const headers = [
+            'Machine Name',
+            'Compressor No',
+            'Status',
+            'Since',
+            'Last Stoppage Start',
+            'Last Stoppage End',
+            'Duration',
+            'Stoppages (8h)',
+            'Stoppage Duration (8h)',
+            'Stoppages (24h)',
+            'Stoppage Duration (24h)',
+            'Last Updated',
+        ];
 
         const rows = filteredMachines.map(machine => {
-            const date = machine.last_updated ? new Date(machine.last_updated).toLocaleString() : 'N/A';
+            const date = machine.current_status?.last_updated
+                ? new Date(machine.current_status.last_updated).toLocaleString()
+                : 'N/A';
             return [
                 machine.slave_name || 'N/A',
-                machine.slave_id || 'N/A',
-                machine.status || 'N/A',
-                machine.latest_downtime?.start_time || '-',
-                machine.latest_downtime?.end_time || '-',
-                machine.latest_downtime?.duration || '-',
-                date
+                machine.compressor_no || 'N/A',
+                machine.current_status?.status || 'N/A',
+                machine.current_status?.since_display || 'N/A',
+                machine.last_stoppage?.start_time || '-',
+                machine.last_stoppage?.end_time || '-',
+                machine.last_stoppage?.duration || '-',
+                machine.history_8h?.count ?? 0,
+                machine.history_8h?.total_duration || '-',
+                machine.history_24h?.count ?? 0,
+                machine.history_24h?.total_duration || '-',
+                date,
             ].join(',');
         });
 
         const csvContent = [headers.join(','), ...rows].join('\n');
-
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -117,14 +136,13 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         document.body.removeChild(link);
     };
 
-    // Function to fetch trend data
     const fetchTrendData = async (slaveId) => {
         try {
             setTrendLoading(true);
             const response = await getCompressorMachineTrend(slaveId);
             const transformedData = response.data.data.map(item => ({
                 timestamp: item.start,
-                value: item.status
+                value: item.status,
             }));
             setTrendData(transformedData);
             return transformedData;
@@ -138,45 +156,70 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // ✅ Helper: Parse duration string to total minutes
     const parseDurationToMinutes = (durationStr) => {
         if (!durationStr) return 0;
-
         const hMatch = durationStr.match(/(-?\d+)\s*h/);
         const mMatch = durationStr.match(/(-?\d+)\s*m/);
         if (hMatch && mMatch) {
             return parseInt(hMatch[1]) * 60 + parseInt(mMatch[1]);
         }
-
         const timeMatch = durationStr.match(/(-?\d+):(\d+)(?::(\d+))?/);
         if (timeMatch) {
             return parseInt(timeMatch[1]) * 60 + parseInt(timeMatch[2]);
         }
-
         const num = parseInt(durationStr);
         if (!isNaN(num)) return num;
-
         return 0;
     };
 
-    // ✅ Helper: Format total minutes to "XX h XX m"
     const formatMinutesToDuration = (totalMinutes) => {
         const isNegative = totalMinutes < 0;
         const absMinutes = Math.abs(totalMinutes);
         const hours = Math.floor(absMinutes / 60);
         const minutes = absMinutes % 60;
         const sign = isNegative ? '-' : '';
-        return `${sign}${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`;
+        return `${sign}${String(hours).padStart(2, '0')} hr ${String(minutes).padStart(2, '0')} m`;
     };
 
-    // ✅ NEW: Open downtime detail popup
+    const formatDateTime = (date) => {
+        const dd = String(date.getDate()).padStart(2, '0');
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const yyyy = date.getFullYear();
+        const hh = String(date.getHours()).padStart(2, '0');
+        const min = String(date.getMinutes()).padStart(2, '0');
+        const ss = String(date.getSeconds()).padStart(2, '0');
+        return `${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
+    };
+
     const openDowntimePopup = (title, data) => {
         setDowntimePopupTitle(title);
         setDowntimePopupData(data);
         setDowntimePopupOpen(true);
     };
 
-    // Define styles
+    const handleStoppageClick = async (machine, hours) => {
+        const now = new Date();
+        const fromTime = new Date(now.getTime() - hours * 60 * 60 * 1000);
+        const timeRange = `${formatDateTime(fromTime)} - ${formatDateTime(now)}`;
+        setStoppageChartTitle(`${machine.slave_name} - Last ${hours} hrs`);
+        setStoppageChartTimeRange(timeRange);
+        setStoppageChartOpen(true);
+        await fetchTrendData(machine.slave_id);
+    };
+
+    const formatTimestampForTooltip = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        return new Date(timestamp).toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+        });
+    };
+
     const styles = {
         mainContent: {
             width: '100%',
@@ -262,7 +305,6 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         },
     };
 
-    // Chart Options for Connectivity
     const chartOptions = {
         chart: {
             type: 'area',
@@ -274,16 +316,14 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         stroke: {
             curve: 'stepline',
             width: 2,
-            colors: ['#30b44a']
+            colors: ['#30b44a'],
         },
         fill: {
             type: 'solid',
             colors: ['#30b44a'],
-            opacity: 0.2
+            opacity: 0.2,
         },
-        dataLabels: {
-            enabled: false
-        },
+        dataLabels: { enabled: false },
         grid: {
             borderColor: '#ebe5e5',
             strokeDashArray: 0,
@@ -296,7 +336,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             },
             labels: {
                 style: { colors: '#6B7280', fontSize: '11px' },
-                datetimeUTC: false
+                datetimeUTC: false,
             },
         },
         yaxis: {
@@ -313,7 +353,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     if (val >= 0.9) return 'Online';
                     if (val <= 0.1) return 'Offline';
                     return '';
-                }
+                },
             },
         },
         tooltip: {
@@ -336,65 +376,69 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         <span style="font-weight: bold; color: ${statusColor}; margin-left: 5px; font-size: 12px;">${statusText}</span>
                     </div>
                 </div>`;
-            }
+            },
         },
-        legend: {
-            show: false
-        }
+        legend: { show: false },
     };
 
-    const chartSeries = [{
-        name: 'Connectivity',
-        data: trendData.map(item => ({
-            x: new Date(item.timestamp).getTime(),
-            y: item.value
-        }))
-    }];
+    const chartSeries = [
+        {
+            name: 'Connectivity',
+            data: trendData.map(item => ({
+                x: new Date(item.timestamp).getTime(),
+                y: item.value,
+            })),
+        },
+    ];
 
-    const formatTimestampForTooltip = (timestamp) => {
-        if (!timestamp) return 'N/A';
-        return new Date(timestamp).toLocaleString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        });
-    };
-
-    // Function to render a floor card
     const renderFloorCard = (machine) => {
         if (!machine) return null;
 
-        const isOnline = machine.status === 'ONLINE';
+        // ✅ Corrected: use current_status.status instead of machine.status
+        const isOnline = machine.current_status?.status === 'ONLINE';
 
-        // ✅ NEW: Check if name exceeds 15 chars for tooltip
         const isNameTruncated = machine.slave_name && machine.slave_name.length > 24;
         const displayName = truncateText(machine.slave_name, 24);
 
+        // ✅ Corrected: use pre-computed history objects from API
+        const stoppageCount8h = machine.history_8h?.count ?? 0;
+        const stoppageCount24h = machine.history_24h?.count ?? 0;
+        const stoppageDuration8h = machine.history_8h?.total_duration || '-';
+        const stoppageDuration24h = machine.history_24h?.total_duration || '-';
+
+        // Compute total minutes for footer display (from total_seconds if available)
+        const totalMinutes8h = machine.history_8h?.total_seconds
+            ? Math.round(machine.history_8h.total_seconds / 60)
+            : parseDurationToMinutes(machine.history_8h?.total_duration);
+        const totalMinutes24h = machine.history_24h?.total_seconds
+            ? Math.round(machine.history_24h.total_seconds / 60)
+            : parseDurationToMinutes(machine.history_24h?.total_duration);
+
         return (
             <Card style={styles.floorCard}>
-                <CardContent style={{
-                    ...styles.commonSection,
-                    ...(isOnline ? {
-                        background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
-                        backgroundColor: 'transparent',
-                    } : {
-                        backgroundColor: '#FFFFFF',
-                    }),
-                    padding: '12px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%',
-                    flexGrow: 1
-                }}>
+                <CardContent
+                    style={{
+                        ...styles.commonSection,
+                        ...(isOnline
+                            ? {
+                                  background:
+                                      'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
+                                  backgroundColor: 'transparent',
+                              }
+                            : {
+                                  backgroundColor: '#FFFFFF',
+                              }),
+                        padding: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        height: '100%',
+                        flexGrow: 1,
+                    }}
+                >
                     {/* Header */}
                     <Box style={styles.commonHeader}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Box>
-                                {/* ✅ CHANGED: Tooltip only when name is truncated */}
                                 {isNameTruncated ? (
                                     <Tooltip
                                         title={machine.slave_name}
@@ -403,43 +447,57 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         enterTouchDelay={0}
                                         leaveTouchDelay={3000}
                                         componentsProps={{
-                                            tooltip: {
-                                                sx: {
-                                                    fontSize: '13px',
-                                                    fontWeight: 500,
-                                                },
-                                            },
+                                            tooltip: { sx: { fontSize: '13px', fontWeight: 500 } },
                                         }}
                                     >
-                                        <Typography style={styles.floorTitle}>
-                                            {displayName}
-                                        </Typography>
+                                        <Typography style={styles.floorTitle}>{displayName}</Typography>
                                     </Tooltip>
                                 ) : (
-                                    <Typography style={styles.floorTitle}>
-                                        {displayName}
-                                    </Typography>
+                                    <Typography style={styles.floorTitle}>{displayName}</Typography>
                                 )}
                             </Box>
                         </Box>
                         <Box style={styles.onlineStatus}>
-                            <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
+                            {/* ✅ Show idle indicator if present */}
+                            {machine.idle && (
+                                <Tooltip title="Idle" arrow>
+                                    <IdleIcon sx={{ fontSize: '16px', color: '#F59E0B' }} />
+                                </Tooltip>
+                            )}
+                            {/* ✅ Show alert indicator if present */}
+                            {machine.alert && (
+                                <Tooltip title={typeof machine.alert === 'string' ? machine.alert : 'Alert'} arrow>
+                                    <WarningAmberIcon sx={{ fontSize: '16px', color: '#EF4444' }} />
+                                </Tooltip>
+                            )}
+                            {/* ✅ Corrected: current_status.status */}
+                            <Typography
+                                style={{
+                                    fontSize: '11px',
+                                    color: isOnline ? '#30b44a' : '#e34d4d',
+                                    border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'),
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                }}
+                            >
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: { xs: '0', sm: '0px' }, marginTop: { xs: '5px', sm: '0' } }}>
+                            {/* ✅ Corrected: current_status.last_updated */}
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    marginLeft: { xs: '0', sm: '0px' },
+                                    marginTop: { xs: '5px', sm: '0' },
+                                }}
+                            >
                                 <Tooltip
-                                    title={formatTimestampForTooltip(machine.last_updated)}
+                                    title={formatTimestampForTooltip(machine.current_status?.last_updated)}
                                     placement="top"
                                     arrow
                                     enterTouchDelay={0}
                                     leaveTouchDelay={3000}
-                                    componentsProps={{
-                                        tooltip: {
-                                            sx: {
-                                                fontSize: '12px',
-                                            },
-                                        },
-                                    }}
+                                    componentsProps={{ tooltip: { sx: { fontSize: '12px' } } }}
                                 >
                                     <Box
                                         component="span"
@@ -448,7 +506,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             padding: '4px',
-                                            cursor: 'pointer'
+                                            cursor: 'pointer',
                                         }}
                                     >
                                         <AccessTimeIcon style={styles.clockIcon} />
@@ -457,136 +515,232 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Box>
                         </Box>
                     </Box>
+
                     <Divider sx={{ mb: 1 }} />
 
-                    {/* Table 1: Latest Downtime */}
+                    {/* Current Status Information */}
+                    <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 2, 
+                        py: 1,
+                        px: 1,
+                        // backgroundColor: isOnline ? 'rgba(232, 249, 230, 0.3)' : 'rgba(250, 232, 232, 0.3)',
+                        borderRadius: '4px',
+                        mb: 1
+                    }}>
+                        <Typography 
+                            sx={{ 
+                                fontSize: '11px', 
+                                fontWeight: 600, 
+                                color: '#1F2937',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            Current Status:
+                        </Typography>
+                        <Chip 
+                            label={machine.current_status?.status || 'N/A'} 
+                            size="small"
+                            sx={{
+                                backgroundColor: isOnline ? '#e8f9e6' : '#fae8e8',
+                                color: isOnline ? '#30b44a' : '#e34d4d',
+                                fontWeight: 'bold',
+                                fontSize: '11px',
+                            }}
+                        />
+                        <Typography 
+                            sx={{ 
+                                fontSize: '11px', 
+                                color: '#0c0c0eff',
+                                whiteSpace: 'nowrap',
+                                fontWeight: 600,
+                            }}
+                        >
+                           from {machine.current_status?.since_display || '-'}
+                        </Typography>
+                        {/* <Typography 
+                            sx={{ 
+                                fontSize: '11px', 
+                                color: '#0c0c0eff',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            Updated: {machine.current_status?.last_updated 
+                                ? new Date(machine.current_status.last_updated).toLocaleString() 
+                                : '-'}
+                        </Typography> */}
+                    </Box>
+
+                    
+                    
+
+                    {/* ✅ Corrected: use last_stoppage instead of latest_downtime */}
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
+                                <TableRow
+                                    style={{
+                                        ...styles.phaseTableHeader,
+                                        backgroundColor: isOnline ? 'transparent' : '#f5f5f5',
+                                    }}
+                                >
                                     <TableCell colSpan={3} style={{ ...styles.tableCell, fontWeight: 'bold' }}>
-                                        Latest Downtime
+                                        Last Stoppage
                                     </TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 <TableRow>
-                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>Start Time</TableCell>
-                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>End Time</TableCell>
-                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>Duration</TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>
+                                        Start Time
+                                    </TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>
+                                        End Time
+                                    </TableCell>
+                                    <TableCell style={styles.tableCell} sx={{ color: '#1F2937', fontWeight: 600 }}>
+                                        Duration
+                                    </TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell style={styles.tableCell}>{machine.latest_downtime?.start_time || '-'}</TableCell>
-                                    <TableCell style={styles.tableCell}>{machine.latest_downtime?.end_time || '-'}</TableCell>
-                                    <TableCell style={styles.tableCell}>{machine.latest_downtime?.duration || '-'}</TableCell>
+                                    <TableCell style={styles.tableCell}>
+                                        {machine.last_stoppage?.start_time || '-'}
+                                    </TableCell>
+                                    <TableCell style={styles.tableCell}>
+                                        {machine.last_stoppage?.end_time || '-'}
+                                    </TableCell>
+                                    <TableCell style={styles.tableCell}>
+                                        {machine.last_stoppage?.duration || '-'}
+                                    </TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
                     </TableContainer>
 
-                    {/* ✅ CHANGED: Downtime History - Summary format with clickable rows */}
-                    <Box style={{ ...styles.phaseTable, marginTop: '16px' }}>
-                        <Typography style={{
-                            ...styles.tableCell,
-                            fontWeight: 'bold',
-                            backgroundColor: isOnline ? 'transparent' : '#f5f5f5',
-                            borderTopLeftRadius: '4px',
-                            borderTopRightRadius: '4px',
-                            display: 'block'
-                        }}>
-                            Downtime History
-                        </Typography>
-
-                        {(() => {
-                            const now = new Date();
-                            const eightHoursAgo = new Date(now.getTime() - 8 * 60 * 60 * 1000);
-
-                            const downtimes24h = machine.downtime_24h || [];
-
-                            // Filter last 8 hours from the 24h array
-                            const last8hDowntimes = downtimes24h.filter(item => {
-                                if (!item.start_time) return false;
-                                try {
-                                    return new Date(item.start_time) >= eightHoursAgo;
-                                } catch {
-                                    return false;
-                                }
-                            });
-
-                            // Calculate total durations
-                            const totalMinutes24h = downtimes24h.reduce((sum, item) => sum + parseDurationToMinutes(item.duration), 0);
-                            const totalMinutes8h = last8hDowntimes.reduce((sum, item) => sum + parseDurationToMinutes(item.duration), 0);
-
-                            return (
-                                <Box>
-                                    {/* ✅ Last 8 hours row - CLICKABLE */}
-                                    <Box
-                                        onClick={() => {
-                                            if (last8hDowntimes.length > 0) {
-                                                openDowntimePopup(
-                                                    `${machine.slave_name} - Last 8 Hours Downtime`,
-                                                    last8hDowntimes
-                                                );
-                                            }
-                                        }}
-                                        sx={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            py: '6px',
-                                            px: '8px',
-                                            borderBottom: '1px solid #eee',
-                                            cursor: last8hDowntimes.length > 0 ? 'pointer' : 'default',
-                                            '&:hover': last8hDowntimes.length > 0 ? {
-                                                backgroundColor: 'rgba(47, 111, 176, 0.08)',
-                                            } : {},
-                                            transition: 'background-color 0.2s ease',
+                    {/* ✅ Corrected: use history_8h / history_24h from API */}
+                    <TableContainer style={{ ...styles.phaseTable, marginTop: '16px' }}>
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow style={{ backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
+                                    <TableCell
+                                        style={{
+                                            ...styles.tableCell,
+                                            fontWeight: 'bold',
+                                            borderTopLeftRadius: '4px',
                                         }}
                                     >
-                                        <Typography style={{ ...styles.tableCell, borderBottom: 'none', fontSize: '12px', color: '#6B7280' }}>
-                                            Last 8 hours
-                                        </Typography>
-                                        <Typography style={{ ...styles.tableCell, borderBottom: 'none', fontSize: '12px', fontWeight: 600, color: last8hDowntimes.length > 0 ? '#2F6FB0' : '#1F2937' }}>
-                                            {last8hDowntimes.length} times ({formatMinutesToDuration(totalMinutes8h)})
-                                        </Typography>
-                                    </Box>
-
-                                    {/* ✅ Last 24 hours row - CLICKABLE */}
-                                    <Box
-                                        onClick={() => {
-                                            if (downtimes24h.length > 0) {
-                                                openDowntimePopup(
-                                                    `${machine.slave_name} - Last 24 Hours Downtime`,
-                                                    downtimes24h
-                                                );
-                                            }
-                                        }}
-                                        sx={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            py: '6px',
-                                            px: '8px',
-                                            borderBottomLeftRadius: '4px',
-                                            borderBottomRightRadius: '4px',
-                                            cursor: downtimes24h.length > 0 ? 'pointer' : 'default',
-                                            '&:hover': downtimes24h.length > 0 ? {
-                                                backgroundColor: 'rgba(47, 111, 176, 0.08)',
-                                            } : {},
-                                            transition: 'background-color 0.2s ease',
+                                        Stoppages History
+                                    </TableCell>
+                                    <TableCell
+                                        align="center"
+                                        style={{
+                                            ...styles.tableCell,
+                                            fontWeight: 'bold',
+                                            whiteSpace: 'nowrap',
                                         }}
                                     >
-                                        <Typography style={{ ...styles.tableCell, borderBottom: 'none', fontSize: '12px', color: '#6B7280' }}>
-                                            Last 24 hours
-                                        </Typography>
-                                        <Typography style={{ ...styles.tableCell, borderBottom: 'none', fontSize: '12px', fontWeight: 600, color: downtimes24h.length > 0 ? '#2F6FB0' : '#1F2937' }}>
-                                            {downtimes24h.length} times ({formatMinutesToDuration(totalMinutes24h)})
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            );
-                        })()}
-                    </Box>
+                                        Previous 8hrs
+                                    </TableCell>
+                                    <TableCell
+                                        align="center"
+                                        style={{
+                                            ...styles.tableCell,
+                                            fontWeight: 'bold',
+                                            borderTopRightRadius: '4px',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        Previous 24hrs
+                                    </TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {/* No. of Stoppages Row */}
+                                <TableRow>
+                                    <TableCell
+                                        style={{ ...styles.tableCell, color: '#1F2937', fontWeight: 600 }}
+                                    >
+                                        No. of Stoppages
+                                    </TableCell>
+                                    <TableCell align="center" style={styles.tableCell}>
+                                        <Box
+                                            component="span"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (stoppageCount8h > 0) {
+                                                    handleStoppageClick(machine, 8);
+                                                }
+                                            }}
+                                            sx={{
+                                                cursor: stoppageCount8h > 0 ? 'pointer' : 'default',
+                                                color: stoppageCount8h > 0 ? '#2F6FB0' : 'inherit',
+                                                fontWeight: 600,
+                                                textDecoration: 'none',
+                                                transition: 'color 0.2s ease, text-decoration 0.2s ease',
+                                                '&:hover':
+                                                    stoppageCount8h > 0
+                                                        ? {
+                                                              textDecoration: 'underline',
+                                                              textDecorationColor: '#2F6FB0',
+                                                          }
+                                                        : {},
+                                            }}
+                                        >
+                                            {stoppageCount8h}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="center" style={styles.tableCell}>
+                                        <Box
+                                            component="span"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (stoppageCount24h > 0) {
+                                                    handleStoppageClick(machine, 24);
+                                                }
+                                            }}
+                                            sx={{
+                                                cursor: stoppageCount24h > 0 ? 'pointer' : 'default',
+                                                color: stoppageCount24h > 0 ? '#2F6FB0' : 'inherit',
+                                                fontWeight: 600,
+                                                textDecoration: 'none',
+                                                transition: 'color 0.2s ease, text-decoration 0.2s ease',
+                                                '&:hover':
+                                                    stoppageCount24h > 0
+                                                        ? {
+                                                              textDecoration: 'underline',
+                                                              textDecorationColor: '#2F6FB0',
+                                                          }
+                                                        : {},
+                                            }}
+                                        >
+                                            {stoppageCount24h}
+                                        </Box>
+                                    </TableCell>
+                                </TableRow>
+
+                                {/* Stoppage Duration Row */}
+                                <TableRow>
+                                    <TableCell
+                                        style={{ ...styles.tableCell, color: '#1F2937', fontWeight: 600 }}
+                                    >
+                                        Stoppage Duration
+                                    </TableCell>
+                                    <TableCell
+                                        align="center"
+                                        style={{ ...styles.tableCell, color: '#1F2937' }}
+                                    >
+                                        {stoppageDuration8h}
+                                    </TableCell>
+                                    <TableCell
+                                        align="center"
+                                        style={{ ...styles.tableCell, color: '#1F2937' }}
+                                    >
+                                        {stoppageDuration24h}
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
 
                     <Divider sx={{ my: 1 }} />
 
@@ -616,7 +770,9 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <CircularProgress />
                 </Box>
             ) : error ? (
-                <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+                <Alert severity="error" sx={{ m: 2 }}>
+                    {error}
+                </Alert>
             ) : (
                 <>
                     {/* Header with Search and Download */}
@@ -654,17 +810,14 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 backgroundColor: '#2F6FB0',
                                 padding: 0,
                                 marginRight: '10px',
-                                '& .MuiButton-startIcon': {
-                                    margin: 0,
-                                },
+                                '& .MuiButton-startIcon': { margin: 0 },
                                 '&:hover': {
                                     borderColor: '#1E4A7C',
                                     backgroundColor: '#1E4A7C',
                                     color: '#fff',
                                 },
                             }}
-                        >
-                        </Button>
+                        />
                     </Box>
 
                     <Box
@@ -682,7 +835,11 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 <Box
                                     key={machine.slave_id || index}
                                     sx={{
-                                        width: { xs: '100%', sm: 'calc(50% - 15px)', md: 'calc(33.33% - 35px)' },
+                                        width: {
+                                            xs: '100%',
+                                            sm: 'calc(50% - 15px)',
+                                            md: 'calc(33.33% - 35px)',
+                                        },
                                     }}
                                 >
                                     {renderFloorCard(machine)}
@@ -695,59 +852,183 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         )}
                     </Box>
 
-                    {/* Trend Modal */}
-                    <Modal
-                        open={chartModalOpen}
-                        onClose={() => setChartModalOpen(false)}
-                    >
-                        <Box sx={{
-                            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                            width: { xs: '90%', md: '60%' }, bgcolor: 'background.paper', borderRadius: '8px', boxShadow: 24, p: 4,
-                        }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                <Typography variant="h6">{selectedFloor} - Connectivity History</Typography>
-                                <IconButton onClick={() => setChartModalOpen(false)}><CloseIcon /></IconButton>
+                    {/* Trend Modal (TREND button) */}
+                    <Modal open={chartModalOpen} onClose={() => setChartModalOpen(false)}>
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                width: { xs: '90%', md: '60%' },
+                                bgcolor: 'background.paper',
+                                borderRadius: '8px',
+                                boxShadow: 24,
+                                p: 4,
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    mb: 2,
+                                }}
+                            >
+                                <Typography variant="h6">{selectedFloor}</Typography>
+                                <IconButton onClick={() => setChartModalOpen(false)}>
+                                    <CloseIcon />
+                                </IconButton>
                             </Box>
                             {trendLoading ? (
-                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '300px' }}>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        height: '300px',
+                                    }}
+                                >
                                     <CircularProgress />
                                 </Box>
                             ) : trendData.length > 0 ? (
-                                <Chart options={chartOptions} series={chartSeries} type="area" height={300} />
+                                <Chart
+                                    options={chartOptions}
+                                    series={chartSeries}
+                                    type="area"
+                                    height={300}
+                                />
                             ) : (
                                 <Alert severity="info">No data available</Alert>
                             )}
                         </Box>
                     </Modal>
 
-                    {/* ✅ NEW: Downtime Detail Popup Modal */}
-                    <Modal
-                        open={downtimePopupOpen}
-                        onClose={() => setDowntimePopupOpen(false)}
-                    >
-                        <Box sx={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            width: { xs: '90%', sm: '500px', md: '600px' },
-                            bgcolor: 'background.paper',
-                            borderRadius: '12px',
-                            boxShadow: 24,
-                            p: 0,
-                            overflow: 'hidden',
-                        }}>
-                            {/* Modal Header */}
-                            <Box sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                px: 3,
-                                py: 2,
-                                backgroundColor: '#F8F9FA',
-                                borderBottom: '1px solid #E5E7EB',
-                            }}>
-                                <Typography variant="h6" sx={{ fontSize: '16px', fontWeight: 600, color: '#1F2937' }}>
+                    {/* Stoppage Count Click → Chart Modal with Time Range */}
+                    <Modal open={stoppageChartOpen} onClose={() => setStoppageChartOpen(false)}>
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                width: { xs: '90%', md: '65%' },
+                                bgcolor: 'background.paper',
+                                borderRadius: '12px',
+                                boxShadow: 24,
+                                overflow: 'hidden',
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'flex-start',
+                                    px: 3,
+                                    py: 2,
+                                    backgroundColor: '#F8F9FA',
+                                    borderBottom: '1px solid #E5E7EB',
+                                }}
+                            >
+                                <Box>
+                                    <Typography
+                                        variant="h6"
+                                        sx={{ fontSize: '16px', fontWeight: 600, color: '#1F2937' }}
+                                    >
+                                        {stoppageChartTitle}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontSize: '12px',
+                                            color: '#6B7280',
+                                            mt: '4px',
+                                            fontFamily: '"Ubuntu", sans-serif',
+                                            backgroundColor: '#EBF5FF',
+                                            display: 'inline-block',
+                                            px: '8px',
+                                            py: '3px',
+                                            borderRadius: '4px',
+                                            border: '1px solid #DBEAFE',
+                                        }}
+                                    >
+                                        {stoppageChartTimeRange}
+                                    </Typography>
+                                </Box>
+                                <IconButton
+                                    onClick={() => setStoppageChartOpen(false)}
+                                    sx={{ color: '#6B7280' }}
+                                >
+                                    <CloseIcon />
+                                </IconButton>
+                            </Box>
+                            <Box sx={{ p: 3 }}>
+                                {trendLoading ? (
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            height: '300px',
+                                        }}
+                                    >
+                                        <CircularProgress />
+                                    </Box>
+                                ) : trendData.length > 0 ? (
+                                    <Chart
+                                        options={chartOptions}
+                                        series={chartSeries}
+                                        type="area"
+                                        height={350}
+                                    />
+                                ) : (
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            height: '300px',
+                                        }}
+                                    >
+                                        <Alert severity="info" sx={{ width: '100%' }}>
+                                            No data available for this time period
+                                        </Alert>
+                                    </Box>
+                                )}
+                            </Box>
+                        </Box>
+                    </Modal>
+
+                    {/* Stoppage Detail Popup Modal */}
+                    <Modal open={downtimePopupOpen} onClose={() => setDowntimePopupOpen(false)}>
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                width: { xs: '90%', sm: '500px', md: '600px' },
+                                bgcolor: 'background.paper',
+                                borderRadius: '12px',
+                                boxShadow: 24,
+                                p: 0,
+                                overflow: 'hidden',
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    px: 3,
+                                    py: 2,
+                                    backgroundColor: '#F8F9FA',
+                                    borderBottom: '1px solid #E5E7EB',
+                                }}
+                            >
+                                <Typography
+                                    variant="h6"
+                                    sx={{ fontSize: '16px', fontWeight: 600, color: '#1F2937' }}
+                                >
                                     {downtimePopupTitle}
                                 </Typography>
                                 <IconButton
@@ -757,41 +1038,76 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     <CloseIcon />
                                 </IconButton>
                             </Box>
-
-                            {/* Modal Body - Downtime Table */}
                             <Box sx={{ p: 3 }}>
                                 {downtimePopupData.length > 0 ? (
                                     <>
-                                        {/* ✅ FIX: maxHeight set to show exactly 5 rows, rest scrolls */}
-                                        <TableContainer sx={{
-                                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                                            borderRadius: '8px',
-                                            border: '1px solid #E5E7EB',
-                                            maxHeight: '240px',
-                                            overflowY: 'auto',
-                                            scrollbarWidth: 'thin',
-                                            '&::-webkit-scrollbar': {
-                                                width: '6px',
-                                            },
-                                            '&::-webkit-scrollbar-track': {
-                                                backgroundColor: '#F3F4F6',
-                                                borderRadius: '3px',
-                                            },
-                                            '&::-webkit-scrollbar-thumb': {
-                                                backgroundColor: '#CBD5E1',
-                                                borderRadius: '3px',
-                                                '&:hover': {
-                                                    backgroundColor: '#94A3B8',
+                                        <TableContainer
+                                            sx={{
+                                                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                                                borderRadius: '8px',
+                                                border: '1px solid #E5E7EB',
+                                                maxHeight: '240px',
+                                                overflowY: 'auto',
+                                                scrollbarWidth: 'thin',
+                                                '&::-webkit-scrollbar': { width: '6px' },
+                                                '&::-webkit-scrollbar-track': {
+                                                    backgroundColor: '#F3F4F6',
+                                                    borderRadius: '3px',
                                                 },
-                                            },
-                                        }}>
+                                                '&::-webkit-scrollbar-thumb': {
+                                                    backgroundColor: '#CBD5E1',
+                                                    borderRadius: '3px',
+                                                    '&:hover': { backgroundColor: '#94A3B8' },
+                                                },
+                                            }}
+                                        >
                                             <Table size="small" stickyHeader>
                                                 <TableHead>
                                                     <TableRow sx={{ backgroundColor: '#F3F4F6' }}>
-                                                        <TableCell sx={{ fontWeight: 700, fontSize: '13px', color: '#374151', py: '10px', borderBottom: '2px solid #E5E7EB' }}>#</TableCell>
-                                                        <TableCell sx={{ fontWeight: 700, fontSize: '13px', color: '#374151', py: '10px', borderBottom: '2px solid #E5E7EB' }}>Start Time</TableCell>
-                                                        <TableCell sx={{ fontWeight: 700, fontSize: '13px', color: '#374151', py: '10px', borderBottom: '2px solid #E5E7EB' }}>End Time</TableCell>
-                                                        <TableCell sx={{ fontWeight: 700, fontSize: '13px', color: '#374151', py: '10px', borderBottom: '2px solid #E5E7EB' }}>Duration</TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                fontWeight: 700,
+                                                                fontSize: '13px',
+                                                                color: '#374151',
+                                                                py: '10px',
+                                                                borderBottom: '2px solid #E5E7EB',
+                                                            }}
+                                                        >
+                                                            #
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                fontWeight: 700,
+                                                                fontSize: '13px',
+                                                                color: '#374151',
+                                                                py: '10px',
+                                                                borderBottom: '2px solid #E5E7EB',
+                                                            }}
+                                                        >
+                                                            Start Time
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                fontWeight: 700,
+                                                                fontSize: '13px',
+                                                                color: '#374151',
+                                                                py: '10px',
+                                                                borderBottom: '2px solid #E5E7EB',
+                                                            }}
+                                                        >
+                                                            End Time
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                fontWeight: 700,
+                                                                fontSize: '13px',
+                                                                color: '#374151',
+                                                                py: '10px',
+                                                                borderBottom: '2px solid #E5E7EB',
+                                                            }}
+                                                        >
+                                                            Duration
+                                                        </TableCell>
                                                     </TableRow>
                                                 </TableHead>
                                                 <TableBody>
@@ -801,40 +1117,77 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                                             <TableRow
                                                                 key={index}
                                                                 sx={{
-                                                                    '&:hover': { backgroundColor: '#F9FAFB' },
-                                                                    backgroundColor: isOngoing ? '#FFF5F5' : 'inherit',
+                                                                    '&:hover': {
+                                                                        backgroundColor: '#F9FAFB',
+                                                                    },
+                                                                    backgroundColor: isOngoing
+                                                                        ? '#FFF5F5'
+                                                                        : 'inherit',
                                                                 }}
                                                             >
-                                                                <TableCell sx={{ fontSize: '12px', color: '#6B7280', borderBottom: '1px solid #F3F4F6' }}>
+                                                                <TableCell
+                                                                    sx={{
+                                                                        fontSize: '12px',
+                                                                        color: '#6B7280',
+                                                                        borderBottom:
+                                                                            '1px solid #F3F4F6',
+                                                                    }}
+                                                                >
                                                                     {index + 1}
                                                                 </TableCell>
-                                                                <TableCell sx={{ fontSize: '12px', color: '#1F2937', borderBottom: '1px solid #F3F4F6' }}>
+                                                                <TableCell
+                                                                    sx={{
+                                                                        fontSize: '12px',
+                                                                        color: '#1F2937',
+                                                                        borderBottom:
+                                                                            '1px solid #F3F4F6',
+                                                                    }}
+                                                                >
                                                                     {item.start_time || '-'}
                                                                 </TableCell>
-                                                                <TableCell sx={{
-                                                                    fontSize: '12px',
-                                                                    color: isOngoing ? '#EF4444' : '#1F2937',
-                                                                    fontWeight: isOngoing ? 600 : 400,
-                                                                    borderBottom: '1px solid #F3F4F6',
-                                                                }}>
+                                                                <TableCell
+                                                                    sx={{
+                                                                        fontSize: '12px',
+                                                                        color: isOngoing
+                                                                            ? '#EF4444'
+                                                                            : '#1F2937',
+                                                                        fontWeight: isOngoing ? 600 : 400,
+                                                                        borderBottom:
+                                                                            '1px solid #F3F4F6',
+                                                                    }}
+                                                                >
                                                                     {item.end_time || (
-                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                            <Box sx={{
-                                                                                width: '6px',
-                                                                                height: '6px',
-                                                                                borderRadius: '50%',
-                                                                                backgroundColor: '#EF4444',
-                                                                            }} />
+                                                                        <Box
+                                                                            sx={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '4px',
+                                                                            }}
+                                                                        >
+                                                                            <Box
+                                                                                sx={{
+                                                                                    width: '6px',
+                                                                                    height: '6px',
+                                                                                    borderRadius: '50%',
+                                                                                    backgroundColor:
+                                                                                        '#EF4444',
+                                                                                }}
+                                                                            />
                                                                             Ongoing
                                                                         </Box>
                                                                     )}
                                                                 </TableCell>
-                                                                <TableCell sx={{
-                                                                    fontSize: '12px',
-                                                                    color: isOngoing ? '#EF4444' : '#1F2937',
-                                                                    fontWeight: isOngoing ? 600 : 400,
-                                                                    borderBottom: '1px solid #F3F4F6',
-                                                                }}>
+                                                                <TableCell
+                                                                    sx={{
+                                                                        fontSize: '12px',
+                                                                        color: isOngoing
+                                                                            ? '#EF4444'
+                                                                            : '#1F2937',
+                                                                        fontWeight: isOngoing ? 600 : 400,
+                                                                        borderBottom:
+                                                                            '1px solid #F3F4F6',
+                                                                    }}
+                                                                >
                                                                     {item.duration || '-'}
                                                                 </TableCell>
                                                             </TableRow>
@@ -843,16 +1196,16 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                                 </TableBody>
                                             </Table>
                                         </TableContainer>
-
-                                        {/* ✅ Scroll indicator */}
                                         {downtimePopupData.length > 5 && (
-                                            <Typography sx={{
-                                                fontSize: '11px',
-                                                color: '#9CA3AF',
-                                                textAlign: 'right',
-                                                mt: 0.5,
-                                                fontStyle: 'italic',
-                                            }}>
+                                            <Typography
+                                                sx={{
+                                                    fontSize: '11px',
+                                                    color: '#9CA3AF',
+                                                    textAlign: 'right',
+                                                    mt: 0.5,
+                                                    fontStyle: 'italic',
+                                                }}
+                                            >
                                                 Scroll to see all {downtimePopupData.length} records ↓
                                             </Typography>
                                         )}
@@ -860,31 +1213,43 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 ) : (
                                     <Box sx={{ textAlign: 'center', py: 5 }}>
                                         <Typography sx={{ color: '#9CA3AF', fontSize: '14px' }}>
-                                            No downtime records found
+                                            No stoppage records found
                                         </Typography>
                                     </Box>
                                 )}
-
-                                {/* Summary Footer - Always visible */}
                                 {downtimePopupData.length > 0 && (
-                                    <Box sx={{
-                                        display: 'flex',
-                                        justifyContent: 'flex-end',
-                                        alignItems: 'center',
-                                        mt: 2,
-                                        px: 1,
-                                        py: 1.5,
-                                        backgroundColor: '#F0F7FF',
-                                        borderRadius: '8px',
-                                        border: '1px solid #DBEAFE',
-                                    }}>
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'flex-end',
+                                            alignItems: 'center',
+                                            mt: 2,
+                                            px: 1,
+                                            py: 1.5,
+                                            backgroundColor: '#F0F7FF',
+                                            borderRadius: '8px',
+                                            border: '1px solid #DBEAFE',
+                                        }}
+                                    >
                                         <Typography sx={{ fontSize: '13px', color: '#6B7280', mr: 2 }}>
                                             Total:
                                         </Typography>
-                                        <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#1E4A7C' }}>
-                                            {downtimePopupData.length} times ({formatMinutesToDuration(
-                                                downtimePopupData.reduce((sum, item) => sum + parseDurationToMinutes(item.duration), 0)
-                                            )})
+                                        <Typography
+                                            sx={{
+                                                fontSize: '13px',
+                                                fontWeight: 700,
+                                                color: '#1E4A7C',
+                                            }}
+                                        >
+                                            {downtimePopupData.length} times (
+                                            {formatMinutesToDuration(
+                                                downtimePopupData.reduce(
+                                                    (sum, item) =>
+                                                        sum + parseDurationToMinutes(item.duration),
+                                                    0
+                                                )
+                                            )}
+                                            )
                                         </Typography>
                                     </Box>
                                 )}
@@ -892,7 +1257,12 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </Box>
                     </Modal>
 
-                    <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={() => setSnackbarOpen(false)} message={snackbarMessage} />
+                    <Snackbar
+                        open={snackbarOpen}
+                        autoHideDuration={6000}
+                        onClose={() => setSnackbarOpen(false)}
+                        message={snackbarMessage}
+                    />
                 </>
             )}
         </Box>

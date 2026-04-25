@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { getCompressorSlaves, getCompressorAnalytics } from '../../auth/compressor/CompressorAnalyticsApi';
 import {
     Box,
     Grid,
@@ -132,26 +133,18 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         },
     };
 
-    // Fetch dummy devices on component mount
+    // Fetch compressor devices on component mount
     useEffect(() => {
         fetchDevices();
     }, []);
 
-    // Function to load dummy devices
-    const fetchDevices = () => {
+    // Function to fetch compressor devices from API
+    const fetchDevices = async () => {
         try {
             setLoading(true);
-            // Dummy Compressor device data
-            const slaves = [
-                { slave_id: 'COMP_001', slave_name: 'COMPRESSOR 1' },
-                { slave_id: 'COMP_002', slave_name: 'COMPRESSOR 2' },
-                { slave_id: 'COMP_003', slave_name: 'COMPRESSOR 3' },
-                { slave_id: 'COMP_004', slave_name: 'COMPRESSOR 4' },
-                { slave_id: 'COMP_005', slave_name: 'COMPRESSOR 5' },
-                { slave_id: 'COMP_006', slave_name: 'COMPRESSOR 6' },
-                { slave_id: 'COMP_007', slave_name: 'COMPRESSOR 7' },
-            ];
+            const slaves = await getCompressorSlaves();
             
+            console.log('Raw slave list from API:', slaves);
             setDeviceObjects(slaves);
             const deviceNames = slaves.map(device => device.slave_name);
             setDevices(['all', ...deviceNames]);
@@ -168,38 +161,26 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Function to generate dummy connectivity data (Online/Offline)
+    // Function to fetch analytics data from API
     const fetchAnalyticsData = async (deviceName, parameters, startDate, endDate) => {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-
         const selectedDevice = deviceObjects.find(device => device.slave_name === deviceName);
         if (!selectedDevice) {
             throw new Error('Device not found');
         }
 
-        const start = dayjs(startDate);
-        const end = dayjs(endDate);
-        const diffMinutes = end.diff(start, 'minute');
+        // Format dates for API request
+        const from = dayjs(startDate).format('YYYY-MM-DDTHH:mm:ss');
+        const to = dayjs(endDate).format('YYYY-MM-DDTHH:mm:ss');
         
-        // Determine interval (generate point every ~15 mins for dummy data)
-        const interval = 15;
+        // Call the API
+        const response = await getCompressorAnalytics(
+            selectedDevice.slave_id,
+            from,
+            to
+        );
         
-        const data = [];
-        let current = start;
-
-        while (current.isBefore(end)) {
-            const point = {
-                timestamp: current.toISOString(),
-                // Generate 1 for Online, 0 for Offline (80% chance online)
-                connectivity_status: Math.random() > 0.2 ? 1 : 0
-            };
-
-            data.push(point);
-            current = current.add(interval, 'minute');
-        }
-        
-        return data;
+        // Return the analytics data array
+        return response.data.data || [];
     };
 
     // Handle search button click
@@ -347,11 +328,24 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             return { series: [] };
         }
 
-        // Map data to [timestamp, value] format for ApexCharts datetime axis
-        const seriesData = filteredChartData.map(item => {
-            const timestamp = item.timestamp || item.created_at || item.date;
-            return [new Date(timestamp).getTime(), item.connectivity_status];
+        // Map API data to [timestamp, value] format for ApexCharts datetime axis
+        // API returns: { start, end, status }
+        // We'll create data points for both start and end to show the status changes
+        const seriesData = [];
+        
+        filteredChartData.forEach(item => {
+            const startTime = new Date(item.start).getTime();
+            const endTime = new Date(item.end).getTime();
+            const status = item.status; // 1 for Online, 0 for Offline
+            
+            // Add start point
+            seriesData.push([startTime, status]);
+            // Add end point to show status change
+            seriesData.push([endTime, status]);
         });
+        
+        // Sort by timestamp
+        seriesData.sort((a, b) => a[0] - b[0]);
 
         return { 
             series: [{
@@ -367,10 +361,18 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             return { series: [] };
         }
 
-        const seriesData = compareChartData.map(item => {
-            const timestamp = item.timestamp || item.created_at || item.date;
-            return [new Date(timestamp).getTime(), item.connectivity_status];
+        const seriesData = [];
+        
+        compareChartData.forEach(item => {
+            const startTime = new Date(item.start).getTime();
+            const endTime = new Date(item.end).getTime();
+            const status = item.status;
+            
+            seriesData.push([startTime, status]);
+            seriesData.push([endTime, status]);
         });
+        
+        seriesData.sort((a, b) => a[0] - b[0]);
 
         return { 
             series: [{
@@ -386,10 +388,18 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             return { series: [] };
         }
 
-        const seriesData = compareChartData2.map(item => {
-            const timestamp = item.timestamp || item.created_at || item.date;
-            return [new Date(timestamp).getTime(), item.connectivity_status];
+        const seriesData = [];
+        
+        compareChartData2.forEach(item => {
+            const startTime = new Date(item.start).getTime();
+            const endTime = new Date(item.end).getTime();
+            const status = item.status;
+            
+            seriesData.push([startTime, status]);
+            seriesData.push([endTime, status]);
         });
+        
+        seriesData.sort((a, b) => a[0] - b[0]);
 
         return { 
             series: [{
