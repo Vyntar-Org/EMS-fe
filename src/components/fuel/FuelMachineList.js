@@ -817,7 +817,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         <Box style={styles.mainContent} id="main-content">
             <Box sx={styles.headerContainer}>
                 <TextField
-                    placeholder="Search machines..."
+                    placeholder="Search Devices..."
                     size="small"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}

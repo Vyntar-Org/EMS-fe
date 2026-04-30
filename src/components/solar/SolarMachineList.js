@@ -750,7 +750,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     {/* Header with Search and Download */}
                     <Box sx={styles.headerContainer}>
                         <TextField
-                            placeholder="Search machines..."
+                            placeholder="Search Devices..."
                             size="small"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
