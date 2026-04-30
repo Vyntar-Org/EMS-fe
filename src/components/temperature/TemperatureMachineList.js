@@ -55,6 +55,109 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
+    // ✅ NEW: Get card background color based on temperature
+    const getCardBackgroundColor = (temperature, isOnline) => {
+        if (!isOnline) {
+            return {
+                background: 'linear-gradient(135deg, #FFFFFF 0%, #E0E0E0 100%)',
+                borderColor: '#BDBDBD',
+            };
+        }
+
+        if (temperature === null || temperature === undefined || isNaN(temperature)) {
+            return {
+                background: 'linear-gradient(135deg, #FFFFFF 0%, #E0E0E0 100%)',
+                borderColor: '#BDBDBD',
+            };
+        }
+
+        if (temperature >= 23 && temperature <= 25) {
+            // Green - Normal range
+            return {
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(76, 175, 80, 0.25) 50%, rgba(76, 175, 80, 0.4) 100%)',
+                // borderColor: '#4CAF50',
+            };
+        } else if (temperature > 25) {
+            // Red - High temperature
+            return {
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(229, 57, 53, 0.25) 50%, rgba(229, 57, 53, 0.4) 100%)',
+                // borderColor: '#E53935',
+            };
+        } else if (temperature < 23) {
+            // Orange - Low temperature
+            return {
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 152, 0, 0.25) 50%, rgba(255, 152, 0, 0.4) 100%)',
+                // borderColor: '#FF9800',
+            };
+        }
+
+        return {
+            background: '#FFFFFF',
+            borderColor: '#E0E0E0',
+        };
+    };
+
+    // ✅ NEW: Get status badge color based on temperature
+    const getStatusBadgeStyle = (temperature, isOnline) => {
+        if (!isOnline) {
+            return {
+                color: '#9E9E9E',
+                borderColor: '#9E9E9E',
+            };
+        }
+
+        if (temperature === null || temperature === undefined || isNaN(temperature)) {
+            return {
+                color: '#9E9E9E',
+                borderColor: '#9E9E9E',
+            };
+        }
+
+        if (temperature >= 23 && temperature <= 25) {
+            return {
+                color: '#2E7D32',
+                borderColor: '#4CAF50',
+                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+            };
+        } else if (temperature > 25) {
+            return {
+                color: '#C62828',
+                borderColor: '#E53935',
+                backgroundColor: 'rgba(229, 57, 53, 0.1)',
+            };
+        } else if (temperature < 23) {
+            return {
+                color: '#E65100',
+                borderColor: '#FF9800',
+                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+            };
+        }
+
+        return {
+            color: '#5A5A5A',
+            borderColor: '#5A5A5A',
+        };
+    };
+
+    // ✅ NEW: Get temperature status text
+    const getTemperatureStatusText = (temperature, isOnline) => {
+        if (!isOnline) return 'Offline';
+
+        if (temperature === null || temperature === undefined || isNaN(temperature)) {
+            return 'No Data';
+        }
+
+        if (temperature >= 23 && temperature <= 25) {
+            return 'Normal';
+        } else if (temperature > 25) {
+            return 'High';
+        } else if (temperature < 23) {
+            return 'Low';
+        }
+
+        return 'Unknown';
+    };
+
     // ✅ NEW: Truncate helper
     const truncateText = (text, length = 15) =>
         text.length > length ? text.slice(0, length) + '...' : text;
@@ -114,7 +217,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             return;
         }
 
-        const headers = ['Machine Name', 'Status', 'Temperature (°C)', 'Humidity (%)', 'Battery (V)', 'Last Updated'];
+        const headers = ['Machine Name', 'Status', 'Temperature (°C)', 'Temperature Status', 'Humidity (%)', 'Battery (V)', 'Last Updated'];
 
         const rows = filteredMachines.map(machine => {
             const isWithinTimeLimit = (lastTs) => {
@@ -127,6 +230,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
 
             const temp = machine.latest?.rv ? machine.latest.rv.toFixed(2) : 'N/A';
+            const tempStatus = machine.latest?.rv ? getTemperatureStatusText(machine.latest.rv, isOnline) : 'N/A';
             const hum = machine.latest?.iy ? machine.latest.iy.toFixed(1) : 'N/A';
             const bat = machine.latest?.bv ? machine.latest.bv.toFixed(2) : 'N/A';
             const date = machine.last_ts ? new Date(machine.last_ts).toLocaleString() : 'N/A';
@@ -135,6 +239,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 machine.name || 'N/A',
                 isOnline ? 'Online' : 'Offline',
                 temp,
+                tempStatus,
                 hum,
                 bat,
                 date
@@ -242,7 +347,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             marginTop: '8px',
         },
         phaseTableHeader: {
-            backgroundColor: '#f5f5f5',
+            backgroundColor: 'transparent',
             fontWeight: 'bold',
         },
         metricsRow: {
@@ -344,16 +449,21 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            },
         },
         floorTitle: {
             fontSize: '16px',
             fontWeight: 600,
             color: '#1F2937',
-            whiteSpace: 'nowrap',       // ✅ NEW
-            overflow: 'hidden',          // ✅ NEW
-            textOverflow: 'ellipsis',    // ✅ NEW
-            maxWidth: '100%',           // ✅ NEW
-            display: 'block',            // ✅ NEW
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '100%',
+            display: 'block',
         },
         gridContainer: {
             display: 'flex',
@@ -506,7 +616,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const renderFloorCard = (machine) => {
         if (!machine) return null;
 
-        // ✅ NEW: Check if name exceeds 15 chars for tooltip
+        // ✅ Check if name exceeds 15 chars for tooltip
         const isNameTruncated = machine.name && machine.name.length > 24;
         const displayName = truncateText(machine.name, 24);
 
@@ -523,6 +633,18 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
+
+        // ✅ Get temperature value
+        const temperatureValue = latest.rv;
+
+        // ✅ Get card background color based on temperature
+        const cardColors = getCardBackgroundColor(temperatureValue, isOnline);
+
+        // ✅ Get status badge style
+        const statusBadgeStyle = getStatusBadgeStyle(temperatureValue, isOnline);
+
+        // ✅ Get temperature status text
+        const temperatureStatus = getTemperatureStatusText(temperatureValue, isOnline);
 
         console.log(latest);
 
@@ -573,12 +695,8 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             <Card style={styles.floorCard}>
                 <CardContent style={{
                     ...styles.commonSection,
-                    ...(isOnline ? {
-                        background: 'linear-gradient(42deg, rgba(255, 255, 255, 1) 0%, rgba(87, 199, 133, 0.72) 94%)',
-                        backgroundColor: 'transparent',
-                    } : {
-                        backgroundColor: '#FFFFFF',
-                    }),
+                    background: cardColors.background,
+                    border: `2px solid ${cardColors.borderColor}`,
                     padding: '12px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -586,7 +704,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     flexGrow: 1
                 }}>
                     <Box style={styles.commonHeader}>
-                        {/* ✅ CHANGED: Tooltip only when name is truncated */}
+                        {/* ✅ Tooltip only when name is truncated */}
                         {isNameTruncated ? (
                             <Tooltip
                                 title={machine.name}
@@ -650,7 +768,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={{ ...styles.phaseTableHeader, backgroundColor: isOnline ? 'transparent' : '#f5f5f5' }}>
+                                <TableRow style={styles.phaseTableHeader}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Parameter</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}></TableCell>
@@ -667,7 +785,17 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
                                     </TableCell>
-                                    <TableCell align="right" style={styles.tableCell}>
+                                    <TableCell align="right" style={{
+                                        ...styles.tableCell,
+                                        fontWeight: 600,
+                                        color: temperatureValue !== null && temperatureValue !== undefined && !isNaN(temperatureValue) && isOnline
+                                            ? (temperatureValue >= 23 && temperatureValue <= 25
+                                                ? '#2E7D32'
+                                                : temperatureValue > 25
+                                                    ? '#C62828'
+                                                    : '#E65100')
+                                            : '#9E9E9E'
+                                    }}>
                                         {conditionalLatest.rv?.toFixed(2)} °C
                                     </TableCell>
                                 </TableRow>
@@ -739,7 +867,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             {/* Header with Search and Download */}
             <Box sx={styles.headerContainer}>
                 <TextField
-                    placeholder="Search machines..."
+                    placeholder="Search Devices..."
                     size="small"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -824,7 +952,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             {/* Chart Modal */}
             <Modal
                 open={chartModalOpen}
-                onClose={() => setChartOpen(false)}
+                onClose={() => setChartModalOpen(false)}
                 aria-labelledby="chart-modal-title"
                 aria-describedby="chart-modal-description"
                 sx={{
@@ -899,12 +1027,26 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                         </IconButton>
                     </Box>
                     <Box id="chart-modal-description">
-                        <Chart
-                            options={chartOptions}
-                            series={chartSeries}
-                            type="line"
-                            height={350}
-                        />
+                        {trendLoading ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 350 }}>
+                                <Typography>Loading chart data...</Typography>
+                            </Box>
+                        ) : trendError ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 350 }}>
+                                <Typography color="error">{trendError}</Typography>
+                            </Box>
+                        ) : trendData.length > 0 ? (
+                            <Chart
+                                options={chartOptions}
+                                series={chartSeries}
+                                type="line"
+                                height={350}
+                            />
+                        ) : (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 350 }}>
+                                <Typography>No trend data available</Typography>
+                            </Box>
+                        )}
                     </Box>
                 </Box>
             </Modal>
