@@ -36,8 +36,18 @@ import SolarLogs from './components/solar/SolarLogs';
 import CompressorMachineList from './components/compressor/CompressorMachineList';
 import CompressorAnalytics from './components/compressor/CompressorAnalytics';
 import CompressorLogs from './components/compressor/CompressorLogs';
+// Import STP components
+import STPDashboard from './components/stp/StpDashboard';
+import STPMachineList from './components/stp/StpMachineList';
+import STPAnalytics from './components/stp/StpAnalytics';
+import STPLogs from './components/stp/StpLogs';
+import STPReports from './components/stp/StpReports';
 
 import './App.css';
+import StpMachineList from './components/stp/StpMachineList';
+import StpAnalytics from './components/stp/StpAnalytics';
+import StpLogs from './components/stp/StpLogs';
+import StpReports from './components/stp/StpReports';
 
 function App() {
   return (
@@ -118,6 +128,8 @@ function AppContent() {
             return <Navigate to="/solar/machine-list" replace />;
           } else if (defaultApp.code === 'COMPRESSOR') {
             return <Navigate to="/compressor/machine-list" replace />;
+          } else if (defaultApp.code === 'STP') {
+            return <Navigate to="/stp/machine-list" replace />;
           }
         }
         return <Navigate to="/dashboard" replace />;
@@ -616,6 +628,92 @@ function AppContent() {
               />
               <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
                 <CompressorLogs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+
+          {/* STP application routes */}
+          <Route path="/stp/dashboard" element={
+            <ProtectedRoute requiredAppCode="STP">
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <STPDashboard onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/stp/machine-list" element={
+            <ProtectedRoute requiredAppCode="STP">
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <StpMachineList onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/stp/analytics" element={
+            <ProtectedRoute requiredAppCode="STP">
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <StpAnalytics onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/stp/logs" element={
+            <ProtectedRoute requiredAppCode="STP">
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <StpLogs onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
+              </main>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/stp/reports" element={
+            <ProtectedRoute requiredAppCode="STP">
+              <Navbar onMenuClick={handleMenuToggle} onSidebarToggle={handleSidebarToggle} activeApp={activeApp} setActiveApp={setActiveApp} />
+              <Sidebar 
+                mobileOpen={mobileMenuOpen} 
+                onClose={handleMenuClose}
+                visible={sidebarVisible}
+                onSidebarHide={handleSidebarHide}
+                onSidebarToggle={handleSidebarToggle}
+                activeApp={activeApp}
+              />
+              <main className={`main-content ${sidebarVisible ? 'sidebar-visible' : 'sidebar-hidden'}`}>
+                <StpReports onSidebarToggle={handleSidebarToggle} sidebarVisible={sidebarVisible} />
               </main>
             </ProtectedRoute>
           } />
