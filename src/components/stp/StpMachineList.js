@@ -475,37 +475,54 @@ const StpMachineList = () => {
 
                     <Divider sx={{ mt: 'auto' }} />
 
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
-    {footerMetrics.map((metric, index) => (
-        <Box 
-            key={metric.metric_key} 
-            sx={{ 
-                display: 'flex', 
-                flexDirection: 'column',
-                // Apply margin left for items after the first one, matching the reference design
-                ...(index > 0 && { marginLeft: '15px' }) 
-            }}
-        >
-            <Typography sx={{ fontSize: '13px', color: '#666', lineHeight: 1, mb: 0.5 }}>
-                {metric.label}
-            </Typography>
-            <Typography sx={{ fontWeight: 'bold', fontSize: '12px', lineHeight: 1.2 }}>
-                {metric.value} <span style={{ fontWeight: 'bold', fontSize: '12px', marginLeft: '2px' }}>{metric.unit}</span>
-            </Typography>
-        </Box>
-    ))}
+                    <Box sx={{ display: 'flex', alignItems: 'center', pt: 1 }}>
 
-    <Box sx={{ marginTop: 'auto' }}>
-        <Button
-            variant="contained"
-            style={styles.chartButton}
-            onClick={() => handleTrendClick(card)}
-            sx={{ height: '30px', minWidth: '60px' }}
-        >
-            Trend
-        </Button>
-    </Box>
-</Box>
+                        {/* LEFT COLUMN: Takes up 1/3 of space, content aligned to start */}
+                        <Box sx={{ display: 'flex', flex: 1, justifyContent: 'flex-start' }}>
+                            {footerMetrics[0] && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    <Typography variant="caption" sx={{ fontSize: '13px', color: '#666', lineHeight: 1, mb: 1, justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+                                        {footerMetrics[0].label}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '12px', lineHeight: 1.2, justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+                                        {footerMetrics[0].value}
+                                        <span style={{ fontWeight: 'bold', fontSize: '12px', lineHeight: 1.2, marginLeft: '2px' }}>
+                                            {footerMetrics[0].unit}
+                                        </span>
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Box>
+
+                        {/* CENTER COLUMN: Takes up 1/3 of space, content aligned to center */}
+                        <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center' }}>
+                            {footerMetrics[1] && (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <Typography variant="caption" sx={{ fontSize: '13px', color: '#666', lineHeight: 1, mb: 1, justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+                                        {footerMetrics[1].label}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '12px', lineHeight: 1.2, justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+                                        {footerMetrics[1].value}
+                                        <span style={{ fontWeight: 'bold', fontSize: '12px', lineHeight: 1.2, marginLeft: '2px' }}>
+                                            {footerMetrics[1].unit}
+                                        </span>
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Box>
+
+                        {/* RIGHT COLUMN: Takes up 1/3 of space, content aligned to end (Right) */}
+                        <Box sx={{ display: 'flex', flex: 1, justifyContent: 'flex-end' }}>
+                            <Button
+                                variant="contained"
+                                style={styles.chartButton}
+                                onClick={() => handleTrendClick(card)}
+                                sx={{ height: '30px', minWidth: '60px' }}
+                            >
+                                Trend
+                            </Button>
+                        </Box>
+                    </Box>
                 </CardContent>
             </Card>
         );
