@@ -39,28 +39,28 @@ const fetchMockApiData = () => {
         "cards": [
             {
                 "slave_id": 1,
-                "card_name": "Water Inlet",
+                "card_name": "Water Inlet (Sewage Water)",
                 "slave_type": "FLOW_METER",
                 "ui_card_type": "FLOW_CARD",
                 "status": "ONLINE",
                 "metrics": [
                     { "metric_key": "inlet_flowrate", "label": "Inlet Flow", "value": 873, "unit": "m3/hr" },
                     { "metric_key": "inlet_totalizer", "label": "Inlet Totalizer", "value": 83, "unit": "KL" },
-                    { "metric_key": "today_consumption", "label": "Today Consumption", "value": 12, "unit": "KLD" },
-                    { "metric_key": "monthly_consumption", "label": "Monthly Consumption", "value": 1234, "unit": "KLD" }
+                    { "metric_key": "today_consumption", "label": "Today", "value": 12, "unit": "KLD" },
+                    { "metric_key": "monthly_consumption", "label": "MTD", "value": 1234, "unit": "KLD" }
                 ]
             },
             {
                 "slave_id": 2,
-                "card_name": "Water Outlet",
+                "card_name": "Water Outlet (Treated Water)",
                 "slave_type": "FLOW_METER",
                 "ui_card_type": "FLOW_CARD",
                 "status": "ONLINE",
                 "metrics": [
                     { "metric_key": "outlet_flowrate", "label": "Outlet Flow", "value": 873, "unit": "m3/hr" },
                     { "metric_key": "outlet_totalizer", "label": "Outlet Totalizer", "value": 83, "unit": "KL" },
-                    { "metric_key": "today_consumption", "label": "Today Consumption", "value": 12, "unit": "KLD" },
-                    { "metric_key": "monthly_consumption", "label": "Monthly Consumption", "value": 1234, "unit": "KLD" }
+                    { "metric_key": "today_consumption", "label": "Today", "value": 12, "unit": "KLD" },
+                    { "metric_key": "monthly_consumption", "label": "MTD", "value": 1234, "unit": "KLD" }
                 ]
             },
             {
@@ -125,12 +125,12 @@ const generateMockMotorTrendData = () => {
     for (let i = 0; i < 36; i++) {
         const time = new Date(now.getTime() - (i * 10 * 60 * 1000));
         categories.push(time.toISOString());
-        
+
         // Random value between 0 and 100 for load or performance
         motor1Data.push(parseFloat((Math.random() * 100).toFixed(2)));
         motor2Data.push(parseFloat((Math.random() * 100).toFixed(2)));
     }
-    
+
     return {
         categories: categories.reverse(),
         series: [
@@ -145,15 +145,15 @@ const StpMachineList = () => {
     const [plantData, setPlantData] = useState(null);
     const [chartModalOpen, setChartModalOpen] = useState(false);
     const [selectedCard, setSelectedCard] = useState(null);
-    
+
     // State for Line Charts (Flow/Totalizer)
     const [trendData, setTrendData] = useState([]);
     const [trendMetricKey, setTrendMetricKey] = useState(null);
-    
+
     // State for Area Charts (Motors)
     const [tankTrendSeries, setTankTrendSeries] = useState([]);
     const [tankTrendCategories, setTankTrendCategories] = useState([]);
-    
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [trendLoading, setTrendLoading] = useState(false);
@@ -228,7 +228,7 @@ const StpMachineList = () => {
             const mockData = generateMockMotorTrendData();
             setTankTrendSeries(mockData.series);
             setTankTrendCategories(mockData.categories);
-        } 
+        }
         // Logic for FLOW_CARD (Inlet/Outlet)
         else {
             let defaultKey = null;
@@ -237,14 +237,14 @@ const StpMachineList = () => {
             } else if (card.card_name === 'Water Outlet') {
                 defaultKey = 'outlet_flowrate';
             }
-            
+
             setTrendMetricKey(defaultKey);
 
             await new Promise(resolve => setTimeout(resolve, 500));
             const mockData = generateMockTrendData(defaultKey);
             setTrendData(mockData);
         }
-        
+
         setTrendLoading(false);
     };
 
@@ -301,7 +301,7 @@ const StpMachineList = () => {
         },
         tooltip: { enabled: true, theme: 'light' }
     };
-    
+
     const lineChartSeries = [{
         name: currentMetricDetails.label,
         data: trendData.map(item => item.value)
@@ -475,29 +475,37 @@ const StpMachineList = () => {
 
                     <Divider sx={{ mt: 'auto' }} />
 
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1 }}>
-                        <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-                            {footerMetrics.map(metric => (
-                                <Box key={metric.metric_key} sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Typography variant="caption" sx={{ fontSize: '13px', color: '#666', lineHeight: 1, mb: 1 }}>
-                                        {metric.label}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '13px', lineHeight: 1.2, justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
-                                        {metric.value} <span style={{ fontSize: '10px', fontWeight: 'normal', marginLeft: '4px' }}> {metric.unit}</span>
-                                    </Typography>
-                                </Box>
-                            ))}
-                        </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+    {footerMetrics.map((metric, index) => (
+        <Box 
+            key={metric.metric_key} 
+            sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                // Apply margin left for items after the first one, matching the reference design
+                ...(index > 0 && { marginLeft: '15px' }) 
+            }}
+        >
+            <Typography sx={{ fontSize: '13px', color: '#666', lineHeight: 1, mb: 0.5 }}>
+                {metric.label}
+            </Typography>
+            <Typography sx={{ fontWeight: 'bold', fontSize: '12px', lineHeight: 1.2 }}>
+                {metric.value} <span style={{ fontWeight: 'bold', fontSize: '12px', marginLeft: '2px' }}>{metric.unit}</span>
+            </Typography>
+        </Box>
+    ))}
 
-                        <Button
-                            variant="contained"
-                            style={styles.chartButton}
-                            onClick={() => handleTrendClick(card)}
-                            sx={{ height: '30px', minWidth: '60px' }}
-                        >
-                            Trend
-                        </Button>
-                    </Box>
+    <Box sx={{ marginTop: 'auto' }}>
+        <Button
+            variant="contained"
+            style={styles.chartButton}
+            onClick={() => handleTrendClick(card)}
+            sx={{ height: '30px', minWidth: '60px' }}
+        >
+            Trend
+        </Button>
+    </Box>
+</Box>
                 </CardContent>
             </Card>
         );
@@ -529,7 +537,25 @@ const StpMachineList = () => {
                             variant="outlined"
                             startIcon={<FileDownloadIcon />}
                             onClick={handleDownload}
-                            sx={{ minWidth: '40px', width: '40px', height: '40px', borderRadius: '50%', borderColor: '#2F6FB0', color: '#fff', backgroundColor: '#2F6FB0', padding: 0, '&:hover': { backgroundColor: '#1E4A7C' } }}
+                            sx={{
+                                minWidth: '40px',
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                borderColor: '#2F6FB0',
+                                color: '#fff',
+                                backgroundColor: '#2F6FB0',
+                                padding: 0,
+                                marginRight: '10px',
+                                '& .MuiButton-startIcon': {
+                                    margin: 0,
+                                },
+                                '&:hover': {
+                                    borderColor: '#1E4A7C',
+                                    backgroundColor: '#1E4A7C',
+                                    color: '#fff',
+                                },
+                            }}
                         />
                     </Box>
 
@@ -548,7 +574,7 @@ const StpMachineList = () => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                         <Box>
                             <Typography variant="h6">{selectedCard?.card_name} - Trend</Typography>
-                            
+
                             {/* Dropdown for Inlet/Outlet Only */}
                             {showTrendDropdown && (
                                 <FormControl size="small" sx={{ mt: 2, minWidth: 150 }}>
@@ -573,7 +599,7 @@ const StpMachineList = () => {
                         </Box>
                         <IconButton onClick={() => setChartModalOpen(false)}><CloseIcon /></IconButton>
                     </Box>
-                    
+
                     {trendLoading ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
                             <CircularProgress />
@@ -582,21 +608,21 @@ const StpMachineList = () => {
                         <>
                             {/* Area Chart for Tank Card */}
                             {isTankTrend && tankTrendSeries.length > 0 && (
-                                <Chart 
-                                    options={areaChartOptions} 
-                                    series={tankTrendSeries} 
-                                    type="area" 
-                                    height={350} 
+                                <Chart
+                                    options={areaChartOptions}
+                                    series={tankTrendSeries}
+                                    type="area"
+                                    height={350}
                                 />
                             )}
 
                             {/* Line Chart for Flow Cards */}
                             {!isTankTrend && trendData.length > 0 && (
-                                <Chart 
-                                    options={lineChartOptions} 
-                                    series={lineChartSeries} 
-                                    type="line" 
-                                    height={350} 
+                                <Chart
+                                    options={lineChartOptions}
+                                    series={lineChartSeries}
+                                    type="line"
+                                    height={350}
                                 />
                             )}
                         </>
