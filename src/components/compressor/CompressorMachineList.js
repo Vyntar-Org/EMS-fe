@@ -63,12 +63,6 @@ const parseFlexibleDate = (dateStr) => {
     return parseDowntimeDate(dateStr);
 };
 
-// ═══════════════════════════════════════════════════════════════
-// FIX #1: Move TabPanel OUTSIDE the component so its reference
-// stays stable across re-renders. When defined inside, it gets
-// a new function identity every render → React unmounts old
-// instance + mounts new one → chart destroys & re-animates → blink
-// ═══════════════════════════════════════════════════════════════
 const TabPanel = memo(({ children, value, index }) => (
     <Box
         role="tabpanel"
@@ -162,11 +156,6 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const [downtimeLoading, setDowntimeLoading] = useState(false);
     const [downtimeWindow, setDowntimeWindow] = useState(null);
 
-    // ═══════════════════════════════════════════════════════════════
-    // FIX #2: Use a ref for derivedStoppages so the tooltip closure
-    // in downtimeChartOptions always reads the latest value without
-    // needing the options object to be recreated
-    // ═══════════════════════════════════════════════════════════════
     const derivedStoppagesRef = useRef([]);
     useEffect(() => {
         derivedStoppagesRef.current = derivedStoppages;
@@ -304,6 +293,51 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    // ─── Download handler for stoppage table in modal ───
+    const handleStoppageTableDownload = () => {
+        if (derivedStoppages.length === 0) {
+            setSnackbarMessage('No stoppage data to download');
+            setSnackbarOpen(true);
+            return;
+        }
+
+        const headers = ['#', 'Start Time', 'End Time', 'Duration'];
+
+        const rows = derivedStoppages.map((item, index) => {
+            const isOngoing = item.isOngoing;
+            const endDisplay = isOngoing ? 'Ongoing' : (item.end_time || '-');
+            // const status = isOngoing ? 'Ongoing' : 'Completed';
+            return [
+                index + 1,
+                `"${item.start_time || '-'}"`,
+                `"${endDisplay}"`,
+                `"${item.duration || '-'}"`,
+                // status,
+            ].join(',');
+        });
+
+        const totalCount = downtimeMeta?.count ?? derivedStoppages.length;
+        const totalDuration = downtimeMeta?.total_downtime
+            ?? formatMinutesToDuration(Math.round(derivedStoppages.reduce((sum, item) => sum + (item.durationSeconds || 0), 0) / 60));
+
+        rows.push('');
+        rows.push(`"Total Stoppages:",${totalCount},,`);
+        rows.push(`"Total Duration:","${totalDuration}",,`);
+
+        const cleanTitle = (stoppageModalTitle || 'stoppage').replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_').slice(0, 50);
+
+        const csvContent = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${cleanTitle}_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     const fetchTrendData = async (slaveId) => {
@@ -515,10 +549,6 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         },
     };
 
-    // ═══════════════════════════════════════════════════════════════
-    // FIX #3: Add animations: { enabled: false } to chartOptions
-    // This was missing — the TREND modal chart would animate on mount
-    // ═══════════════════════════════════════════════════════════════
     const chartOptions = useRef({
         chart: {
             type: 'area',
@@ -608,12 +638,6 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         })),
     }], [trendData]);
 
-    // ═══════════════════════════════════════════════════════════════
-    // FIX #4: Use useRef for downtimeChartOptions to keep a STABLE
-    // reference. The tooltip reads derivedStoppages from the ref
-    // instead of closing over state, so the options object never
-    // needs to be recreated.
-    // ═══════════════════════════════════════════════════════════════
     const downtimeWindowRef = useRef(null);
     useEffect(() => {
         downtimeWindowRef.current = downtimeWindow;
@@ -690,7 +714,6 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 const statusText = value === 1 ? 'Online' : 'Offline';
                 const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
 
-                // Read from ref — always gets latest value without recreating options
                 const stoppages = derivedStoppagesRef.current;
 
                 let durationText = '';
@@ -725,10 +748,6 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         legend: { show: false },
     }).current;
 
-    // ═══════════════════════════════════════════════════════════════
-    // FIX #5: Update xaxis min/max imperatively via ApexCharts
-    // .updateOptions() instead of recreating the options object
-    // ═══════════════════════════════════════════════════════════════
     const downtimeChartRef = useRef(null);
 
     useEffect(() => {
@@ -737,7 +756,6 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const toTs = parseFlexibleDate(downtimeWindow.to);
         if (fromTs == null || toTs == null || isNaN(fromTs) || isNaN(toTs)) return;
 
-        // Update xaxis range imperatively — no new options object created
         if (downtimeChartRef.current?.chart?.updateOptions) {
             downtimeChartRef.current.chart.updateOptions({
                 xaxis: {
@@ -1093,6 +1111,7 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             width: { xs: '92%', sm: '600px', md: '750px' },
                             bgcolor: 'background.paper', borderRadius: '12px', boxShadow: 24, overflow: 'hidden',
                         }}>
+                            {/* ── Modal Header ── */}
                             <Box sx={{
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
                                 px: 3, py: 2, backgroundColor: '#F8F9FA', borderBottom: '1px solid #E5E7EB',
@@ -1115,7 +1134,11 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 </IconButton>
                             </Box>
 
-                            <Box sx={{ px: 3, backgroundColor: '#F8F9FA', borderBottom: '1px solid #E5E7EB' }}>
+                            {/* ── Tabs row with conditional download icon ── */}
+                            <Box sx={{
+                                px: 3, backgroundColor: '#F8F9FA', borderBottom: '1px solid #E5E7EB',
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            }}>
                                 <Tabs
                                     value={stoppageActiveTab}
                                     onChange={(_, newVal) => setStoppageActiveTab(newVal)}
@@ -1132,10 +1155,33 @@ const CompressorMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     <Tab icon={<BarChartIcon sx={{ fontSize: '18px', mr: 0.5 }} />} iconPosition="start" label="Chart" />
                                     <Tab icon={<TableChartIcon sx={{ fontSize: '18px', mr: 0.5 }} />} iconPosition="start" label="Data" />
                                 </Tabs>
+
+                                {/* ── Download icon: only visible on Data tab ── */}
+                                <Tooltip title="Download CSV" arrow placement="top">
+                                    <span>
+                                        <IconButton
+                                            onClick={handleStoppageTableDownload}
+                                            disabled={stoppageActiveTab !== 1 || derivedStoppages.length === 0}
+                                            sx={{
+                                                opacity: stoppageActiveTab === 1 ? 1 : 0,
+                                                pointerEvents: stoppageActiveTab === 1 ? 'auto' : 'none',
+                                                transition: 'opacity 0.25s ease, color 0.2s ease, background-color 0.2s ease',
+                                                color: '#2F6FB0',
+                                                '&:hover': { backgroundColor: '#EBF5FF', color: '#1E4A7C' },
+                                                '&:disabled': { color: '#CBD5E1', backgroundColor: 'transparent', cursor: 'not-allowed' },
+                                                width: '36px',
+                                                height: '36px',
+                                            }}
+                                        >
+                                            <FileDownloadIcon sx={{ fontSize: '20px' }} />
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
                             </Box>
 
+                            {/* ── Tab Panels ── */}
                             <Box sx={{ px: 3, pb: 3, height: '410px' }}>
-                                {/* Chart Tab — TabPanel is now stable (defined outside component) */}
+                                {/* Chart Tab */}
                                 <TabPanel value={stoppageActiveTab} index={0}>
                                     <MemoizedTrendChart
                                         options={downtimeChartOptions}

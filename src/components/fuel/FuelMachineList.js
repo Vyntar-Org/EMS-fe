@@ -281,7 +281,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '10px',
+            marginBottom: '5px',
             flexWrap: 'wrap',
             gap: '8px',
         },
@@ -665,7 +665,7 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: { xs: '0', sm: '0px' }, marginTop: { xs: '5px', sm: '0' } }}>
-                                <Tooltip
+                                {/* <Tooltip
                                     title={formatTimestampForTooltip(machine.last_ts)}
                                     placement="top"
                                     arrow
@@ -691,10 +691,13 @@ const FuelMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     >
                                         <AccessTimeIcon style={styles.clockIcon} />
                                     </Box>
-                                </Tooltip>
+                                </Tooltip> */}
                             </Box>
                         </Box>
                     </Box>
+                    <Typography style={{ ...styles.floorTitle, fontSize: '12px', fontWeight: 'bold', color: 'rgb(82 93 108)' }}>
+                        {formatTimestampForTooltip(machine.last_ts)}
+                    </Typography>
 
                     {/* Fuel Level Progress Bar */}
                     <Box style={styles.fuelLevelContainer}>

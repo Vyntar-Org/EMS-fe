@@ -224,7 +224,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '10px',
+            marginBottom: '5px',
             flexWrap: 'wrap',
             gap: '8px',
         },
@@ -606,7 +606,7 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
-                            <Tooltip
+                            {/* <Tooltip
                                 title={formatTimestampForTooltip(machine.last_ts)}
                                 placement="top"
                                 arrow
@@ -632,9 +632,12 @@ const FireSafetyMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 >
                                     <AccessTimeIcon style={styles.clockIcon} />
                                 </Box>
-                            </Tooltip>
+                            </Tooltip> */}
                         </Box>
                     </Box>
+                    <Typography style={{ ...styles.floorTitle, fontSize: '12px', fontWeight: 'bold', color: 'rgb(82 93 108)' }}>
+                        {`${formatTimestampForTooltip(machine.last_ts)}`}
+                    </Typography>
 
                     {/* Temperature/Water Data Table */}
                     <TableContainer style={styles.phaseTable}>

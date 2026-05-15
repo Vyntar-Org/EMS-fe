@@ -358,7 +358,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
         <Box sx={{ display: 'flex', gap: '10px', marginLeft: is1024 ? '-5px' : { lg: '-30px', md: '-15px', sm: '-30px' }, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'left' } }}>
 
           {/* Card 1: Devices */}
-          <Card sx={{ ...responsiveCardStyle, width: is1024 ? '30%' :  { xs: 'calc(88% - 5px)', sm: 'calc(30% - 5px)', md: getCardWidth() }, marginLeft: { xs: '-45px', sm: '30px', md: '0' } }}>
+          <Card sx={{ ...responsiveCardStyle, width: is1024 ? '30%' : { xs: 'calc(88% - 5px)', sm: 'calc(30% - 5px)', md: getCardWidth() }, marginLeft: { xs: '-45px', sm: '30px', md: '0' } }}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box display="flex" alignItems="center" mb={1}>
                 <DnsIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
@@ -378,7 +378,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
           </Card>
 
           {/* Card 2: Energy Consumption */}
-          <Card sx={{ ...responsiveCardStyle, width: is1024 ? '58.5%' :  { xs: 'calc(88% - 5px)', sm: 'calc(54% - 5px)', md: getCardWidth() === '230px' ? '500px' : (parseInt(getCardWidth()) * 2) + 'px' }, marginLeft: { xs: '-45px', sm: '0', md: '0' }, height: '130px', position: 'relative', overflow: 'hidden' }}>
+          <Card sx={{ ...responsiveCardStyle, width: is1024 ? '58.5%' : { xs: 'calc(88% - 5px)', sm: 'calc(54% - 5px)', md: getCardWidth() === '230px' ? '500px' : (parseInt(getCardWidth()) * 2) + 'px' }, marginLeft: { xs: '-45px', sm: '0', md: '0' }, height: '130px', position: 'relative', overflow: 'hidden' }}>
             <CardContent sx={{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box display="flex" alignItems="center" mb={1.5}>
                 <FlashOnIcon sx={{ color: '#1F2937', mr: 1, fontSize: '20px' }} />
@@ -449,6 +449,9 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 <Box textAlign="center"> <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>{((carbonFootprints?.backup?.toFixed(2)))}</Typography> <Typography sx={labelStyle}>Backup</Typography> </Box>
                 <Box textAlign="center"> <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>{((carbonFootprints?.green?.toFixed(2)))}</Typography> <Typography sx={labelStyle}>Green</Typography> </Box>
               </Box>
+              <Box display="flex" justifyContent="center" mt={1}>
+                <Typography sx={{ fontSize: '13px', color: '#1F2937', fontWeight: 500 }}>kg of CO₂</Typography>
+              </Box>
             </CardContent>
           </Card>
 
@@ -486,7 +489,7 @@ const Dashboard = ({ onSidebarToggle, sidebarVisible }) => {
           </Grid>
 
           <Grid item xs={12}>
-            <Card sx={{ ...cardStyle1, width: { xs: '85%', sm: '90%',md: getChartCardWidth1() }, height: { xs: 'auto', sm: 'auto', md: is1024 ? 'auto' : '389px' }, marginLeft: is1024 ? '-92px' : { xs: '0px', sm: '10px', md: '0', lg: '0' }, padding: '20px', marginBottom: '10px', transition: 'all 0.3s ease', '&:hover': { backgroundColor: '#fff', boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)', transform: 'translateY(-2px)' } }}>
+            <Card sx={{ ...cardStyle1, width: { xs: '85%', sm: '90%', md: getChartCardWidth1() }, height: { xs: 'auto', sm: 'auto', md: is1024 ? 'auto' : '389px' }, marginLeft: is1024 ? '-92px' : { xs: '0px', sm: '10px', md: '0', lg: '0' }, padding: '20px', marginBottom: '10px', transition: 'all 0.3s ease', '&:hover': { backgroundColor: '#fff', boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.08)', transform: 'translateY(-2px)' } }}>
               <Grid container spacing={2}>
                 {/* ✅ FIX: At 1024px chart takes full row, stacks separately */}
                 <Grid item xs={12} sm={12} md={is1024 ? 12 : 8}>

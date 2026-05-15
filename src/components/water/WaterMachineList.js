@@ -229,7 +229,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '10px',
+            marginBottom: '5px',
             flexWrap: 'wrap',
             gap: '8px',
         },
@@ -615,7 +615,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     {machine.totalizer || 0} m³
                                 </Typography>
 
-                                <Tooltip
+                                {/* <Tooltip
                                     title={formatTimestampForTooltip(machine.latest_ts)}
                                     placement="top"
                                     arrow
@@ -641,11 +641,15 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     >
                                         <AccessTimeIcon style={styles.clockIcon} />
                                     </Box>
-                                </Tooltip>
+                                </Tooltip> */}
 
                             </Box>
                         </Box>
                     </Box>
+
+                    <Typography style={{ ...styles.floorTitle, fontSize: '12px', fontWeight: 'bold', color: 'rgb(82 93 108)' }}>
+                        {formatTimestampForTooltip(machine.latest_ts)}
+                    </Typography>
 
                     {/* Temperature/Water Data Table */}
                     <TableContainer style={styles.phaseTable}>
@@ -662,7 +666,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </TableHead>
                             <TableBody>
                                 {/* Location */}
-                                <TableRow>
+                                {/* <TableRow>
                                     <TableCell style={styles.tableCell}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <LocationOnIcon style={styles.parameterIcon} />
@@ -674,7 +678,7 @@ const WaterMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     <TableCell align="right" style={styles.tableCell}>
                                         {machine.location || 'N/A'}
                                     </TableCell>
-                                </TableRow>
+                                </TableRow> */}
 
                                 {/* Consumption */}
                                 <TableRow>

@@ -530,7 +530,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '10px',
+            marginBottom: '5px',
             flexWrap: 'wrap',
             gap: '8px',
         },
@@ -804,12 +804,12 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 }),
                             }}
                         >
-                            <Typography style={{ 
-                                fontSize: '11px', 
-                                color: displayStatus === 'Online' ? '#30b44a' : '#e34d4d', 
-                                border: '1px solid ' + (displayStatus === 'Online' ? '#30b44a' : '#e34d4d'), 
-                                padding: '2px 6px', 
-                                borderRadius: '4px' 
+                            <Typography style={{
+                                fontSize: '11px',
+                                color: displayStatus === 'Online' ? '#30b44a' : '#e34d4d',
+                                border: '1px solid ' + (displayStatus === 'Online' ? '#30b44a' : '#e34d4d'),
+                                padding: '2px 6px',
+                                borderRadius: '4px'
                             }}>
                                 {displayStatus}
                             </Typography>
@@ -818,7 +818,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                 <Typography style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937', marginLeft: '10px' }}>
                                     {safeValue(displayLatest.acte_im, 1)} kWh
                                 </Typography>
-                                <Tooltip
+                                {/* <Tooltip
                                     title={`${formatTimestampForTooltip(machine.latest?.last_ts)}`}
                                     placement="top"
                                     arrow
@@ -843,18 +843,21 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     >
                                         <AccessTimeIcon sx={{ fontSize: '14px', ml: 0.5 }} />
                                     </Box>
-                                </Tooltip>
+                                </Tooltip> */}
                             </Box>
                         </Box>
                     </Box>
+                    <Typography style={{ ...styles.floorTitle, fontSize: '12px', fontWeight: 'bold', color: 'rgb(82 93 108)' }}>
+                        {`${formatTimestampForTooltip(machine.latest?.last_ts)}`}
+                    </Typography>
 
                     {/* Phase Data Table */}
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow style={{ 
-                                    ...styles.phaseTableHeader, 
-                                    backgroundColor: isOnline ? 'rgba(87, 199, 133, 0.1)' : '#f5f5f5' 
+                                <TableRow style={{
+                                    ...styles.phaseTableHeader,
+                                    backgroundColor: isOnline ? 'rgba(87, 199, 133, 0.1)' : '#f5f5f5'
                                 }}>
                                     <TableCell style={{ ...styles.tableCell, fontWeight: 'bold' }}>Phase</TableCell>
                                     <TableCell align="right" style={{ ...styles.tableCell, fontWeight: 'bold' }}>V</TableCell>

@@ -78,6 +78,14 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         });
     };
 
+    // ✅ NEW: Check if machine is online based on instant_flow
+    const isMachineOnline = (machine) => {
+        const instantFlow = machine.latest?.instant_flow;
+        // If instant_flow is null, undefined, or 0, machine is offline
+        // If instant_flow is greater than 0, machine is online
+        return instantFlow !== null && instantFlow !== undefined && instantFlow > 1;
+    };
+
     // Function to fetch solar machine list
     const fetchSolarMachineList = async () => {
         try {
@@ -115,14 +123,8 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
         const headers = ['Machine Name', 'Status', 'Instant Flow (m³/hr)', 'Flow Temp (°C)', 'Pressure (bar)', 'Inlet Temp (°C)', 'Outlet Temp (°C)', 'Last Updated'];
 
         const rows = filteredMachines.map(machine => {
-            const isWithinTimeLimit = (lastTs) => {
-                if (!lastTs) return false;
-                const lastTime = new Date(lastTs);
-                const currentTime = new Date();
-                const timeDiff = (currentTime - lastTime) / (1000 * 60);
-                return timeDiff <= 15;
-            };
-            const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
+            // ✅ CHANGED: Use isMachineOnline based on instant_flow
+            const isOnline = isMachineOnline(machine);
 
             return [
                 machine.name || 'N/A',
@@ -263,7 +265,7 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '10px',
+            marginBottom: '5px',
             flexWrap: 'wrap',
             gap: '8px',
         },
@@ -321,11 +323,11 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '16px',
             fontWeight: 600,
             color: '#1F2937',
-            whiteSpace: 'nowrap',       // ✅ NEW
-            overflow: 'hidden',          // ✅ NEW
-            textOverflow: 'ellipsis',    // ✅ NEW
-            maxWidth: '100%',           // ✅ NEW
-            display: 'block',            // ✅ NEW
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '100%',
+            display: 'block',
         },
         gridContainer: {
             display: 'flex',
@@ -395,6 +397,9 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             justifyContent: 'center',
             alignItems: 'center',
             height: '50vh',
+        },
+        offlineValueText: {
+            color: '#000000de',
         },
     };
 
@@ -517,18 +522,8 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
     const renderFloorCard = (machine) => {
         if (!machine) return null;
 
-        // Check if the last timestamp is within the last 15 minutes
-        const isWithinTimeLimit = (lastTs) => {
-            if (!lastTs) return false;
-
-            const lastTime = new Date(lastTs);
-            const currentTime = new Date();
-            const timeDiff = (currentTime - lastTime) / (1000 * 60);
-
-            return timeDiff <= 15;
-        };
-
-        const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
+        // ✅ CHANGED: Check online status based on instant_flow
+        const isOnline = isMachineOnline(machine);
         const latest = machine.latest || {};
         const energy = machine.energy || {};
         const totalizer = machine.totalizer || {};
@@ -585,11 +580,12 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                             </Box>
                         </Box>
                         <Box style={styles.onlineStatus}>
+                            {/* ✅ CHANGED: Status badge based on instant_flow */}
                             <Typography style={{ fontSize: '11px', color: isOnline ? '#30b44a' : '#e34d4d', border: '1px solid ' + (isOnline ? '#30b44a' : '#e34d4d'), padding: '2px 6px', borderRadius: '4px' }}>
                                 {isOnline ? 'Online' : 'Offline'}
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', marginLeft: { xs: '0', sm: '0px' }, marginTop: { xs: '5px', sm: '0' } }}>
-                                <Tooltip
+                                {/* <Tooltip
                                     title={formatTimestampForTooltip(machine.last_ts)}
                                     placement="top"
                                     arrow
@@ -615,10 +611,13 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     >
                                         <AccessTimeIcon style={styles.clockIcon} />
                                     </Box>
-                                </Tooltip>
+                                </Tooltip> */}
                             </Box>
                         </Box>
                     </Box>
+                    <Typography style={{ ...styles.floorTitle, fontSize: '12px', fontWeight: 'bold', color: 'rgb(82 93 108)' }}>
+                        {formatTimestampForTooltip(machine.last_ts)}
+                    </Typography>
 
                     <TableContainer style={styles.phaseTable}>
                         <Table size="small">
@@ -640,7 +639,9 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}></TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.latest?.instant_flow || 0).toFixed(2)} m³/hr
+                                        <span style={!isOnline ? styles.offlineValueText : {}}>
+                                            {(machine.latest?.instant_flow || 0).toFixed(2)} m³/hr
+                                        </span>
                                     </TableCell>
                                 </TableRow>
 
@@ -654,7 +655,9 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}></TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.latest?.flow_temperature || 0).toFixed(2)} °C
+                                        <span style={!isOnline ? styles.offlineValueText : {}}>
+                                            {(machine.latest?.flow_temperature || 0).toFixed(2)} °C
+                                        </span>
                                     </TableCell>
                                 </TableRow>
 
@@ -668,7 +671,9 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}></TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.latest?.pressure || 0).toFixed(2)} bar
+                                        <span style={!isOnline ? styles.offlineValueText : {}}>
+                                            {(machine.latest?.pressure || 0).toFixed(2)} kPa
+                                        </span>
                                     </TableCell>
                                 </TableRow>
 
@@ -682,7 +687,9 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}></TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.latest?.inlet_temperature || 0).toFixed(2)} °C
+                                        <span style={!isOnline ? styles.offlineValueText : {}}>
+                                            {(machine.latest?.inlet_temperature || 0).toFixed(2)} °C
+                                        </span>
                                     </TableCell>
                                 </TableRow>
 
@@ -696,7 +703,9 @@ const SolarMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}></TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
-                                        {(machine.latest?.outlet_temperature || 0).toFixed(2)} °C
+                                        <span style={!isOnline ? styles.offlineValueText : {}}>
+                                            {(machine.latest?.outlet_temperature || 0).toFixed(2)} °C
+                                        </span>
                                     </TableCell>
                                 </TableRow>
                             </TableBody>
