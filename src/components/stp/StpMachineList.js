@@ -30,115 +30,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
-// Mock API Response
-const fetchMockApiData = () => {
-    return {
-        "device_uid": "VRT2526119",
-        "device_name": "STP Plant 1",
-        "last_updated": "2026-05-13 10:25:01",
-        "cards": [
-            {
-                "slave_id": 1,
-                "card_name": "Water Inlet (Sewage Water)",
-                "slave_type": "FLOW_METER",
-                "ui_card_type": "FLOW_CARD",
-                "status": "ONLINE",
-                "metrics": [
-                    { "metric_key": "inlet_flowrate", "label": "Inlet Flow", "value": 873, "unit": "m3/hr" },
-                    { "metric_key": "inlet_totalizer", "label": "Inlet Totalizer", "value": 83, "unit": "KL" },
-                    { "metric_key": "today_consumption", "label": "Today", "value": 12, "unit": "KLD" },
-                    { "metric_key": "monthly_consumption", "label": "MTD", "value": 1234, "unit": "KLD" }
-                ]
-            },
-            {
-                "slave_id": 2,
-                "card_name": "Water Outlet (Treated Water)",
-                "slave_type": "FLOW_METER",
-                "ui_card_type": "FLOW_CARD",
-                "status": "ONLINE",
-                "metrics": [
-                    { "metric_key": "outlet_flowrate", "label": "Outlet Flow", "value": 873, "unit": "m3/hr" },
-                    { "metric_key": "outlet_totalizer", "label": "Outlet Totalizer", "value": 83, "unit": "KL" },
-                    { "metric_key": "today_consumption", "label": "Today", "value": 12, "unit": "KLD" },
-                    { "metric_key": "monthly_consumption", "label": "MTD", "value": 1234, "unit": "KLD" }
-                ]
-            },
-            {
-                "slave_id": 3,
-                "card_name": "pH Monitor",
-                "slave_type": "QUALITY_SENSOR",
-                "ui_card_type": "QUALITY_CARD",
-                "status": "ONLINE",
-                "metrics": [
-                    { "metric_key": "ph", "label": "pH", "value": 7.18 }
-                ]
-            },
-            {
-                "slave_id": 4,
-                "card_name": "TDS Monitor",
-                "slave_type": "QUALITY_SENSOR",
-                "ui_card_type": "QUALITY_CARD",
-                "status": "ONLINE",
-                "metrics": [
-                    { "metric_key": "tds", "label": "TDS", "value": 234 }
-                ]
-            },
-            {
-                "slave_id": 5,
-                "card_name": "Water Level Monitoring",
-                "slave_type": "TANK",
-                "ui_card_type": "TANK_CARD",
-                "status": "ONLINE",
-                "metrics": [
-                    { "metric_key": "Level 1", "label": "Water Level 1", "value": "FULL" },
-                    { "metric_key": "Motor 1 Status", "label": "Motor 1 Status", "value": "ON", "status_color": "GREEN" },
-                    { "metric_key": "Level 2", "label": "Water Level 2", "value": "LOW" },
-                    { "metric_key": "Motor 2 Status", "label": "Motor 2 Status", "value": "OFF", "status_color": "RED" }
-                ]
-            }
-        ]
-    };
-};
-
-// Mock Generator for Line Charts (Flow/Totalizer)
-const generateMockTrendData = (type) => {
-    const data = [];
-    const now = new Date();
-    for (let i = 0; i < 36; i++) {
-        const time = new Date(now.getTime() - (i * 10 * 60 * 1000));
-        let value = parseFloat((Math.random() * 100).toFixed(2));
-        if (type && type.includes('totalizer')) {
-            value = parseFloat((Math.random() * 500 + 500).toFixed(2));
-        }
-        data.push({ timestamp: time.toISOString(), value });
-    }
-    return data.reverse();
-};
-
-// Mock Generator for Area Charts (Motors)
-const generateMockMotorTrendData = () => {
-    const now = new Date();
-    const categories = [];
-    const motor1Data = [];
-    const motor2Data = [];
-
-    for (let i = 0; i < 36; i++) {
-        const time = new Date(now.getTime() - (i * 10 * 60 * 1000));
-        categories.push(time.toISOString());
-
-        // Random value between 0 and 100 for load or performance
-        motor1Data.push(parseFloat((Math.random() * 100).toFixed(2)));
-        motor2Data.push(parseFloat((Math.random() * 100).toFixed(2)));
-    }
-
-    return {
-        categories: categories.reverse(),
-        series: [
-            { name: 'Motor 1', data: motor1Data.reverse() },
-            { name: 'Motor 2', data: motor2Data.reverse() }
-        ]
-    };
-};
+// Import the real API function
+import { getStpMachineList } from '../../auth/stp/StpMachineListApi'; // Adjust path as needed
 
 const StpMachineList = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -146,11 +39,9 @@ const StpMachineList = () => {
     const [chartModalOpen, setChartModalOpen] = useState(false);
     const [selectedCard, setSelectedCard] = useState(null);
 
-    // State for Line Charts (Flow/Totalizer)
+    // State for Charts
     const [trendData, setTrendData] = useState([]);
     const [trendMetricKey, setTrendMetricKey] = useState(null);
-
-    // State for Area Charts (Motors)
     const [tankTrendSeries, setTankTrendSeries] = useState([]);
     const [tankTrendCategories, setTankTrendCategories] = useState([]);
 
@@ -166,13 +57,21 @@ const StpMachineList = () => {
         try {
             setLoading(true);
             setError(null);
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const data = fetchMockApiData();
-            setPlantData(data);
+            
+            // Call Real API
+            const response = await getStpMachineList();
+            
+            // Response structure: { success: true, data: { cards: [...] } }
+            // We map it to the state structure expected by the component
+            setPlantData({
+                device_name: 'STP Plant', // Default name if not provided in API root
+                cards: response.data.cards || []
+            });
+
         } catch (err) {
             console.error('Error fetching data:', err);
-            setError('Failed to load plant data');
-            setSnackbarMessage('Failed to load plant data');
+            setError(err.message || 'Failed to load plant data');
+            setSnackbarMessage(err.message || 'Failed to load plant data');
             setSnackbarOpen(true);
         } finally {
             setLoading(false);
@@ -200,13 +99,13 @@ const StpMachineList = () => {
             ].join(',');
         });
 
-        const metaRow = [`Device: ${plantData.device_name}`, `Updated: ${plantData.last_updated}`].join(',');
+        const metaRow = [`Device: ${plantData.device_name || 'STP'}`, `Updated: ${new Date().toISOString()}`].join(',');
         const csvContent = [metaRow, headers.join(','), ...rows].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `${plantData.device_name}_${new Date().toISOString().slice(0, 10)}.csv`);
+        link.setAttribute('download', `STP_Machines_${new Date().toISOString().slice(0, 10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -222,23 +121,60 @@ const StpMachineList = () => {
         setTankTrendSeries([]);
         setTrendMetricKey(null);
 
-        // Logic for TANK_CARD (Water Level Monitoring)
+        // Logic for TANK_CARD
         if (card.ui_card_type === 'TANK_CARD') {
+            // Mock Data Generator for Tank
+            const generateMockMotorTrendData = () => {
+                const now = new Date();
+                const categories = [];
+                const motor1Data = [];
+                const motor2Data = [];
+                for (let i = 0; i < 36; i++) {
+                    const time = new Date(now.getTime() - (i * 10 * 60 * 1000));
+                    categories.push(time.toISOString());
+                    motor1Data.push(parseFloat((Math.random() * 100).toFixed(2)));
+                    motor2Data.push(parseFloat((Math.random() * 100).toFixed(2)));
+                }
+                return {
+                    categories: categories.reverse(),
+                    series: [
+                        { name: 'Motor 1', data: motor1Data.reverse() },
+                        { name: 'Motor 2', data: motor2Data.reverse() }
+                    ]
+                };
+            };
+
             await new Promise(resolve => setTimeout(resolve, 500));
             const mockData = generateMockMotorTrendData();
             setTankTrendSeries(mockData.series);
             setTankTrendCategories(mockData.categories);
         }
-        // Logic for FLOW_CARD (Inlet/Outlet)
+        // Logic for FLOW_CARD
         else {
-            let defaultKey = null;
-            if (card.card_name === 'Water Inlet') {
-                defaultKey = 'inlet_flowrate';
-            } else if (card.card_name === 'Water Outlet') {
-                defaultKey = 'outlet_flowrate';
-            }
+            // Detect Inlet or Outlet based on metrics present in the card
+            const hasInlet = card.metrics.some(m => m.metric_key === 'inlet_flowrate');
+            const hasOutlet = card.metrics.some(m => m.metric_key === 'outlet_flowrate');
 
+            let defaultKey = null;
+            if (hasInlet) defaultKey = 'inlet_flowrate';
+            else if (hasOutlet) defaultKey = 'outlet_flowrate';
+            
             setTrendMetricKey(defaultKey);
+
+            // Mock Data Generator for Flow
+            const generateMockTrendData = (type) => {
+                const data = [];
+                const now = new Date();
+                for (let i = 0; i < 36; i++) {
+                    const time = new Date(now.getTime() - (i * 10 * 60 * 1000));
+                    let value = parseFloat((Math.random() * 100).toFixed(2));
+                    if (type && type.includes('totalizer')) {
+                        value = parseFloat((Math.random() * 500 + 500).toFixed(2));
+                    }
+                    data.push({ timestamp: time.toISOString(), value });
+                }
+                return data.reverse();
+            };
 
             await new Promise(resolve => setTimeout(resolve, 500));
             const mockData = generateMockTrendData(defaultKey);
@@ -252,6 +188,19 @@ const StpMachineList = () => {
         const newKey = event.target.value;
         setTrendMetricKey(newKey);
         setTrendLoading(true);
+
+        // Mock generator
+        const generateMockTrendData = (type) => {
+            const data = [];
+            const now = new Date();
+            for (let i = 0; i < 36; i++) {
+                const time = new Date(now.getTime() - (i * 10 * 60 * 1000));
+                let value = parseFloat((Math.random() * 100).toFixed(2));
+                if (type && type.includes('totalizer')) value = parseFloat((Math.random() * 500 + 500).toFixed(2));
+                data.push({ timestamp: time.toISOString(), value });
+            }
+            return data.reverse();
+        };
 
         await new Promise(resolve => setTimeout(resolve, 300));
         const mockData = generateMockTrendData(newKey);
@@ -283,8 +232,6 @@ const StpMachineList = () => {
     };
 
     // --- Chart Configurations ---
-
-    // 1. Line Chart Options (For Inlet/Outlet)
     const currentMetricDetails = selectedCard?.metrics.find(m => m.metric_key === trendMetricKey) || { label: 'Value', unit: '' };
 
     const lineChartOptions = {
@@ -307,7 +254,6 @@ const StpMachineList = () => {
         data: trendData.map(item => item.value)
     }];
 
-    // 2. Area Chart Options (For Water Level Monitoring / Motors)
     const areaChartOptions = {
         chart: { type: 'area', height: 350, toolbar: { show: true }, zoom: { enabled: true }, background: '#FFFFFF' },
         stroke: { curve: 'stepline', width: 2 },
@@ -322,7 +268,7 @@ const StpMachineList = () => {
         },
         tooltip: { enabled: true, theme: 'light' },
         legend: { position: 'top', horizontalAlign: 'center' },
-        colors: ['#2E93fA', '#66DA26'] // Blue for Motor 1, Green for Motor 2
+        colors: ['#2E93fA', '#66DA26']
     };
 
     // --- Render Logic ---
@@ -331,7 +277,8 @@ const StpMachineList = () => {
         const isOnline = card.status === 'ONLINE';
         const isTank = card.ui_card_type === 'TANK_CARD';
 
-        const consumptionKeys = ['today_consumption', 'monthly_consumption'];
+        // Updated keys to match API response (mtd_consumption vs monthly_consumption)
+        const consumptionKeys = ['today_consumption', 'monthly_consumption', 'mtd_consumption'];
         const tableMetrics = card.metrics.filter(m => !consumptionKeys.includes(m.metric_key));
         const footerMetrics = card.metrics.filter(m => consumptionKeys.includes(m.metric_key));
 
@@ -355,7 +302,8 @@ const StpMachineList = () => {
                     </Box>
 
                     <Typography style={{ fontSize: '12px', fontWeight: 'bold', color: 'rgb(82 93 108)', mb: 1 }}>
-                        {plantData?.last_updated ? formatTimestamp(plantData.last_updated) : 'N/A'}
+                        {/* Use card specific timestamp if available, else plant default */}
+                        {card.last_updated ? formatTimestamp(card.last_updated) : 'N/A'}
                     </Typography>
 
                     {isTank ? (
@@ -476,8 +424,6 @@ const StpMachineList = () => {
                     <Divider sx={{ mt: 'auto' }} />
 
                     <Box sx={{ display: 'flex', alignItems: 'center', pt: 1 }}>
-
-                        {/* LEFT COLUMN: Takes up 1/3 of space, content aligned to start */}
                         <Box sx={{ display: 'flex', flex: 1, justifyContent: 'flex-start' }}>
                             {footerMetrics[0] && (
                                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
@@ -494,7 +440,6 @@ const StpMachineList = () => {
                             )}
                         </Box>
 
-                        {/* CENTER COLUMN: Takes up 1/3 of space, content aligned to center */}
                         <Box sx={{ display: 'flex', flex: 1, justifyContent: 'center' }}>
                             {footerMetrics[1] && (
                                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -511,7 +456,6 @@ const StpMachineList = () => {
                             )}
                         </Box>
 
-                        {/* RIGHT COLUMN: Takes up 1/3 of space, content aligned to end (Right) */}
                         <Box sx={{ display: 'flex', flex: 1, justifyContent: 'flex-end' }}>
                             <Button
                                 variant="contained"
@@ -528,9 +472,9 @@ const StpMachineList = () => {
         );
     };
 
-    // Determine if the current modal needs the dropdown (Only for Inlet/Outlet)
-    const showTrendDropdown = selectedCard?.card_name === 'Water Inlet' || selectedCard?.card_name === 'Water Outlet';
-    // Check if it's the Tank Card
+    // Determine if the current modal needs the dropdown
+    // Updated logic to check ui_card_type instead of name for robustness
+    const showTrendDropdown = selectedCard?.ui_card_type === 'FLOW_CARD';
     const isTankTrend = selectedCard?.ui_card_type === 'TANK_CARD';
 
     return (
@@ -555,23 +499,10 @@ const StpMachineList = () => {
                             startIcon={<FileDownloadIcon />}
                             onClick={handleDownload}
                             sx={{
-                                minWidth: '40px',
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                borderColor: '#2F6FB0',
-                                color: '#fff',
-                                backgroundColor: '#2F6FB0',
-                                padding: 0,
-                                marginRight: '10px',
-                                '& .MuiButton-startIcon': {
-                                    margin: 0,
-                                },
-                                '&:hover': {
-                                    borderColor: '#1E4A7C',
-                                    backgroundColor: '#1E4A7C',
-                                    color: '#fff',
-                                },
+                                minWidth: '40px', width: '40px', height: '40px', borderRadius: '50%',
+                                borderColor: '#2F6FB0', color: '#fff', backgroundColor: '#2F6FB0', padding: 0, marginRight: '10px',
+                                '& .MuiButton-startIcon': { margin: 0 },
+                                '&:hover': { borderColor: '#1E4A7C', backgroundColor: '#1E4A7C', color: '#fff' },
                             }}
                         />
                     </Box>
@@ -592,7 +523,6 @@ const StpMachineList = () => {
                         <Box>
                             <Typography variant="h6">{selectedCard?.card_name} - Trend</Typography>
 
-                            {/* Dropdown for Inlet/Outlet Only */}
                             {showTrendDropdown && (
                                 <FormControl size="small" sx={{ mt: 2, minWidth: 150 }}>
                                     <InputLabel id="trend-param-label">Parameter</InputLabel>
@@ -602,14 +532,12 @@ const StpMachineList = () => {
                                         label="Parameter"
                                         onChange={handleTrendParameterChange}
                                     >
-                                        {selectedCard?.card_name === 'Water Inlet' && [
-                                            <MenuItem key="flow" value="inlet_flowrate">Flow</MenuItem>,
-                                            <MenuItem key="total" value="inlet_totalizer">Totalizer</MenuItem>
-                                        ]}
-                                        {selectedCard?.card_name === 'Water Outlet' && [
-                                            <MenuItem key="flow" value="outlet_flowrate">Flow</MenuItem>,
-                                            <MenuItem key="total" value="outlet_totalizer">Totalizer</MenuItem>
-                                        ]}
+                                        {/* Dynamically populate based on available metrics in the card */}
+                                        {selectedCard?.metrics.map((metric) => (
+                                            <MenuItem key={metric.metric_key} value={metric.metric_key}>
+                                                {metric.label}
+                                            </MenuItem>
+                                        ))}
                                     </Select>
                                 </FormControl>
                             )}
@@ -623,7 +551,6 @@ const StpMachineList = () => {
                         </Box>
                     ) : (
                         <>
-                            {/* Area Chart for Tank Card */}
                             {isTankTrend && tankTrendSeries.length > 0 && (
                                 <Chart
                                     options={areaChartOptions}
@@ -633,7 +560,6 @@ const StpMachineList = () => {
                                 />
                             )}
 
-                            {/* Line Chart for Flow Cards */}
                             {!isTankTrend && trendData.length > 0 && (
                                 <Chart
                                     options={lineChartOptions}
