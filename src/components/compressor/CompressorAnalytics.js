@@ -47,20 +47,19 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     // State for filters
     const [searchTerm, setSearchTerm] = useState('');
     const [filterDevice, setFilterDevice] = useState('');
-    // Initialize with default dates - 1 day ago to today
     const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(1, 'day'));
     const [filterEndDate, setFilterEndDate] = useState(dayjs());
-    const [searchClicked, setSearchClicked] = useState(false); // Track if search has been clicked
-    const [devices, setDevices] = useState(['all']); // Initialize with 'all' as default
-    const [deviceObjects, setDeviceObjects] = useState([]); // Store full device objects with IDs
-    const [selectedParameter, setSelectedParameter] = useState(['connectivity_status']); // State for main chart parameter selection
-    const [selectedParameter2, setSelectedParameter2] = useState(['connectivity_status']); // State for comparison charts
-    const [selectedParameter3, setSelectedParameter3] = useState(['connectivity_status']); // State for comparison charts
-    const [filterDevice2, setFilterDevice2] = useState('all'); 
-    const [filterDevice3, setFilterDevice3] = useState('all'); 
+    const [searchClicked, setSearchClicked] = useState(false);
+    const [devices, setDevices] = useState(['all']);
+    const [deviceObjects, setDeviceObjects] = useState([]);
+    const [selectedParameter, setSelectedParameter] = useState(['connectivity_status']);
+    const [selectedParameter2, setSelectedParameter2] = useState(['connectivity_status']);
+    const [selectedParameter3, setSelectedParameter3] = useState(['connectivity_status']);
+    const [filterDevice2, setFilterDevice2] = useState('all');
+    const [filterDevice3, setFilterDevice3] = useState('all');
     const [openStart, setOpenStart] = useState(false);
     const [openEnd, setOpenEnd] = useState(false);
-    
+
     // Loading and error states
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -79,51 +78,18 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             fontSize: '14px',
             color: '#5A5A5A',
             marginBottom: '20px',
-            paddingRight: { xs: '5px', sm: '15px' },    
+            paddingRight: { xs: '5px', sm: '15px' },
             paddingLeft: { xs: '5px', sm: '15px' },
             boxSizing: 'border-box',
         },
         container: {
             padding: { xs: '5px', sm: '0' },
         },
-        blockHeader: {
-            padding: { xs: '5px 0', sm: '10px 0' },
-        },
-        headerTitle: {
-            margin: '0',
-            fontSize: { xs: '18px', sm: '24px' },
-            fontWeight: '400',
-            color: '#515151',
-        },
         tableCard: {
             backgroundColor: '#fff',
             borderRadius: '4px',
             boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
             padding: { xs: '10px', sm: '15px' },
-        },
-        statusChip: {
-            fontWeight: 'bold',
-            fontSize: '12px',
-        },
-        actionButton: {
-            margin: '0 5px',
-        },
-        tableHeader: {
-            backgroundColor: '#e9ecef',
-            fontWeight: 'bold',
-        },
-        tableRow: {
-            '&:hover': {
-                backgroundColor: '#f9f9f9',
-            },
-        },
-        activeStatus: {
-            color: '#30b44a',
-            backgroundColor: '#e8f9e6',
-        },
-        inactiveStatus: {
-            color: '#e34d4d',
-            backgroundColor: '#fae8e8',
         },
         loadingContainer: {
             display: 'flex',
@@ -133,25 +99,22 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         },
     };
 
-    // Fetch compressor devices on component mount
     useEffect(() => {
         fetchDevices();
     }, []);
 
-    // Function to fetch compressor devices from API
     const fetchDevices = async () => {
         try {
             setLoading(true);
             const slaves = await getCompressorSlaves();
-            
-            console.log('Raw slave list from API:', slaves);
+
             setDeviceObjects(slaves);
             const deviceNames = slaves.map(device => device.slave_name);
             setDevices(['all', ...deviceNames]);
-            
-            // Set default device to the first one (not 'all')
+
+            // Default to 'all' if available, otherwise first device
             if (slaves.length > 0) {
-                setFilterDevice(slaves[0].slave_name);
+                setFilterDevice('all');
             }
         } catch (err) {
             console.error('Error fetching devices:', err);
@@ -161,62 +124,63 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Function to fetch analytics data from API
+    // Function to fetch analytics data for a single device
     const fetchAnalyticsData = async (deviceName, parameters, startDate, endDate) => {
         const selectedDevice = deviceObjects.find(device => device.slave_name === deviceName);
         if (!selectedDevice) {
             throw new Error('Device not found');
         }
 
-        // Format dates for API request
         const from = dayjs(startDate).format('YYYY-MM-DDTHH:mm:ss');
         const to = dayjs(endDate).format('YYYY-MM-DDTHH:mm:ss');
-        
-        // Call the API
+
         const response = await getCompressorAnalytics(
             selectedDevice.slave_id,
             from,
             to
         );
-        
-        // Return the analytics data array
+
         return response.data.data || [];
     };
 
     // Handle search button click
     const handleSearch = async () => {
-        if (!filterDevice || filterDevice === 'all') {
-            setSnackbarMessage('Please select a device');
-            setSnackbarOpen(true);
-            return;
-        }
+        // Removed the check that blocked 'all'
         if (!filterStartDate || !filterEndDate) {
             setSnackbarMessage('Please select date range');
             setSnackbarOpen(true);
             return;
         }
-        
+
         try {
             setDataLoading(true);
             setSearchClicked(true);
-            
-            const analyticsData = await fetchAnalyticsData(
-                filterDevice, 
-                selectedParameter, 
-                filterStartDate, 
-                filterEndDate
-            );
-            setFilteredChartData(analyticsData);
-            
+
+            // Logic to handle 'all' devices or single device
+            let combinedData = [];
+
+            if (filterDevice === 'all') {
+                // Fetch all devices
+                const promises = deviceObjects.map(async (device) => {
+                    const data = await fetchAnalyticsData(device.slave_name, selectedParameter, filterStartDate, filterEndDate);
+                    return data.map(item => ({ ...item, deviceName: device.slave_name })); // Add device name to data points
+                });
+
+                const results = await Promise.all(promises);
+                combinedData = results.flat();
+            } else {
+                // Fetch single device
+                const analyticsData = await fetchAnalyticsData(filterDevice, selectedParameter, filterStartDate, filterEndDate);
+                combinedData = analyticsData.map(item => ({ ...item, deviceName: filterDevice }));
+            }
+
+            setFilteredChartData(combinedData);
+
+            // Handle Comparison 1
             if (compareMode && compareDevice) {
                 setCompareLoading(true);
                 try {
-                    const compareData = await fetchAnalyticsData(
-                        compareDevice, 
-                        selectedParameter2, 
-                        filterStartDate, 
-                        filterEndDate
-                    );
+                    const compareData = await fetchAnalyticsData(compareDevice, selectedParameter2, filterStartDate, filterEndDate);
                     setCompareChartData(compareData);
                 } catch (err) {
                     console.error('Error fetching comparison data:', err);
@@ -224,16 +188,12 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                     setCompareLoading(false);
                 }
             }
-            
+
+            // Handle Comparison 2
             if (compareMode2 && compareDevice2) {
                 setCompareLoading2(true);
                 try {
-                    const compareData2 = await fetchAnalyticsData(
-                        compareDevice2, 
-                        selectedParameter3, 
-                        filterStartDate, 
-                        filterEndDate
-                    );
+                    const compareData2 = await fetchAnalyticsData(compareDevice2, selectedParameter3, filterStartDate, filterEndDate);
                     setCompareChartData2(compareData2);
                 } catch (err) {
                     console.error('Error fetching second comparison data:', err);
@@ -250,10 +210,9 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Function to reset all filters
     const handleResetFilters = () => {
         setSearchTerm('');
-        setFilterDevice(deviceObjects.length > 0 ? deviceObjects[0].slave_name : '');
+        setFilterDevice(deviceObjects.length > 0 ? 'all' : '');
         setFilterStartDate(dayjs().subtract(1, 'day'));
         setFilterEndDate(dayjs());
         setSearchClicked(false);
@@ -268,28 +227,23 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         setError(null);
     };
 
-    const [filteredChartData, setFilteredChartData] = useState([]); 
-    const [compareMode, setCompareMode] = useState(false); 
-    const [compareDevice, setCompareDevice] = useState(''); 
-    const [compareChartData, setCompareChartData] = useState([]); 
-    const [compareMode2, setCompareMode2] = useState(false); 
-    const [compareDevice2, setCompareDevice2] = useState(''); 
-    const [compareChartData2, setCompareChartData2] = useState([]); 
+    // State now holds data with deviceName property included
+    const [filteredChartData, setFilteredChartData] = useState([]);
+    const [compareMode, setCompareMode] = useState(false);
+    const [compareDevice, setCompareDevice] = useState('');
+    const [compareChartData, setCompareChartData] = useState([]);
+    const [compareMode2, setCompareMode2] = useState(false);
+    const [compareDevice2, setCompareDevice2] = useState('');
+    const [compareChartData2, setCompareChartData2] = useState([]);
 
-    // Handle comparison device selection
     const handleCompareDeviceChange = async (deviceName) => {
         setCompareDevice(deviceName);
         setCompareMode(true);
-        
+
         if (searchClicked && filteredChartData.length > 0) {
             setCompareLoading(true);
             try {
-                const compareData = await fetchAnalyticsData(
-                    deviceName, 
-                    selectedParameter2, 
-                    filterStartDate, 
-                    filterEndDate
-                );
+                const compareData = await fetchAnalyticsData(deviceName, selectedParameter2, filterStartDate, filterEndDate);
                 setCompareChartData(compareData);
             } catch (err) {
                 console.error('Error fetching comparison data:', err);
@@ -299,20 +253,14 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Handle second comparison device selection
     const handleCompareDevice2Change = async (deviceName) => {
         setCompareDevice2(deviceName);
         setCompareMode2(true);
-        
+
         if (searchClicked && filteredChartData.length > 0) {
             setCompareLoading2(true);
             try {
-                const compareData2 = await fetchAnalyticsData(
-                    deviceName, 
-                    selectedParameter3, 
-                    filterStartDate, 
-                    filterEndDate
-                );
+                const compareData2 = await fetchAnalyticsData(deviceName, selectedParameter3, filterStartDate, filterEndDate);
                 setCompareChartData2(compareData2);
             } catch (err) {
                 console.error('Error fetching second comparison data:', err);
@@ -322,59 +270,65 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Process the filtered chart data for Connectivity (Datetime Series)
+    // Process data for Main Chart (Supports Multiple Devices)
     const processedFilteredData = React.useMemo(() => {
-        if (!filteredChartData || !Array.isArray(filteredChartData) || filteredChartData.length === 0) {
+        if (!filteredChartData || filteredChartData.length === 0) {
             return { series: [] };
         }
 
-        // Map API data to [timestamp, value] format for ApexCharts datetime axis
-        // API returns: { start, end, status }
-        // We'll create data points for both start and end to show the status changes
-        const seriesData = [];
-        
-        filteredChartData.forEach(item => {
-            const startTime = new Date(item.start).getTime();
-            const endTime = new Date(item.end).getTime();
-            const status = item.status; // 1 for Online, 0 for Offline
-            
-            // Add start point
-            seriesData.push([startTime, status]);
-            // Add end point to show status change
-            seriesData.push([endTime, status]);
-        });
-        
-        // Sort by timestamp
-        seriesData.sort((a, b) => a[0] - b[0]);
+        // Group data by deviceName
+        const groupedByDevice = filteredChartData.reduce((acc, item) => {
+            const name = item.deviceName || 'Unknown';
+            if (!acc[name]) acc[name] = [];
+            acc[name].push(item);
+            return acc;
+        }, {});
 
-        return { 
-            series: [{
-                name: 'Connectivity',
+        // Create series for each device
+        const series = Object.keys(groupedByDevice).map(deviceName => {
+            const devicePoints = groupedByDevice[deviceName];
+            const seriesData = [];
+
+            devicePoints.forEach(item => {
+                const startTime = new Date(item.start).getTime();
+                const endTime = new Date(item.end).getTime();
+                const status = item.status;
+
+                seriesData.push([startTime, status]);
+                seriesData.push([endTime, status]);
+            });
+
+            seriesData.sort((a, b) => a[0] - b[0]);
+
+            return {
+                name: deviceName,
                 data: seriesData
-            }]
-        };
+            };
+        });
+
+        return { series };
     }, [filteredChartData]);
 
-    // Process the comparison chart data
+    // Process Comparison Data (Single Device)
     const processedCompareData = React.useMemo(() => {
         if (!compareChartData || !Array.isArray(compareChartData) || compareChartData.length === 0) {
             return { series: [] };
         }
 
         const seriesData = [];
-        
+
         compareChartData.forEach(item => {
             const startTime = new Date(item.start).getTime();
             const endTime = new Date(item.end).getTime();
             const status = item.status;
-            
+
             seriesData.push([startTime, status]);
             seriesData.push([endTime, status]);
         });
-        
+
         seriesData.sort((a, b) => a[0] - b[0]);
 
-        return { 
+        return {
             series: [{
                 name: 'Connectivity',
                 data: seriesData
@@ -382,26 +336,25 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         };
     }, [compareChartData]);
 
-    // Process the second comparison chart data
     const processedCompareData2 = React.useMemo(() => {
         if (!compareChartData2 || !Array.isArray(compareChartData2) || compareChartData2.length === 0) {
             return { series: [] };
         }
 
         const seriesData = [];
-        
+
         compareChartData2.forEach(item => {
             const startTime = new Date(item.start).getTime();
             const endTime = new Date(item.end).getTime();
             const status = item.status;
-            
+
             seriesData.push([startTime, status]);
             seriesData.push([endTime, status]);
         });
-        
+
         seriesData.sort((a, b) => a[0] - b[0]);
 
-        return { 
+        return {
             series: [{
                 name: 'Connectivity',
                 data: seriesData
@@ -409,8 +362,12 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         };
     }, [compareChartData2]);
 
-    // Chart configuration for Connectivity
-    const getChartOptions = (currentProcessedData, currentData) => {
+    // Chart Options
+    // Chart Options
+    const getChartOptions = (isMultiDevice = false) => {
+        // Basic color palette for multiple devices
+        const colors = ['#30b44a', '#2F6FB0', '#e34d4d', '#f4b400', '#9c27b0', '#00bcd4'];
+
         return {
             chart: {
                 type: 'area',
@@ -421,14 +378,13 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             },
             stroke: {
                 width: 2,
-                curve: 'stepline' // Step line is perfect for On/Off status
+                curve: 'stepline'
             },
             fill: {
                 type: 'solid',
                 opacity: 0.2,
-                colors: ['#30b44a'] // Green fill
             },
-            colors: ['#30b44a'], // Green line
+            colors: colors,
             dataLabels: { enabled: false },
             xaxis: {
                 type: 'datetime',
@@ -451,7 +407,7 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                 tickAmount: 2,
                 labels: {
                     style: { colors: '#6B7280', fontSize: '12px' },
-                    formatter: function(val) {
+                    formatter: function (val) {
                         if (val >= 0.9) return 'Online';
                         if (val <= 0.1) return 'Offline';
                         return '';
@@ -467,25 +423,33 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                 enabled: true,
                 theme: 'light',
                 x: { format: 'dd MMM yyyy HH:mm' },
-                custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+                // KEY CHANGE: Enable shared tooltip for All Devices view
+                shared: isMultiDevice,
+                // Only use custom tooltip for single device view
+                custom: isMultiDevice ? undefined : function ({ series, seriesIndex, dataPointIndex, w }) {
                     const dataPoint = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
                     const date = new Date(dataPoint[0]);
                     const formattedDate = date.toLocaleString();
                     const value = dataPoint[1];
                     const statusText = value === 1 ? 'Online' : 'Offline';
                     const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
+                    const seriesName = w.globals.initialSeries[seriesIndex].name;
 
                     return `<div style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
                         <div style="font-weight: bold; margin-bottom: 8px; color: #333; font-size: 12px;">${formattedDate}</div>
                         <div style="display: flex; align-items: center;">
                             <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor}; margin-right: 8px;"></span>
-                            <span style="flex: 1; color: #333; font-size: 12px;">Status:</span>
+                            <span style="flex: 1; color: #333; font-size: 12px;">${seriesName}:</span>
                             <span style="font-weight: bold; color: ${statusColor}; margin-left: 5px; font-size: 12px;">${statusText}</span>
                         </div>
                     </div>`;
                 }
             },
-            legend: { show: false },
+            legend: {
+                show: isMultiDevice, // Show legend only if multiple devices
+                position: 'top',
+                horizontalAlign: 'center'
+            },
             markers: {
                 size: 0,
                 hover: { size: 5 }
@@ -499,7 +463,7 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                 <Card sx={styles.tableCard}>
                     <CardContent sx={{ p: { xs: 1, sm: 1 } }}>
                         <Box className="logs-header">
-                            <Box 
+                            <Box
                                 className="logs-filters"
                                 sx={{
                                     display: 'flex',
@@ -518,9 +482,9 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 ) : (
                                     <>
                                         {/* Machine Select */}
-                                        <FormControl 
-                                            size="small" 
-                                            sx={{ 
+                                        <FormControl
+                                            size="small"
+                                            sx={{
                                                 minWidth: { xs: '100%', sm: 300 },
                                                 order: { xs: 1, sm: 1 }
                                             }}
@@ -533,17 +497,17 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             >
                                                 {devices.map((device) => (
                                                     <MenuItem key={device} value={device}>
-                                                        {device === 'all' ? 'Select Device' : device}
+                                                        {device === 'all' ? 'All Devices' : device}
                                                     </MenuItem>
                                                 ))}
                                             </Select>
                                         </FormControl>
 
                                         {/* Parameters Select */}
-                                        <FormControl 
-                                            size="small" 
-                                            sx={{ 
-                                                minWidth: { xs: '100%', sm: 200 }, 
+                                        <FormControl
+                                            size="small"
+                                            sx={{
+                                                minWidth: { xs: '100%', sm: 200 },
                                                 mr: { sm: 1 },
                                                 order: { xs: 2, sm: 2 }
                                             }}
@@ -570,7 +534,7 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         </FormControl>
 
                                         {/* Date Pickers Row */}
-                                        <Box 
+                                        <Box
                                             sx={{
                                                 display: 'flex',
                                                 flexDirection: { xs: 'column', sm: 'row' },
@@ -590,10 +554,10 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     slotProps={{
                                                         textField: {
                                                             size: 'small',
-                                                            sx: { 
-                                                                minWidth: { xs: '100%', sm: 220 }, 
-                                                                mr: { sm: 2 }, 
-                                                                borderRadius: 2 
+                                                            sx: {
+                                                                minWidth: { xs: '100%', sm: 220 },
+                                                                mr: { sm: 2 },
+                                                                borderRadius: 2
                                                             },
                                                             onClick: () => setOpenStart(true),
                                                         },
@@ -612,10 +576,10 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     slotProps={{
                                                         textField: {
                                                             size: 'small',
-                                                            sx: { 
-                                                                minWidth: { xs: '100%', sm: 220 }, 
-                                                                mr: { sm: 2 }, 
-                                                                borderRadius: 2 
+                                                            sx: {
+                                                                minWidth: { xs: '100%', sm: 220 },
+                                                                mr: { sm: 2 },
+                                                                borderRadius: 2
                                                             },
                                                             onClick: () => setOpenEnd(true),
                                                         },
@@ -625,7 +589,7 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         </Box>
 
                                         {/* Buttons Row */}
-                                        <Box 
+                                        <Box
                                             sx={{
                                                 display: 'flex',
                                                 flexDirection: 'row',
@@ -646,7 +610,7 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     padding: { xs: '6px 16px', sm: '6px' },
                                                     borderRadius: '4px',
                                                 }}
-                                            >   
+                                            >
                                             </Button>
 
                                             <Button
@@ -669,7 +633,7 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 )}
                             </Box>
                         </Box>
-                        
+
                         {/* Chart Display Area */}
                         {searchClicked ? (
                             dataLoading ? (
@@ -678,13 +642,13 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 </Box>
                             ) : processedFilteredData.series.length > 0 ? (
                                 <>
-                                    <Box sx={{ 
-                                        display: 'flex', 
-                                        flexDirection: { xs: 'column', md: 'row' }, // Changed sm to md
-                                        justifyContent: 'space-between', 
-                                        alignItems: { xs: 'flex-start', md: 'center' }, // Changed sm to md
+                                    <Box sx={{
+                                        display: 'flex',
+                                        flexDirection: { xs: 'column', md: 'row' },
+                                        justifyContent: 'space-between',
+                                        alignItems: { xs: 'flex-start', md: 'center' },
                                         mb: 1, mt: 2,
-                                        gap: { xs: 1, md: 0 } // Changed sm to md
+                                        gap: { xs: 1, md: 0 }
                                     }}>
                                         <Typography
                                             gutterBottom
@@ -695,39 +659,45 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                 mb: 0
                                             }}
                                         >
-                                            {filterDevice} - Connectivity History
+                                            {filterDevice === 'all' ? 'All Devices' : filterDevice} - Connectivity History
                                         </Typography>
-                                        <Box sx={{ width: { xs: '100%', md: 'auto' } }}> {/* Changed sm to md */}
+                                        <Box sx={{ width: { xs: '100%', md: 'auto' } }}>
                                             <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                                                {compareMode ? (
-                                                    <Button
-                                                        variant="outlined"
-                                                        size="small"
-                                                        onClick={() => setCompareMode(false)}
-                                                        sx={{ borderColor: '#d32f2f', color: '#d32f2f', width: { xs: '100%', sm: 'auto' } }}
-                                                    >
-                                                        Cancel Compare
-                                                    </Button>
-                                                ) : (
-                                                    <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 300 }, width: { xs: '100%', md: 'auto' } }}>
-                                                        <InputLabel>Select Device to Compare</InputLabel>
-                                                        <Select
-                                                            value={compareDevice}
-                                                            label="Select Device to Compare"
-                                                            onChange={(e) => handleCompareDeviceChange(e.target.value)}
-                                                        >
-                                                            {devices.filter(device => device !== 'all' && device !== filterDevice).map((device) => (
-                                                                <MenuItem key={device} value={device}>{device}</MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                    </FormControl>
+                                                {/* Compare Logic - Only relevant if a specific device is selected in main, or comparing against specific */}
+                                                {filterDevice !== 'all' && (
+                                                    <>
+                                                        {compareMode ? (
+                                                            <Button
+                                                                variant="outlined"
+                                                                size="small"
+                                                                onClick={() => setCompareMode(false)}
+                                                                sx={{ borderColor: '#d32f2f', color: '#d32f2f', width: { xs: '100%', sm: 'auto' } }}
+                                                            >
+                                                                Cancel Compare
+                                                            </Button>
+                                                        ) : (
+                                                            <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 300 }, width: { xs: '100%', md: 'auto' } }}>
+                                                                <InputLabel>Select Device to Compare</InputLabel>
+                                                                <Select
+                                                                    value={compareDevice}
+                                                                    label="Select Device to Compare"
+                                                                    onChange={(e) => handleCompareDeviceChange(e.target.value)}
+                                                                >
+                                                                    {devices.filter(device => device !== 'all' && device !== filterDevice).map((device) => (
+                                                                        <MenuItem key={device} value={device}>{device}</MenuItem>
+                                                                    ))}
+                                                                </Select>
+                                                            </FormControl>
+                                                        )}
+                                                    </>
                                                 )}
                                             </Box>
                                         </Box>
                                     </Box>
                                     <Box sx={{ width: '100%', overflow: 'auto' }}>
                                         <Chart
-                                            options={getChartOptions(processedFilteredData, filteredChartData)}
+                                            // Pass true if multiple series exist (All devices)
+                                            options={getChartOptions(processedFilteredData.series.length > 1)}
                                             series={processedFilteredData.series}
                                             type="area"
                                             height={420}
@@ -746,7 +716,7 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             ) : processedCompareData.series.length > 0 ? (
                                                 <Box sx={{ width: '100%', overflow: 'auto' }}>
                                                     <Chart
-                                                        options={getChartOptions(processedCompareData, compareChartData)}
+                                                        options={getChartOptions(false)}
                                                         series={processedCompareData.series}
                                                         type="area"
                                                         height={420}

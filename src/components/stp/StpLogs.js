@@ -11,20 +11,13 @@ import {
   TableHead,
   TableRow,
   Paper,
-  TextField,
-  InputAdornment,
-  IconButton,
-  Select,
-  MenuItem,
   FormControl,
   InputLabel,
+  Select,
+  MenuItem,
   Chip,
   Button,
-  Grid,
   Pagination,
-  Checkbox,
-  ListItemText,
-  Divider,
   CircularProgress,
   Alert,
   Snackbar
@@ -49,43 +42,53 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // Filter State variables
-  const [searchTerm, setSearchTerm] = useState('');
   const [filterDevice, setFilterDevice] = useState('');
   const [page, setPage] = useState(1);
   const rowsPerPage = 30;
   const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(1, 'hour'));
   const [filterEndDate, setFilterEndDate] = useState(dayjs());
   const [searchClicked, setSearchClicked] = useState(false);
-  const [selectedColumn, setSelectedColumn] = useState([]);
   const [openStart, setOpenStart] = React.useState(false);
   const [openEnd, setOpenEnd] = React.useState(false);
 
-  // Define all available parameters based on the image
-  const allParameters = [
-    { val: 'device', label: 'Device' },
-    { val: 'timestamp', label: 'Timestamp' },
-    { val: 'rpm', label: 'RPM' },
-    { val: 'temperature', label: 'Temperature (°C)' },
-    { val: 'pressure', label: 'Pressure (bar)' },
-    { val: 'ph', label: 'pH' },
-    { val: 'tds', label: 'TDS (ppm)' },
-    { val: 'cod', label: 'COD (mg/L)' },
-    { val: 'tss', label: 'TSS (mg/L)' },
-    { val: 'bod', label: 'BOD (mg/L)' },
-    { val: 'intake_total', label: 'Intake Total (L/m²/day)' },
-    { val: 'flow_rate', label: 'Flow Rate (L/min)' },
-    { val: 'running_hours', label: 'Total Running Hours' },
-    { val: 'power', label: 'Power (kW)' },
-    { val: 'data_status', label: 'Data Status' }
-  ];
+  // Define device-specific columns configuration
+  const deviceColumnsConfig = {
+    'Water Inlet': [
+      { key: 'timestamp', label: 'Timestamp' },
+      { key: 'inlet_flow', label: 'Inlet Flow (m³/hr)' },
+      { key: 'inlet_totalizer', label: 'Inlet Totalizer (KL)' },
+    ],
+    'Water Outlet': [
+      { key: 'timestamp', label: 'Timestamp' },
+      { key: 'outlet_flow', label: 'Outlet Flow (m³/hr)' },
+      { key: 'outlet_totalizer', label: 'Outlet Totalizer (KL)' },
+    ],
+    'pH Monitor': [
+      { key: 'timestamp', label: 'Timestamp' },
+      { key: 'ph', label: 'pH' },
+    ],
+    'TDS Monitor': [
+      { key: 'timestamp', label: 'Timestamp' },
+      { key: 'tds', label: 'TDS (ppm)' },
+    ],
+    'Water Level Monitoring': [
+      { key: 'timestamp', label: 'Timestamp' },
+      { key: 'collection_tank_level', label: 'Collection Tank Level' },
+      { key: 'collection_motor_status', label: 'Motor Status (Collection)' },
+      { key: 'filter_out_level', label: 'Filter Out Level' },
+      { key: 'filter_out_motor_status', label: 'Motor Status (Filter Out)' },
+    ]
+  };
 
-  // Get all parameter values for easy reference
-  const allParameterValues = allParameters.map(param => param.val);
+  // Function to get current columns based on selected device
+  const getCurrentColumns = () => {
+    return deviceColumnsConfig[filterDevice] || [];
+  };
 
-  // Load devices on component mount (Mock Data)
+  // Load devices on component mount
   useEffect(() => {
     setTimeout(() => {
-      const mockDevices = ['STP 1', 'STP 2'];
+      const mockDevices = ['Water Inlet', 'Water Outlet', 'pH Monitor', 'TDS Monitor', 'Water Level Monitoring'];
       setDevices(['all', ...mockDevices]);
       if (mockDevices.length > 0) {
         setFilterDevice(mockDevices[0]);
@@ -93,7 +96,7 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
     }, 500);
   }, []);
 
-  // Helper to generate random mock logs based on image columns
+  // Helper to generate random mock logs based on device
   const generateMockLogs = (device, start, end) => {
     const data = [];
     const startTime = start.valueOf();
@@ -103,33 +106,40 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
     if (diff <= 0) return [];
 
     const numberOfEntries = Math.floor(Math.random() * 50) + 50;
-    const statuses = ['Valid', 'Invalid', 'Warning'];
+    const levels = ['Full', 'Low'];
+    const motorStatuses = ['On', 'Off'];
 
     for (let i = 0; i < numberOfEntries; i++) {
       const randomTime = startTime + Math.random() * diff;
-      data.push({
-        device: device,
+      const entry = {
         timestamp: new Date(randomTime).toISOString(),
-        rpm: Math.floor(Math.random() * 3000) + 1000,
-        temperature: (Math.random() * 60 + 20).toFixed(2),
-        pressure: (Math.random() * 10).toFixed(2),
-        ph: (Math.random() * 5 + 4).toFixed(2),
-        tds: Math.floor(Math.random() * 500 + 100),
-        cod: Math.floor(Math.random() * 100 + 20),
-        tss: Math.floor(Math.random() * 50 + 10),
-        bod: Math.floor(Math.random() * 30 + 5),
-        intake_total: Math.floor(Math.random() * 1000 + 500),
-        flow_rate: (Math.random() * 100).toFixed(2),
-        running_hours: Math.floor(Math.random() * 5000),
-        power: (Math.random() * 50).toFixed(2),
-        data_status: statuses[Math.floor(Math.random() * statuses.length)]
-      });
+      };
+
+      // Generate data based on device type
+      if (device === 'Water Inlet') {
+        entry.inlet_flow = (Math.random() * 100).toFixed(2);
+        entry.inlet_totalizer = Math.floor(Math.random() * 1000);
+      } else if (device === 'Water Outlet') {
+        entry.outlet_flow = (Math.random() * 100).toFixed(2);
+        entry.outlet_totalizer = Math.floor(Math.random() * 1000);
+      } else if (device === 'pH Monitor') {
+        entry.ph = (Math.random() * 3 + 6).toFixed(2); // Range 6-9
+      } else if (device === 'TDS Monitor') {
+        entry.tds = Math.floor(Math.random() * 400 + 100); // Range 100-500
+      } else if (device === 'Water Level Monitoring') {
+        entry.collection_tank_level = levels[Math.floor(Math.random() * levels.length)];
+        entry.collection_motor_status = motorStatuses[Math.floor(Math.random() * motorStatuses.length)];
+        entry.filter_out_level = levels[Math.floor(Math.random() * levels.length)];
+        entry.filter_out_motor_status = motorStatuses[Math.floor(Math.random() * motorStatuses.length)];
+      }
+
+      data.push(entry);
     }
 
     return data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   };
 
-  // Handle search button click (Mock Data)
+  // Handle search button click
   const handleSearch = () => {
     if (!filterDevice || filterDevice === 'all') {
       setSnackbarMessage('Please select a device');
@@ -162,34 +172,19 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
     }, 800);
   };
 
-  // Filter logs based on search term (Client-side filtering)
-  const filteredLogs = logs.filter((log) => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-
-    // Search across relevant string/number fields
-    return (
-      log.device.toLowerCase().includes(term) ||
-      log.timestamp.toLowerCase().includes(term) ||
-      log.data_status.toLowerCase().includes(term) ||
-      log.rpm.toString().includes(term)
-    );
-  });
-
-  // Calculate pagination (Client-side)
-  const totalRecords = filteredLogs.length;
+  // Calculate pagination
+  const totalRecords = logs.length;
   const totalPages = Math.ceil(totalRecords / rowsPerPage);
   const shouldShowPagination = searchClicked && totalRecords > 0;
 
   // Get logs for current page
-  const paginatedLogs = filteredLogs.slice(
+  const paginatedLogs = logs.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
 
   // Function to reset all filters
   const handleResetFilters = () => {
-    setSearchTerm('');
     if (devices.length > 1) {
       setFilterDevice(devices[1]);
     }
@@ -197,7 +192,6 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
     setFilterEndDate(dayjs());
     setPage(1);
     setSearchClicked(false);
-    setSelectedColumn([]);
     setLogs([]);
     setError(null);
   };
@@ -206,24 +200,6 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
   const handlePageChange = (event, value) => {
     setPage(value);
   };
-
-  // Handle parameter selection
-  const handleParameterChange = (event) => {
-    const value = event.target.value;
-
-    if (value.includes('all_parameters')) {
-      if (selectedColumn.length === allParameterValues.length) {
-        setSelectedColumn([]);
-      } else {
-        setSelectedColumn([...allParameterValues]);
-      }
-    } else {
-      setSelectedColumn(typeof value === 'string' ? value.split(',') : value);
-    }
-  };
-
-  // Check if all parameters are selected
-  const isAllParametersSelected = selectedColumn.length === allParameterValues.length;
 
   const styles = {
     mainContent: {
@@ -243,26 +219,53 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
     }
   }
 
-  // Helper to render cell content based on column
-  const renderCellContent = (log, col) => {
-    switch (col) {
-      case 'timestamp': return new Date(log.timestamp).toLocaleString();
-      case 'device': return log.device;
-      case 'rpm': return log.rpm;
-      case 'temperature': return `${log.temperature} °C`;
-      case 'pressure': return `${log.pressure} bar`;
-      case 'ph': return log.ph;
-      case 'tds': return `${log.tds} ppm`;
-      case 'cod': return `${log.cod} mg/L`;
-      case 'tss': return `${log.tss} mg/L`;
-      case 'bod': return `${log.bod} mg/L`;
-      case 'intake_total': return `${log.intake_total} L/m²/day`;
-      case 'flow_rate': return `${log.flow_rate} L/min`;
-      case 'running_hours': return log.running_hours;
-      case 'power': return `${log.power} kW`;
-      case 'data_status': return log.data_status;
-      default: return '-';
+  // Helper to render cell content
+  const renderCellContent = (log, colKey) => {
+    if (colKey === 'timestamp') {
+      return new Date(log.timestamp).toLocaleString();
     }
+    return log[colKey] !== undefined ? log[colKey] : '-';
+  };
+
+  // Helper to render status chips
+  const renderStatusChip = (value) => {
+    if (typeof value === 'string') {
+      const lowerValue = value.toLowerCase();
+      let bgColor = '';
+      let label = value;
+
+      if (lowerValue === 'full') {
+        bgColor = '#4f92d4';
+        label = 'FULL';
+      } else if (lowerValue === 'low') {
+        bgColor = '#d05353';
+        label = 'LOW';
+      } else if (lowerValue === 'on') {
+        bgColor = 'green';
+        label = 'ON';
+      } else if (lowerValue === 'off') {
+        bgColor = 'red';
+        label = 'OFF';
+      }
+
+      if (bgColor) {
+        return (
+          <Chip 
+            label={label} 
+            size="small" 
+            sx={{ 
+              backgroundColor: bgColor, 
+              color: 'white', 
+              fontWeight: 'bold',
+              borderRadius: '16px',
+              minWidth: '50px',
+              fontSize: '10px',
+            }} 
+          />
+        );
+      }
+    }
+    return value;
   };
 
   if (loading && !searchClicked) {
@@ -278,6 +281,8 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
       </Box>
     );
   }
+
+  const currentColumns = getCurrentColumns();
 
   return (
     <Box sx={styles.mainContent} id="main-content">
@@ -332,54 +337,6 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
                 </Select>
               </FormControl>
 
-              {/* Parameters Select */}
-              <FormControl
-                size="small"
-                sx={{
-                  minWidth: { xs: '100%', sm: 300 },
-                  mr: { sm: 2 },
-                }}
-              >
-                <InputLabel>Select Parameters</InputLabel>
-                <Select
-                  multiple
-                  value={selectedColumn}
-                  onChange={handleParameterChange}
-                  label="Select Parameters"
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                      {isAllParametersSelected ? (
-                        <Chip label="All Parameters" size="small" sx={{ height: '20px', fontSize: '10px' }} />
-                      ) : (
-                        selected.slice(0, 2).map((value) => (
-                          <Chip
-                            key={value}
-                            label={allParameters.find(p => p.val === value)?.label || value}
-                            size="small"
-                            sx={{ height: '20px', fontSize: '10px' }}
-                          />
-                        ))
-                      )}
-                      {!isAllParametersSelected && selected.length > 2 && (
-                        <Chip label={`+${selected.length - 2} more`} size="small" sx={{ height: '20px', fontSize: '10px' }} />
-                      )}
-                    </Box>
-                  )}
-                  MenuProps={{ PaperProps: { style: { maxHeight: 300, width: 250 } } }}
-                >
-                  <MenuItem value="all_parameters">
-                    <Checkbox checked={isAllParametersSelected} indeterminate={selectedColumn.length > 0 && !isAllParametersSelected} />
-                    <ListItemText primary="All Parameters" />
-                  </MenuItem>
-                  {allParameters.map((item) => (
-                    <MenuItem key={item.val} value={item.val}>
-                      <Checkbox checked={selectedColumn.indexOf(item.val) > -1} />
-                      <ListItemText primary={item.label} />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
               {/* Date Pickers */}
               <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -423,17 +380,13 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
                   onClick={handleSearch}
                   sx={{
                     backgroundColor: '#2F6FB0',
-                    '&:hover': {
-                      backgroundColor: '#1E4A7C',
-                    },
+                    '&:hover': { backgroundColor: '#1E4A7C' },
                     minWidth: 'auto',
                     width: { xs: 'auto', sm: '32px' },
                     height: '32px',
                     padding: { xs: '6px 16px', sm: '6px' },
                     borderRadius: '4px',
-                    '& .MuiButton-startIcon': {
-                      margin: { sm: 0 },
-                    }
+                    '& .MuiButton-startIcon': { margin: { sm: 0 } }
                   }}
                 >
                 </Button>
@@ -441,24 +394,17 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
                 <Button
                   variant="outlined"
                   startIcon={<RefreshIcon />}
-                  onClick={() => {
-                    handleResetFilters();
-                  }}
+                  onClick={handleResetFilters}
                   sx={{
                     borderColor: '#6c757d',
                     color: '#6c757d',
-                    '&:hover': {
-                      borderColor: '#5a6268',
-                      color: '#5a6268',
-                    },
+                    '&:hover': { borderColor: '#5a6268', color: '#5a6268' },
                     minWidth: 'auto',
                     width: { xs: 'auto', sm: '32px' },
                     height: '32px',
                     padding: { xs: '6px 16px', sm: '4px' },
                     borderRadius: '4px',
-                    '& .MuiButton-startIcon': {
-                      margin: { sm: 0 },
-                    }
+                    '& .MuiButton-startIcon': { margin: { sm: 0 } }
                   }}
                 >
                 </Button>
@@ -467,52 +413,82 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
           </Box>
 
           {searchClicked && (
-            <Box sx={{ width: '100%', overflow: 'auto', mt: 2 }}>
-              <TableContainer component={Paper} className="logs-table-container">
+            <Box sx={{ width: '100%', overflow: 'auto' }}>
+              <TableContainer component={Paper} className="logs-table-container" sx={{ maxHeight: { xs: 400, sm: 520 }, width: '100%' }}>
                 <Table stickyHeader sx={{ tableLayout: 'auto', width: '100%' }}>
                   <TableHead>
                     <TableRow className="log-table-header">
-                      <TableCell className="log-header-cell" sx={{ fontWeight: 'bold' }}>#</TableCell>
-                      {selectedColumn.length > 0 ? (
-                        selectedColumn.map((col) => (
-                          <TableCell key={col} className="log-header-cell" sx={{ fontWeight: 'bold' }}>
-                            {allParameters.find(p => p.val === col)?.label || col}
-                          </TableCell>
-                        ))
-                      ) : (
-                        allParameters.map((param) => (
-                          <TableCell key={param.val} className="log-header-cell" sx={{ fontWeight: 'bold' }}>
-                            {param.label}
-                          </TableCell>
-                        ))
-                      )}
+                      {/* <TableCell 
+                        className="log-header-cell" 
+                        sx={{ 
+                          textTransform: 'capitalize',
+                          fontSize: { xs: '11px', sm: '14px' },
+                          padding: { xs: '8px 4px', sm: '16px' },
+                          fontWeight: 'bold',
+                          backgroundColor: "#0156a6", color: "#fff"
+                        }}
+                      >
+                        #
+                      </TableCell> */}
+                      {currentColumns.map((col) => (
+                        <TableCell 
+                          key={col.key} 
+                          className="log-header-cell" 
+                          sx={{ 
+                            textTransform: 'capitalize',
+                            fontSize: { xs: '11px', sm: '14px' },
+                            padding: { xs: '8px 4px', sm: '16px' },
+                            fontWeight: 'bold',
+                            backgroundColor: "#0156a6", color: "#fff"
+                          }}
+                        >
+                          {col.label}
+                        </TableCell>
+                      ))}
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {paginatedLogs.length > 0 ? (
                       paginatedLogs.map((log, index) => (
-                        <TableRow key={index} hover>
-                          <TableCell>{(page - 1) * rowsPerPage + index + 1}</TableCell>
-
-                          {selectedColumn.length > 0 ? (
-                            selectedColumn.map((col) => (
-                              <TableCell key={col}>
-                                {renderCellContent(log, col)}
+                        <TableRow key={index} hover className="log-table-row">
+                          {/* <TableCell 
+                            className="log-table-cell"
+                            sx={{
+                              fontSize: { xs: '11px', sm: '14px' },
+                              padding: { xs: '8px 4px', sm: '16px' }
+                            }}
+                          >
+                            {(page - 1) * rowsPerPage + index + 1}
+                          </TableCell> */}
+                          {currentColumns.map((col) => {
+                            const value = log[col.key];
+                            
+                            return (
+                              <TableCell 
+                                key={col.key} 
+                                className="log-table-cell"
+                                sx={{
+                                  fontSize: { xs: '11px', sm: '14px' },
+                                  padding: { xs: '8px 4px', sm: '16px' }
+                                }}
+                              >
+                                {renderStatusChip(value) || renderCellContent(log, col.key)}
                               </TableCell>
-                            ))
-                          ) : (
-                            allParameters.map((param) => (
-                              <TableCell key={param.val}>
-                                {renderCellContent(log, param.val)}
-                              </TableCell>
-                            ))
-                          )}
+                            );
+                          })}
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={selectedColumn.length > 0 ? selectedColumn.length + 1 : allParameters.length + 1} align="center">
-                          No logs found
+                        <TableCell 
+                          colSpan={currentColumns.length + 1} 
+                          align="center"
+                          sx={{
+                            fontSize: { xs: '12px', sm: '14px' },
+                            padding: { xs: '16px 8px', sm: '16px' }
+                          }}
+                        >
+                          No logs found matching your filters
                         </TableCell>
                       </TableRow>
                     )}
@@ -522,10 +498,21 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
             </Box>
           )}
 
-          {/* Pagination */}
+          {/* Pagination - Updated to match WaterLogs style */}
           {shouldShowPagination && (
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-              <Typography variant="body2">
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between', 
+              alignItems: { xs: 'center', sm: 'center' }, 
+              mt: 2,
+              gap: { xs: 1, sm: 0 }
+            }}>
+              <Typography 
+                variant="body2" 
+                color="textSecondary"
+                sx={{ fontSize: { xs: '11px', sm: '14px' } }}
+              >
                 Showing {((page - 1) * rowsPerPage) + 1} to {Math.min(page * rowsPerPage, totalRecords)} of {totalRecords} entries
               </Typography>
               <Pagination
@@ -533,6 +520,16 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
                 page={page}
                 onChange={handlePageChange}
                 color="primary"
+                showFirstButton
+                showLastButton
+                size="small"
+                sx={{
+                  '& .MuiPaginationItem-root': {
+                    fontSize: { xs: '11px', sm: '14px' },
+                    minWidth: { xs: '28px', sm: '32px' },
+                    height: { xs: '28px', sm: '32px' }
+                  }
+                }}
               />
             </Box>
           )}

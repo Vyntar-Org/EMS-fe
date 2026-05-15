@@ -315,7 +315,7 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
             },
             axisBorder: { show: false },
             title: {
-                text: 'Hours / Power %',
+                // text: 'Hours / Power %',
                 style: { color: '#6B7280', fontSize: '12px' }
             }
         },
@@ -330,8 +330,8 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
     };
 
     const blowerUsageSeries = [
-        { name: 'Run Hours', data: blowerUsageData.map(item => item.hours) },
-        { name: 'Power Usage (%)', data: blowerUsageData.map(item => item.power) }
+        { name: 'Sewage Water', data: blowerUsageData.map(item => item.hours) },
+        { name: 'Treated Water', data: blowerUsageData.map(item => item.power) }
     ];
 
     // Card styles
@@ -428,49 +428,15 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
     return (
         <Box style={styles.mainContent} id="main-content">
-            {/* Navbar */}
-            {/* <Box sx={styles.navbar}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <IconButton onClick={onSidebarToggle} sx={{ color: '#374151' }}>
-                        <MenuIcon />
-                    </IconButton>
-                    <img 
-                        src="/static/images/Vyntax_Logo.png" 
-                        alt="Vyntar Logo" 
-                        style={{ height: '40px' }} 
-                    />
-                    <Box sx={{ ml: 2 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1F2937', lineHeight: 1.2 }}>
-                            STP Monitoring Dashboard
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 300 }}>
-                            Live Plant Performance Overview
-                        </Typography>
-                    </Box>
-                </Box>
-
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', mb: '4px' }}>
-                        <FiberManualRecordIcon sx={{ color: isOnline ? '#62CD62' : '#E74C3C', fontSize: '12px' }} />
-                        <Typography sx={{ fontSize: '1rem', fontWeight: 500, color: isOnline ? '#62CD62' : '#E74C3C' }}>
-                            {deviceStatus}
-                        </Typography>
-                    </Box>
-                    <Typography variant="caption" sx={{ color: '#6B7280', fontWeight: 300 }}>
-                        {latestTimestamp}
-                    </Typography>
-                </Box>
-            </Box> */}
-
             {/* Main Content */}
             {!loading && !error && dashboardData && (
                 <>
                     {/* Top Row: Metrics Cards + Gauges */}
-                    <Grid container spacing={2} sx={{  }}>
-                        {/* Intake Total Card */}
-                        <Grid item xs={12} sm={6} md={2}>
-                            <Card sx={{ ...metricCardStyle, width: '100%' }}>
-                                <CardContent sx={{ p: 2, textAlign: 'center', width: '100%' }}>
+                    <Grid container spacing={2}>
+                        {/* Intake Total Card — full width per row below md; desktop unchanged */}
+                        <Grid item xs={12} sm={12} md={2}>
+                            <Card sx={{ ...metricCardStyle, width: { xs: '85%', sm: '50%', md: '100%' }, height: { xs: 'auto', sm: '50%', md: '50%' } }}>
+                                <CardContent sx={{ p: {md: 2, sm: 2}, textAlign: 'center', width: '100%' }}>
                                     <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1F2937' }}>
                                         Intake Total
                                     </Typography>
@@ -488,17 +454,17 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                         </Grid>
 
                         {/* Gauge Charts Container */}
-                        <Grid item xs={12} sm={12} md={8}>
-                            <Card sx={{...cardStyle, marginLeft:'35px'}}>
-                                <CardContent sx={{ p: 3 }}>
-                                    <Box sx={{ 
-                                        display: 'flex', 
-                                        justifyContent: 'space-around', 
+                        <Grid item xs={12} sm={8} md={8}>
+                            <Card sx={{ ...cardStyle, marginLeft: { xs: 0, sm: '127px', md: '35px' }, height: { xs: 'auto', md: '70%' }, width: { xs: '94.5%', sm: '60%', md: 'auto' }, marginTop: {sm: '-232px', md: '0'} }}>
+                                <CardContent sx={{ p: { xs: 2, sm: -5, md: 3 } }}>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        justifyContent: 'space-around',
                                         flexWrap: 'wrap',
-                                        gap: 2 
+                                        gap: 2
                                     }}>
                                         {/* pH Gauge */}
-                                        <Box sx={{ textAlign: 'center', minWidth: '140px', marginTop: '-20px' }}>
+                                        <Box sx={{ textAlign: 'center', minWidth: '140px' , marginTop: '-20px' }}>
                                             <Typography sx={metricHeadingStyle}>pH</Typography>
                                             <Chart
                                                 options={phGaugeOptions}
@@ -567,8 +533,8 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                         </Grid>
 
                         {/* Treated Water Card */}
-                        <Grid item xs={12} sm={6} md={2}>
-                            <Card sx={{ ...metricCardStyle, width: '100%', marginLeft: '-5px' }}>
+                        <Grid item xs={12} sm={12} md={2}>
+                            <Card sx={{ ...metricCardStyle, width: { xs: '85%', md: '100%' }, marginLeft: { xs: 0, md: '-5px' }, height: { xs: 'auto', md: '50%' } }}>
                                 <CardContent sx={{ p: 2, textAlign: 'center', width: '100%' }}>
                                     <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1F2937' }}>
                                         Treated Water
@@ -588,16 +554,17 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     </Grid>
 
                     {/* Blower Performance Row */}
-                    <Grid container spacing={2} sx={{ marginTop: '-50px'}}>
+                    <Grid container spacing={2} sx={{ marginTop: { xs: 1, md: '-50px' } }}>
                         <Grid item xs={12}>
-                            <Card sx={{ ...cardStyle, minHeight: '150px'}}>
-                                <CardContent sx={{ p: 5 }}>
-                                    <Box sx={{ 
-                                        display: 'flex', 
-                                        justifyContent: 'space-around', 
+                            <Card sx={{ ...cardStyle, minHeight: '150px', height: { xs: 'auto', md: '70%' } }}>
+                                <CardContent sx={{ p: { xs: 2, md: 5 } }}>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        flexDirection: { xs: 'column', md: 'row' },
+                                        justifyContent: 'space-around',
                                         alignItems: 'center',
                                         flexWrap: 'wrap',
-                                        gap: "145px"
+                                        gap: { xs: 3, md: '145px' },
                                     }}>
                                         {/* Heading */}
                                         {/* <Box sx={{ minWidth: '120px', textAlign: { xs: 'center', md: 'left' } }}>
@@ -608,7 +575,7 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
                                         {/* Run Hours */}
                                         <Box sx={{ textAlign: 'center', minWidth: '156px' }}>
-                                            <Typography sx={metricHeadingStyle}>Run Hours</Typography>
+                                            <Typography sx={metricHeadingStyle}>Sewage Water</Typography>
                                             <Typography sx={{ ...metricValueStyle, fontSize: '20px' }}>
                                                 {runHours.toLocaleString()}
                                             </Typography>
@@ -664,7 +631,7 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     <Grid container spacing={2}>
                         {/* Historical Trends Chart */}
                         <Grid item xs={12} md={6}>
-                            <Card sx={{ ...cardStyle, minHeight: '300px', width: '143.5%', marginTop:'10px' }}>
+                            <Card sx={{ ...cardStyle, minHeight: '300px', width: { xs: '94.5%', md: '143.5%' }, marginTop: { xs: '6px', md: '10px' } }}>
                                 <CardContent sx={{ height: '100%' }}>
                                     <Typography sx={{ ...titleStyle, mb: 2 }}>
                                         Historical Trends
@@ -700,10 +667,10 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
                         {/* Blower Usage Chart */}
                         <Grid item xs={12} md={6}>
-                            <Card sx={{ ...cardStyle, minHeight: '300px', width: '88.5%', marginLeft: '200px', marginTop:'10px' }}>
-                                <CardContent sx={{height: '100%' }}>
+                            <Card sx={{ ...cardStyle, minHeight: '300px', width: { xs: '94.5%', md: '88.5%' }, marginLeft: { xs: 0, md: '200px' }, marginTop: { xs: '-10px', md: '10px' } }}>
+                                <CardContent sx={{ height: '100%' }}>
                                     <Typography sx={{ ...titleStyle, mb: 2 }}>
-                                        Blower Usage
+                                        {/* Blower Usage */}
                                     </Typography>
                                     <Box sx={{ position: 'relative' }}>
                                         {chartLoading && (
@@ -727,8 +694,8 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                             options={blowerUsageOptions}
                                             series={blowerUsageSeries}
                                             type="bar"
-                                            height={200}
-                                            width='140%'
+                                            height={250}
+                                            width={isMobile ? '100%' : '140%'}
                                         />
                                     </Box>
                                 </CardContent>

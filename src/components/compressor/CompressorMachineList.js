@@ -41,7 +41,7 @@ import {
     getCompressorDowntimeHistory,
 } from '../../auth/compressor/MachineListApi';
 
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 10 * 1000;
 
 const parseDowntimeDate = (dateStr) => {
     if (!dateStr) return null;
