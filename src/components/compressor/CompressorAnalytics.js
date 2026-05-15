@@ -365,97 +365,126 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     // Chart Options
     // Chart Options
     const getChartOptions = (isMultiDevice = false) => {
-        // Basic color palette for multiple devices
-        const colors = ['#30b44a', '#2F6FB0', '#e34d4d', '#f4b400', '#9c27b0', '#00bcd4'];
+    // Basic color palette for multiple devices
+    const colors = ['#30b44a', '#2F6FB0', '#e34d4d', '#f4b400', '#9c27b0', '#00bcd4'];
 
-        return {
-            chart: {
-                type: 'area',
-                height: 420,
-                toolbar: { show: true },
-                zoom: { enabled: true },
-                background: '#FFFFFF',
+    return {
+        chart: {
+            type: 'area',
+            height: 420,
+            toolbar: { show: true },
+            zoom: { enabled: true },
+            background: '#FFFFFF',
+        },
+        stroke: {
+            width: 2,
+            curve: 'stepline'
+        },
+        fill: {
+            type: 'solid',
+            opacity: 0.2,
+        },
+        colors: colors,
+        dataLabels: { enabled: false },
+        xaxis: {
+            type: 'datetime',
+            title: {
+                text: 'Time',
+                style: { color: '#6B7280', fontSize: '12px' },
             },
-            stroke: {
-                width: 2,
-                curve: 'stepline'
+            labels: {
+                style: { colors: '#6B7280', fontSize: '11px' },
+                datetimeUTC: false
             },
-            fill: {
-                type: 'solid',
-                opacity: 0.2,
+        },
+        yaxis: {
+            title: {
+                text: 'Status',
+                style: { color: '#6B7280', fontSize: '12px' },
             },
-            colors: colors,
-            dataLabels: { enabled: false },
-            xaxis: {
-                type: 'datetime',
-                title: {
-                    text: 'Time',
-                    style: { color: '#6B7280', fontSize: '12px' },
-                },
-                labels: {
-                    style: { colors: '#6B7280', fontSize: '11px' },
-                    datetimeUTC: false
-                },
-            },
-            yaxis: {
-                title: {
-                    text: 'Status',
-                    style: { color: '#6B7280', fontSize: '12px' },
-                },
-                min: -0.1,
-                max: 1.1,
-                tickAmount: 2,
-                labels: {
-                    style: { colors: '#6B7280', fontSize: '12px' },
-                    formatter: function (val) {
-                        if (val >= 0.9) return 'Online';
-                        if (val <= 0.1) return 'Offline';
-                        return '';
-                    }
-                },
-            },
-            grid: {
-                borderColor: '#E5E7EB',
-                xaxis: { lines: { show: false } },
-                yaxis: { lines: { show: true } },
-            },
-            tooltip: {
-                enabled: true,
-                theme: 'light',
-                x: { format: 'dd MMM yyyy HH:mm' },
-                // KEY CHANGE: Enable shared tooltip for All Devices view
-                shared: isMultiDevice,
-                // Only use custom tooltip for single device view
-                custom: isMultiDevice ? undefined : function ({ series, seriesIndex, dataPointIndex, w }) {
-                    const dataPoint = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
-                    const date = new Date(dataPoint[0]);
-                    const formattedDate = date.toLocaleString();
-                    const value = dataPoint[1];
-                    const statusText = value === 1 ? 'Online' : 'Offline';
-                    const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
-                    const seriesName = w.globals.initialSeries[seriesIndex].name;
-
-                    return `<div style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-                        <div style="font-weight: bold; margin-bottom: 8px; color: #333; font-size: 12px;">${formattedDate}</div>
-                        <div style="display: flex; align-items: center;">
-                            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor}; margin-right: 8px;"></span>
-                            <span style="flex: 1; color: #333; font-size: 12px;">${seriesName}:</span>
-                            <span style="font-weight: bold; color: ${statusColor}; margin-left: 5px; font-size: 12px;">${statusText}</span>
-                        </div>
-                    </div>`;
+            min: -0.1,
+            max: 1.1,
+            tickAmount: 2,
+            labels: {
+                style: { colors: '#6B7280', fontSize: '12px' },
+                formatter: function (val) {
+                    if (val >= 0.9) return 'Online';
+                    if (val <= 0.1) return 'Offline';
+                    return '';
                 }
             },
-            legend: {
-                show: isMultiDevice, // Show legend only if multiple devices
-                position: 'top',
-                horizontalAlign: 'center'
-            },
-            markers: {
-                size: 0,
-                hover: { size: 5 }
+        },
+        grid: {
+            borderColor: '#E5E7EB',
+            xaxis: { lines: { show: false } },
+            yaxis: { lines: { show: true } },
+        },
+        tooltip: {
+            enabled: true,
+            theme: 'light',
+            shared: isMultiDevice, // Shared crosshair for multi-device
+            // Unified Custom Tooltip
+            custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+                const allSeries = w.globals.initialSeries;
+                let tooltipHtml = '';
+                let timestamp = null;
+
+                // Helper function to create the status row HTML
+                const getStatusRow = (name, value) => {
+                    const statusText = value === 1 ? 'Online' : 'Offline';
+                    const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
+                    return `
+                        <div style="display: flex; align-items: center; margin-top: 4px;">
+                            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor}; margin-right: 8px;"></span>
+                            <span style="flex: 1; color: #333; font-size: 12px;">${name}:</span>
+                            <span style="font-weight: bold; color: ${statusColor}; margin-left: 5px; font-size: 12px;">${statusText}</span>
+                        </div>
+                    `;
+                };
+
+                // Logic for Multi-Device (Show all devices in list)
+                if (isMultiDevice) {
+                    // Iterate through all series
+                    allSeries.forEach((s, i) => {
+                        const point = s.data[dataPointIndex];
+                        // Check if point exists to avoid errors
+                        if (point) {
+                            if (!timestamp) timestamp = point[0]; // Capture timestamp once
+                            tooltipHtml += getStatusRow(s.name, point[1]);
+                        }
+                    });
+                } 
+                // Logic for Single Device
+                else {
+                    const point = allSeries[seriesIndex].data[dataPointIndex];
+                    if (point) {
+                        timestamp = point[0];
+                        tooltipHtml += getStatusRow(allSeries[seriesIndex].name, point[1]);
+                    }
+                }
+
+                // Format the timestamp (Bold)
+                const formattedDate = timestamp ? new Date(timestamp).toLocaleString() : 'N/A';
+
+                return `
+                    <div style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                        <div style="font-weight: bold; margin-bottom: 8px; color: #333; font-size: 12px;">${formattedDate}</div>
+                        ${tooltipHtml}
+                    </div>
+                `;
             }
-        };
+        },
+        legend: {
+            show: isMultiDevice, // Show legend only if multiple devices
+            position: 'top',
+            horizontalAlign: 'center'
+        },
+        markers: {
+            size: 0,
+            hover: { size: 5 }
+        }
     };
+};
 
     return (
         <Box sx={styles.mainContent} id="main-content">
