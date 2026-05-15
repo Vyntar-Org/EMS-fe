@@ -1,6 +1,6 @@
-import React from 'react';
-import { Autocomplete, TextField, Box, Typography } from '@mui/material';
-import { List } from 'react-window';
+import React from "react";
+import { Autocomplete, TextField, Box, Typography } from "@mui/material";
+import { List } from "react-window";
 
 const LISTBOX_PADDING = 8; // px
 
@@ -37,48 +37,50 @@ function useResetCache(data) {
 }
 
 // Adapter for react-window to MUI Autocomplete
-const ListboxComponent = React.forwardRef(function ListboxComponent(props, ref) {
-  const { children, ...other } = props;
-  const itemData = [];
-  children.forEach((item) => {
-    itemData.push(item);
-    itemData.push(...(item.children || []));
-  });
+const ListboxComponent = React.forwardRef(
+  function ListboxComponent(props, ref) {
+    const { children, ...other } = props;
+    const itemData = [];
+    children.forEach((item) => {
+      itemData.push(item);
+      itemData.push(...(item.children || []));
+    });
 
-  const itemCount = itemData.length;
-  const itemSize = 48;
+    const itemCount = itemData.length;
+    const itemSize = 48;
 
-  const getChildSize = () => {
-    return itemSize;
-  };
+    const getChildSize = () => {
+      return itemSize;
+    };
 
-  const getHeight = () => {
-    if (itemCount > 8) {
-      return 8 * itemSize;
-    }
-    return itemCount * itemSize;
-  };
+    const getHeight = () => {
+      if (itemCount > 8) {
+        return 8 * itemSize;
+      }
+      return itemCount * itemSize;
+    };
 
-  const gridRef = useResetCache(itemCount);
+    const gridRef = useResetCache(itemCount);
 
-  return (
-    <div ref={ref}>
-      <OuterElementContext.Provider value={other}>
-        <List
-          rowCount={itemCount}
-          rowHeight={itemSize}
-          rowComponent={renderRow}
-          rowProps={{ data: itemData }}
-          style={{ height: getHeight() + 2 * LISTBOX_PADDING, width: '100%' }}
-          ref={gridRef}
-          outerElementType={OuterElementType}
-          innerElementType="ul"
-          overscanCount={5}
-        />
-      </OuterElementContext.Provider>
-    </div>
-  );
-});
+    return (
+      <div ref={ref}>
+        <OuterElementContext.Provider value={other}>
+          <List
+            rowCount={itemCount}
+            rowHeight={itemSize}
+            rowComponent={renderRow}
+            rowProps={{ data: itemData }}
+            style={{ height: getHeight() + 2 * LISTBOX_PADDING, width: "100%" }}
+            ref={gridRef}
+            outerElementType={OuterElementType}
+            innerElementType="ul"
+            overscanCount={5}
+          />
+        </OuterElementContext.Provider>
+      </div>
+    );
+  },
+);
 
 export const CustomAutocomplete = ({
   label,
@@ -91,53 +93,76 @@ export const CustomAutocomplete = ({
   helperText,
   fullWidth = true,
   multiple = false,
+  placeholder = "",
   ...props
 }) => {
+  const getOptionLabel = (option) => {
+    if (typeof option === "string") {
+      return option;
+    }
+
+    return option.label || "";
+  };
+
+  const isOptionEqualToValue = (option, val) => {
+    if (!val) return false;
+    return option.value === val || option.value === val.value;
+  };
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', width: fullWidth ? '100%' : 'auto' }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        width: fullWidth ? "100%" : "auto",
+      }}
+    >
       <Autocomplete
+        autoComplete={false}
         multiple={multiple}
         options={options}
-        value={value}
         onChange={(event, newValue) => onChange(newValue)}
         onBlur={onBlur}
         fullWidth={fullWidth}
-        ListboxComponent={ListboxComponent}
+        // ListboxComponent={ListboxComponent}
+        value={options?.find((option) => option.value == value) || null}
+        getOptionLabel={getOptionLabel}
+        isOptionEqualToValue={isOptionEqualToValue}
         renderInput={(params) => (
           <TextField
             {...params}
+            placeholder={placeholder}
             label={label}
             name={name}
             variant="outlined"
             error={!!error}
             helperText={helperText}
             InputLabelProps={{
-              style: { color: '#A0AAB4' },
+              style: { color: "#A0AAB4" },
             }}
             sx={{
-              '& .MuiOutlinedInput-root': {
+              "& .MuiOutlinedInput-root": {
                 borderRadius: 2,
-                backgroundColor: '#2A2D34',
-                color: '#FFFFFF',
-                '& fieldset': {
-                  borderColor: 'transparent',
-                },
-                '&:hover fieldset': {
-                  borderColor: '#FCD637',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#FCD637',
-                },
-              },
-              '& .MuiSvgIcon-root': {
-                color: '#A0AAB4',
               },
             }}
           />
         )}
-        renderOption={(props, option) => [props, option.label]}
-        // Disable built-in filtering if options are already filtered externally
-        // filterOptions={(x) => x} 
+        renderOption={(props, option) => (
+          <li
+            {...props}
+            key={JSON.stringify(option)}
+            style={{ padding: "20px", height: 30, minHeight: "auto" }}
+          >
+            <Typography
+              sx={{ wordBreak: "break-all" }}
+              fontSize="14px"
+              color="#595959"
+              fontWeight="bold"
+            >
+              {option.label}
+            </Typography>
+          </li>
+        )}
         {...props}
       />
     </Box>

@@ -4,15 +4,18 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ApplicationProvider } from "./contexts/ApplicationContext";
 import { AppRoutes } from "./routes/AppRoutes";
 import { ToastProvider } from "./components/common/PremiumToast";
+import { CommonDataContextProvider } from "./contexts/CommonDataContext";
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <ApplicationProvider>
-          <ToastProvider>
-            <AppRoutes />
-          </ToastProvider>
+          <CommonDataContextProvider>
+            <ToastProvider>
+              <AppRoutes />
+            </ToastProvider>
+          </CommonDataContextProvider>
         </ApplicationProvider>
       </AuthProvider>
     </BrowserRouter>

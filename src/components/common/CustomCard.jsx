@@ -33,20 +33,22 @@ const CustomCard = ({
   isPremium = false,
   accentColor = "#CCC751",
   titleIcon,
+  childrenOtherProps = {},
   ...props
 }) => {
   return (
     <StyledCard accentcolor={accentColor} {...props}>
-      <CardContent sx={{ p: "14px !important" }}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            mb: 1,
-          }}
-        >
-          <Box width="100%">
+      <CardContent sx={{ p: "14px !important", height: "100%" }}>
+        {(title || subtitle || icon) && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              mb: 1,
+            }}
+            width="100%"
+          >
             {title && (
               <Box
                 sx={{ display: "flex", alignItems: "center", gap: 1 }}
@@ -81,22 +83,17 @@ const CustomCard = ({
                 {subtitle}
               </Typography>
             )}
+            {icon && icon}
           </Box>
-          {icon && (
-            <Box
-              sx={{
-                p: 1,
-                borderRadius: "12px",
-                backgroundColor: alpha(accentColor, 0.1),
-                color: accentColor,
-              }}
-            >
-              {icon}
-            </Box>
-          )}
-        </Box>
+        )}
 
-        <Box>{children}</Box>
+        <Box
+          height="calc(100% - 14px - 18px)"
+          overflow="auto"
+          {...childrenOtherProps}
+        >
+          {children}
+        </Box>
       </CardContent>
     </StyledCard>
   );

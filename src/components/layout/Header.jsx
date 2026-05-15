@@ -79,6 +79,10 @@ export const Header = () => {
           // boxShadow: "0 4px 20px rgba(112, 112, 112, 0.2)",
           boxShadow: "none",
           borderBottom: "1px solid rgba(0,0,0,0.08)",
+          "& .MuiToolbar-root": {
+            pr: 0.5,
+            pl: 1.7,
+          },
         }}
       >
         <Toolbar>
@@ -136,7 +140,7 @@ export const Header = () => {
                     },
                   },
                   "& .MuiTabs-indicator": {
-                    backgroundColor: "#CCC751",
+                    backgroundColor: "rgb(245, 213, 71)",
                     height: 3,
                     borderRadius: "3px 3px 0 0",
                   },
@@ -144,11 +148,11 @@ export const Header = () => {
               >
                 {applications.map((app) => (
                   <Tab
-                    sx={{
-                      "&.Mui-selected": {
-                        background: "#f1ea182c",
-                      },
-                    }}
+                    // sx={{
+                    //   "&.Mui-selected": {
+                    //     background: "#f1ea182c",
+                    //   },
+                    // }}
                     key={app.code}
                     label={
                       <Box

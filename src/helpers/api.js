@@ -1,3 +1,4 @@
+import { API_URLS } from "./apiUrls";
 import { storage } from "./storage";
 
 const BASE_URL =
@@ -18,7 +19,7 @@ const refreshTokenIfNeeded = async () => {
 
   if (refreshToken && isTokenExpiringSoon(expiry)) {
     try {
-      const response = await fetch(`${BASE_URL}/auth/refresh/`, {
+      const response = await fetch(`${BASE_URL}${API_URLS.REFRESH}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

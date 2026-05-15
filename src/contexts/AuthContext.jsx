@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { storage } from "../helpers/storage";
 import { api } from "../helpers/api";
+import { API_URLS } from "../helpers/apiUrls";
 
 const AuthContext = createContext();
 
@@ -46,7 +47,7 @@ const fetchCurrentUser = async (accessToken = null) => {
   //   return response.data || response;
   // } catch (error) {
   try {
-    const fallback = await api.get("/auth/me/", {
+    const fallback = await api.get(API_URLS.CURRENT_USER, {
       ...(accessToken
         ? {
             headers: {
@@ -90,7 +91,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const responseBody = await api.post("/auth/login/", {
+      const responseBody = await api.post(API_URLS.LOGIN, {
         username,
         password,
       });
@@ -137,7 +138,7 @@ export const AuthProvider = ({ children }) => {
 
     if (refreshToken) {
       try {
-        await api.post("/auth/logout/", { refresh: refreshToken });
+        await api.post(API_URLS.LOGOUT, { refresh: refreshToken });
       } catch (error) {
         // Logout request failed, clearing local auth state anyway
       }

@@ -130,7 +130,7 @@ export const Sidebar = () => {
                     p: 0,
                     py: 1,
                     backgroundColor: isActive ? "#f1ea182c" : "transparent",
-                    border: isActive ? "1px solid #CCC751" : "none",
+                    border: isActive ? "1px solid rgb(245, 213, 71)" : "none",
                     ":hover": {
                       backgroundColor: isActive ? "#f1ea182c" : "transparent",
                     },

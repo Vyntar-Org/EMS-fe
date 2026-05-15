@@ -156,7 +156,6 @@ const Login = () => {
               disableElevation
               type="submit"
               variant="contained"
-              color="primary"
               fullWidth
               disabled={formik.isSubmitting}
               sx={{
@@ -166,6 +165,10 @@ const Login = () => {
                 fontWeight: "bold",
                 color: "#000",
                 borderRadius: "24px",
+                background: "#F5D547",
+                "&:hover": {
+                  background: "#e8c011",
+                },
               }}
             >
               SIGN IN
