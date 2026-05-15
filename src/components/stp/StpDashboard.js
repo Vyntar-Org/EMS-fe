@@ -600,14 +600,14 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                         gap: "145px"
                                     }}>
                                         {/* Heading */}
-                                        <Box sx={{ minWidth: '120px', textAlign: { xs: 'center', md: 'left' } }}>
+                                        {/* <Box sx={{ minWidth: '120px', textAlign: { xs: 'center', md: 'left' } }}>
                                             <Typography sx={{ ...metricHeadingStyle, fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
                                                 Blower Performance
                                             </Typography>
-                                        </Box>
+                                        </Box> */}
 
                                         {/* Run Hours */}
-                                        <Box sx={{ textAlign: 'center', minWidth: '100px' }}>
+                                        <Box sx={{ textAlign: 'center', minWidth: '156px' }}>
                                             <Typography sx={metricHeadingStyle}>Run Hours</Typography>
                                             <Typography sx={{ ...metricValueStyle, fontSize: '20px' }}>
                                                 {runHours.toLocaleString()}
@@ -616,7 +616,7 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                         </Box>
 
                                         {/* Temperature */}
-                                        <Box sx={{ textAlign: 'center', minWidth: '100px' }}>
+                                        <Box sx={{ textAlign: 'center', minWidth: '156px' }}>
                                             <Typography sx={metricHeadingStyle}>Temperature</Typography>
                                             <Typography sx={{ ...metricValueStyle, fontSize: '20px' }}>
                                                 {temperature}
@@ -625,7 +625,7 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                         </Box>
 
                                         {/* Pressure */}
-                                        <Box sx={{ textAlign: 'center', minWidth: '100px' }}>
+                                        <Box sx={{ textAlign: 'center', minWidth: '156px' }}>
                                             <Typography sx={metricHeadingStyle}>Pressure</Typography>
                                             <Typography sx={{ ...metricValueStyle, fontSize: '20px' }}>
                                                 {pressure}
@@ -634,7 +634,7 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                         </Box>
 
                                         {/* Power */}
-                                        <Box sx={{ textAlign: 'center', minWidth: '100px' }}>
+                                        <Box sx={{ textAlign: 'center', minWidth: '156px' }}>
                                             <Typography sx={metricHeadingStyle}>Power</Typography>
                                             <Typography sx={{ ...metricValueStyle, fontSize: '20px' }}>
                                                 {power}
@@ -643,7 +643,7 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                                         </Box>
 
                                         {/* RPM & Status */}
-                                        <Box sx={{ textAlign: 'center', minWidth: '100px' }}>
+                                        <Box sx={{ textAlign: 'center', minWidth: '156px' }}>
                                             <Typography sx={metricHeadingStyle}>RPM</Typography>
                                             <Typography sx={{ ...metricValueStyle, fontSize: '20px' }}>
                                                 {rpm.toLocaleString()}

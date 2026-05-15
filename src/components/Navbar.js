@@ -62,6 +62,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
         navigate(`/solar/${route}`);
       } else if (app.code === 'COMPRESSOR') {
         navigate(`/compressor/${route}`);
+      } else if (app.code=== 'STP') {
+        navigate(`/stp/${route}`);
       } else {
         navigate(`/${route}`);
       }
@@ -79,6 +81,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
         navigate('/solar/machine-list');
       } else if (app.code === 'COMPRESSOR') {
         navigate('/compressor/machine-list');
+      } else if (app.code === 'STP') {
+        navigate('/stp/dashboard');
       } else {
         navigate('/dashboard');
       }
@@ -140,7 +144,7 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
     if (!applications) return [];
     
     // CHANGED: Moved WATER to the top of the list
-    const priorityOrder = ['WATER', 'ENERGY', 'FUEL', 'SOLAR', 'FIRE-SAFETY', 'COMPRESSOR', 'TEMPERATURE'];
+    const priorityOrder = ['WATER', 'ENERGY', 'FUEL', 'SOLAR', 'FIRE-SAFETY', 'COMPRESSOR', 'TEMPERATURE', 'STP'];
     
     return applications.slice().sort((a, b) => {
       const indexA = priorityOrder.indexOf(a.code);
@@ -262,6 +266,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                   displayName = 'Solar HVAC';
                 } else if (app.code === 'COMPRESSOR') {
                   displayName = 'Compressor';
+                } else if (app.code === 'STP') {
+                  displayName = 'STP';
                 }
                                   
                 return (
@@ -377,6 +383,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                     displayName = 'Solar';
                   } else if (app.code === 'COMPRESSOR') {
                     displayName = 'Compressor';
+                  } else if (app.code === 'STP') {
+                    displayName = 'STP';
                   }
                   
                   return (
