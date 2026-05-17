@@ -1,5 +1,5 @@
-import Cookies from 'js-cookie';
-import { encryptData, decryptData } from './encryption';
+// import Cookies from 'js-cookie';
+import { encryptData, decryptData } from "./encryption";
 
 export const storage = {
   // Local Storage
@@ -25,24 +25,24 @@ export const storage = {
   removeSession: (key) => sessionStorage.removeItem(key),
 
   // Cookies
-  setCookie: (key, value, options = { expires: 1 }) => {
-    const encrypted = encryptData(value);
-    if (encrypted) Cookies.set(key, encrypted, options);
-  },
-  getCookie: (key) => {
-    const data = Cookies.get(key);
-    return data ? decryptData(data) : null;
-  },
-  removeCookie: (key) => Cookies.remove(key),
+  // setCookie: (key, value, options = { expires: 1 }) => {
+  //   const encrypted = encryptData(value);
+  //   if (encrypted) Cookies.set(key, encrypted, options);
+  // },
+  // getCookie: (key) => {
+  //   const data = Cookies.get(key);
+  //   return data ? decryptData(data) : null;
+  // },
+  // removeCookie: (key) => Cookies.remove(key),
 
   // Clear All
   clearAll: () => {
     localStorage.clear();
     sessionStorage.clear();
     // Getting all cookies to remove them
-    const cookies = Cookies.get();
-    for (const cookie in cookies) {
-      Cookies.remove(cookie);
-    }
-  }
+    // const cookies = Cookies.get();
+    // for (const cookie in cookies) {
+    //   Cookies.remove(cookie);
+    // }
+  },
 };

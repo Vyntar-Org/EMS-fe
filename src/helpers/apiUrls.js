@@ -24,6 +24,17 @@ const EMS_MACHINE_LIST = {
     `/admin/machine-list/active-power-chart/?slave_id=${slaveId}`,
   EMS_MACHINE_LIST_VOLTAGE: (slaveId) =>
     `/admin/machine-list/voltage/?slave_id=${slaveId}`,
+  EMS_MACHINE_LIST_CURRENT: (slaveId) =>
+    `/admin/machine-list/current/?slave_id=${slaveId}`,
+  EMS_MACHINE_LIST_POWER_FACTOR: (slaveId) =>
+    `/admin/machine-list/power-factor/?slave_id=${slaveId}`,
+  EMS_MACHINE_LIST_FREQUENCY: (slaveId) =>
+    `/admin/machine-list/frequency/?slave_id=${slaveId}`,
+};
+
+const EMS_ANALYTICS = {
+  EMS_ANALYTICS_DATA: (slaveId, parameters, from_datetime, to_datetime) =>
+    `/applications/energy/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${from_datetime}&to_datetime=${to_datetime}`,
 };
 
 export const API_URLS = {
@@ -31,4 +42,5 @@ export const API_URLS = {
   ...AUTH,
   ...EMS_DASHBOARD,
   ...EMS_MACHINE_LIST,
+  ...EMS_ANALYTICS,
 };

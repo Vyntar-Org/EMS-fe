@@ -151,7 +151,6 @@ export const Sidebar = () => {
                         // transform: "translateX(4px)",
                         // transition: "all 0.2s ease",
                       },
-                      transition: "all 0.2s ease",
                     }}
                   >
                     {iconMap[iconName] || <DashboardIcon />}
