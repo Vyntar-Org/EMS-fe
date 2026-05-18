@@ -59,7 +59,7 @@ const MachineListHeader = ({
         alignItems="center"
         justifyContent="space-between"
       >
-        <Box sx={{ flexGrow: 1, maxWidth: 300 }}>
+        <Box sx={{ flexGrow: 1, maxWidth: { sm: 300 } }}>
           {/* <Typography
             variant="caption"
             color="text.secondary"
@@ -74,7 +74,7 @@ const MachineListHeader = ({
             label="Search Devices..."
             size="small"
             sx={{
-              mt: 0.5,
+              // mt: 0.5,
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2,
                 backgroundColor: "#f9f9f9",
@@ -661,7 +661,7 @@ const ModalContentForTrend = ({
             return [
               {
                 name: `${slaveName} Frequency`,
-                data: frequencyData.map((item) => item.value),
+                data: chartResponse?.data?.map((item) => item.value),
                 color: "#E34D4D",
               },
             ];
@@ -773,7 +773,7 @@ const ModalContentForTrend = ({
 const EnergyMachineList = () => {
   const { slavesData } = useCommonData();
   const { selectedApp } = useApplications();
-  const [machineListData, setMachineList] = useState(null);
+  const [machineListData, setMachineListData] = useState(null);
   const [slavesId, setSlavesId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [modalDetails, setModalDetails] = useState(null);
@@ -812,7 +812,7 @@ const EnergyMachineList = () => {
     try {
       const res = await api.get(API_URLS.EMS_MACHINE_LIST_DATA);
       if (res?.success) {
-        setMachineList(res?.data);
+        setMachineListData(res?.data);
       }
     } catch (error) {
       console.error("One of the API calls failed:", error);
@@ -829,7 +829,7 @@ const EnergyMachineList = () => {
     <>
       <Box
         sx={{
-          height: { md: "calc(100vh - 64px - 16px)" },
+          height: "calc(100vh - 64px - 16px)",
         }}
       >
         <MachineListHeader
@@ -903,13 +903,15 @@ const EnergyMachineList = () => {
         confirmText={null}
         cancelText={null}
       >
-        <ModalContentForTrend
-          handleTabChange={handleTabChange}
-          tab={modalDetails?.tab}
-          keyParam={modalDetails?.keyParam}
-          slaveId={modalDetails?.data?.slave_id}
-          slaveName={modalDetails?.data?.name}
-        />
+        {Boolean(modalDetails?.isOpen) ? (
+          <ModalContentForTrend
+            handleTabChange={handleTabChange}
+            tab={modalDetails?.tab}
+            keyParam={modalDetails?.keyParam}
+            slaveId={modalDetails?.data?.slave_id}
+            slaveName={modalDetails?.data?.name}
+          />
+        ) : null}
       </PremiumModal>
     </>
   );

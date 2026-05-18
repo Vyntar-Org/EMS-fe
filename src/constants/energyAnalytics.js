@@ -36,3 +36,23 @@ export const PARAMETER_OPTIONS = [
     value: "i_b,i_r,i_y,avg_i",
   },
 ];
+
+export const KEY_PARAMETER_OPTIONS_MAPPING = {
+  actpr_t: "Active Power (kW)",
+  apppr_t: "Apparent Power (kVA)",
+  acte_im: "Active Energy Import (kWh)",
+  reacte_im: "Reactive Energy Import (kVArh)",
+  pf_t: "Power Factor",
+  fq: "Frequency (Hz)",
+  rv: "R Phase Voltage (V)",
+  yv: "Y Phase Voltage (V)",
+  bv: "B Phase Voltage (V)",
+  ry_v: "R-Y Voltage (V)",
+  yb_v: "Y-B Voltage (V)",
+  br_v: "B-R Voltage (V)",
+  avg_l_l_v: "Avg Line-to-Line Voltage (V)",
+  i_r: "R Phase Current (A)",
+  i_y: "Y Phase Current (A)",
+  i_b: "B Phase Current (A)",
+  avg_i: "Average Current (A)",
+};

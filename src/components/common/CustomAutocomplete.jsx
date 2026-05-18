@@ -186,7 +186,9 @@ export const CustomAutocomplete = ({
           value.some((v) => v === opt.value || (v && v.value === opt.value)),
         )
       : []
-    : options?.find((option) => option.value == value) || null;
+    : options?.find(
+        (option) => option.value === value || option.value === value.value,
+      ) || null;
 
   return (
     <Box
@@ -197,6 +199,7 @@ export const CustomAutocomplete = ({
       }}
     >
       <Autocomplete
+        disableCloseOnSelect={multiple}
         autoComplete={false}
         disableListWrap
         multiple={multiple}
@@ -224,6 +227,15 @@ export const CustomAutocomplete = ({
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2,
+                height: "40px",
+                overflowY: "auto",
+                display: "flex",
+                flexWrap: "nowrap",
+                alignItems: "center",
+                paddingRight: "65px !important",
+              },
+              "& .MuiAutocomplete-inputRoot .MuiAutocomplete-input": {
+                minWidth: "30px",
               },
             }}
           />
@@ -269,6 +281,14 @@ export const CustomAutocomplete = ({
             internalListRef,
             onItemsBuilt: handleItemsBuilt,
           },
+        }}
+        renderTags={(value, getTagProps) => {
+          if (value.length === 0) return null;
+          return (
+            <Typography variant="body2" sx={{ ml: 1, color: "text.secondary" }}>
+              {value.length} items selected
+            </Typography>
+          );
         }}
         {...props}
       />
