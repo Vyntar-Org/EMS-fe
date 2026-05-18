@@ -63,28 +63,20 @@ function StpReports({ onSidebarToggle, sidebarVisible }) {
     const currentMonthDays = Array.from({ length: daysInCurrentMonth }, (_, i) => i + 1);
 
     // Mock Data Generator
+    // MODIFIED: All values set to 0 for 'Water Inlet' and 'Water Outlet'
     const generateMockData = (month, year, type) => {
         const daysInMonth = getDaysInMonth(month, year);
-        // Fixed Device Names as per image
         const devices = ['Water Inlet', 'Water Outlet']; 
         const result = {};
 
         devices.forEach(device => {
             result[device] = [];
-            let cumulative = Math.floor(Math.random() * 1000) + 500; // Starting reading
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
-                if (type === 'consumption') {
-                    // Daily consumption (random value between 50 and 150)
-                    const consumption = Math.floor(Math.random() * 100) + 50;
-                    result[device].push({ date: dateStr, value: consumption });
-                } else if (type === 'reading') {
-                    // Daily meter reading (cumulative)
-                    cumulative += Math.floor(Math.random() * 100) + 50;
-                    result[device].push({ date: dateStr, value: cumulative });
-                }
+                // Setting value to 0 for both consumption and reading types
+                result[device].push({ date: dateStr, value: 0 });
             }
         });
 
@@ -98,8 +90,8 @@ function StpReports({ onSidebarToggle, sidebarVisible }) {
         devices.forEach(device => {
             result[device] = [];
             for (let m = 1; m <= 12; m++) {
-                const consumption = Math.floor(Math.random() * 3000) + 1000;
-                result[device].push({ month: m, value: consumption });
+                // Setting value to 0 for monthly consumption
+                result[device].push({ month: m, value: 0 });
             }
         });
 

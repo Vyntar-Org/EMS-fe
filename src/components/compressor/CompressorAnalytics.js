@@ -27,6 +27,7 @@ import {
     CircularProgress,
     Alert,
     Snackbar,
+    FormControlLabel
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -68,6 +69,9 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [compareLoading2, setCompareLoading2] = useState(false);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
+
+    // State for merging comparison into main chart
+    const [mergeComparison, setMergeComparison] = useState(false);
 
     const styles = {
         mainContent: {
@@ -176,8 +180,8 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
 
             setFilteredChartData(combinedData);
 
-            // Handle Comparison 1
-            if (compareMode && compareDevice) {
+            // Handle Comparison 1 (Fetch data regardless of merge status, needed for both cases)
+            if (compareDevice) {
                 setCompareLoading(true);
                 try {
                     const compareData = await fetchAnalyticsData(compareDevice, selectedParameter2, filterStartDate, filterEndDate);
@@ -225,6 +229,9 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         setCompareChartData([]);
         setCompareChartData2([]);
         setError(null);
+        setMergeComparison(false);
+        setCompareMode(false);
+        setCompareDevice('');
     };
 
     // State now holds data with deviceName property included
@@ -240,7 +247,7 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         setCompareDevice(deviceName);
         setCompareMode(true);
 
-        if (searchClicked && filteredChartData.length > 0) {
+        if (searchClicked) {
             setCompareLoading(true);
             try {
                 const compareData = await fetchAnalyticsData(deviceName, selectedParameter2, filterStartDate, filterEndDate);
@@ -270,7 +277,25 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Process data for Main Chart (Supports Multiple Devices)
+    // Process Comparison Data (Single Device) - Helper function
+    const processRawData = (rawData, deviceName) => {
+        if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
+            return [];
+        }
+        const seriesData = [];
+        rawData.forEach(item => {
+            const startTime = new Date(item.start).getTime();
+            const endTime = new Date(item.end).getTime();
+            const status = item.status;
+
+            seriesData.push([startTime, status]);
+            seriesData.push([endTime, status]);
+        });
+        seriesData.sort((a, b) => a[0] - b[0]);
+        return seriesData;
+    };
+
+    // Process data for Main Chart (Supports Multiple Devices + Merged Comparison)
     const processedFilteredData = React.useMemo(() => {
         if (!filteredChartData || filteredChartData.length === 0) {
             return { series: [] };
@@ -284,7 +309,7 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             return acc;
         }, {});
 
-        // Create series for each device
+        // Create series for each device in main selection
         const series = Object.keys(groupedByDevice).map(deviceName => {
             const devicePoints = groupedByDevice[deviceName];
             const seriesData = [];
@@ -306,185 +331,177 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             };
         });
 
-        return { series };
-    }, [filteredChartData]);
+        // If Merge Comparison is checked, add compare device data to this series array
+        if (mergeComparison && compareDevice && compareChartData.length > 0) {
+            const mergedData = processRawData(compareChartData, compareDevice);
+            // Avoid duplicate device names if somehow already selected (though UI prevents it)
+            if (!series.find(s => s.name === compareDevice)) {
+                series.push({
+                    name: compareDevice,
+                    data: mergedData
+                });
+            }
+        }
 
-    // Process Comparison Data (Single Device)
+        return { series };
+    }, [filteredChartData, mergeComparison, compareDevice, compareChartData]);
+
+    // Process Comparison Data (Separate Chart - used when mergeComparison is false)
     const processedCompareData = React.useMemo(() => {
+        if (mergeComparison) return { series: [] }; // Don't process if merging to main chart
+
         if (!compareChartData || !Array.isArray(compareChartData) || compareChartData.length === 0) {
             return { series: [] };
         }
 
-        const seriesData = [];
-
-        compareChartData.forEach(item => {
-            const startTime = new Date(item.start).getTime();
-            const endTime = new Date(item.end).getTime();
-            const status = item.status;
-
-            seriesData.push([startTime, status]);
-            seriesData.push([endTime, status]);
-        });
-
-        seriesData.sort((a, b) => a[0] - b[0]);
+        const seriesData = processRawData(compareChartData, compareDevice);
 
         return {
             series: [{
-                name: 'Connectivity',
+                name: compareDevice || 'Connectivity',
                 data: seriesData
             }]
         };
-    }, [compareChartData]);
+    }, [compareChartData, compareDevice, mergeComparison]);
 
     const processedCompareData2 = React.useMemo(() => {
         if (!compareChartData2 || !Array.isArray(compareChartData2) || compareChartData2.length === 0) {
             return { series: [] };
         }
 
-        const seriesData = [];
-
-        compareChartData2.forEach(item => {
-            const startTime = new Date(item.start).getTime();
-            const endTime = new Date(item.end).getTime();
-            const status = item.status;
-
-            seriesData.push([startTime, status]);
-            seriesData.push([endTime, status]);
-        });
-
-        seriesData.sort((a, b) => a[0] - b[0]);
+        const seriesData = processRawData(compareChartData2, compareDevice2);
 
         return {
             series: [{
-                name: 'Connectivity',
+                name: compareDevice2 || 'Connectivity',
                 data: seriesData
             }]
         };
-    }, [compareChartData2]);
+    }, [compareChartData2, compareDevice2]);
 
-    // Chart Options
     // Chart Options
     const getChartOptions = (isMultiDevice = false) => {
-    // Basic color palette for multiple devices
-    const colors = ['#30b44a', '#2F6FB0', '#e34d4d', '#f4b400', '#9c27b0', '#00bcd4'];
+        // Basic color palette for multiple devices
+        const colors = ['#30b44a', '#2F6FB0', '#e34d4d', '#f4b400', '#9c27b0', '#00bcd4'];
 
-    return {
-        chart: {
-            type: 'area',
-            height: 420,
-            toolbar: { show: true },
-            zoom: { enabled: true },
-            background: '#FFFFFF',
-        },
-        stroke: {
-            width: 2,
-            curve: 'stepline'
-        },
-        fill: {
-            type: 'solid',
-            opacity: 0.2,
-        },
-        colors: colors,
-        dataLabels: { enabled: false },
-        xaxis: {
-            type: 'datetime',
-            title: {
-                text: 'Time',
-                style: { color: '#6B7280', fontSize: '12px' },
+        return {
+            chart: {
+                type: 'area',
+                height: 420,
+                toolbar: { show: true },
+                zoom: { enabled: true },
+                background: '#FFFFFF',
             },
-            labels: {
-                style: { colors: '#6B7280', fontSize: '11px' },
-                datetimeUTC: false
+            stroke: {
+                width: 2,
+                curve: 'stepline'
             },
-        },
-        yaxis: {
-            title: {
-                text: 'Status',
-                style: { color: '#6B7280', fontSize: '12px' },
+            fill: {
+                type: 'solid',
+                opacity: 0.2,
             },
-            min: -0.1,
-            max: 1.1,
-            tickAmount: 2,
-            labels: {
-                style: { colors: '#6B7280', fontSize: '12px' },
-                formatter: function (val) {
-                    if (val >= 0.9) return 'Online';
-                    if (val <= 0.1) return 'Offline';
-                    return '';
-                }
+            colors: colors,
+            dataLabels: { enabled: false },
+            xaxis: {
+                type: 'datetime',
+                title: {
+                    text: 'Time',
+                    style: { color: '#6B7280', fontSize: '12px' },
+                },
+                labels: {
+                    style: { colors: '#6B7280', fontSize: '11px' },
+                    datetimeUTC: false
+                },
             },
-        },
-        grid: {
-            borderColor: '#E5E7EB',
-            xaxis: { lines: { show: false } },
-            yaxis: { lines: { show: true } },
-        },
-        tooltip: {
-            enabled: true,
-            theme: 'light',
-            shared: isMultiDevice, // Shared crosshair for multi-device
-            // Unified Custom Tooltip
-            custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-                const allSeries = w.globals.initialSeries;
-                let tooltipHtml = '';
-                let timestamp = null;
+            yaxis: {
+                title: {
+                    text: 'Status',
+                    style: { color: '#6B7280', fontSize: '12px' },
+                },
+                min: -0.1,
+                max: 1.1,
+                tickAmount: 2,
+                labels: {
+                    style: { colors: '#6B7280', fontSize: '12px' },
+                    formatter: function (val) {
+                        if (val >= 0.9) return 'Online';
+                        if (val <= 0.1) return 'Offline';
+                        return '';
+                    }
+                },
+            },
+            grid: {
+                borderColor: '#E5E7EB',
+                xaxis: { lines: { show: false } },
+                yaxis: { lines: { show: true } },
+            },
+            tooltip: {
+                enabled: true,
+                theme: 'light',
+                shared: isMultiDevice, // Shared crosshair for multi-device
+                // Unified Custom Tooltip
+                custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+                    const allSeries = w.globals.initialSeries;
+                    let tooltipHtml = '';
+                    let timestamp = null;
 
-                // Helper function to create the status row HTML
-                const getStatusRow = (name, value) => {
-                    const statusText = value === 1 ? 'Online' : 'Offline';
-                    const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
+                    // Helper function to create the status row HTML
+                    const getStatusRow = (name, value) => {
+                        const statusText = value === 1 ? 'Online' : 'Offline';
+                        const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
+                        return `
+                            <div style="display: flex; align-items: center; margin-top: 4px;">
+                                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor}; margin-right: 8px;"></span>
+                                <span style="flex: 1; color: #333; font-size: 12px;">${name}:</span>
+                                <span style="font-weight: bold; color: ${statusColor}; margin-left: 5px; font-size: 12px;">${statusText}</span>
+                            </div>
+                        `;
+                    };
+
+                    // Logic for Multi-Device (Show all devices in list)
+                    if (isMultiDevice) {
+                        // Iterate through all series
+                        allSeries.forEach((s, i) => {
+                            const point = s.data[dataPointIndex];
+                            // Check if point exists to avoid errors
+                            if (point) {
+                                if (!timestamp) timestamp = point[0]; // Capture timestamp once
+                                tooltipHtml += getStatusRow(s.name, point[1]);
+                            }
+                        });
+                    }
+                    // Logic for Single Device
+                    else {
+                        const point = allSeries[seriesIndex].data[dataPointIndex];
+                        if (point) {
+                            timestamp = point[0];
+                            tooltipHtml += getStatusRow(allSeries[seriesIndex].name, point[1]);
+                        }
+                    }
+
+                    // Format the timestamp in 12-hour format using dayjs
+                    // 'DD/MM/YYYY hh:mm:ss A' -> 12 hour format with AM/PM
+                    const formattedDate = timestamp ? dayjs(timestamp).format('DD/MM/YYYY hh:mm:ss A') : 'N/A';
+
                     return `
-                        <div style="display: flex; align-items: center; margin-top: 4px;">
-                            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor}; margin-right: 8px;"></span>
-                            <span style="flex: 1; color: #333; font-size: 12px;">${name}:</span>
-                            <span style="font-weight: bold; color: ${statusColor}; margin-left: 5px; font-size: 12px;">${statusText}</span>
+                        <div style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                            <div style="font-weight: bold; margin-bottom: 8px; color: #333; font-size: 12px;">${formattedDate}</div>
+                            ${tooltipHtml}
                         </div>
                     `;
-                };
-
-                // Logic for Multi-Device (Show all devices in list)
-                if (isMultiDevice) {
-                    // Iterate through all series
-                    allSeries.forEach((s, i) => {
-                        const point = s.data[dataPointIndex];
-                        // Check if point exists to avoid errors
-                        if (point) {
-                            if (!timestamp) timestamp = point[0]; // Capture timestamp once
-                            tooltipHtml += getStatusRow(s.name, point[1]);
-                        }
-                    });
-                } 
-                // Logic for Single Device
-                else {
-                    const point = allSeries[seriesIndex].data[dataPointIndex];
-                    if (point) {
-                        timestamp = point[0];
-                        tooltipHtml += getStatusRow(allSeries[seriesIndex].name, point[1]);
-                    }
                 }
-
-                // Format the timestamp (Bold)
-                const formattedDate = timestamp ? new Date(timestamp).toLocaleString() : 'N/A';
-
-                return `
-                    <div style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-                        <div style="font-weight: bold; margin-bottom: 8px; color: #333; font-size: 12px;">${formattedDate}</div>
-                        ${tooltipHtml}
-                    </div>
-                `;
+            },
+            legend: {
+                show: isMultiDevice, // Show legend only if multiple devices
+                position: 'top',
+                horizontalAlign: 'center'
+            },
+            markers: {
+                size: 0,
+                hover: { size: 5 }
             }
-        },
-        legend: {
-            show: isMultiDevice, // Show legend only if multiple devices
-            position: 'top',
-            horizontalAlign: 'center'
-        },
-        markers: {
-            size: 0,
-            hover: { size: 5 }
-        }
+        };
     };
-};
 
     return (
         <Box sx={styles.mainContent} id="main-content">
@@ -689,17 +706,36 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             }}
                                         >
                                             {filterDevice === 'all' ? 'All Devices' : filterDevice} - Connectivity History
+                                            {mergeComparison && compareDevice && ` compared with ${compareDevice}`}
                                         </Typography>
                                         <Box sx={{ width: { xs: '100%', md: 'auto' } }}>
-                                            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                                            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center' }}>
                                                 {/* Compare Logic - Only relevant if a specific device is selected in main, or comparing against specific */}
                                                 {filterDevice !== 'all' && (
-                                                    <>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        {/* NEW: Checkbox for merging charts */}
+                                                        <FormControlLabel
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={mergeComparison}
+                                                                    onChange={(e) => setMergeComparison(e.target.checked)}
+                                                                    disabled={!compareDevice}
+                                                                    size="small"
+                                                                />
+                                                            }
+                                                            label="Merge Charts"
+                                                            sx={{ mr: 0 }}
+                                                        />
+                                                        
                                                         {compareMode ? (
                                                             <Button
                                                                 variant="outlined"
                                                                 size="small"
-                                                                onClick={() => setCompareMode(false)}
+                                                                onClick={() => {
+                                                                    setCompareMode(false);
+                                                                    setMergeComparison(false);
+                                                                    setCompareDevice('');
+                                                                }}
                                                                 sx={{ borderColor: '#d32f2f', color: '#d32f2f', width: { xs: '100%', sm: 'auto' } }}
                                                             >
                                                                 Cancel Compare
@@ -718,14 +754,14 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 </Select>
                                                             </FormControl>
                                                         )}
-                                                    </>
+                                                    </Box>
                                                 )}
                                             </Box>
                                         </Box>
                                     </Box>
                                     <Box sx={{ width: '100%', overflow: 'auto' }}>
                                         <Chart
-                                            // Pass true if multiple series exist (All devices)
+                                            // Pass true if multiple series exist (All devices or merged comparison)
                                             options={getChartOptions(processedFilteredData.series.length > 1)}
                                             series={processedFilteredData.series}
                                             type="area"
@@ -734,8 +770,8 @@ const CompressorAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                         />
                                     </Box>
 
-                                    {/* Comparison Charts */}
-                                    {compareMode && compareDevice && (
+                                    {/* Comparison Charts - Only render if NOT merged into main chart */}
+                                    {!mergeComparison && compareMode && compareDevice && (
                                         <Box sx={{ mt: 4 }}>
                                             <Typography gutterBottom sx={{ fontSize: '14px', fontWeight: 'bold', color: '#50342c', mb: 1 }}>
                                                 {compareDevice} - Connectivity History

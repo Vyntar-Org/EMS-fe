@@ -119,6 +119,7 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     }, []);
 
     // Function to generate Mock Analytics Data
+    // MODIFIED: All flow_rate values are now set to 0
     const fetchAnalyticsData = async (deviceName, startDate, endDate) => {
         await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -134,8 +135,8 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         while (current.isBefore(end)) {
             const entry = {
                 timestamp: current.format('YYYY-MM-DD HH:mm:ss'),
-                // Generate random values for flow_rate
-                flow_rate: Math.floor(Math.random() * 100) + 800, 
+                // Set value to 0 as requested
+                flow_rate: 0, 
             };
             data.push(entry);
             current = current.add(1, 'hour');
