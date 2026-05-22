@@ -37,10 +37,17 @@ const EMS_ANALYTICS = {
     `/applications/energy/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${from_datetime}&to_datetime=${to_datetime}`,
 };
 
+const TEMPERATURE_MACHINE_LIST = {
+  TEMPERATURE_MACHINE_LIST_DATA: "/applications/temperature/machine-list/",
+  TEMPERATURE_MACHINE_LIST_TREND: (slaveId, parameter, hours = 6) =>
+    `/applications/temperature/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}&hours=${hours}`,
+};
+
 export const API_URLS = {
   ...ADMINS,
   ...AUTH,
   ...EMS_DASHBOARD,
   ...EMS_MACHINE_LIST,
   ...EMS_ANALYTICS,
+  ...TEMPERATURE_MACHINE_LIST,
 };
