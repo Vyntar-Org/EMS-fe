@@ -96,7 +96,7 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
     }, 500);
   }, []);
 
-  // Helper to generate random mock logs based on device
+  // Helper to generate mock logs based on device
   const generateMockLogs = (device, start, end) => {
     const data = [];
     const startTime = start.valueOf();
@@ -106,6 +106,7 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
     if (diff <= 0) return [];
 
     const numberOfEntries = Math.floor(Math.random() * 50) + 50;
+    // Options for Water Level Monitoring
     const levels = ['Full', 'Low'];
     const motorStatuses = ['On', 'Off'];
 
@@ -117,16 +118,17 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
 
       // Generate data based on device type
       if (device === 'Water Inlet') {
-        entry.inlet_flow = (Math.random() * 100).toFixed(2);
-        entry.inlet_totalizer = Math.floor(Math.random() * 1000);
+        entry.inlet_flow = 0;
+        entry.inlet_totalizer = 0;
       } else if (device === 'Water Outlet') {
-        entry.outlet_flow = (Math.random() * 100).toFixed(2);
-        entry.outlet_totalizer = Math.floor(Math.random() * 1000);
+        entry.outlet_flow = 0;
+        entry.outlet_totalizer = 0;
       } else if (device === 'pH Monitor') {
-        entry.ph = (Math.random() * 3 + 6).toFixed(2); // Range 6-9
+        entry.ph = 0;
       } else if (device === 'TDS Monitor') {
-        entry.tds = Math.floor(Math.random() * 400 + 100); // Range 100-500
+        entry.tds = 0;
       } else if (device === 'Water Level Monitoring') {
+        // As requested: showing Low and Off (status strings) instead of 0
         entry.collection_tank_level = levels[Math.floor(Math.random() * levels.length)];
         entry.collection_motor_status = motorStatuses[Math.floor(Math.random() * motorStatuses.length)];
         entry.filter_out_level = levels[Math.floor(Math.random() * levels.length)];
@@ -418,18 +420,6 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
                 <Table stickyHeader sx={{ tableLayout: 'auto', width: '100%' }}>
                   <TableHead>
                     <TableRow className="log-table-header">
-                      {/* <TableCell 
-                        className="log-header-cell" 
-                        sx={{ 
-                          textTransform: 'capitalize',
-                          fontSize: { xs: '11px', sm: '14px' },
-                          padding: { xs: '8px 4px', sm: '16px' },
-                          fontWeight: 'bold',
-                          backgroundColor: "#0156a6", color: "#fff"
-                        }}
-                      >
-                        #
-                      </TableCell> */}
                       {currentColumns.map((col) => (
                         <TableCell 
                           key={col.key} 
@@ -451,15 +441,6 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
                     {paginatedLogs.length > 0 ? (
                       paginatedLogs.map((log, index) => (
                         <TableRow key={index} hover className="log-table-row">
-                          {/* <TableCell 
-                            className="log-table-cell"
-                            sx={{
-                              fontSize: { xs: '11px', sm: '14px' },
-                              padding: { xs: '8px 4px', sm: '16px' }
-                            }}
-                          >
-                            {(page - 1) * rowsPerPage + index + 1}
-                          </TableCell> */}
                           {currentColumns.map((col) => {
                             const value = log[col.key];
                             
@@ -498,7 +479,7 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
             </Box>
           )}
 
-          {/* Pagination - Updated to match WaterLogs style */}
+          {/* Pagination */}
           {shouldShowPagination && (
             <Box sx={{ 
               display: 'flex', 
