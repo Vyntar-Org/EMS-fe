@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { API_URLS } from "../../helpers/apiUrls";
 import { api } from "../../helpers/api";
-import EnergyMachineListSkeleton from "../skeletonLoaders/EnergyMachineListSkeleton";
 import {
   Box,
   Button,
@@ -37,6 +36,7 @@ import PremiumModal from "../common/PremiumModal";
 import ReactApexChart from "react-apexcharts";
 import { Loading } from "../common/Loading";
 import { TEMPERATURE_TREND_TAB_OPTIONS } from "../../constants/temperatureMachineList";
+import TemperatureMachineListSkeleton from "../skeletonLoaders/TemperatureMachineListSkeleton";
 
 const getMachineSlaveId = (machine) => machine?.slave_id ?? machine?.id;
 
@@ -169,7 +169,13 @@ const TemperatureMetricBlock = ({
         <Table size="small" sx={{ width: "100%", tableLayout: "fixed" }}>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold", border: 0, width: "50%" }}>
+              <TableCell
+                sx={{
+                  fontWeight: "bold",
+                  border: 0,
+                  width: { xs: "50%", lg: "60%" },
+                }}
+              >
                 <ResponsiveTextWrapper
                   fontSize="16px"
                   fontWeight="bold"
@@ -178,7 +184,11 @@ const TemperatureMetricBlock = ({
               </TableCell>
               <TableCell
                 align="right"
-                sx={{ fontWeight: "bold", border: 0, width: "50%" }}
+                sx={{
+                  fontWeight: "bold",
+                  border: 0,
+                  width: { xs: "50%", lg: "40%" },
+                }}
               >
                 <ResponsiveTextWrapper
                   fontSize="16px"
@@ -211,40 +221,42 @@ const TemperatureMetricBlock = ({
             ].map((row) => {
               const RowIcon = row.Icon;
               return (
-              <TableRow key={row.name}>
-                <TableCell sx={{ border: 0, py: 0.5, width: "50%" }}>
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <RowIcon
-                      sx={{
-                        fontSize: "14px",
-                        color: row.color,
-                        mr: 1,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Box width="calc(100% - 28px)">
-                      <ResponsiveTextWrapper
-                        fontSize="14px"
-                        color="#333333"
-                        fontWeight="bold"
-                        value={row.name}
+                <TableRow key={row.name}>
+                  <TableCell
+                    sx={{ border: 0, py: 0.5, width: { xs: "50%", lg: "60%" } }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <RowIcon
+                        sx={{
+                          fontSize: "14px",
+                          color: row.color,
+                          mr: 1,
+                          flexShrink: 0,
+                        }}
                       />
+                      <Box width="calc(100% - 14px - 8px)">
+                        <ResponsiveTextWrapper
+                          fontSize="14px"
+                          color="#333333"
+                          fontWeight="bold"
+                          value={row.name}
+                        />
+                      </Box>
                     </Box>
-                  </Box>
-                </TableCell>
-                <TableCell
-                  align="right"
-                  sx={{ border: 0, py: 0.5, width: "50%" }}
-                >
-                  <ResponsiveTextWrapper
-                    fontSize="14px"
-                    color="#333333"
-                    fontWeight="bold"
-                    value={row.value}
-                  />
-                </TableCell>
-              </TableRow>
-            );
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ border: 0, py: 0.5, width: { xs: "50%", lg: "40%" } }}
+                  >
+                    <ResponsiveTextWrapper
+                      fontSize="14px"
+                      color="#333333"
+                      fontWeight="bold"
+                      value={row.value}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
             })}
           </TableBody>
         </Table>
@@ -316,12 +328,7 @@ const handleDownload = (filteredMachines, selectedApp) => {
   URL.revokeObjectURL(url);
 };
 
-const ModalContentForTrend = ({
-  handleTabChange,
-  tab,
-  slaveId,
-  slaveName,
-}) => {
+const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
   const [chartResponse, setChartResponse] = useState(null);
   const [chartLoading, setChartLoading] = useState(true);
 
@@ -426,8 +433,7 @@ const ModalContentForTrend = ({
 
         w.globals.seriesNames.forEach((name, index) => {
           const value = series[index][dataPointIndex];
-          const color =
-            w.config.series[index]?.color || "#4A90E2";
+          const color = w.config.series[index]?.color || "#4A90E2";
           tooltipContent += `
           <div style="display: flex; align-items: center; margin-bottom: 6px; padding: 0 4px;">
             <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; margin-right: 8px;"></span>
@@ -508,7 +514,8 @@ const TemperatureMachineList = () => {
   const machines = machineListData?.machines || [];
 
   const filteredMachines = useMemo(() => {
-    if (slavesId == null || slavesId === "" || !machines.length) return machines;
+    if (slavesId == null || slavesId === "" || !machines.length)
+      return machines;
     return machines.filter(
       (m) => String(getMachineSlaveId(m)) === String(slavesId),
     );
@@ -573,15 +580,10 @@ const TemperatureMachineList = () => {
           isDownloadDisabled={!Boolean(filteredMachines?.length)}
         />
 
-        <Grid
-          container
-          height="calc(100% - 44px - 8px)"
-          pt={1}
-          overflow="auto"
-        >
+        <Grid container height="calc(100% - 44px - 8px)" pt={1} overflow="auto">
           <Grid item xs={12}>
             {isLoading ? (
-              <EnergyMachineListSkeleton />
+              <TemperatureMachineListSkeleton />
             ) : filteredMachines?.length ? (
               <Grid container rowGap={1} columnSpacing={1}>
                 {filteredMachines.map((mc) => (
@@ -590,6 +592,7 @@ const TemperatureMachineList = () => {
                     xs={12}
                     sm={6}
                     md={4}
+                    lg={3}
                     key={`temperature-machine-${mc.id}`}
                   >
                     <CustomCard childrenOtherProps={{ height: "100%" }}>
