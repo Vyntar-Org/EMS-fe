@@ -56,3 +56,12 @@ export const KEY_PARAMETER_OPTIONS_MAPPING = {
   i_b: "B Phase Current (A)",
   avg_i: "Average Current (A)",
 };
+
+export const UNIQUE_PASTEL_BGS = [
+  "#f4f8fa",
+  "#f7f5fa",
+  "#faf8f5",
+  "#f5faf6",
+  "#faf5f5",
+  "#fbfaf4",
+];

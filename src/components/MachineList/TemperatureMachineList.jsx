@@ -564,7 +564,10 @@ const TemperatureMachineList = () => {
     <>
       <Box
         sx={{
-          height: "calc(100vh - 64px - 16px)",
+          height: {
+            xs: "calc(100vh - 56px - 16px)",
+            md: "calc(100vh - 64px - 16px)",
+          },
         }}
       >
         <MachineListHeader

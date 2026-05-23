@@ -1,18 +1,12 @@
 import React, { useState } from "react";
 import { useCommonData } from "../../contexts/CommonDataContext";
-import {
-  Box,
-  Button,
-  Grid,
-  IconButton,
-  Skeleton,
-  Tooltip,
-} from "@mui/material";
+import { Box, Button, Grid, Typography } from "@mui/material";
 import { CustomAutocomplete } from "../common/CustomAutocomplete";
 import { RestartAlt, Search } from "@mui/icons-material";
 import {
   KEY_PARAMETER_OPTIONS_MAPPING,
   PARAMETER_OPTIONS,
+  UNIQUE_PASTEL_BGS,
 } from "../../constants/energyAnalytics";
 import { CustomDatePicker } from "../common/CustomDatePicker";
 import { api } from "../../helpers/api";
@@ -20,165 +14,201 @@ import { API_URLS } from "../../helpers/apiUrls";
 import dayjs from "dayjs";
 import NoDataFound from "../common/errors/NoDataFound";
 import ReactApexChart from "react-apexcharts";
+import { downAnalyticsSampleData } from "../../helpers/common";
+import { Loading } from "../common/Loading";
 
-const AnalyticsHeader = ({ slaveOptions, handleSearch, handleReset }) => {
-  const [payload, setPayload] = useState(null);
+const getProcessedChartData = (rawAnalytics, activeKeys) => {
+  if (!rawAnalytics?.data || rawAnalytics.data.length === 0) {
+    return { series: [], categories: [] };
+  }
 
-  const handleFieldCh = (key, value) => {
-    setPayload((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
+  const rawData = rawAnalytics.data;
+  const maxPoints = 1200;
 
-  return (
-    <Box
-      sx={{
-        pb: 1,
-        borderBottom: "1px solid",
-        borderColor: "divider",
-      }}
-    >
-      <Grid container gap={2} alignItems="center">
-        <Grid item xs={12} sm md lg={3}>
-          <CustomAutocomplete
-            options={slaveOptions}
-            onChange={(val) => handleFieldCh("slave_id", val)}
-            value={payload?.slave_id || ""}
-            label="Select Devices"
-            size="small"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
-                backgroundColor: "#f9f9f9",
-                transition: "0.3s",
-                "&:hover": {
-                  backgroundColor: "#fff",
-                },
-              },
-            }}
-          />
-        </Grid>
+  const series = activeKeys.map((key) => {
+    const sampledDataPoints = downAnalyticsSampleData(rawData, maxPoints, key);
+    return {
+      name: KEY_PARAMETER_OPTIONS_MAPPING[key] || key,
+      data: sampledDataPoints.map((row) => row[key] ?? null),
+    };
+  });
 
-        <Grid item xs={12} sm md lg={3}>
-          <CustomAutocomplete
-            multiple
-            options={PARAMETER_OPTIONS}
-            onChange={(val) => handleFieldCh("parameters", val)}
-            value={payload?.parameters || ""}
-            label="Select Parameters"
-            size="small"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
-                backgroundColor: "#f9f9f9",
-                transition: "0.3s",
-                "&:hover": {
-                  backgroundColor: "#fff",
-                },
-              },
-            }}
-          />
-        </Grid>
-
-        <Grid item xs={12} md={4.5} lg>
-          <CustomDatePicker
-            mode="datetimerangepicker"
-            onChange={(val) => handleFieldCh("dateTime", val)}
-            value={payload?.dateTime || ""}
-          />
-        </Grid>
-
-        <Grid item xs="auto" display="flex" gap={1} ml={{ xs: "auto", md: 0 }}>
-          <Tooltip title="Search">
-            <span>
-              <Button
-                variant="contained"
-                onClick={() => handleSearch(payload)}
-                sx={{
-                  width: 40,
-                  height: 40,
-                  minWidth: 0,
-                  p: 0,
-                  borderRadius: 2,
-                  boxShadow: "none",
-                  backgroundColor: (theme) =>
-                    theme.palette.primary.main || "#1976d2",
-                  "&:hover": {
-                    boxShadow: "none",
-                    backgroundColor: (theme) =>
-                      theme.palette.primary.dark || "#115293",
-                  },
-                }}
-              >
-                <Search sx={{ fontSize: 20, color: "#fff" }} />
-              </Button>
-            </span>
-          </Tooltip>
-
-          <Tooltip title="Reset">
-            <span>
-              <Button
-                variant="contained"
-                onClick={handleReset}
-                sx={{
-                  width: 40,
-                  height: 40,
-                  minWidth: 0,
-                  p: 0,
-                  borderRadius: 2,
-                  boxShadow: "none",
-                  backgroundColor: "#f5f5f5",
-                  color: "#666666",
-                  "&:hover": {
-                    boxShadow: "none",
-                    backgroundColor: "#e0e0e0",
-                    color: "#333333",
-                  },
-                }}
-              >
-                <RestartAlt sx={{ fontSize: 20 }} />
-              </Button>
-            </span>
-          </Tooltip>
-        </Grid>
-      </Grid>
-    </Box>
+  const baseSampledData = downAnalyticsSampleData(
+    rawData,
+    maxPoints,
+    activeKeys[0] || "timestamp",
   );
+  const categories = baseSampledData.map((item) =>
+    item.timestamp ? dayjs(item.timestamp).format("DD MMM HH:mm") : "",
+  );
+
+  return { series, categories };
 };
+
+const GlobalFiltersRow = ({ dateTime, onDateChange, addNewComparisonRow }) => (
+  <Box
+    sx={{
+      pb: 2,
+      borderBottom: "1px dashed",
+      borderColor: "divider",
+      display: "flex",
+      gap: 2,
+    }}
+  >
+    <Grid container alignItems="end" spacing={2}>
+      <Grid item xs={12} md={8} lg={6}>
+        <Typography
+          variant="subtitle2"
+          sx={{ mb: 0.5, color: "text.secondary" }}
+        >
+          Global Date/Time
+        </Typography>
+        <CustomDatePicker
+          mode="datetimerangepicker"
+          onChange={onDateChange}
+          value={dateTime || ""}
+        />
+      </Grid>
+
+      <Grid item xs={12} sm="auto" ml="auto">
+        <Button
+          fullWidth
+          size="large"
+          disableElevation
+          sx={{
+            fontWeight: "bold",
+            borderRadius: "16px",
+          }}
+          variant="contained"
+          color="secondary"
+          onClick={addNewComparisonRow}
+        >
+          + Add Device To Compare
+        </Button>
+      </Grid>
+    </Grid>
+  </Box>
+);
+
+const DeviceFilterRow = ({
+  comparisonId,
+  slaveOptions,
+  payload,
+  handleFieldChange,
+  handleSearch,
+  handleReset,
+  showCancel,
+}) => (
+  <Box sx={{ py: 1.5, px: 2, bgcolor: "#fff", borderRadius: 2, mb: 1 }}>
+    <Grid container spacing={2} alignItems="center">
+      <Grid item xs={12} md={3.5}>
+        <CustomAutocomplete
+          options={slaveOptions}
+          onChange={(val) => handleFieldChange(comparisonId, "slave_id", val)}
+          value={payload?.slave_id || ""}
+          label="Select Device"
+          size="small"
+        />
+      </Grid>
+      <Grid item xs={12} md={4.5}>
+        <CustomAutocomplete
+          multiple
+          options={PARAMETER_OPTIONS}
+          onChange={(val) => handleFieldChange(comparisonId, "parameters", val)}
+          value={payload?.parameters || ""}
+          label="Select Parameters"
+          size="small"
+        />
+      </Grid>
+      <Grid
+        item
+        xs={12}
+        md={4}
+        display="flex"
+        gap={1}
+        justifyContent="flex-end"
+      >
+        <Button
+          variant="contained"
+          onClick={() => handleSearch(comparisonId)}
+          startIcon={<Search />}
+          size="small"
+          disableElevation
+          sx={{
+            fontWeight: "bold",
+            borderRadius: "8px",
+          }}
+        >
+          Analyze
+        </Button>
+        <Button
+          variant="outlined"
+          color="inherit"
+          onClick={() => handleReset(comparisonId)}
+          size="small"
+          disableElevation
+          sx={{
+            fontWeight: "bold",
+            borderRadius: "8px",
+          }}
+        >
+          <RestartAlt fontSize="small" />
+        </Button>
+        {showCancel && (
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => handleReset(comparisonId, true)}
+            size="small"
+            disableElevation
+            sx={{
+              fontWeight: "bold",
+              borderRadius: "8px",
+            }}
+          >
+            Cancel
+          </Button>
+        )}
+      </Grid>
+    </Grid>
+  </Box>
+);
 
 const EnergyAnalytics = () => {
   const { slavesData } = useCommonData();
-  const [isLoading, setIsLoading] = useState(false);
-  const [analyticsData, setAnalyticsData] = useState(null);
-  const [selectedParameters, setSelectedParameters] = useState(null);
+  const [globalDateTime, setGlobalDateTime] = useState(null);
+  const [payloads, setPayloads] = useState({ 1: null });
+  const [analyticsDataMap, setAnalyticsDataMap] = useState({});
+  const [selectedParamsMap, setSelectedParamsMap] = useState({});
+  const [loadingMap, setLoadingMap] = useState({});
+  const [rowIds, setRowIds] = useState([1]);
 
-  const handleSearch = async (payload) => {
-    if (!payload) return;
+  const handleFieldChange = (id, key, value) => {
+    setPayloads((prev) => ({ ...prev, [id]: { ...prev[id], [key]: value } }));
+  };
 
-    setIsLoading(true);
+  const handleSearch = async (id) => {
+    const currentPayload = payloads[id];
+    if (!currentPayload?.slave_id) return;
+
+    setLoadingMap((prev) => ({ ...prev, [id]: true }));
     try {
-      const slaveId = payload?.slave_id?.value ?? "";
-
-      const parameterValues = payload?.parameters
-        ? payload.parameters
+      const slaveId = currentPayload.slave_id?.value ?? "";
+      const parameterValues = currentPayload.parameters
+        ? currentPayload.parameters
             .map((p) => p?.value)
             .filter(Boolean)
             .join(",")
         : "";
 
-      const startDateObj = payload?.dateTime?.[0];
-      const endDateObj = payload?.dateTime?.[1];
-
-      const formattedStart =
-        startDateObj?.isValid && startDateObj.isValid()
-          ? startDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
-          : "";
-
-      const formattedEnd =
-        endDateObj?.isValid && endDateObj.isValid()
-          ? endDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
-          : "";
+      const startDateObj = globalDateTime?.[0];
+      const endDateObj = globalDateTime?.[1];
+      const formattedStart = startDateObj?.isValid?.()
+        ? startDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
+        : "";
+      const formattedEnd = endDateObj?.isValid?.()
+        ? endDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
+        : "";
 
       const newApiUrl = API_URLS.EMS_ANALYTICS_DATA(
         slaveId,
@@ -186,139 +216,180 @@ const EnergyAnalytics = () => {
         formattedStart,
         formattedEnd,
       );
-
       const res = await api.get(newApiUrl);
       if (res?.success) {
-        setAnalyticsData(res?.data);
-        setSelectedParameters(payload?.parameters);
+        setAnalyticsDataMap((prev) => ({ ...prev, [id]: res.data }));
+        setSelectedParamsMap((prev) => ({
+          ...prev,
+          [id]: currentPayload.parameters,
+        }));
       }
     } catch (error) {
-      console.error("energy analytics api failed:", error);
+      console.error(`API Error on row ${id}:`, error);
     } finally {
-      setIsLoading(false);
+      setLoadingMap((prev) => ({ ...prev, [id]: false }));
     }
   };
 
-  const handleReset = () => {
-    setAnalyticsData(null);
-    setSelectedParameters(null);
+  const handleReset = (id, shouldRemoveRow = false) => {
+    if (shouldRemoveRow && id !== 1) {
+      setRowIds((prev) => prev.filter((rowId) => rowId !== id));
+      setPayloads((prev) => {
+        const c = { ...prev };
+        delete c[id];
+        return c;
+      });
+      setAnalyticsDataMap((prev) => {
+        const c = { ...prev };
+        delete c[id];
+        return c;
+      });
+      setSelectedParamsMap((prev) => {
+        const c = { ...prev };
+        delete c[id];
+        return c;
+      });
+      setLoadingMap((prev) => {
+        const c = { ...prev };
+        delete c[id];
+        return c;
+      });
+    } else {
+      setPayloads((prev) => ({ ...prev, [id]: null }));
+      setAnalyticsDataMap((prev) => ({ ...prev, [id]: null }));
+      setSelectedParamsMap((prev) => ({ ...prev, [id]: null }));
+    }
   };
 
-  const activeKeys = selectedParameters?.flatMap((param) => {
-    return param.value ? param.value.split(",") : [];
-  });
-
-  const chartSeries = activeKeys?.map((key) => {
-    return {
-      name: KEY_PARAMETER_OPTIONS_MAPPING[key] || key,
-      data: analyticsData?.data?.map((row) => row[key] ?? null),
-    };
-  });
-
-  const chartCategories = analyticsData?.data?.map((item) =>
-    item.timestamp ? dayjs(item.timestamp).format("DD MMM HH:mm") : "",
-  );
-
-  const chartOptions = {
-    chart: {
-      type: "line",
-      zoom: { enabled: true },
-      toolbar: { show: false },
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    stroke: {
-      curve: "smooth",
-      width: 2,
-    },
-    xaxis: {
-      categories: chartCategories,
-      labels: {
-        rotate: -45,
-        style: {
-          fontSize: "12px",
-          colors: "#595959",
-        },
-      },
-    },
-    yaxis: {
-      labels: {
-        formatter: (val) => (val !== null ? val.toFixed(2) : ""),
-      },
-    },
-    tooltip: {
-      shared: true,
-      intersect: false,
-      x: {
-        format: "dd MMM yyyy HH:mm:ss",
-      },
-    },
-    legend: {
-      position: "top",
-      horizontalAlign: "left",
-      offsetY: 0,
-    },
-    grid: {
-      borderColor: "#f1f1f1",
-    },
+  const addNewComparisonRow = () => {
+    const nextId = Math.max(...rowIds, 0) + 1;
+    setRowIds((prev) => [...prev, nextId]);
   };
+
+  const slaveOptions =
+    slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) ||
+    [];
 
   return (
     <Box
       sx={{
         height: {
-          sm: "calc(100vh - 64px - 16px)",
+          xs: "calc(100vh - 56px - 16px)",
+          md: "calc(100vh - 64px - 16px)",
         },
       }}
     >
-      <AnalyticsHeader
-        slaveOptions={slavesData?.map((f) => ({
-          label: f?.slave_name,
-          value: f?.slave_id,
-        }))}
-        handleSearch={handleSearch}
-        handleReset={handleReset}
+      <GlobalFiltersRow
+        dateTime={globalDateTime}
+        onDateChange={(val) => setGlobalDateTime(val)}
+        addNewComparisonRow={addNewComparisonRow}
       />
 
       <Box
-        height={{
-          sm: "calc(100% - 160px)",
-          md: "calc(100% - 48px)",
-        }}
+        height={{ xs: "calc(100% - 141px)", md: "calc(100% - 82px)" }}
         pt={1}
-        overflow={{ sm: "auto" }}
-        bgcolor={{
-          ...(!isLoading && analyticsData?.data?.length
-            ? { sm: "#f5f5f5" }
-            : {}),
-        }}
+        overflow="auto"
+        display="flex"
+        flexDirection="column"
+        gap={1}
       >
-        {isLoading ? (
-          <Skeleton
-            sx={{ borderRadius: "16px" }}
-            animation="wave"
-            variant="rounded"
-            width="100%"
-            height="100%"
-          />
-        ) : !analyticsData?.data?.length ? (
-          <NoDataFound />
-        ) : (
-          <Box
-            height={{ xs: 500, sm: "100%" }}
-            width="100%"
-            overflow={{ sm: "hidden" }}
-          >
-            <ReactApexChart
-              options={chartOptions}
-              series={chartSeries}
-              type="line"
-              height="100%"
-              width="100%"
-            />
-          </Box>
-        )}
+        {rowIds.map((id, index) => {
+          const rawAnalytics = analyticsDataMap[id];
+          const currentSelectedParams = selectedParamsMap[id];
+          const isLoading = loadingMap[id];
+
+          const activeKeys =
+            currentSelectedParams?.flatMap((param) =>
+              param.value ? param.value.split(",") : [],
+            ) || [];
+
+          const processedData = getProcessedChartData(rawAnalytics, activeKeys);
+
+          const selectedDeviceIdsInOtherRows = Object.keys(payloads)
+            .filter((rowId) => Number(rowId) !== id)
+            .map((rowId) => payloads[rowId]?.slave_id?.value)
+            .filter(Boolean);
+
+          const filteredSlaveOptions = slaveOptions.filter(
+            (option) => !selectedDeviceIdsInOtherRows.includes(option.value),
+          );
+
+          const uniqueBgColor =
+            UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
+
+          const performanceChartOptions = {
+            chart: {
+              type: "line",
+              zoom: { enabled: true },
+              toolbar: { show: false },
+            },
+            dataLabels: { enabled: false },
+            markers: { size: 0, hover: { sizeOffset: 4 } },
+            stroke: { curve: "straight", width: 1.5 },
+            xaxis: {
+              categories: processedData.categories,
+              labels: { rotate: -45, style: { fontSize: "10px" } },
+              tooltip: { enabled: false },
+            },
+            yaxis: {
+              labels: {
+                formatter: (val) => (val !== null ? val.toFixed(2) : ""),
+              },
+            },
+            tooltip: { shared: true, intersect: false },
+            legend: { position: "top", horizontalAlign: "left" },
+            grid: { borderColor: "#f1f1f1" },
+          };
+
+          const deviceLabel =
+            payloads[id]?.slave_id?.label || `Device Segment ${id}`;
+
+          return (
+            <Box
+              key={id}
+              sx={{
+                p: 1,
+                borderRadius: 3,
+                bgcolor: uniqueBgColor,
+                transition: "background-color 0.3s ease",
+                boxShadow: "0px 4px 12px rgba(0,0,0,0.02)",
+                // height: "100%",
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                {deviceLabel} Analysis{" "}
+                {rawAnalytics?.data?.length > 1200 &&
+                  `(Downsampled from ${rawAnalytics.data.length} points)`}
+              </Typography>
+
+              <DeviceFilterRow
+                comparisonId={id}
+                slaveOptions={filteredSlaveOptions}
+                payload={payloads[id]}
+                handleFieldChange={handleFieldChange}
+                handleSearch={handleSearch}
+                handleReset={handleReset}
+                showCancel={rowIds.length > 1}
+              />
+
+              <Box sx={{ height: { xs: 500, sm: 380 } }}>
+                {isLoading ? (
+                  <Loading />
+                ) : !processedData.series.length ? (
+                  <NoDataFound />
+                ) : (
+                  <ReactApexChart
+                    options={performanceChartOptions}
+                    series={processedData.series}
+                    type="line"
+                    height="100%"
+                    width="100%"
+                  />
+                )}
+              </Box>
+            </Box>
+          );
+        })}
       </Box>
     </Box>
   );
