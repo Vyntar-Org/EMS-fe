@@ -37,6 +37,18 @@ const EMS_ANALYTICS = {
     `/applications/energy/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${from_datetime}&to_datetime=${to_datetime}`,
 };
 
+const EMS_LOGS = {
+  EMS_LOGS_DATA: (
+    slaveId,
+    parameters,
+    from_datetime,
+    to_datetime,
+    limit = 50,
+    offset = 0,
+  ) =>
+    `/admin/device-logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${from_datetime}&end_datetime=${to_datetime}&limit=${limit}&offset=${offset}`,
+};
+
 const TEMPERATURE_MACHINE_LIST = {
   TEMPERATURE_MACHINE_LIST_DATA: "/applications/temperature/machine-list/",
   TEMPERATURE_MACHINE_LIST_TREND: (slaveId, parameter, hours = 6) =>
@@ -50,4 +62,5 @@ export const API_URLS = {
   ...EMS_MACHINE_LIST,
   ...EMS_ANALYTICS,
   ...TEMPERATURE_MACHINE_LIST,
+  ...EMS_LOGS,
 };

@@ -14,12 +14,8 @@ const NoDataFound = ({ message = "No data available", icon }) => {
       sx={{ opacity: 0.6 }}
       color="warning.main"
     >
-      {icon || <Error sx={{ fontSize: { sm: 40, md: 55 } }} />}
-      <Typography
-        textAlign="center"
-        fontSize={{ md: "1.25rem" }}
-        fontWeight="bolder"
-      >
+      {icon || <Error sx={{ fontSize: 55 }} />}
+      <Typography textAlign="center" fontSize="1.25rem" fontWeight="bolder">
         {message}
       </Typography>
     </Box>

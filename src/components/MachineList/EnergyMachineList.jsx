@@ -49,7 +49,7 @@ const MachineListHeader = ({
     <Box
       sx={{
         pb: 1,
-        borderBottom: "1px solid",
+        borderBottom: "1px dashed",
         borderColor: "divider",
       }}
     >
@@ -831,7 +831,7 @@ const EnergyMachineList = () => {
         sx={{
           height: {
             xs: "calc(100vh - 56px - 16px)",
-            md: "calc(100vh - 64px - 16px)",
+            sm: "calc(100vh - 64px - 16px)",
           },
         }}
       >

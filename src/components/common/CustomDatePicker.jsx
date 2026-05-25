@@ -6,6 +6,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import dayjs from "dayjs";
+import { basePickerStyles } from "../../helpers/common";
 
 export const CustomDatePicker = ({
   mode = "datepicker", // datepicker | timepicker | datetimepicker | daterangepicker | timerangepicker | datetimerangepicker
@@ -18,17 +19,6 @@ export const CustomDatePicker = ({
   minDate,
   maxDate,
 }) => {
-  const basePickerStyles = {
-    "& .MuiOutlinedInput-root": {
-      borderRadius: 2,
-      backgroundColor: "#f9f9f9",
-      transition: "0.3s",
-      "&:hover": {
-        backgroundColor: "#fff",
-      },
-    },
-  };
-
   const [startDate, endDate] = Array.isArray(value) ? value : [null, null];
 
   const handleRangeChange = (newValue, type) => {

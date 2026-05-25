@@ -73,3 +73,14 @@ export const downAnalyticsSampleData = (data, threshold, key) => {
   sampled[threshold - 1] = data[data.length - 1];
   return sampled;
 };
+
+export const basePickerStyles = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 2,
+    backgroundColor: "#f9f9f9",
+    transition: "0.3s",
+    "&:hover": {
+      backgroundColor: "#fff",
+    },
+  },
+};

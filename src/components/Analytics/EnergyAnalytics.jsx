@@ -5,7 +5,6 @@ import { CustomAutocomplete } from "../common/CustomAutocomplete";
 import { RestartAlt, Search } from "@mui/icons-material";
 import {
   KEY_PARAMETER_OPTIONS_MAPPING,
-  PARAMETER_OPTIONS,
   UNIQUE_PASTEL_BGS,
 } from "../../constants/energyAnalytics";
 import { CustomDatePicker } from "../common/CustomDatePicker";
@@ -14,7 +13,10 @@ import { API_URLS } from "../../helpers/apiUrls";
 import dayjs from "dayjs";
 import NoDataFound from "../common/errors/NoDataFound";
 import ReactApexChart from "react-apexcharts";
-import { downAnalyticsSampleData } from "../../helpers/common";
+import {
+  basePickerStyles,
+  downAnalyticsSampleData,
+} from "../../helpers/common";
 import { Loading } from "../common/Loading";
 
 const getProcessedChartData = (rawAnalytics, activeKeys) => {
@@ -98,6 +100,7 @@ const DeviceFilterRow = ({
   handleSearch,
   handleReset,
   showCancel,
+  parameterOptions,
 }) => (
   <Box sx={{ py: 1.5, px: 2, bgcolor: "#fff", borderRadius: 2, mb: 1 }}>
     <Grid container spacing={2} alignItems="center">
@@ -108,16 +111,18 @@ const DeviceFilterRow = ({
           value={payload?.slave_id || ""}
           label="Select Device"
           size="small"
+          sx={basePickerStyles}
         />
       </Grid>
       <Grid item xs={12} md={4.5}>
         <CustomAutocomplete
           multiple
-          options={PARAMETER_OPTIONS}
+          options={parameterOptions}
           onChange={(val) => handleFieldChange(comparisonId, "parameters", val)}
           value={payload?.parameters || ""}
           label="Select Parameters"
           size="small"
+          sx={basePickerStyles}
         />
       </Grid>
       <Grid
@@ -175,7 +180,7 @@ const DeviceFilterRow = ({
 );
 
 const EnergyAnalytics = () => {
-  const { slavesData } = useCommonData();
+  const { slavesData, parametersData } = useCommonData();
   const [globalDateTime, setGlobalDateTime] = useState(null);
   const [payloads, setPayloads] = useState({ 1: null });
   const [analyticsDataMap, setAnalyticsDataMap] = useState({});
@@ -275,7 +280,7 @@ const EnergyAnalytics = () => {
       sx={{
         height: {
           xs: "calc(100vh - 56px - 16px)",
-          md: "calc(100vh - 64px - 16px)",
+          sm: "calc(100vh - 64px - 16px)",
         },
       }}
     >
@@ -370,6 +375,7 @@ const EnergyAnalytics = () => {
                 handleSearch={handleSearch}
                 handleReset={handleReset}
                 showCancel={rowIds.length > 1}
+                parameterOptions={parametersData}
               />
 
               <Box sx={{ height: { xs: 500, sm: 380 } }}>

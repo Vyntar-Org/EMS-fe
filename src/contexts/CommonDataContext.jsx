@@ -1,8 +1,15 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { api } from "../helpers/api";
 import { API_URLS } from "../helpers/apiUrls";
 import { useAuth } from "./AuthContext";
 import { useApplications } from "./ApplicationContext";
+import { PARAMETER_OPTIONS } from "../constants/energyAnalytics";
 
 const CommonDataContext = createContext();
 
@@ -26,6 +33,11 @@ export const CommonDataContextProvider = ({ children }) => {
     }
   };
 
+  const parametersData = useMemo(
+    () => (selectedApp ? PARAMETER_OPTIONS?.[selectedApp] || [] : []),
+    [selectedApp],
+  );
+
   useEffect(() => {
     if ((user, selectedApp)) {
       fetchData(selectedApp);
@@ -36,6 +48,7 @@ export const CommonDataContextProvider = ({ children }) => {
     <CommonDataContext.Provider
       value={{
         slavesData,
+        parametersData,
       }}
     >
       {children}
