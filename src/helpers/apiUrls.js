@@ -81,7 +81,12 @@ const TEMPERATURE_LOGS = {
 };
 
 const TEMPERATURE_ANALYTICS = {
-  TEMPERATURE_ANALYTICS_DATA: (slaveId, parameters, from_datetime, to_datetime) =>
+  TEMPERATURE_ANALYTICS_DATA: (
+    slaveId,
+    parameters,
+    from_datetime,
+    to_datetime,
+  ) =>
     `/applications/temperature/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${encodeURIComponent(from_datetime)}&to_datetime=${encodeURIComponent(to_datetime)}`,
 };
 
