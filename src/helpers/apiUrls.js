@@ -77,7 +77,7 @@ const TEMPERATURE_LOGS = {
     limit = 50,
     offset = 0,
   ) =>
-    `/applications/temperature/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${encodeURIComponent(start_datetime)}&end_datetime=${encodeURIComponent(end_datetime)}&limit=${limit}&offset=${offset}`,
+    `/applications/temperature/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
 const TEMPERATURE_ANALYTICS = {
@@ -87,7 +87,7 @@ const TEMPERATURE_ANALYTICS = {
     from_datetime,
     to_datetime,
   ) =>
-    `/applications/temperature/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${encodeURIComponent(from_datetime)}&to_datetime=${encodeURIComponent(to_datetime)}`,
+    `/applications/temperature/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${from_datetime}&to_datetime=${to_datetime}`,
 };
 
 const SOLAR_MACHINE_LIST = {
@@ -105,12 +105,12 @@ const SOLAR_LOGS = {
     limit = 50,
     offset = 0,
   ) =>
-    `/applications/solar/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${encodeURIComponent(start_datetime)}&end_datetime=${encodeURIComponent(end_datetime)}&limit=${limit}&offset=${offset}`,
+    `/applications/solar/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
 const SOLAR_ANALYTICS = {
   SOLAR_ANALYTICS_DATA: (slaveId, parameters, from_datetime, to_datetime) =>
-    `/applications/solar/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${encodeURIComponent(from_datetime)}&to_datetime=${encodeURIComponent(to_datetime)}`,
+    `/applications/solar/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${from_datetime}&to_datetime=${to_datetime}`,
 };
 
 export const API_URLS = {
