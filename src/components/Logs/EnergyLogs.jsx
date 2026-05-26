@@ -12,6 +12,8 @@ import { KEY_PARAMETER_OPTIONS_MAPPING } from "../../constants/energyAnalytics";
 import { CustomTable } from "../common/CustomTable";
 import dayjs from "dayjs";
 
+const getDefaultDateRange = () => [dayjs().subtract(24, "hour"), dayjs()];
+
 const LogsFilterHeader = ({
   slaveOptions,
   parameterOptions,
@@ -131,7 +133,10 @@ const LogsFilterHeader = ({
               <Button
                 variant="contained"
                 onClick={() => {
-                  setPayload(null);
+                  setPayload((prev) => ({
+                    ...(prev || {}),
+                    dateTime: getDefaultDateRange(),
+                  }));
                   handleReset();
                 }}
                 sx={{
@@ -174,7 +179,9 @@ const EnergyLogs = () => {
   const { slavesData, parametersData } = useCommonData();
   const [loading, setLoading] = useState(null);
   const [logsData, setLogsData] = useState(null);
-  const [payload, setPayload] = useState(null);
+  const [payload, setPayload] = useState({
+    dateTime: getDefaultDateRange(),
+  });
   const [apiPaginationParams, setApiPaginationParams] = useState({
     limit: 50,
     offset: 0,

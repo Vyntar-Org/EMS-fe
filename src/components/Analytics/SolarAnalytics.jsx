@@ -3,10 +3,8 @@ import { useCommonData } from "../../contexts/CommonDataContext";
 import { Box, Button, Grid, Typography } from "@mui/material";
 import { CustomAutocomplete } from "../common/CustomAutocomplete";
 import { RestartAlt, Search } from "@mui/icons-material";
-import {
-  KEY_PARAMETER_OPTIONS_MAPPING,
-  UNIQUE_PASTEL_BGS,
-} from "../../constants/energyAnalytics";
+import { UNIQUE_PASTEL_BGS } from "../../constants/energyAnalytics";
+import { SOLAR_LOG_COLUMN_MAPPING } from "../../constants/solarLogs";
 import { CustomDatePicker } from "../common/CustomDatePicker";
 import { api } from "../../helpers/api";
 import { API_URLS } from "../../helpers/apiUrls";
@@ -26,13 +24,18 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
     return { series: [], categories: [] };
   }
 
+  const plotKeys = activeKeys.filter((key) => key !== "timestamp");
+  if (!plotKeys.length) {
+    return { series: [], categories: [] };
+  }
+
   const rawData = rawAnalytics.data;
   const maxPoints = 1200;
 
-  const series = activeKeys.map((key) => {
+  const series = plotKeys.map((key) => {
     const sampledDataPoints = downAnalyticsSampleData(rawData, maxPoints, key);
     return {
-      name: KEY_PARAMETER_OPTIONS_MAPPING[key] || key,
+      name: SOLAR_LOG_COLUMN_MAPPING[key] || key,
       data: sampledDataPoints.map((row) => row[key] ?? null),
     };
   });
@@ -40,7 +43,7 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
   const baseSampledData = downAnalyticsSampleData(
     rawData,
     maxPoints,
-    activeKeys[0] || "timestamp",
+    plotKeys[0],
   );
   const categories = baseSampledData.map((item) =>
     item.timestamp ? dayjs(item.timestamp).format("DD MMM HH:mm") : "",
@@ -181,7 +184,7 @@ const DeviceFilterRow = ({
   </Box>
 );
 
-const EnergyAnalytics = () => {
+const SolarAnalytics = () => {
   const { slavesData, parametersData } = useCommonData();
   const [globalDateTime, setGlobalDateTime] = useState(getDefaultDateRange());
   const [payloads, setPayloads] = useState({ 1: null });
@@ -211,19 +214,19 @@ const EnergyAnalytics = () => {
       const startDateObj = globalDateTime?.[0];
       const endDateObj = globalDateTime?.[1];
       const formattedStart = startDateObj?.isValid?.()
-        ? startDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
+        ? startDateObj.format("YYYY-MM-DD HH:mm:ss")
         : "";
       const formattedEnd = endDateObj?.isValid?.()
-        ? endDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
+        ? endDateObj.format("YYYY-MM-DD HH:mm:ss")
         : "";
 
-      const newApiUrl = API_URLS.EMS_ANALYTICS_DATA(
+      const url = API_URLS.SOLAR_ANALYTICS_DATA(
         slaveId,
         parameterValues,
         formattedStart,
         formattedEnd,
       );
-      const res = await api.get(newApiUrl);
+      const res = await api.get(url);
       if (res?.success) {
         setAnalyticsDataMap((prev) => ({ ...prev, [id]: res.data }));
         setSelectedParamsMap((prev) => ({
@@ -232,7 +235,7 @@ const EnergyAnalytics = () => {
         }));
       }
     } catch (error) {
-      console.error(`API Error on row ${id}:`, error);
+      console.error(`Solar analytics API error on row ${id}:`, error);
     } finally {
       setLoadingMap((prev) => ({ ...prev, [id]: false }));
     }
@@ -360,7 +363,6 @@ const EnergyAnalytics = () => {
                 bgcolor: uniqueBgColor,
                 transition: "background-color 0.3s ease",
                 boxShadow: "0px 4px 12px rgba(0,0,0,0.02)",
-                // height: "100%",
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
@@ -403,4 +405,4 @@ const EnergyAnalytics = () => {
   );
 };
 
-export default EnergyAnalytics;
+export default SolarAnalytics;

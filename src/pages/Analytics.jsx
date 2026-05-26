@@ -1,10 +1,14 @@
 import React from "react";
 import EnergyAnalytics from "../components/Analytics/EnergyAnalytics";
+import SolarAnalytics from "../components/Analytics/SolarAnalytics";
+import TemperatureAnalytics from "../components/Analytics/TemperatureAnalytics";
 import { useApplications } from "../contexts/ApplicationContext";
 import { Box } from "@mui/material";
 
 const ANALYTICS_CONFIG = {
   ENERGY: EnergyAnalytics,
+  SOLAR: SolarAnalytics,
+  TEMPERATURE: TemperatureAnalytics,
 };
 
 const Analytics = () => {

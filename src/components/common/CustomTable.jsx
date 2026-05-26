@@ -22,6 +22,7 @@ import ResponsiveTextWrapper from "./ResponsiveTextWrapper";
 export const CustomTable = ({
   data,
   columns,
+  fillWidth = false,
   pageIndex: serverPageIndex,
   pageSize: serverPageSize,
   totalRowCount,
@@ -66,7 +67,13 @@ export const CustomTable = ({
   });
 
   const { rows } = table.getRowModel();
-  const totalTableWidth = table.getTotalSize();
+
+  const cellWidthSx = fillWidth
+    ? { flex: 1, minWidth: 0 }
+    : (size) => ({
+        minWidth: size,
+        maxWidth: size,
+      });
 
   const finalTotalCount = isServerSide
     ? totalRowCount || 0
@@ -83,6 +90,7 @@ export const CustomTable = ({
           style={{
             ...style,
             display: "flex",
+            width: fillWidth ? "100%" : undefined,
             backgroundColor:
               index % 2 === 0 ? "background.default " : "#e7f3ff4a",
           }}
@@ -94,11 +102,12 @@ export const CustomTable = ({
               component="div"
               key={cell.id}
               sx={{
-                // flex: cell.column.columnDef.size || 1,
                 display: "flex",
                 alignItems: "center",
-                minWidth: cell.column.getSize(),
-                maxWidth: cell.column.getSize(),
+                justifyContent: "center",
+                ...(fillWidth
+                  ? cellWidthSx
+                  : cellWidthSx(cell.column.getSize())),
                 p: 1,
                 border: "1px solid",
                 borderColor: "divider",
@@ -117,7 +126,7 @@ export const CustomTable = ({
         </TableRow>
       );
     },
-    [rows],
+    [rows, fillWidth],
   );
 
   const handleLocalPageChange = (event, newPage) => {
@@ -140,7 +149,7 @@ export const CustomTable = ({
       }}
     >
       <Box height="100%" width="100%" overflow="auto">
-        <Table component="div">
+        <Table component="div" sx={{ width: "100%" }}>
           <TableHead
             component="div"
             sx={{
@@ -157,6 +166,7 @@ export const CustomTable = ({
                 key={headerGroup.id}
                 sx={{
                   display: "flex",
+                  width: "100%",
                   backgroundColor: "#0156A6",
                 }}
               >
@@ -166,9 +176,16 @@ export const CustomTable = ({
                     component="div"
                     key={header.id}
                     sx={{
-                      flex: header.column.columnDef.size || 1,
-                      minWidth: header?.getSize(),
-                      maxWidth: header?.getSize(),
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      ...(fillWidth
+                        ? cellWidthSx
+                        : {
+                            flex: header.column.columnDef.size || 1,
+                            minWidth: header?.getSize(),
+                            maxWidth: header?.getSize(),
+                          }),
                       p: 1,
                       color: "#fff",
                       border: "1px solid",
@@ -192,13 +209,13 @@ export const CustomTable = ({
               </TableRow>
             ))}
           </TableHead>
-          <TableBody component="div">
+          <TableBody component="div" sx={{ width: "100%" }}>
             <List
               rowCount={rows.length}
               rowHeight={32}
               rowComponent={RenderRow}
               rowProps={{}}
-              // style={{ height: "100%", width: "100%" }}
+              style={{ width: "100%" }}
             />
           </TableBody>
         </Table>

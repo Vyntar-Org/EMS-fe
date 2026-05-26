@@ -68,6 +68,46 @@ const TEMPERATURE_MACHINE_LIST = {
     `/applications/temperature/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}&hours=${hours}`,
 };
 
+const TEMPERATURE_LOGS = {
+  TEMPERATURE_LOGS_DATA: (
+    slaveId,
+    parameters,
+    start_datetime,
+    end_datetime,
+    limit = 50,
+    offset = 0,
+  ) =>
+    `/applications/temperature/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${encodeURIComponent(start_datetime)}&end_datetime=${encodeURIComponent(end_datetime)}&limit=${limit}&offset=${offset}`,
+};
+
+const TEMPERATURE_ANALYTICS = {
+  TEMPERATURE_ANALYTICS_DATA: (slaveId, parameters, from_datetime, to_datetime) =>
+    `/applications/temperature/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${encodeURIComponent(from_datetime)}&to_datetime=${encodeURIComponent(to_datetime)}`,
+};
+
+const SOLAR_MACHINE_LIST = {
+  SOLAR_MACHINE_LIST_DATA: "/applications/solar/machine-list/",
+  SOLAR_MACHINE_LIST_TREND: (slaveId, parameter, hours = 6) =>
+    `/applications/solar/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}&hours=${hours}`,
+};
+
+const SOLAR_LOGS = {
+  SOLAR_LOGS_DATA: (
+    slaveId,
+    parameters,
+    start_datetime,
+    end_datetime,
+    limit = 50,
+    offset = 0,
+  ) =>
+    `/applications/solar/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${encodeURIComponent(start_datetime)}&end_datetime=${encodeURIComponent(end_datetime)}&limit=${limit}&offset=${offset}`,
+};
+
+const SOLAR_ANALYTICS = {
+  SOLAR_ANALYTICS_DATA: (slaveId, parameters, from_datetime, to_datetime) =>
+    `/applications/solar/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${encodeURIComponent(from_datetime)}&to_datetime=${encodeURIComponent(to_datetime)}`,
+};
+
 export const API_URLS = {
   ...ADMINS,
   ...AUTH,
@@ -75,6 +115,11 @@ export const API_URLS = {
   ...EMS_MACHINE_LIST,
   ...EMS_ANALYTICS,
   ...TEMPERATURE_MACHINE_LIST,
+  ...TEMPERATURE_LOGS,
+  ...TEMPERATURE_ANALYTICS,
   ...EMS_LOGS,
   ...EMS_REPORTS,
+  ...SOLAR_LOGS,
+  ...SOLAR_ANALYTICS,
+  ...SOLAR_MACHINE_LIST,
 };

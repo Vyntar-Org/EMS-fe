@@ -1,3 +1,6 @@
+import { SOLAR_PARAMETER_OPTIONS } from "./solarLogs";
+import { TEMPERATURE_PARAMETER_OPTIONS } from "./temperatureLogs";
+
 export const PARAMETER_OPTIONS = {
   ENERGY: [
     {
@@ -37,6 +40,8 @@ export const PARAMETER_OPTIONS = {
       value: "i_b,i_r,i_y,avg_i",
     },
   ],
+  SOLAR: SOLAR_PARAMETER_OPTIONS,
+  TEMPERATURE: TEMPERATURE_PARAMETER_OPTIONS,
 };
 
 export const KEY_PARAMETER_OPTIONS_MAPPING = {
