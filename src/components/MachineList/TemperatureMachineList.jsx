@@ -359,7 +359,7 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 
   useEffect(() => {
     fetchTrendModalChartData(tab);
-  }, [tab, slaveId]);
+  }, [slaveId]);
 
   const chartOptions = {
     chart: {
@@ -479,6 +479,7 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
               (t) => t.tab === e.target.value,
             );
             if (!selected) return;
+            fetchTrendModalChartData(selected.tab);
             handleTabChange(selected.tab, selected.tabDesc);
           }}
         />

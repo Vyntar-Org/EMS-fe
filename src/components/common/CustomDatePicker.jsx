@@ -9,7 +9,7 @@ import dayjs from "dayjs";
 import { basePickerStyles } from "../../helpers/common";
 
 export const CustomDatePicker = ({
-  mode = "datepicker", // datepicker | timepicker | datetimepicker | daterangepicker | timerangepicker | datetimerangepicker
+  mode = "datepicker", // datepicker | timepicker | datetimepicker | daterangepicker | timerangepicker | datetimerangepicker | monthpicker | yearpicker | monthrangepicker | yearrangepicker
   value, // Single value (dayjs object) OR Array [start, end] for ranges
   onChange, // Callback returns single value OR Array [start, end]
   label = "Select Date",
@@ -32,6 +32,142 @@ export const CustomDatePicker = ({
 
   const renderPicker = () => {
     switch (mode) {
+      case "monthpicker":
+        return (
+          <DatePicker
+            label={label}
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            minDate={minDate}
+            maxDate={maxDate}
+            views={["month"]}
+            openTo="month"
+            slotProps={{
+              textField: {
+                sx: basePickerStyles,
+                size: "small",
+                fullWidth: true,
+              },
+            }}
+          />
+        );
+
+      case "yearpicker":
+        return (
+          <DatePicker
+            label={label}
+            value={value}
+            onChange={onChange}
+            disabled={disabled}
+            minDate={minDate}
+            maxDate={maxDate}
+            views={["year"]}
+            openTo="year"
+            slotProps={{
+              textField: {
+                sx: basePickerStyles,
+                size: "small",
+                fullWidth: true,
+              },
+            }}
+          />
+        );
+
+      case "monthrangepicker":
+        return (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              width: "100%",
+            }}
+          >
+            <DatePicker
+              label={startLabel}
+              value={startDate}
+              onChange={(val) => handleRangeChange(val, "start")}
+              disabled={disabled}
+              maxDate={endDate || maxDate}
+              minDate={minDate}
+              views={["month"]}
+              openTo="month"
+              slotProps={{
+                textField: {
+                  sx: basePickerStyles,
+                  size: "small",
+                  fullWidth: true,
+                },
+              }}
+            />
+            <DatePicker
+              label={endLabel}
+              value={endDate}
+              onChange={(val) => handleRangeChange(val, "end")}
+              disabled={disabled}
+              minDate={startDate || minDate}
+              maxDate={maxDate}
+              views={["month"]}
+              openTo="month"
+              slotProps={{
+                textField: {
+                  sx: basePickerStyles,
+                  size: "small",
+                  fullWidth: true,
+                },
+              }}
+            />
+          </Box>
+        );
+
+      case "yearrangepicker":
+        return (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              width: "100%",
+            }}
+          >
+            <DatePicker
+              label={startLabel}
+              value={startDate}
+              onChange={(val) => handleRangeChange(val, "start")}
+              disabled={disabled}
+              maxDate={endDate || maxDate}
+              minDate={minDate}
+              views={["year"]}
+              openTo="year"
+              slotProps={{
+                textField: {
+                  sx: basePickerStyles,
+                  size: "small",
+                  fullWidth: true,
+                },
+              }}
+            />
+            <DatePicker
+              label={endLabel}
+              value={endDate}
+              onChange={(val) => handleRangeChange(val, "end")}
+              disabled={disabled}
+              minDate={startDate || minDate}
+              maxDate={maxDate}
+              views={["year"]}
+              openTo="year"
+              slotProps={{
+                textField: {
+                  sx: basePickerStyles,
+                  size: "small",
+                  fullWidth: true,
+                },
+              }}
+            />
+          </Box>
+        );
+
       case "timepicker":
         return (
           <TimePicker

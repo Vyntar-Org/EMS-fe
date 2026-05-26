@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+
 export const formatTimestamp = (tsString) => {
   if (!tsString) return "";
   const dateObj = new Date(tsString);
@@ -83,4 +85,133 @@ export const basePickerStyles = {
       backgroundColor: "#fff",
     },
   },
+};
+
+export const transformDynamicDataToDailyMatrix = (
+  apiData,
+  keyConfig = { dateKey: "date", valueKey: "consumption" },
+) => {
+  const { dateKey, valueKey } = keyConfig;
+
+  if (!apiData || typeof apiData !== "object" || Array.isArray(apiData)) {
+    return { tableData: [], tableColumns: [] };
+  }
+
+  const monthLookup = [
+    "",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const uniqueDates = new Set();
+  Object.values(apiData).forEach((dataArray) => {
+    if (Array.isArray(dataArray)) {
+      dataArray.forEach((item) => {
+        if (item && item[dateKey] !== undefined && item[dateKey] !== null) {
+          uniqueDates.add(String(item[dateKey]).trim());
+        }
+      });
+    }
+  });
+
+  const sortedDates = Array.from(uniqueDates).sort((a, b) => {
+    if (!isNaN(a) && !isNaN(b)) {
+      return Number(a) - Number(b);
+    }
+    return dayjs(a).diff(dayjs(b));
+  });
+
+  const tableColumns = [
+    {
+      accessorKey: "device",
+      header: "Device",
+      size: 160,
+    },
+    ...sortedDates.map((dateString) => {
+      let headerLabel = dateString;
+
+      const isFullDate = /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+      const isMonthOnlyString = /^\d{4}-\d{2}$/.test(dateString);
+      const isRawNumber =
+        !isNaN(dateString) &&
+        Number(dateString) >= 1 &&
+        Number(dateString) <= 12;
+
+      if (isFullDate) {
+        headerLabel = dayjs(dateString).format("DD MMM YYYY");
+      } else if (isMonthOnlyString) {
+        headerLabel = dayjs(dateString).format("MMM YYYY");
+      } else if (isRawNumber) {
+        headerLabel = monthLookup[Number(dateString)];
+      } else {
+        const parsed = dayjs(dateString);
+        if (parsed.isValid()) {
+          headerLabel = parsed.format("MMM YYYY");
+        }
+      }
+
+      return {
+        accessorKey: dateString,
+        header: headerLabel,
+        size: isFullDate ? 110 : 100,
+        cell: (info) => {
+          const val = info.getValue();
+          return val !== undefined && val !== null
+            ? Number(val).toFixed(2)
+            : "0.00";
+        },
+      };
+    }),
+  ];
+
+  const tableData = Object.entries(apiData).map(([deviceName, dataArray]) => {
+    const row = { device: deviceName };
+
+    sortedDates.forEach((dateStr) => {
+      row[dateStr] = 0;
+    });
+
+    if (Array.isArray(dataArray)) {
+      dataArray.forEach((item) => {
+        const itemDate =
+          item?.[dateKey] !== undefined ? String(item[dateKey]).trim() : null;
+        const itemValue = item?.[valueKey];
+
+        if (itemDate && row.hasOwnProperty(itemDate)) {
+          row[itemDate] = parseFloat(Number(itemValue || 0).toFixed(2));
+        }
+      });
+    }
+
+    return row;
+  });
+
+  return { tableData, tableColumns };
+};
+
+export const triggerFileDownload = (
+  downloadUrl,
+  preferredFileName = "Download",
+) => {
+  if (!downloadUrl) return;
+
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+
+  link.setAttribute("download", preferredFileName);
+
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
 };

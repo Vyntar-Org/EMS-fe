@@ -10,15 +10,16 @@ import NoDataFound from "../common/errors/NoDataFound";
 import { api } from "../../helpers/api";
 import { KEY_PARAMETER_OPTIONS_MAPPING } from "../../constants/energyAnalytics";
 import { CustomTable } from "../common/CustomTable";
+import dayjs from "dayjs";
 
 const LogsFilterHeader = ({
   slaveOptions,
   parameterOptions,
   handleSearch,
   handleReset,
+  payload,
+  setPayload,
 }) => {
-  const [payload, setPayload] = useState(null);
-
   const handleFieldCh = (key, value) => {
     setPayload((prev) => ({
       ...prev,
@@ -90,12 +91,12 @@ const LogsFilterHeader = ({
           />
         </Grid>
 
-        <Grid item xs="auto" display="flex" gap={1} ml={{ xs: "auto", md: 0 }}>
+        <Grid item xs="auto" display="flex" gap={2} ml={{ xs: "auto", md: 0 }}>
           <Tooltip title="Search">
             <span>
               <Button
                 variant="contained"
-                onClick={() => handleSearch(payload)}
+                onClick={() => handleSearch()}
                 sx={{
                   width: 40,
 
@@ -173,6 +174,17 @@ const EnergyLogs = () => {
   const { slavesData, parametersData } = useCommonData();
   const [loading, setLoading] = useState(null);
   const [logsData, setLogsData] = useState(null);
+  const [payload, setPayload] = useState(null);
+  const [apiPaginationParams, setApiPaginationParams] = useState({
+    limit: 50,
+    offset: 0,
+  });
+  const [backendTotalRowsCount, setBackendTotalRowsCount] = useState(0);
+
+  const tablePageIndex = Math.floor(
+    apiPaginationParams.offset / apiPaginationParams.limit,
+  );
+  const tablePageSize = apiPaginationParams.limit;
 
   const logsColumns = useMemo(() => {
     if (!logsData?.length) return [];
@@ -180,13 +192,25 @@ const EnergyLogs = () => {
     const columnDef = Object.keys(logsData[1]).map((c) => ({
       accessorKey: c,
       header: KEY_PARAMETER_OPTIONS_MAPPING?.[c],
-      size: c === "timestamp" ? 150 : 120,
+      size: c === "timestamp" ? 150 : 130,
+      cell: (info) => {
+        const value = info.getValue();
+
+        if (c === "timestamp" && value) {
+          const date = dayjs(value);
+          return date.isValid()
+            ? date.format("DD MMM YYYY HH:mm:ss")
+            : String(value);
+        }
+
+        return String(value ?? "-");
+      },
     }));
 
     return columnDef;
   }, [logsData]);
 
-  const handleSearch = async (payload) => {
+  const handleSearch = async (paginationDetails = apiPaginationParams) => {
     if (!payload?.slave_id) return;
 
     setLoading(true);
@@ -213,10 +237,13 @@ const EnergyLogs = () => {
         parameterValues,
         formattedStart,
         formattedEnd,
+        paginationDetails.limit,
+        paginationDetails.offset,
       );
       const res = await api.get(newApiUrl);
       if (res?.success) {
         setLogsData(res?.data || []);
+        setBackendTotalRowsCount(res?.meta?.total || 0);
       }
     } catch (error) {
       console.error(`API Error:`, error);
@@ -227,6 +254,34 @@ const EnergyLogs = () => {
 
   const handleReset = () => {
     setLogsData(null);
+    setBackendTotalRowsCount(0);
+    setApiPaginationParams({
+      limit: 50,
+      offset: 0,
+    });
+  };
+
+  const handlePageChange = (event, newPageIndex) => {
+    setApiPaginationParams((prev) => ({
+      ...prev,
+      offset: newPageIndex * prev.limit,
+    }));
+    handleSearch({
+      ...apiPaginationParams,
+      offset: newPageIndex * apiPaginationParams.limit,
+    });
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    const newLimit = parseInt(event.target.value, 10);
+    setApiPaginationParams({
+      limit: newLimit,
+      offset: 0,
+    });
+    handleSearch({
+      limit: newLimit,
+      offset: 0,
+    });
   };
 
   const slaveOptions =
@@ -247,6 +302,8 @@ const EnergyLogs = () => {
         parameterOptions={parametersData}
         handleSearch={handleSearch}
         handleReset={handleReset}
+        payload={payload}
+        setPayload={setPayload}
       />
 
       <Box
@@ -263,7 +320,15 @@ const EnergyLogs = () => {
         ) : !logsData?.length ? (
           <NoDataFound />
         ) : (
-          <CustomTable data={logsData} columns={logsColumns} />
+          <CustomTable
+            data={logsData}
+            columns={logsColumns}
+            pageIndex={tablePageIndex}
+            pageSize={tablePageSize}
+            totalRowCount={backendTotalRowsCount}
+            onPageChange={handlePageChange}
+            onRowsPerPageChange={handleRowsPerPageChange}
+          />
         )}
       </Box>
     </Box>

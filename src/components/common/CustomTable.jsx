@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
+  getPaginationRowModel,
 } from "@tanstack/react-table";
 import {
   Box,
@@ -13,32 +14,83 @@ import {
   TableHead,
   TableRow,
   Paper,
+  TablePagination,
 } from "@mui/material";
 import { List } from "react-window";
 import ResponsiveTextWrapper from "./ResponsiveTextWrapper";
 
-export const CustomTable = ({ data, columns }) => {
+export const CustomTable = ({
+  data,
+  columns,
+  pageIndex: serverPageIndex,
+  pageSize: serverPageSize,
+  totalRowCount,
+  onPageChange,
+  onRowsPerPageChange,
+}) => {
+  const isServerSide = Boolean(onPageChange && onRowsPerPageChange);
+
+  const [localPagination, setLocalPagination] = useState({
+    pageIndex: 0,
+    pageSize: 50,
+  });
+
+  const activePageIndex = isServerSide
+    ? serverPageIndex
+    : localPagination.pageIndex;
+  const activePageSize = isServerSide
+    ? serverPageSize
+    : localPagination.pageSize;
+
   const table = useReactTable({
     data,
     columns,
+    pageCount: isServerSide
+      ? Math.ceil((totalRowCount || 0) / activePageSize)
+      : undefined,
+    state: {
+      pagination: {
+        pageIndex: activePageIndex,
+        pageSize: activePageSize,
+      },
+    },
+    manualPagination: isServerSide,
+
+    onPaginationChange: (updater) => {
+      if (!isServerSide) {
+        setLocalPagination(updater);
+      }
+    },
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: isServerSide ? undefined : getPaginationRowModel(),
   });
 
   const { rows } = table.getRowModel();
   const totalTableWidth = table.getTotalSize();
 
+  const finalTotalCount = isServerSide
+    ? totalRowCount || 0
+    : table.getPrePaginationRowModel().rows.length;
+
   const RenderRow = React.useCallback(
     ({ index, style }) => {
       const row = rows[index];
+      if (!row) return null;
 
       return (
         <TableRow
           component="div"
-          style={{ ...style, display: "flex" }}
+          style={{
+            ...style,
+            display: "flex",
+            backgroundColor:
+              index % 2 === 0 ? "background.default " : "#e7f3ff4a",
+          }}
           key={row.id}
         >
           {row.getVisibleCells().map((cell) => (
             <TableCell
+              align="center"
               component="div"
               key={cell.id}
               sx={{
@@ -48,6 +100,8 @@ export const CustomTable = ({ data, columns }) => {
                 minWidth: cell.column.getSize(),
                 maxWidth: cell.column.getSize(),
                 p: 1,
+                border: "1px solid",
+                borderColor: "divider",
               }}
             >
               <ResponsiveTextWrapper
@@ -55,7 +109,7 @@ export const CustomTable = ({ data, columns }) => {
                   cell.column.columnDef.cell,
                   cell.getContext(),
                 )}
-                fontSize="14px"
+                fontSize="12px"
                 fontWeight={500}
               />
             </TableCell>
@@ -66,25 +120,49 @@ export const CustomTable = ({ data, columns }) => {
     [rows],
   );
 
+  const handleLocalPageChange = (event, newPage) => {
+    table.setPageIndex(newPage);
+  };
+
+  const handleLocalRowsPerPageChange = (event) => {
+    table.setPageSize(parseInt(event.target.value, 10));
+  };
+
   return (
-    <>
-      <Box height="100%" width="100%" overflow="auto" sx={{ borderRadius: 2 }}>
-        <Table
-          component="div"
-          sx={{
-            width: "100%",
-            tableLayout: "fixed",
-          }}
-        >
-          <TableHead component="div">
+    <Paper
+      sx={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        borderRadius: 1,
+        overflow: "hidden",
+      }}
+    >
+      <Box height="100%" width="100%" overflow="auto">
+        <Table component="div">
+          <TableHead
+            component="div"
+            sx={{
+              display: "block",
+              position: "sticky",
+              top: 0,
+              zIndex: 2,
+              width: "100%",
+            }}
+          >
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 component="div"
                 key={headerGroup.id}
-                sx={{ display: "flex", backgroundColor: "#F5F7FA" }}
+                sx={{
+                  display: "flex",
+                  backgroundColor: "#0156A6",
+                }}
               >
                 {headerGroup.headers.map((header) => (
                   <TableCell
+                    align="center"
                     component="div"
                     key={header.id}
                     sx={{
@@ -92,6 +170,9 @@ export const CustomTable = ({ data, columns }) => {
                       minWidth: header?.getSize(),
                       maxWidth: header?.getSize(),
                       p: 1,
+                      color: "#fff",
+                      border: "1px solid",
+                      borderColor: "divider",
                     }}
                   >
                     <ResponsiveTextWrapper
@@ -114,7 +195,7 @@ export const CustomTable = ({ data, columns }) => {
           <TableBody component="div">
             <List
               rowCount={rows.length}
-              rowHeight={40}
+              rowHeight={32}
               rowComponent={RenderRow}
               rowProps={{}}
               // style={{ height: "100%", width: "100%" }}
@@ -122,6 +203,31 @@ export const CustomTable = ({ data, columns }) => {
           </TableBody>
         </Table>
       </Box>
-    </>
+
+      <TablePagination
+        rowsPerPageOptions={[50, 100, 150, 200]}
+        component="div"
+        count={finalTotalCount}
+        rowsPerPage={activePageSize}
+        page={activePageIndex}
+        onPageChange={isServerSide ? onPageChange : handleLocalPageChange}
+        onRowsPerPageChange={
+          isServerSide ? onRowsPerPageChange : handleLocalRowsPerPageChange
+        }
+        sx={{
+          overflow: "hidden",
+          border: "1px solid",
+          borderRadius: 1,
+          borderColor: "divider",
+          backgroundColor: "#e7f3ff4a",
+          ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+            {
+              color: "#4A5568",
+              fontSize: "14px",
+              fontWeight: 500,
+            },
+        }}
+      />
+    </Paper>
   );
 };

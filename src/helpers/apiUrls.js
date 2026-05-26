@@ -49,6 +49,19 @@ const EMS_LOGS = {
     `/admin/device-logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${from_datetime}&end_datetime=${to_datetime}&limit=${limit}&offset=${offset}`,
 };
 
+const EMS_REPORTS = {
+  EMS_REPORTS_DATE_WISE_CONSUMPTION_DATA: (year, month) =>
+    `/reports/date-wise/consumption?month=${month}&year=${year}`,
+  EMS_REPORTS_MONTH_WISE_CONSUMPTION_DATA: (year) =>
+    `/reports/month-wise/consumption?year=${year}`,
+  EMS_REPORTS_DATE_WISE_READING_DATA: (year, month) =>
+    `/reports/date-wise/reading?month=${month}&year=${year}`,
+  EMS_REPORTS_DATE_WISE_CONSUMPTION_COST_DATA: (year, month) =>
+    `/reports/date-wise/consumption-cost?month=${month}&year=${year}`,
+  EMS_REPORTS_MONTH_WISE_CONSUMPTION_COST_DATA: (year) =>
+    `/reports/month-wise/consumption-cost?year=${year}`,
+};
+
 const TEMPERATURE_MACHINE_LIST = {
   TEMPERATURE_MACHINE_LIST_DATA: "/applications/temperature/machine-list/",
   TEMPERATURE_MACHINE_LIST_TREND: (slaveId, parameter, hours = 6) =>
@@ -63,4 +76,5 @@ export const API_URLS = {
   ...EMS_ANALYTICS,
   ...TEMPERATURE_MACHINE_LIST,
   ...EMS_LOGS,
+  ...EMS_REPORTS,
 };

@@ -14,7 +14,7 @@ export const PrivateLayout = () => {
   }
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <>
       <Header />
       <Sidebar />
       <Box
@@ -24,11 +24,12 @@ export const PrivateLayout = () => {
           p: 1,
           backgroundColor: "background.default",
           minHeight: "100vh",
+          ml: "70px",
         }}
       >
         <Toolbar />
         <Outlet />
       </Box>
-    </Box>
+    </>
   );
 };
