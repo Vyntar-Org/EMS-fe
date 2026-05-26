@@ -43,6 +43,12 @@ const TEMPERATURE_MACHINE_LIST = {
     `/applications/temperature/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}&hours=${hours}`,
 };
 
+const SOLAR_MACHINE_LIST = {
+  SOLAR_MACHINE_LIST_DATA: "/applications/solar/machine-list/",
+  SOLAR_MACHINE_LIST_TREND: (slaveId, parameter, hours = 6) =>
+    `/applications/solar/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}&hours=${hours}`,
+};
+
 export const API_URLS = {
   ...ADMINS,
   ...AUTH,
@@ -50,4 +56,5 @@ export const API_URLS = {
   ...EMS_MACHINE_LIST,
   ...EMS_ANALYTICS,
   ...TEMPERATURE_MACHINE_LIST,
+  ...SOLAR_MACHINE_LIST,
 };

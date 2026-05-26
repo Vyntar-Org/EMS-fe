@@ -2,11 +2,13 @@ import React from "react";
 import { useApplications } from "../contexts/ApplicationContext";
 import EnergyMachineList from "../components/MachineList/EnergyMachineList";
 import TemperatureMachineList from "../components/MachineList/TemperatureMachineList";
+import SolarMachineList from "../components/MachineList/SolarMachineList";
 import { Box } from "@mui/material";
 
 const MACHINE_LIST_CONFIG = {
   ENERGY: EnergyMachineList,
   TEMPERATURE: TemperatureMachineList,
+  SOLAR: SolarMachineList,
 };
 
 const MachineList = () => {
