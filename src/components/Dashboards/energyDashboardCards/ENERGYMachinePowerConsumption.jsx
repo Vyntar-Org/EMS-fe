@@ -165,7 +165,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
               color: "white",
               "&:hover": { bgcolor: "primary.dark" },
             },
-            marginRight: { sm: "212px" },
+            marginRight: { sm: "212px", md: "0", lg: "212px" },
           }}
         >
           <ToggleButton value={1}>
@@ -217,7 +217,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
           <Box
             width={{ sm: "200px" }}
             height={{ sm: "100%" }}
-            position={{ sm: "absolute" }}
+            position={{ sm: "absolute", md: "unset", lg: "absolute" }}
             // bgcolor="#fff"
             right={{ sm: 14 }}
             top={{ sm: 6 }}
