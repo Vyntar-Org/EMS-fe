@@ -9,15 +9,15 @@ import { Loading } from "../common/Loading";
 import NoDataFound from "../common/errors/NoDataFound";
 import { api } from "../../helpers/api";
 import {
-  SOLAR_LOG_COLUMN_MAPPING,
-  SOLAR_LOG_COLUMN_ORDER,
-} from "../../constants/solarLogs";
+  TEMPERATURE_LOG_COLUMN_MAPPING,
+  TEMPERATURE_LOG_COLUMN_ORDER,
+} from "../../constants/temperatureLogs";
 import { CustomTable } from "../common/CustomTable";
 import dayjs from "dayjs";
 
 const getDefaultDateRange = () => [dayjs().subtract(24, "hour"), dayjs()];
 
-const SolarLogsFilterHeader = ({
+const TemperatureLogsFilterHeader = ({
   slaveOptions,
   parameterOptions,
   handleSearch,
@@ -46,7 +46,7 @@ const SolarLogsFilterHeader = ({
             options={slaveOptions}
             onChange={(val) => handleFieldCh("slave_id", val)}
             value={payload?.slave_id || ""}
-            label="Select Devices"
+            label="Select Device"
             size="small"
             sx={{
               "& .MuiOutlinedInput-root": {
@@ -66,7 +66,7 @@ const SolarLogsFilterHeader = ({
             multiple
             options={parameterOptions}
             onChange={(val) => handleFieldCh("parameters", val)}
-            value={payload?.parameters || ""}
+            value={payload?.parameters || []}
             label="Select Parameters"
             size="small"
             sx={{
@@ -96,6 +96,7 @@ const SolarLogsFilterHeader = ({
               <Button
                 variant="contained"
                 onClick={() => handleSearch()}
+                disabled={!payload?.slave_id}
                 sx={{
                   width: 40,
                   height: 40,
@@ -154,9 +155,9 @@ const SolarLogsFilterHeader = ({
   );
 };
 
-const SolarLogs = () => {
+const TemperatureLogs = () => {
   const { slavesData, parametersData } = useCommonData();
-  const [loading, setLoading] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [logsData, setLogsData] = useState(null);
   const [payload, setPayload] = useState({
     dateTime: getDefaultDateRange(),
@@ -175,14 +176,24 @@ const SolarLogs = () => {
   const logsColumns = useMemo(() => {
     if (!logsData?.length) return [];
 
+    const selectedParamKeys = Array.isArray(payload?.parameters)
+      ? payload.parameters.map((p) => p?.value).filter(Boolean)
+      : [];
+
     const availableKeys = Object.keys(logsData[0]);
-    const orderedKeys = SOLAR_LOG_COLUMN_ORDER.filter((key) =>
+    let orderedKeys = TEMPERATURE_LOG_COLUMN_ORDER.filter((key) =>
       availableKeys.includes(key),
     );
 
-    const columnDef = orderedKeys.map((c) => ({
+    if (selectedParamKeys.length > 0) {
+      orderedKeys = orderedKeys.filter(
+        (key) => key === "timestamp" || selectedParamKeys.includes(key),
+      );
+    }
+
+    return orderedKeys.map((c) => ({
       accessorKey: c,
-      header: SOLAR_LOG_COLUMN_MAPPING?.[c] ?? c,
+      header: TEMPERATURE_LOG_COLUMN_MAPPING[c] ?? c,
       cell: (info) => {
         const value = info.getValue();
 
@@ -194,15 +205,13 @@ const SolarLogs = () => {
         }
 
         if (typeof value === "number") {
-          return value.toFixed(3);
+          return value.toFixed(2);
         }
 
         return String(value ?? "-");
       },
     }));
-
-    return columnDef;
-  }, [logsData]);
+  }, [logsData, payload?.parameters]);
 
   const handleSearch = async (paginationDetails = apiPaginationParams) => {
     if (!payload?.slave_id) return;
@@ -210,12 +219,13 @@ const SolarLogs = () => {
     setLoading(true);
     try {
       const slaveId = payload.slave_id?.value ?? "";
-      const parameterValues = payload?.parameters
+      const parameterValues = Array.isArray(payload?.parameters)
         ? payload.parameters
             .map((p) => p?.value)
-            .filter(Boolean)
+            .filter((v) => v && v !== "timestamp")
             .join(",")
         : "";
+
       const startDateObj = payload?.dateTime?.[0];
       const endDateObj = payload?.dateTime?.[1];
       const formattedStart = startDateObj?.isValid?.()
@@ -225,7 +235,7 @@ const SolarLogs = () => {
         ? endDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
         : "";
 
-      const url = API_URLS.SOLAR_LOGS_DATA(
+      const url = API_URLS.TEMPERATURE_LOGS_DATA(
         slaveId,
         parameterValues,
         formattedStart,
@@ -236,10 +246,10 @@ const SolarLogs = () => {
       const res = await api.get(url);
       if (res?.success) {
         setLogsData(res?.data?.logs || []);
-        setBackendTotalRowsCount(res?.meta?.total || 0);
+        setBackendTotalRowsCount(res?.meta?.total ?? 0);
       }
     } catch (error) {
-      console.error("Solar logs API error:", error);
+      console.error("Temperature logs API error:", error);
     } finally {
       setLoading(false);
     }
@@ -249,32 +259,28 @@ const SolarLogs = () => {
     setLogsData(null);
     setBackendTotalRowsCount(0);
     setApiPaginationParams({
-      limit: 30,
+      limit: 50,
       offset: 0,
     });
   };
 
   const handlePageChange = (event, newPageIndex) => {
-    setApiPaginationParams((prev) => ({
-      ...prev,
-      offset: newPageIndex * prev.limit,
-    }));
-    handleSearch({
+    const nextParams = {
       ...apiPaginationParams,
       offset: newPageIndex * apiPaginationParams.limit,
-    });
+    };
+    setApiPaginationParams(nextParams);
+    handleSearch(nextParams);
   };
 
   const handleRowsPerPageChange = (event) => {
     const newLimit = parseInt(event.target.value, 10);
-    setApiPaginationParams({
+    const nextParams = {
       limit: newLimit,
       offset: 0,
-    });
-    handleSearch({
-      limit: newLimit,
-      offset: 0,
-    });
+    };
+    setApiPaginationParams(nextParams);
+    handleSearch(nextParams);
   };
 
   const slaveOptions =
@@ -290,7 +296,7 @@ const SolarLogs = () => {
         },
       }}
     >
-      <SolarLogsFilterHeader
+      <TemperatureLogsFilterHeader
         slaveOptions={slaveOptions}
         parameterOptions={parametersData}
         handleSearch={handleSearch}
@@ -329,4 +335,4 @@ const SolarLogs = () => {
   );
 };
 
-export default SolarLogs;
+export default TemperatureLogs;

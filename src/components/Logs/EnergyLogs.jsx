@@ -66,7 +66,7 @@ const LogsFilterHeader = ({
             multiple
             options={parameterOptions}
             onChange={(val) => handleFieldCh("parameters", val)}
-            value={payload?.parameters || ""}
+            value={payload?.parameters || []}
             label="Select Parameters"
             size="small"
             sx={{
@@ -98,6 +98,7 @@ const LogsFilterHeader = ({
             <span>
               <Button
                 variant="contained"
+                disabled={!payload?.slave_id}
                 onClick={() => handleSearch()}
                 sx={{
                   width: 40,

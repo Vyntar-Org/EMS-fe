@@ -66,7 +66,7 @@ const SolarLogsFilterHeader = ({
             multiple
             options={parameterOptions}
             onChange={(val) => handleFieldCh("parameters", val)}
-            value={payload?.parameters || ""}
+            value={payload?.parameters || []}
             label="Select Parameters"
             size="small"
             sx={{
@@ -94,6 +94,7 @@ const SolarLogsFilterHeader = ({
           <Tooltip title="Search">
             <span>
               <Button
+                disabled={!payload?.slave_id}
                 variant="contained"
                 onClick={() => handleSearch()}
                 sx={{
@@ -249,7 +250,7 @@ const SolarLogs = () => {
     setLogsData(null);
     setBackendTotalRowsCount(0);
     setApiPaginationParams({
-      limit: 30,
+      limit: 50,
       offset: 0,
     });
   };
