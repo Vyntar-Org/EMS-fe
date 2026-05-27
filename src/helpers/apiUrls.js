@@ -76,8 +76,19 @@ const TEMPERATURE_LOGS = {
     end_datetime,
     limit = 50,
     offset = 0,
-  ) =>
-    `/applications/temperature/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${encodeURIComponent(start_datetime)}&end_datetime=${encodeURIComponent(end_datetime)}&limit=${limit}&offset=${offset}`,
+  ) => {
+    const query = new URLSearchParams({
+      slave_id: String(slaveId),
+      start_datetime,
+      end_datetime,
+      limit: String(limit),
+      offset: String(offset),
+    });
+    if (parameters) {
+      query.set("parameters", parameters);
+    }
+    return `/applications/temperature/logs/?${query.toString()}`;
+  },
 };
 
 const TEMPERATURE_ANALYTICS = {
