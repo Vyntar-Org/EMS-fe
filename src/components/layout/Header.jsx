@@ -14,6 +14,8 @@ import {
   ListItemText,
   Avatar,
   Button,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -22,11 +24,12 @@ import { useApplications } from "../../contexts/ApplicationContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getPagePath, pageComponentMap } from "../../helpers/pageMapping.jsx";
 import PremiumModal from "../common/PremiumModal";
+import { Close, MenuOpen } from "@mui/icons-material";
+import ResponsiveTextWrapper from "../common/ResponsiveTextWrapper.jsx";
 
-export const Header = () => {
+export const Header = ({ setIsMobileOpen, isMobileOpen, handleAppChange }) => {
   const { user, logout } = useAuth();
-  const { applications, selectedApp, switchApp, getCurrentApp } =
-    useApplications();
+  const { applications, selectedApp } = useApplications();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -52,20 +55,6 @@ export const Header = () => {
     navigate("/login");
   };
 
-  const handleAppChange = (event, newAppCode) => {
-    switchApp(newAppCode);
-    const app = applications.find((a) => a.code === newAppCode);
-    if (app) {
-      const defaultPage =
-        app.default_landing_page ||
-        app.pages?.find((pageCode) => pageComponentMap[pageCode]) ||
-        app.pages?.[0] ||
-        "DASHBOARD";
-      const path = getPagePath(defaultPage, newAppCode);
-      navigate(path);
-    }
-  };
-
   const open = Boolean(anchorEl);
 
   return (
@@ -81,13 +70,42 @@ export const Header = () => {
           borderBottom: "1px solid rgba(0,0,0,0.08)",
           "& .MuiToolbar-root": {
             pr: 0.5,
-            pl: 1.7,
+            pl: { xs: 0.5, md: 1.7 },
           },
         }}
       >
         <Toolbar>
-          {/* Logo */}
-          <Box sx={{ display: "flex", alignItems: "center", mr: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              mr: 3,
+            }}
+          >
+            <IconButton
+              sx={{
+                display: { xs: "flex", sm: "none" },
+                backgroundColor: "primary.200",
+                color: "primary.main",
+                borderRadius: "10px",
+                padding: "6px",
+                border: "1px solid",
+                borderColor: "primary.100",
+                "&:hover": {
+                  backgroundColor: "primary.100",
+                },
+                "&.Mui-disabled": {
+                  backgroundColor: "action.disabledBackground",
+                  color: "action.disabled",
+                },
+                mr: 1,
+              }}
+              disabled={isMobileOpen}
+              color="primary"
+              onClick={() => setIsMobileOpen(!isMobileOpen)}
+            >
+              <MenuOpen />
+            </IconButton>
             <img
               src="/assets/vyntar-logo-full.png"
               alt="Vyntar Logo"
@@ -102,7 +120,7 @@ export const Header = () => {
                 borderBottom: 1,
                 borderColor: "rgba(255,255,255,0.2)",
                 flex: 1,
-                display: "flex",
+                display: { xs: "none", sm: "flex" },
                 justifyContent: "end",
               }}
             >

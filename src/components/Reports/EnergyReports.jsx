@@ -24,6 +24,8 @@ import { API_URLS } from "../../helpers/apiUrls";
 import { api } from "../../helpers/api";
 import { transformDynamicDataToDailyMatrix } from "../../helpers/common";
 import { exportToCSV, exportToPDF } from "../../helpers/exports";
+import { CustomAutocomplete } from "../common/CustomAutocomplete";
+import { useCommonData } from "../../contexts/CommonDataContext";
 
 const ReportsHeader = ({
   selectedTab,
@@ -34,6 +36,9 @@ const ReportsHeader = ({
   handlePdfDownload,
   handleExcelDownload,
   loading,
+  slavesData,
+  slavesId,
+  setSlavesId,
 }) => {
   const handleFieldCh = (key, value) => {
     setPayload((prev) => ({
@@ -107,7 +112,7 @@ const ReportsHeader = ({
         sx={{ bgcolor: "#f5f5f5", p: 1.5, borderRadius: 2 }}
       >
         {ENERGY_REPORTS_ALLOW_MONTH.includes(selectedTab) && (
-          <Grid item xs sm={3.5} md={2}>
+          <Grid item xs sm md={2}>
             <CustomDatePicker
               label="Select Month"
               mode="monthpicker"
@@ -117,7 +122,7 @@ const ReportsHeader = ({
           </Grid>
         )}
 
-        <Grid item xs sm={3.5} md={2}>
+        <Grid item xs sm md={2}>
           <CustomDatePicker
             label="Select Year"
             mode="yearpicker"
@@ -158,12 +163,31 @@ const ReportsHeader = ({
         <Grid
           item
           xs={12}
-          sm="auto"
+          md={4}
           display="flex"
           gap={2}
           ml="auto"
           justifyContent="end"
         >
+          <CustomAutocomplete
+            options={slavesData}
+            onChange={(e) => setSlavesId(e?.value || "")}
+            value={slavesId || ""}
+            label="Search Devices..."
+            size="small"
+            sx={{
+              // mt: 0.5,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                backgroundColor: "#f9f9f9",
+                transition: "0.3s",
+                "&:hover": {
+                  backgroundColor: "#fff",
+                },
+              },
+            }}
+          />
+
           <Tooltip title="Download Excel">
             <span>
               <Button
@@ -220,6 +244,8 @@ const ReportsHeader = ({
 };
 
 const EnergyReports = () => {
+  const { slavesData } = useCommonData();
+  const [slavesId, setSlavesId] = useState(null);
   const [selectedTab, setSelectedTab] = useState(
     "EMS_REPORTS_DATE_WISE_CONSUMPTION_DATA",
   );
@@ -230,12 +256,22 @@ const EnergyReports = () => {
     year: dayjs(new Date()),
   });
 
+  const slaveName = slavesData?.find(
+    (s) => s?.slave_id === slavesId,
+  )?.slave_name;
+
   const { tableData, tableColumns } = useMemo(() => {
-    return transformDynamicDataToDailyMatrix(
+    const { tableData, tableColumns } = transformDynamicDataToDailyMatrix(
       reportsData,
       ENERGY_REPORTS_API_DATA_KEY_CONFIG[selectedTab],
     );
-  }, [reportsData, selectedTab]);
+
+    const filteredData = slaveName
+      ? tableData.filter((row) => row.device === slaveName)
+      : tableData;
+
+    return { tableData: filteredData, tableColumns };
+  }, [reportsData, selectedTab, slaveName]);
 
   const fetchReportsData = async (curTab, newPayload) => {
     if (!curTab) return;
@@ -323,12 +359,18 @@ const EnergyReports = () => {
         handlePdfDownload={handlePdfDownload}
         handleExcelDownload={handleExcelDownload}
         loading={loading}
+        slavesId={slavesId}
+        setSlavesId={setSlavesId}
+        slavesData={slavesData?.map((f) => ({
+          label: f?.slave_name,
+          value: f?.slave_id,
+        }))}
       />
 
       <Box
         height={{
           xs: "calc(100% - 176px)",
-          sm: "calc(100% - 120px)",
+          md: "calc(100% - 120px)",
         }}
         pt={1}
         overflow="auto"

@@ -214,10 +214,10 @@ const TemperatureAnalytics = () => {
       const startDateObj = globalDateTime?.[0];
       const endDateObj = globalDateTime?.[1];
       const formattedStart = startDateObj?.isValid?.()
-        ? startDateObj.format("YYYY-MM-DD HH:mm:ss")
+        ? startDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
         : "";
       const formattedEnd = endDateObj?.isValid?.()
-        ? endDateObj.format("YYYY-MM-DD HH:mm:ss")
+        ? endDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
         : "";
 
       const url = API_URLS.TEMPERATURE_ANALYTICS_DATA(
@@ -309,8 +309,9 @@ const TemperatureAnalytics = () => {
           const isLoading = loadingMap[id];
 
           const activeKeys =
-            currentSelectedParams?.map((param) => param.value).filter(Boolean) ||
-            [];
+            currentSelectedParams
+              ?.map((param) => param.value)
+              .filter(Boolean) || [];
 
           const processedData = getProcessedChartData(rawAnalytics, activeKeys);
 
