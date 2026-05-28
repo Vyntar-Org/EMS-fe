@@ -102,6 +102,76 @@ const SOLAR_MACHINE_LIST = {
     `/applications/solar/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}&hours=${hours}`,
 };
 
+const FIRE_SAFETY_MACHINE_LIST = {
+  FIRE_SAFETY_MACHINE_LIST_DATA: "/applications/fire-safety/machine-list/",
+  FIRE_SAFETY_MACHINE_LIST_TREND: (slaveId, parameter, hours = 6) =>
+    `/applications/fire-safety/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}&hours=${hours}`,
+};
+
+const FIRE_SAFETY_ANALYTICS = {
+  FIRE_SAFETY_ANALYTICS_DATA: (slaveId, parameters, from_datetime, to_datetime) =>
+    `/applications/fire-safety/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${encodeURIComponent(from_datetime)}&to_datetime=${encodeURIComponent(to_datetime)}`,
+};
+
+const FIRE_SAFETY_LOGS = {
+  FIRE_SAFETY_LOGS_DATA: (
+    slaveId,
+    parameters,
+    start_datetime,
+    end_datetime,
+    limit = 50,
+    offset = 0,
+  ) => {
+    const query = new URLSearchParams({
+      slave_id: String(slaveId),
+      start_datetime,
+      end_datetime,
+      limit: String(limit),
+      offset: String(offset),
+    });
+    if (parameters) {
+      query.set("parameters", parameters);
+    }
+    return `/applications/fire-safety/logs/?${query.toString()}`;
+  },
+};
+
+const COMPRESSOR_MACHINE_LIST = {
+  COMPRESSOR_MACHINE_LIST_DATA: "/applications/compressor/machine-list/",
+  COMPRESSOR_MACHINE_LIST_TREND: (slaveId, parameter, hours = 6) =>
+    `/applications/compressor/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}&hours=${hours}`,
+  COMPRESSOR_DOWNTIME_HISTORY: (slaveId, hours = 48) =>
+    `/applications/compressor/downtime/history/?slave_id=${slaveId}&hours=${hours}`,
+};
+
+const COMPRESSOR_LOGS = {
+  COMPRESSOR_LOGS_DATA: (
+    slaveId,
+    parameters,
+    start_datetime,
+    end_datetime,
+    limit = 50,
+    offset = 0,
+  ) => {
+    const query = new URLSearchParams({
+      slave_id: String(slaveId),
+      start_datetime,
+      end_datetime,
+      limit: String(limit),
+      offset: String(offset),
+    });
+    if (parameters) {
+      query.set("parameters", parameters);
+    }
+    return `/applications/compressor/logs/?${query.toString()}`;
+  },
+};
+
+const COMPRESSOR_ANALYTICS = {
+  COMPRESSOR_ANALYTICS_DATA: (slaveId, from_datetime, to_datetime) =>
+    `/applications/compressor/analytics/?slave_id=${slaveId}&from=${encodeURIComponent(from_datetime)}&to=${encodeURIComponent(to_datetime)}`,
+};
+
 const SOLAR_LOGS = {
   SOLAR_LOGS_DATA: (
     slaveId,
@@ -133,4 +203,10 @@ export const API_URLS = {
   ...SOLAR_LOGS,
   ...SOLAR_ANALYTICS,
   ...SOLAR_MACHINE_LIST,
+  ...FIRE_SAFETY_MACHINE_LIST,
+  ...FIRE_SAFETY_ANALYTICS,
+  ...FIRE_SAFETY_LOGS,
+  ...COMPRESSOR_MACHINE_LIST,
+  ...COMPRESSOR_LOGS,
+  ...COMPRESSOR_ANALYTICS,
 };
