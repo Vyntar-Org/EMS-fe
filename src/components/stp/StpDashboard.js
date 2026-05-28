@@ -1,704 +1,1200 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
-    Box,
-    Grid,
-    Card,
-    CardContent,
-    Typography,
-    CircularProgress,
-    Snackbar,
-    useTheme,
-    useMediaQuery,
-    Badge
-} from '@mui/material';
-import Chart from 'react-apexcharts';
-import MenuIcon from '@mui/icons-material/Menu';
-import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
-import IconButton from '@mui/material/IconButton';
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  CircularProgress,
+  Snackbar,
+  useTheme,
+  useMediaQuery,
+  Badge,
+} from "@mui/material";
+import Chart from "react-apexcharts";
+import MenuIcon from "@mui/icons-material/Menu";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import IconButton from "@mui/material/IconButton";
 import {
-    getStpDashboardSummary,
-    getStpWaterComparison,
-    getStpHistoricalTrends
-} from '../../auth/stp/StpDashboardApi';
+  getStpDashboardSummary,
+  getStpWaterComparison,
+  getStpHistoricalTrends,
+} from "../../auth/stp/StpDashboardApi";
+import { Circle, MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import L from "leaflet";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("md", "lg"));
 
-    // State management
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
+  // State management
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
-    // Device status state
-    const [deviceStatus, setDeviceStatus] = useState('Running');
-    const [latestTimestamp, setLatestTimestamp] = useState('');
-    const [isOnline, setIsOnline] = useState(true);
+  // Device status state
+  const [deviceStatus, setDeviceStatus] = useState("Running");
+  const [latestTimestamp, setLatestTimestamp] = useState("");
+  const [isOnline, setIsOnline] = useState(true);
 
-    // Metric states (these would come from API)
-    const [intakeTotal, setIntakeTotal] = useState(0);
-    const [treatedWater, setTreatedWater] = useState(0);
+  // Metric states (these would come from API)
+  const [intakeTotal, setIntakeTotal] = useState(0);
+  const [treatedWater, setTreatedWater] = useState(0);
 
-    // Gauge values
-    const [phValue, setPhValue] = useState(0);
-    const [tdsValue, setTdsValue] = useState(0);
-    const [codValue, setCodValue] = useState(0);
-    const [bodValue, setBodValue] = useState(0);
-    const [tssValue, setTssValue] = useState(0);
+  // Gauge values
+  const [phValue, setPhValue] = useState(0);
+  const [tdsValue, setTdsValue] = useState(0);
+  const [codValue, setCodValue] = useState(0);
+  const [bodValue, setBodValue] = useState(0);
+  const [tssValue, setTssValue] = useState(0);
 
-    // Blower performance metrics
-    const [runHours, setRunHours] = useState(1540);
-    const [temperature, setTemperature] = useState(55);
-    const [pressure, setPressure] = useState(2.8);
-    const [power, setPower] = useState(3.9);
-    const [rpm, setRpm] = useState(1250);
+  // Blower performance metrics
+  const [runHours, setRunHours] = useState(1540);
+  const [temperature, setTemperature] = useState(55);
+  const [pressure, setPressure] = useState(2.8);
+  const [power, setPower] = useState(3.9);
+  const [rpm, setRpm] = useState(1250);
 
-    // Chart data states
-    const [historicalCategories, setHistoricalCategories] = useState([]);
-    const [historicalSeries, setHistoricalSeries] = useState([]);
-    const [waterCompCategories, setWaterCompCategories] = useState([]);
-    const [waterCompSeries, setWaterCompSeries] = useState([]);
+  // Chart data states
+  const [historicalCategories, setHistoricalCategories] = useState([]);
+  const [historicalSeries, setHistoricalSeries] = useState([]);
+  const [waterCompCategories, setWaterCompCategories] = useState([]);
+  const [waterCompSeries, setWaterCompSeries] = useState([]);
 
-    const [chartLoading, setChartLoading] = useState(false);
+  const [chartLoading, setChartLoading] = useState(false);
 
+  // Fetch latest timestamp and device status
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-    // Fetch latest timestamp and device status
-    useEffect(() => {
-        const fetchAllData = async () => {
-            try {
-                setLoading(true);
-                setError(null);
+        // 1. Fetch Summary Data
+        const summaryRes = await getStpDashboardSummary();
+        const cards = summaryRes.data.cards || [];
 
-                // 1. Fetch Summary Data
-                const summaryRes = await getStpDashboardSummary();
-                const cards = summaryRes.data.cards || [];
+        // Map summary data to state
+        cards.forEach((card) => {
+          if (card.title === "Intake Total") {
+            setIntakeTotal(card.value);
+          } else if (card.title === "Treated Water") {
+            setTreatedWater(card.value);
+          } else if (card.title === "pH") {
+            setPhValue(card.value);
+          } else if (card.title === "TDS") {
+            setTdsValue(card.value);
+          } else if (card.title === "COD") {
+            setCodValue(card.value);
+          } else if (card.title === "BOD") {
+            setBodValue(card.value);
+          } else if (card.title === "TSS") {
+            setTssValue(card.value);
+          }
+        });
 
-                // Map summary data to state
-                cards.forEach(card => {
-                    if (card.title === 'Intake Total') {
-                        setIntakeTotal(card.value);
-                    } else if (card.title === 'Treated Water') {
-                        setTreatedWater(card.value);
-                    } else if (card.title === 'pH') {
-                        setPhValue(card.value);
-                    } else if (card.title === 'TDS') {
-                        setTdsValue(card.value);
-                    } else if (card.title === 'COD') {
-                        setCodValue(card.value);
-                    } else if (card.title === 'BOD') {
-                        setBodValue(card.value);
-                    } else if (card.title === 'TSS') {
-                        setTssValue(card.value);
-                    }
-                });
+        // 2. Fetch Chart Data concurrently
+        await loadChartData();
 
-                // 2. Fetch Chart Data concurrently
-                await loadChartData();
-
-                // Set timestamp
-                const now = new Date();
-                const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                const day = now.getDate().toString().padStart(2, '0');
-                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                const month = monthNames[now.getMonth()];
-                const year = now.getFullYear();
-                setLatestTimestamp(`Last updated : ${time} | ${day}-${month}-${year}`);
-
-            } catch (err) {
-                console.error('Error fetching dashboard data:', err);
-                setError('Failed to fetch dashboard data: ' + err.message);
-                setSnackbarMessage('Failed to fetch dashboard data');
-                setSnackbarOpen(true);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchAllData();
-    }, []);
-
-    // Fetch dashboard data
-    const loadChartData = async () => {
-        try {
-            setChartLoading(true);
-
-            const [trendsRes, comparisonRes] = await Promise.all([
-                getStpHistoricalTrends(),
-                getStpWaterComparison()
-            ]);
-
-            // Set Historical Trends
-            if (trendsRes.success) {
-                setHistoricalCategories(trendsRes.data.categories || []);
-                setHistoricalSeries(trendsRes.data.series || []);
-            }
-
-            // Set Water Comparison (Used for the "Blower Usage" / Bar Chart)
-            if (comparisonRes.success) {
-                setWaterCompCategories(comparisonRes.data.categories || []);
-                setWaterCompSeries(comparisonRes.data.series || []);
-            }
-
-        } catch (err) {
-            console.error('Error loading chart data:', err);
-            setSnackbarMessage('Failed to load chart data');
-            setSnackbarOpen(true);
-        } finally {
-            setChartLoading(false);
-        }
+        // Set timestamp
+        const now = new Date();
+        const time = now.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+        const day = now.getDate().toString().padStart(2, "0");
+        const monthNames = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+        const month = monthNames[now.getMonth()];
+        const year = now.getFullYear();
+        setLatestTimestamp(`Last updated : ${time} | ${day}-${month}-${year}`);
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError("Failed to fetch dashboard data: " + err.message);
+        setSnackbarMessage("Failed to fetch dashboard data");
+        setSnackbarOpen(true);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const getGaugeOptions = (title, min, max, unit) => ({
-        chart: {
-            type: 'radialBar',
-            height: 200,
-            toolbar: { show: false }
-        },
-        plotOptions: {
-            radialBar: {
-                startAngle: -135,
-                endAngle: 135,
-                hollow: {
-                    size: '60%',
-                    background: 'transparent'
-                },
-                track: {
-                    background: '#E5E7EB',
-                    strokeWidth: '97%',
-                    margin: 5
-                },
-                dataLabels: {
-                    name: {
-                        show: true,
-                        fontSize: '10px',
-                        color: '#6B7280',
-                        offsetY: -10
-                    },
-                    value: {
-                        show: true,
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        color: '#1F2937',
-                        offsetY: -1,
-                        formatter: function (val) {
-                            return val;
-                        }
-                    }
-                }
-            }
-        },
-        labels: [title],
-        colors: ['#0156a6']
-    });
+    fetchAllData();
+  }, []);
 
-    const phGaugeOptions = getGaugeOptions('pH', 0, 14, '');
-    const tdsGaugeOptions = getGaugeOptions('TDS', 0, 1000, 'ppm');
-    const codGaugeOptions = getGaugeOptions('COD', 0, 500, 'mg/L');
-    const bodGaugeOptions = getGaugeOptions('BOD', 0, 300, 'mg/L');
-    const tssGaugeOptions = getGaugeOptions('TSS', 0, 200, 'mg/L');
+  // Fetch dashboard data
+  const loadChartData = async () => {
+    try {
+      setChartLoading(true);
 
-    // Historical Trends Line Chart Options
-    const historicalTrendsOptions = {
-        chart: {
-            type: 'line',
-            height: 350,
-            toolbar: { show: false },
-            background: 'transparent'
-        },
-        stroke: {
-            curve: 'smooth',
-            width: 2
-        },
-        markers: {
-            size: 0
-        },
-        grid: {
-            strokeDashArray: 4,
-            borderColor: 'transparent',
-            xaxis: { lines: { show: false } },
-            yaxis: { lines: { show: true, color: '#E5E7EB' } }
-        },
-        xaxis: {
-            tickAmount: 6,
-            categories: historicalCategories, // Use state data
-            labels: {
-                style: { colors: '#6B7280', fontSize: '10px' },
-                rotate: -45
-            },
-            axisBorder: { show: false },
-            axisTicks: { show: false }
-        },
-        yaxis: {
-            tickAmount: 6,
-            labels: {
-                style: { colors: '#6B7280', fontSize: '12px' }
-            },
-            axisBorder: { show: false }
-        },
-        legend: {
-            show: true,
-            position: 'top',
-            horizontalAlign: 'center',
-            fontSize: '12px',
-            labels: { colors: ['#6B7280'] }
-        },
-        tooltip: {
-            enabled: true,
-            theme: 'light'
-        },
-        colors: ['#0156a6', '#10B981', '#F59E0B', '#EF4444']
-    };
+      const [trendsRes, comparisonRes] = await Promise.all([
+        getStpHistoricalTrends(),
+        getStpWaterComparison(),
+      ]);
 
-    // Water Comparison (Bar Chart) Options
-    const blowerUsageOptions = {
-        chart: {
-            type: 'bar',
-            height: 350,
-            toolbar: { show: false },
-            background: 'transparent'
+      // Set Historical Trends
+      if (trendsRes.success) {
+        setHistoricalCategories(trendsRes.data.categories || []);
+        setHistoricalSeries(trendsRes.data.series || []);
+      }
+
+      // Set Water Comparison (Used for the "Blower Usage" / Bar Chart)
+      if (comparisonRes.success) {
+        setWaterCompCategories(comparisonRes.data.categories || []);
+        setWaterCompSeries(comparisonRes.data.series || []);
+      }
+    } catch (err) {
+      console.error("Error loading chart data:", err);
+      setSnackbarMessage("Failed to load chart data");
+      setSnackbarOpen(true);
+    } finally {
+      setChartLoading(false);
+    }
+  };
+
+  const getGaugeOptions = (title, min, max, unit) => ({
+    chart: {
+      type: "radialBar",
+      height: 240,
+      toolbar: { show: false },
+    },
+    plotOptions: {
+      radialBar: {
+        startAngle: -135,
+        endAngle: 135,
+        hollow: {
+          size: "60%",
+          background: "transparent",
         },
-        plotOptions: {
-            bar: {
-                borderRadius: 4,
-                columnWidth: '60%',
-                dataLabels: {
-                    position: 'top'
-                }
-            }
+        track: {
+          background: "#E5E7EB",
+          strokeWidth: "97%",
+          margin: 5,
         },
         dataLabels: {
-            enabled: true,
-            offsetY: -20,
-            style: {
-                colors: ['#0a223e'],
-                fontSize: '12px',
-                fontWeight: '600'
-            }
-        },
-        grid: {
-            strokeDashArray: 4,
-            borderColor: 'transparent',
-            xaxis: { lines: { show: false } },
-            yaxis: { lines: { show: true, color: '#E5E7EB' } }
-        },
-        xaxis: {
-            categories: waterCompCategories, // Use state data
-            labels: {
-                style: { colors: '#6B7280', fontSize: '12px' }
-            },
-            axisBorder: { show: false },
-            axisTicks: { show: false },
-            title: {
-                text: 'Day',
-                style: { color: '#6B7280', fontSize: '12px' }
-            }
-        },
-        yaxis: {
-            labels: {
-                style: { colors: '#6B7280', fontSize: '12px' }
-            },
-            axisBorder: { show: false },
-            title: {
-                text: 'KL',
-                style: { color: '#6B7280', fontSize: '12px' }
-            }
-        },
-        legend: {
+          name: {
             show: true,
-            position: 'top',
-            horizontalAlign: 'center',
-            fontSize: '12px',
-            labels: { colors: ['#6B7280'] }
+            fontSize: "10px",
+            color: "#6B7280",
+            offsetY: -10,
+          },
+          value: {
+            show: true,
+            fontSize: "14px",
+            fontWeight: "bold",
+            color: "#1F2937",
+            offsetY: -1,
+            formatter: function (val) {
+              return val;
+            },
+          },
         },
-        colors: ['#0156a6', '#10B981']
-    };
+      },
+    },
+    labels: [title],
+    colors: ["#0156a6"],
+  });
 
-    // Card styles
-    const cardStyle = {
-        borderRadius: '16px',
-        boxShadow: '0px 8px 24px rgba(0,0,0,0.08)',
-        backgroundColor: '#FFFFFF',
-        height: '70%'
-    };
+  const phGaugeOptions = getGaugeOptions("pH", 0, 14, "");
+  const tdsGaugeOptions = getGaugeOptions("TDS", 0, 1000, "ppm");
+  const codGaugeOptions = getGaugeOptions("COD", 0, 500, "mg/L");
+  const bodGaugeOptions = getGaugeOptions("BOD", 0, 300, "mg/L");
+  const tssGaugeOptions = getGaugeOptions("TSS", 0, 200, "mg/L");
 
-    const metricCardStyle = {
-        borderRadius: '14px',
-        padding: '20px',
-        boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.08)',
-        backgroundColor: '#FFFFFF',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '50%',
-        transition: 'all 0.3s ease',
-        '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.15)'
-        }
-    };
+  // Historical Trends Line Chart Options
+  const historicalTrendsOptions = {
+    chart: {
+      type: "line",
+      height: 350,
+      toolbar: { show: false },
+      background: "transparent",
+    },
+    stroke: {
+      curve: "smooth",
+      width: 2,
+    },
+    markers: {
+      size: 0,
+    },
+    grid: {
+      strokeDashArray: 4,
+      borderColor: "transparent",
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true, color: "#E5E7EB" } },
+    },
+    xaxis: {
+      tickAmount: 6,
+      categories: historicalCategories, // Use state data
+      labels: {
+        style: { colors: "#6B7280", fontSize: "10px" },
+        rotate: -45,
+      },
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+    },
+    yaxis: {
+      tickAmount: 6,
+      labels: {
+        style: { colors: "#6B7280", fontSize: "12px" },
+      },
+      axisBorder: { show: false },
+    },
+    legend: {
+      show: true,
+      position: "top",
+      horizontalAlign: "center",
+      fontSize: "12px",
+      labels: { colors: ["#6B7280"] },
+    },
+    tooltip: {
+      enabled: true,
+      theme: "light",
+    },
+    colors: ["#0156a6", "#10B981", "#F59E0B", "#EF4444"],
+  };
 
-    const titleStyle = {
-        fontSize: '16px',
-        fontWeight: 600,
-        color: '#1F2937',
-        fontFamily: 'sans-serif'
-    };
-
-    const metricHeadingStyle = {
-        fontSize: '13px',
-        fontWeight: 500,
-        color: '#6B7280',
-        fontFamily: 'sans-serif',
-        marginBottom: '0px',
-        marginTop: '8px'
-    };
-
-    const metricValueStyle = {
-        fontSize: '24px',
-        fontWeight: 'bold',
-        color: '#0156a6',
-        fontFamily: 'sans-serif'
-    };
-
-    const metricUnitStyle = {
-        fontSize: '12px',
-        color: '#6B7280',
-        fontFamily: 'sans-serif',
-        marginTop: '4px'
-    };
-
-    const styles = {
-        mainContent: {
-            width: '100%',
-            minHeight: '87vh',
-            fontFamily: 'sans-serif',
-            fontSize: '14px',
-            padding: '10px',
-            backgroundColor: '#F9FAFB'
+  // Water Comparison (Bar Chart) Options
+  const blowerUsageOptions = {
+    chart: {
+      type: "bar",
+      height: 350,
+      toolbar: { show: false },
+      background: "transparent",
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 4,
+        columnWidth: "60%",
+        dataLabels: {
+          position: "top",
         },
-        navbar: {
-            backgroundColor: '#FFFFFF',
-            borderBottom: '1px solid #E5E7EB',
-            padding: '12px 24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-        }
-    };
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      offsetY: -20,
+      style: {
+        colors: ["#0a223e"],
+        fontSize: "12px",
+        fontWeight: "600",
+      },
+    },
+    grid: {
+      strokeDashArray: 4,
+      borderColor: "transparent",
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true, color: "#E5E7EB" } },
+    },
+    xaxis: {
+      categories: waterCompCategories, // Use state data
+      labels: {
+        style: { colors: "#6B7280", fontSize: "12px" },
+      },
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      title: {
+        text: "Day",
+        style: { color: "#6B7280", fontSize: "12px" },
+      },
+    },
+    yaxis: {
+      labels: {
+        style: { colors: "#6B7280", fontSize: "12px" },
+      },
+      axisBorder: { show: false },
+      title: {
+        text: "KL",
+        style: { color: "#6B7280", fontSize: "12px" },
+      },
+    },
+    legend: {
+      show: true,
+      position: "top",
+      horizontalAlign: "center",
+      fontSize: "12px",
+      labels: { colors: ["#6B7280"] },
+    },
+    colors: ["#0156a6", "#10B981"],
+  };
 
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
+  // Card styles
+  const cardStyle = {
+    borderRadius: "16px",
+    boxShadow: "0px 8px 24px rgba(0,0,0,0.08)",
+    backgroundColor: "#FFFFFF",
+    height: "70%",
+  };
 
-    if (error && historicalCategories.length === 0) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                <Typography variant="h6" color="error">Error: {error}</Typography>
-            </Box>
-        );
-    }
+  const metricCardStyle = {
+    borderRadius: "14px",
+    padding: "20px",
+    boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.08)",
+    backgroundColor: "#FFFFFF",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "50%",
+    transition: "all 0.3s ease",
+    "&:hover": {
+      transform: "translateY(-2px)",
+      boxShadow: "0 4px 8px -2px rgba(0, 0, 0, 0.15)",
+    },
+  };
 
+  const titleStyle = {
+    fontSize: "16px",
+    fontWeight: 600,
+    color: "#1F2937",
+    fontFamily: "sans-serif",
+  };
+
+  const metricHeadingStyle = {
+    fontSize: "13px",
+    fontWeight: 500,
+    color: "#6B7280",
+    fontFamily: "sans-serif",
+    marginBottom: "0px",
+    marginTop: "8px",
+  };
+
+  const metricValueStyle = {
+    fontSize: "24px",
+    fontWeight: "bold",
+    color: "#0156a6",
+    fontFamily: "sans-serif",
+  };
+
+  const metricUnitStyle = {
+    fontSize: "12px",
+    color: "#6B7280",
+    fontFamily: "sans-serif",
+    // marginTop: "4px",
+  };
+
+  const styles = {
+    mainContent: {
+      width: "100%",
+      minHeight: "87vh",
+      fontFamily: "sans-serif",
+      fontSize: "14px",
+      padding: "10px",
+      backgroundColor: "#F9FAFB",
+    },
+    navbar: {
+      backgroundColor: "#FFFFFF",
+      borderBottom: "1px solid #E5E7EB",
+      padding: "12px 24px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: "20px",
+      borderRadius: "8px",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+    },
+  };
+
+  if (loading) {
     return (
-        <Box style={styles.mainContent} id="main-content">
-            {/* Main Content */}
-            <>
-                {/* Top Row: Metrics Cards + Gauges */}
-                <Grid container spacing={2}>
-                    {/* Intake Total Card — full width per row below md; desktop unchanged */}
-                    <Grid item xs={12} sm={2} md={2}>
-                        <Card sx={{ ...metricCardStyle, width: { xs: '85%', sm: '50%', md: '100%' }, height: { xs: 'auto', sm: '50%', md: '50%' } }}>
-                            <CardContent sx={{ p: { md: 2, sm: 2 }, textAlign: 'center', width: '100%' }}>
-                                <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1F2937' }}>
-                                    Intake Total
-                                </Typography>
-                                <Typography sx={{ fontSize: '14px', color: '#6B7280', mb: 2 }}>
-                                    (Waste Water)
-                                </Typography>
-                                <Typography sx={metricValueStyle}>
-                                    {intakeTotal.toLocaleString()}
-                                </Typography>
-                                <Typography sx={metricUnitStyle}>
-                                    KL
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-
-                    {/* Gauge Charts Container */}
-                    <Grid item xs={12} sm={8} md={8}>
-                        <Card sx={{ ...cardStyle, marginLeft: { xs: 0, sm: '127px', md: '35px' }, height: { xs: 'auto', md: '70%' }, width: { xs: '94.5%', sm: '60%', md: 'auto' }, marginTop: { sm: '-232px', md: '0' } }}>
-                            <CardContent sx={{ p: { xs: 2, sm: -5, md: 3 } }}>
-                                <Box sx={{
-                                    display: 'flex',
-                                    justifyContent: 'space-around',
-                                    flexWrap: 'wrap',
-                                    gap: 2
-                                }}>
-                                    {/* pH Gauge */}
-                                    <Box sx={{ textAlign: 'center', minWidth: '140px', marginTop: '-20px' }}>
-                                        <Typography sx={metricHeadingStyle}>pH</Typography>
-                                        <Chart
-                                            options={phGaugeOptions}
-                                            series={[phValue]}
-                                            type="radialBar"
-                                            height={100}
-                                            width="180"
-                                        />
-                                        <Typography sx={{ fontSize: '11px', color: '#9CA3AF' }}>mg/L</Typography>
-                                    </Box>
-
-                                    {/* TDS Gauge */}
-                                    <Box sx={{ textAlign: 'center', minWidth: '140px', marginTop: '-20px' }}>
-                                        <Typography sx={metricHeadingStyle}>TDS</Typography>
-                                        <Chart
-                                            options={tdsGaugeOptions}
-                                            series={[tdsValue]}
-                                            type="radialBar"
-                                            height={100}
-                                            width="180"
-                                        />
-                                        <Typography sx={{ fontSize: '11px', color: '#9CA3AF' }}>ppm</Typography>
-                                    </Box>
-
-                                    {/* COD Gauge */}
-                                    <Box sx={{ textAlign: 'center', minWidth: '140px', marginTop: '-20px' }}>
-                                        <Typography sx={metricHeadingStyle}>COD</Typography>
-                                        <Chart
-                                            options={codGaugeOptions}
-                                            series={[codValue]}
-                                            type="radialBar"
-                                            height={100}
-                                            width="180"
-                                        />
-                                        <Typography sx={{ fontSize: '11px', color: '#9CA3AF' }}>mg/L</Typography>
-                                    </Box>
-
-                                    {/* BOD Gauge */}
-                                    <Box sx={{ textAlign: 'center', minWidth: '140px', marginTop: '-20px' }}>
-                                        <Typography sx={metricHeadingStyle}>BOD</Typography>
-                                        <Chart
-                                            options={bodGaugeOptions}
-                                            series={[bodValue]}
-                                            type="radialBar"
-                                            height={100}
-                                            width="180"
-                                        />
-                                        <Typography sx={{ fontSize: '11px', color: '#9CA3AF' }}>mg/L</Typography>
-                                    </Box>
-
-                                    {/* TSS Gauge */}
-                                    <Box sx={{ textAlign: 'center', minWidth: '140px', marginTop: '-20px' }}>
-                                        <Typography sx={metricHeadingStyle}>TSS</Typography>
-                                        <Chart
-                                            options={tssGaugeOptions}
-                                            series={[tssValue]}
-                                            type="radialBar"
-                                            height={100}
-                                            width="180"
-                                        />
-                                        <Typography sx={{ fontSize: '11px', color: '#9CA3AF' }}>mg/L</Typography>
-                                    </Box>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-
-                    {/* Treated Water Card */}
-                    <Grid item xs={12} sm={2} md={2}>
-                        <Card sx={{ ...metricCardStyle, width: { xs: '85%', md: '100%' }, marginLeft: { xs: 0, md: '-5px' }, height: { xs: 'auto', md: '50%' } }}>
-                            <CardContent sx={{ p: 2, textAlign: 'center', width: '100%' }}>
-                                <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#1F2937' }}>
-                                    Treated Water
-                                </Typography>
-                                <Typography sx={{ fontSize: '14px', color: '#6B7280', mb: 2 }}>
-                                    (Out)
-                                </Typography>
-                                <Typography sx={metricValueStyle}>
-                                    {treatedWater.toLocaleString()}
-                                </Typography>
-                                <Typography sx={metricUnitStyle}>
-                                    KL
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                </Grid>
-
-                {/* Blower Performance Row */}
-                <Grid container spacing={2} sx={{ marginTop: { xs: 1, md: '-50px' } }}>
-                    <Grid item xs={12}>
-                        <Card sx={{ ...cardStyle, minHeight: '150px', height: { xs: 'auto', md: '70%' } }}>
-                            <CardContent sx={{ p: { xs: 2, md: 5 } }}>
-                                <Box sx={{
-                                    display: 'flex',
-                                    flexDirection: { xs: 'column', md: 'row' },
-                                    justifyContent: 'space-around',
-                                    alignItems: 'center',
-                                    flexWrap: 'wrap',
-                                    gap: { xs: 3, md: '145px' },
-                                }}>
-                                    {/* Heading */}
-                                    {/* <Box sx={{ minWidth: '120px', textAlign: { xs: 'center', md: 'left' } }}>
-                                            <Typography sx={{ ...metricHeadingStyle, fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
-                                                water comparison
-                                            </Typography>
-                                        </Box> */}
-
-                                    {/* Run Hours */}
-                                    <Box sx={{ textAlign: 'center', minWidth: '156px' }}>
-                                        <Typography sx={metricHeadingStyle}>Sewage Water</Typography>
-                                        <Typography sx={{ ...metricValueStyle, fontSize: '20px' }}>
-                                            {runHours.toLocaleString()}
-                                        </Typography>
-                                        <Typography sx={metricUnitStyle}>hr</Typography>
-                                    </Box>
-
-                                    {/* Temperature */}
-                                    <Box sx={{ textAlign: 'center', minWidth: '156px' }}>
-                                        <Typography sx={metricHeadingStyle}>Temperature</Typography>
-                                        <Typography sx={{ ...metricValueStyle, fontSize: '20px' }}>
-                                            {temperature}
-                                        </Typography>
-                                        <Typography sx={metricUnitStyle}>°C</Typography>
-                                    </Box>
-
-                                    {/* Pressure */}
-                                    <Box sx={{ textAlign: 'center', minWidth: '156px' }}>
-                                        <Typography sx={metricHeadingStyle}>Pressure</Typography>
-                                        <Typography sx={{ ...metricValueStyle, fontSize: '20px' }}>
-                                            {pressure}
-                                        </Typography>
-                                        <Typography sx={metricUnitStyle}>bar</Typography>
-                                    </Box>
-
-                                    {/* Power */}
-                                    <Box sx={{ textAlign: 'center', minWidth: '156px' }}>
-                                        <Typography sx={metricHeadingStyle}>Power</Typography>
-                                        <Typography sx={{ ...metricValueStyle, fontSize: '20px' }}>
-                                            {power}
-                                        </Typography>
-                                        <Typography sx={metricUnitStyle}>KW</Typography>
-                                    </Box>
-
-                                    {/* RPM & Status */}
-                                    <Box sx={{ textAlign: 'center', minWidth: '156px' }}>
-                                        <Typography sx={metricHeadingStyle}>RPM</Typography>
-                                        <Typography sx={{ ...metricValueStyle, fontSize: '20px' }}>
-                                            {rpm.toLocaleString()}
-                                        </Typography>
-                                        <Badge
-                                            badgeContent={deviceStatus}
-                                            color={isOnline ? 'success' : 'error'}
-                                            sx={{ mt: 1 }}
-                                        />
-                                    </Box>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                </Grid>
-
-                {/* Charts Row */}
-                <Grid container spacing={2}>
-                    {/* Historical Trends Chart */}
-                    <Grid item xs={12} md={6}>
-                        <Card sx={{ ...cardStyle, minHeight: '300px', width: { xs: '94.5%', sm: '105%', md: '143.5%' }, marginTop: { xs: '6px', md: '10px' } }}>
-                            <CardContent sx={{ height: '100%' }}>
-                                <Typography sx={{ ...titleStyle, mb: 2 }}>
-                                    Historical Trends
-                                </Typography>
-                                <Box sx={{ position: 'relative' }}>
-                                    {chartLoading && (
-                                        <Box sx={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            right: 0,
-                                            bottom: 0,
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                            backgroundColor: 'rgba(255,255,255,0.8)',
-                                            zIndex: 10,
-                                            borderRadius: '8px'
-                                        }}>
-                                            <CircularProgress />
-                                        </Box>
-                                    )}
-                                    {!chartLoading && historicalSeries.length > 0 && (
-                                        <Chart
-                                            options={historicalTrendsOptions}
-                                            series={historicalSeries}
-                                            type="line"
-                                            height={200}
-                                        />
-                                    )}
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-
-                    {/* Blower Usage Chart */}
-                    <Grid item xs={12} md={6}>
-                        <Card sx={{ ...cardStyle, minHeight: '300px', width: { xs: '94.5%', sm: '103%', md: '88.5%' }, marginLeft: { xs: 0, sm: '10px', md: '200px' }, marginTop: { xs: '-10px', sm: '5px', md: '10px' } }}>
-                            <CardContent sx={{ height: '100%' }}>
-                                <Typography sx={{ ...titleStyle, mb: 2 }}>
-                                    water comparison
-                                </Typography>
-                                <Box sx={{ position: 'relative' }}>
-                                    {chartLoading && (
-                                        <Box sx={{
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            right: 0,
-                                            bottom: 0,
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                            backgroundColor: 'rgba(255,255,255,0.8)',
-                                            zIndex: 10,
-                                            borderRadius: '8px'
-                                        }}>
-                                            <CircularProgress />
-                                        </Box>
-                                    )}
-                                    {!chartLoading && waterCompSeries.length > 0 && (
-                                        <Chart
-                                            options={blowerUsageOptions}
-                                            series={waterCompSeries}
-                                            type="bar"
-                                            height={240}
-                                            width={isMobile ? '100%' : '140%'}
-                                        />
-                                    )}
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                </Grid>
-            </>
-
-            {/* Snackbar for notifications */}
-            <Snackbar
-                open={snackbarOpen}
-                autoHideDuration={6000}
-                onClose={() => setSnackbarOpen(false)}
-                message={snackbarMessage}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            />
-        </Box>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
     );
+  }
+
+  if (error && historicalCategories.length === 0) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <Typography variant="h6" color="error">
+          Error: {error}
+        </Typography>
+      </Box>
+    );
+  }
+
+  const MetricCard = ({ children }) => {
+    return (
+      <Card
+        sx={{
+          height: { md: "100%" },
+          borderRadius: "14px",
+          boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.08)",
+          backgroundColor: "#FFFFFF",
+          transition: "all 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 4px 8px -2px rgba(0, 0, 0, 0.15)",
+          },
+        }}
+      >
+        <CardContent sx={{ p: "16px !important" }}>{children}</CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <>
+      <Box
+        height={{ md: "calc(100vh - 70px - 8px)" }}
+        overflow="auto"
+        px={1}
+        pb={1}
+      >
+        <Grid container gap={1} alignItems="center" height={{ md: "50%" }}>
+          <Grid size={{ xs: 12, md: 7 }} height={{ md: "100%" }}>
+            <Grid container gap={1} height={{ md: "40%" }}>
+              <Grid size={{ sm: "grow" }}>
+                <MetricCard>
+                  <Typography
+                    align="center"
+                    sx={{ fontSize: "14px", fontWeight: 700, color: "#1F2937" }}
+                  >
+                    Intake Total
+                  </Typography>
+                  <Box display="flex" justifyContent="space-around" mt={0.5}>
+                    <Box>
+                      <Typography
+                        align="center"
+                        sx={{ fontSize: "14px", color: "#6B7280" }}
+                      >
+                        (Waste Water)
+                      </Typography>
+                      <Typography align="center" sx={metricValueStyle}>
+                        {intakeTotal.toLocaleString()}
+                      </Typography>
+                      <Typography align="center" sx={metricUnitStyle}>
+                        KL
+                      </Typography>
+                    </Box>
+
+                    <Box>
+                      <Typography
+                        align="center"
+                        sx={{ fontSize: "14px", color: "#6B7280" }}
+                      >
+                        (Waste Water)
+                      </Typography>
+                      <Typography align="center" sx={metricValueStyle}>
+                        {intakeTotal.toLocaleString()}
+                      </Typography>
+                      <Typography align="center" sx={metricUnitStyle}>
+                        KL
+                      </Typography>
+                    </Box>
+                  </Box>
+                </MetricCard>
+              </Grid>
+
+              <Grid size={{ sm: "grow" }}>
+                <MetricCard>
+                  <Typography
+                    align="center"
+                    sx={{ fontSize: "14px", fontWeight: 700, color: "#1F2937" }}
+                  >
+                    Treated Water
+                  </Typography>
+                  <Box display="flex" justifyContent="space-around" mt={0.5}>
+                    <Box>
+                      <Typography
+                        align="center"
+                        sx={{ fontSize: "14px", color: "#6B7280" }}
+                      >
+                        (Out)
+                      </Typography>
+                      <Typography align="center" sx={metricValueStyle}>
+                        {treatedWater.toLocaleString()}
+                      </Typography>
+                      <Typography align="center" sx={metricUnitStyle}>
+                        KL
+                      </Typography>
+                    </Box>
+
+                    <Box>
+                      <Typography
+                        align="center"
+                        sx={{ fontSize: "14px", color: "#6B7280" }}
+                      >
+                        (Out)
+                      </Typography>
+                      <Typography align="center" sx={metricValueStyle}>
+                        {treatedWater.toLocaleString()}
+                      </Typography>
+                      <Typography align="center" sx={metricUnitStyle}>
+                        KL
+                      </Typography>
+                    </Box>
+                  </Box>
+                </MetricCard>
+              </Grid>
+            </Grid>
+
+            <Grid container mt={1} height={{ md: "calc(100% - 40% - 8px)" }}>
+              <Grid size={{ sm: 12 }}>
+                <MetricCard>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-around",
+                      alignItems: "center",
+                      flexDirection: { xs: "column", sm: "row" },
+                      gap: 1,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography sx={metricHeadingStyle}>pH</Typography>
+                      <Chart
+                        options={phGaugeOptions}
+                        series={[phValue]}
+                        type="radialBar"
+                        height={100}
+                        width="100"
+                      />
+                      <Typography sx={{ fontSize: "11px", color: "#9CA3AF" }}>
+                        mg/L
+                      </Typography>
+                    </Box>
+
+                    {/* TDS Gauge */}
+                    <Box
+                      sx={{
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography sx={metricHeadingStyle}>TDS</Typography>
+                      <Chart
+                        options={tdsGaugeOptions}
+                        series={[tdsValue]}
+                        type="radialBar"
+                        height={100}
+                        width="100"
+                      />
+                      <Typography sx={{ fontSize: "11px", color: "#9CA3AF" }}>
+                        ppm
+                      </Typography>
+                    </Box>
+
+                    {/* COD Gauge */}
+                    <Box
+                      sx={{
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography sx={metricHeadingStyle}>COD</Typography>
+                      <Chart
+                        options={codGaugeOptions}
+                        series={[codValue]}
+                        type="radialBar"
+                        height={100}
+                        width="100"
+                      />
+                      <Typography sx={{ fontSize: "11px", color: "#9CA3AF" }}>
+                        mg/L
+                      </Typography>
+                    </Box>
+
+                    {/* BOD Gauge */}
+                    <Box
+                      sx={{
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography sx={metricHeadingStyle}>BOD</Typography>
+                      <Chart
+                        options={bodGaugeOptions}
+                        series={[bodValue]}
+                        type="radialBar"
+                        height={100}
+                        width="100"
+                      />
+                      <Typography sx={{ fontSize: "11px", color: "#9CA3AF" }}>
+                        mg/L
+                      </Typography>
+                    </Box>
+
+                    {/* TSS Gauge */}
+                    <Box
+                      sx={{
+                        textAlign: "center",
+                      }}
+                    >
+                      <Typography sx={metricHeadingStyle}>TSS</Typography>
+                      <Chart
+                        options={tssGaugeOptions}
+                        series={[tssValue]}
+                        type="radialBar"
+                        height={100}
+                        width="100"
+                      />
+                      <Typography sx={{ fontSize: "11px", color: "#9CA3AF" }}>
+                        mg/L
+                      </Typography>
+                    </Box>
+                  </Box>
+                </MetricCard>
+              </Grid>
+            </Grid>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: "grow" }} height={{ md: "100%" }}>
+            <MetricCard>
+              <Typography
+                sx={{ fontSize: "14px", fontWeight: 700, color: "#1F2937" }}
+              >
+                Site Location Map
+              </Typography>
+              <MapContainer
+                center={[9.9252, 78.1198]}
+                zoom={14}
+                scrollWheelZoom={false}
+                style={{ height: "280px", width: "100%" }}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Circle
+                  center={[9.9252, 78.1198]}
+                  radius={400}
+                  pathOptions={{
+                    color: "#38bdf8",
+                    fillColor: "#38bdf8",
+                    fillOpacity: 0.15,
+                  }}
+                />
+                <Marker position={[9.9252, 78.1198]}>
+                  <Popup>
+                    <strong>Weather Station + Solar PV Site</strong>
+                    <br />
+                    Lat: {9.9252}
+                    <br />
+                    Lon: {78.1198}
+                  </Popup>
+                </Marker>
+              </MapContainer>
+            </MetricCard>
+          </Grid>
+        </Grid>
+
+        <Grid
+          container
+          gap={1}
+          alignItems="center"
+          mt={1}
+          height={{ md: "calc(100% - 50% - 8px)" }}
+        >
+          <Grid size={{ xs: 12, sm: "grow" }} height={{ md: "100%" }}>
+            <MetricCard>
+              <Typography sx={{ ...titleStyle, mb: 2 }}>
+                Historical Trends
+              </Typography>
+              <Box sx={{ position: "relative" }}>
+                {chartLoading && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      backgroundColor: "rgba(255,255,255,0.8)",
+                      zIndex: 10,
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <CircularProgress />
+                  </Box>
+                )}
+                {!chartLoading && historicalSeries.length > 0 && (
+                  <Chart
+                    options={historicalTrendsOptions}
+                    series={historicalSeries}
+                    type="line"
+                    height={240}
+                  />
+                )}
+              </Box>
+            </MetricCard>
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: "grow" }} height={{ md: "100%" }}>
+            <MetricCard>
+              <Typography sx={{ ...titleStyle, mb: 2 }}>
+                water comparison
+              </Typography>
+              <Box sx={{ position: "relative" }}>
+                {chartLoading && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      backgroundColor: "rgba(255,255,255,0.8)",
+                      zIndex: 10,
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <CircularProgress />
+                  </Box>
+                )}
+                {!chartLoading && waterCompSeries.length > 0 && (
+                  <Chart
+                    options={blowerUsageOptions}
+                    series={waterCompSeries}
+                    type="bar"
+                    height={240}
+                  />
+                )}
+              </Box>
+            </MetricCard>
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      />
+    </>
+  );
+
+  //   return (
+  //     <Box style={styles.mainContent} id="main-content">
+  //       {/* Main Content */}
+  //       <>
+  //         {/* Top Row: Metrics Cards + Gauges */}
+  //         <Grid container spacing={2}>
+  //           {/* Intake Total Card — full width per row below md; desktop unchanged */}
+  //           <Grid item xs={12} sm={2} md={2}>
+  //             <Card
+  //               sx={{
+  //                 ...metricCardStyle,
+  //                 width: { xs: "85%", sm: "50%", md: "100%" },
+  //                 height: { xs: "auto", sm: "50%", md: "50%" },
+  //               }}
+  //             >
+  //               <CardContent
+  //                 sx={{ p: { md: 2, sm: 2 }, textAlign: "center", width: "100%" }}
+  //               >
+  //                 <Typography
+  //                   sx={{ fontSize: "14px", fontWeight: 700, color: "#1F2937" }}
+  //                 >
+  //                   Intake Total
+  //                 </Typography>
+  //                 <Typography sx={{ fontSize: "14px", color: "#6B7280", mb: 2 }}>
+  //                   (Waste Water)
+  //                 </Typography>
+  //                 <Typography sx={metricValueStyle}>
+  //                   {intakeTotal.toLocaleString()}
+  //                 </Typography>
+  //                 <Typography sx={metricUnitStyle}>KL</Typography>
+  //               </CardContent>
+  //             </Card>
+  //           </Grid>
+
+  //           {/* Gauge Charts Container */}
+  //           <Grid item xs={12} sm={8} md={8}>
+  //             <Card
+  //               sx={{
+  //                 ...cardStyle,
+  //                 marginLeft: { xs: 0, sm: "127px", md: "35px" },
+  //                 height: { xs: "auto", md: "70%" },
+  //                 width: { xs: "94.5%", sm: "60%", md: "auto" },
+  //                 marginTop: { sm: "-232px", md: "0" },
+  //               }}
+  //             >
+  //               <CardContent sx={{ p: { xs: 2, sm: -5, md: 3 } }}>
+  //                 <Box
+  //                   sx={{
+  //                     display: "flex",
+  //                     justifyContent: "space-around",
+  //                     flexWrap: "wrap",
+  //                     gap: 2,
+  //                   }}
+  //                 >
+  //                   {/* pH Gauge */}
+  //                   <Box
+  //                     sx={{
+  //                       textAlign: "center",
+  //                       minWidth: "140px",
+  //                       marginTop: "-20px",
+  //                     }}
+  //                   >
+  //                     <Typography sx={metricHeadingStyle}>pH</Typography>
+  //                     <Chart
+  //                       options={phGaugeOptions}
+  //                       series={[phValue]}
+  //                       type="radialBar"
+  //                       height={100}
+  //                       width="100"
+  //                     />
+  //                     <Typography sx={{ fontSize: "11px", color: "#9CA3AF" }}>
+  //                       mg/L
+  //                     </Typography>
+  //                   </Box>
+
+  //                   {/* TDS Gauge */}
+  //                   <Box
+  //                     sx={{
+  //                       textAlign: "center",
+  //                       minWidth: "140px",
+  //                       marginTop: "-20px",
+  //                     }}
+  //                   >
+  //                     <Typography sx={metricHeadingStyle}>TDS</Typography>
+  //                     <Chart
+  //                       options={tdsGaugeOptions}
+  //                       series={[tdsValue]}
+  //                       type="radialBar"
+  //                       height={100}
+  //                       width="180"
+  //                     />
+  //                     <Typography sx={{ fontSize: "11px", color: "#9CA3AF" }}>
+  //                       ppm
+  //                     </Typography>
+  //                   </Box>
+
+  //                   {/* COD Gauge */}
+  //                   <Box
+  //                     sx={{
+  //                       textAlign: "center",
+  //                       minWidth: "140px",
+  //                       marginTop: "-20px",
+  //                     }}
+  //                   >
+  //                     <Typography sx={metricHeadingStyle}>COD</Typography>
+  //                     <Chart
+  //                       options={codGaugeOptions}
+  //                       series={[codValue]}
+  //                       type="radialBar"
+  //                       height={100}
+  //                       width="180"
+  //                     />
+  //                     <Typography sx={{ fontSize: "11px", color: "#9CA3AF" }}>
+  //                       mg/L
+  //                     </Typography>
+  //                   </Box>
+
+  //                   {/* BOD Gauge */}
+  //                   <Box
+  //                     sx={{
+  //                       textAlign: "center",
+  //                       minWidth: "140px",
+  //                       marginTop: "-20px",
+  //                     }}
+  //                   >
+  //                     <Typography sx={metricHeadingStyle}>BOD</Typography>
+  //                     <Chart
+  //                       options={bodGaugeOptions}
+  //                       series={[bodValue]}
+  //                       type="radialBar"
+  //                       height={100}
+  //                       width="180"
+  //                     />
+  //                     <Typography sx={{ fontSize: "11px", color: "#9CA3AF" }}>
+  //                       mg/L
+  //                     </Typography>
+  //                   </Box>
+
+  //                   {/* TSS Gauge */}
+  //                   <Box
+  //                     sx={{
+  //                       textAlign: "center",
+  //                       minWidth: "140px",
+  //                       marginTop: "-20px",
+  //                     }}
+  //                   >
+  //                     <Typography sx={metricHeadingStyle}>TSS</Typography>
+  //                     <Chart
+  //                       options={tssGaugeOptions}
+  //                       series={[tssValue]}
+  //                       type="radialBar"
+  //                       height={100}
+  //                       width="180"
+  //                     />
+  //                     <Typography sx={{ fontSize: "11px", color: "#9CA3AF" }}>
+  //                       mg/L
+  //                     </Typography>
+  //                   </Box>
+  //                 </Box>
+  //               </CardContent>
+  //             </Card>
+  //           </Grid>
+
+  //           {/* Treated Water Card */}
+  //           <Grid item xs={12} sm={2} md={2}>
+  //             <Card
+  //               sx={{
+  //                 ...metricCardStyle,
+  //                 width: { xs: "85%", md: "100%" },
+  //                 marginLeft: { xs: 0, md: "-5px" },
+  //                 height: { xs: "auto", md: "50%" },
+  //               }}
+  //             >
+  //               <CardContent sx={{ p: 2, textAlign: "center", width: "100%" }}>
+  //                 <Typography
+  //                   sx={{ fontSize: "14px", fontWeight: 700, color: "#1F2937" }}
+  //                 >
+  //                   Treated Water
+  //                 </Typography>
+  //                 <Typography sx={{ fontSize: "14px", color: "#6B7280", mb: 2 }}>
+  //                   (Out)
+  //                 </Typography>
+  //                 <Typography sx={metricValueStyle}>
+  //                   {treatedWater.toLocaleString()}
+  //                 </Typography>
+  //                 <Typography sx={metricUnitStyle}>KL</Typography>
+  //               </CardContent>
+  //             </Card>
+  //           </Grid>
+  //         </Grid>
+
+  //         {/* Blower Performance Row */}
+  //         <Grid container spacing={2} sx={{ marginTop: { xs: 1, md: "-50px" } }}>
+  //           <Grid item xs={12}>
+  //             <Card
+  //               sx={{
+  //                 ...cardStyle,
+  //                 minHeight: "150px",
+  //                 height: { xs: "auto", md: "70%" },
+  //               }}
+  //             >
+  //               <CardContent sx={{ p: { xs: 2, md: 5 } }}>
+  //                 <Box
+  //                   sx={{
+  //                     display: "flex",
+  //                     flexDirection: { xs: "column", md: "row" },
+  //                     justifyContent: "space-around",
+  //                     alignItems: "center",
+  //                     flexWrap: "wrap",
+  //                     gap: { xs: 3, md: "145px" },
+  //                   }}
+  //                 >
+  //                   {/* Heading */}
+  //                   {/* <Box sx={{ minWidth: '120px', textAlign: { xs: 'center', md: 'left' } }}>
+  //                                             <Typography sx={{ ...metricHeadingStyle, fontSize: '14px', fontWeight: 600, color: '#1F2937' }}>
+  //                                                 water comparison
+  //                                             </Typography>
+  //                                         </Box> */}
+
+  //                   {/* Run Hours */}
+  //                   <Box sx={{ textAlign: "center", minWidth: "156px" }}>
+  //                     <Typography sx={metricHeadingStyle}>
+  //                       Sewage Water
+  //                     </Typography>
+  //                     <Typography sx={{ ...metricValueStyle, fontSize: "20px" }}>
+  //                       {runHours.toLocaleString()}
+  //                     </Typography>
+  //                     <Typography sx={metricUnitStyle}>hr</Typography>
+  //                   </Box>
+
+  //                   {/* Temperature */}
+  //                   <Box sx={{ textAlign: "center", minWidth: "156px" }}>
+  //                     <Typography sx={metricHeadingStyle}>Temperature</Typography>
+  //                     <Typography sx={{ ...metricValueStyle, fontSize: "20px" }}>
+  //                       {temperature}
+  //                     </Typography>
+  //                     <Typography sx={metricUnitStyle}>°C</Typography>
+  //                   </Box>
+
+  //                   {/* Pressure */}
+  //                   <Box sx={{ textAlign: "center", minWidth: "156px" }}>
+  //                     <Typography sx={metricHeadingStyle}>Pressure</Typography>
+  //                     <Typography sx={{ ...metricValueStyle, fontSize: "20px" }}>
+  //                       {pressure}
+  //                     </Typography>
+  //                     <Typography sx={metricUnitStyle}>bar</Typography>
+  //                   </Box>
+
+  //                   {/* Power */}
+  //                   <Box sx={{ textAlign: "center", minWidth: "156px" }}>
+  //                     <Typography sx={metricHeadingStyle}>Power</Typography>
+  //                     <Typography sx={{ ...metricValueStyle, fontSize: "20px" }}>
+  //                       {power}
+  //                     </Typography>
+  //                     <Typography sx={metricUnitStyle}>KW</Typography>
+  //                   </Box>
+
+  //                   {/* RPM & Status */}
+  //                   <Box sx={{ textAlign: "center", minWidth: "156px" }}>
+  //                     <Typography sx={metricHeadingStyle}>RPM</Typography>
+  //                     <Typography sx={{ ...metricValueStyle, fontSize: "20px" }}>
+  //                       {rpm.toLocaleString()}
+  //                     </Typography>
+  //                     <Badge
+  //                       badgeContent={deviceStatus}
+  //                       color={isOnline ? "success" : "error"}
+  //                       sx={{ mt: 1 }}
+  //                     />
+  //                   </Box>
+  //                 </Box>
+  //               </CardContent>
+  //             </Card>
+  //           </Grid>
+  //         </Grid>
+
+  //         {/* Charts Row */}
+  //         <Grid container spacing={2}>
+  //           {/* Historical Trends Chart */}
+  //           <Grid item xs={12} md={6}>
+  //             <Card
+  //               sx={{
+  //                 ...cardStyle,
+  //                 minHeight: "300px",
+  //                 width: { xs: "94.5%", sm: "105%", md: "143.5%" },
+  //                 marginTop: { xs: "6px", md: "10px" },
+  //               }}
+  //             >
+  //               <CardContent sx={{ height: "100%" }}>
+  //                 <Typography sx={{ ...titleStyle, mb: 2 }}>
+  //                   Historical Trends
+  //                 </Typography>
+  //                 <Box sx={{ position: "relative" }}>
+  //                   {chartLoading && (
+  //                     <Box
+  //                       sx={{
+  //                         position: "absolute",
+  //                         top: 0,
+  //                         left: 0,
+  //                         right: 0,
+  //                         bottom: 0,
+  //                         display: "flex",
+  //                         justifyContent: "center",
+  //                         alignItems: "center",
+  //                         backgroundColor: "rgba(255,255,255,0.8)",
+  //                         zIndex: 10,
+  //                         borderRadius: "8px",
+  //                       }}
+  //                     >
+  //                       <CircularProgress />
+  //                     </Box>
+  //                   )}
+  //                   {!chartLoading && historicalSeries.length > 0 && (
+  //                     <Chart
+  //                       options={historicalTrendsOptions}
+  //                       series={historicalSeries}
+  //                       type="line"
+  //                       height={200}
+  //                     />
+  //                   )}
+  //                 </Box>
+  //               </CardContent>
+  //             </Card>
+  //           </Grid>
+
+  //           {/* Blower Usage Chart */}
+  //           <Grid item xs={12} md={6}>
+  //             <Card
+  //               sx={{
+  //                 ...cardStyle,
+  //                 minHeight: "300px",
+  //                 width: { xs: "94.5%", sm: "103%", md: "88.5%" },
+  //                 marginLeft: { xs: 0, sm: "10px", md: "200px" },
+  //                 marginTop: { xs: "-10px", sm: "5px", md: "10px" },
+  //               }}
+  //             >
+  //               <CardContent sx={{ height: "100%" }}>
+  //                 <Typography sx={{ ...titleStyle, mb: 2 }}>
+  //                   water comparison
+  //                 </Typography>
+  //                 <Box sx={{ position: "relative" }}>
+  //                   {chartLoading && (
+  //                     <Box
+  //                       sx={{
+  //                         position: "absolute",
+  //                         top: 0,
+  //                         left: 0,
+  //                         right: 0,
+  //                         bottom: 0,
+  //                         display: "flex",
+  //                         justifyContent: "center",
+  //                         alignItems: "center",
+  //                         backgroundColor: "rgba(255,255,255,0.8)",
+  //                         zIndex: 10,
+  //                         borderRadius: "8px",
+  //                       }}
+  //                     >
+  //                       <CircularProgress />
+  //                     </Box>
+  //                   )}
+  //                   {!chartLoading && waterCompSeries.length > 0 && (
+  //                     <Chart
+  //                       options={blowerUsageOptions}
+  //                       series={waterCompSeries}
+  //                       type="bar"
+  //                       height={240}
+  //                       width={isMobile ? "100%" : "140%"}
+  //                     />
+  //                   )}
+  //                 </Box>
+  //               </CardContent>
+  //             </Card>
+  //           </Grid>
+  //         </Grid>
+  //       </>
+
+  //       {/* Snackbar for notifications */}
+  //       <Snackbar
+  //         open={snackbarOpen}
+  //         autoHideDuration={6000}
+  //         onClose={() => setSnackbarOpen(false)}
+  //         message={snackbarMessage}
+  //         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+  //       />
+  //     </Box>
+  //   );
 };
 
 export default STPDashboard;
