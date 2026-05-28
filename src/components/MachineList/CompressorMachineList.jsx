@@ -97,8 +97,6 @@ const MachineListHeader = ({
   slaveOptions,
   setSlavesId,
   slavesId,
-  searchTerm,
-  setSearchTerm,
   handleDownload,
   isDownloadDisabled,
 }) => (
@@ -110,7 +108,7 @@ const MachineListHeader = ({
     }}
   >
     <Stack
-      direction={{ xs: "column", sm: "row" }}
+      direction="row"
       spacing={2}
       alignItems="center"
       justifyContent="space-between"
@@ -191,13 +189,13 @@ const CompressorMetricBlock = ({ machine, handleOpenModal, onStoppageClick }) =>
   return (
     <Box
       sx={{
-        p: 2,
+        p: 1,
         bgcolor: isOnline ? "#e8f5e9" : "#f2f2f2",
-        borderRadius: "20px",
+        borderRadius: "16px",
         minHeight: 340,
       }}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="start" spacing={1} sx={{ mb: 1 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ mb: 1 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <ResponsiveTextWrapper
             value={name}
@@ -205,14 +203,6 @@ const CompressorMetricBlock = ({ machine, handleOpenModal, onStoppageClick }) =>
             fontWeight="bold"
             color="text.primary"
           />
-          {lastUpdated ? (
-            <ResponsiveTextWrapper
-              value={formatTimestamp(lastUpdated)}
-              color="#595959"
-              fontSize="14px"
-              sx={{ mt: 0.5 }}
-            />
-          ) : null}
         </Box>
 
         <Chip
@@ -225,6 +215,23 @@ const CompressorMetricBlock = ({ machine, handleOpenModal, onStoppageClick }) =>
             borderColor: isOnline ? "success.main" : "error.main",
           }}
         />
+      </Stack>
+
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={1}
+        gap={1}
+      >
+        <Box width="100%">
+          <ResponsiveTextWrapper
+            value={formatTimestamp(lastUpdated)}
+            color="#595959"
+            fontWeight="bold"
+            fontSize="16px"
+          />
+        </Box>
       </Stack>
 
       <Divider sx={{ mb: 1 }} />
@@ -256,7 +263,7 @@ const CompressorMetricBlock = ({ machine, handleOpenModal, onStoppageClick }) =>
             value={`from ${statusFrom}`}
             color="#595959"
             fontSize="12px"
-            fontweight="bold"
+            fontWeight="bold"
             align="center"
           />
         ) : null}
@@ -964,7 +971,6 @@ const ModalContentForTrend = ({ handleTabChange, tab, tabDesc, slaveId, slaveNam
 const CompressorMachineList = () => {
   const { slavesData } = useCommonData();
   const { selectedApp } = useApplications();
-  const [searchTerm, setSearchTerm] = useState("");
   const [machineListData, setMachineListData] = useState(null);
   const [slavesId, setSlavesId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -1008,22 +1014,11 @@ const CompressorMachineList = () => {
 
   const filteredMachines = useMemo(() => {
     const machines = machineListData?.machines || [];
-    const term = searchTerm?.toLowerCase().trim();
     return machines.filter((machine) => {
       const matchesSlave = !slavesId || machine?.slave_id === slavesId || machine?.id === slavesId;
-      if (!matchesSlave) return false;
-      if (!term) return true;
-      return [
-        machine?.name,
-        machine?.slave_name,
-        machine?.compressor_no,
-        machine?.device_uid,
-        machine?.status,
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term));
+      return matchesSlave;
     });
-  }, [machineListData, searchTerm, slavesId]);
+  }, [machineListData, slavesId]);
 
   const fetchMachineListData = async () => {
     setIsLoading(true);
@@ -1060,8 +1055,6 @@ const CompressorMachineList = () => {
           }))}
           setSlavesId={setSlavesId}
           slavesId={slavesId}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
           handleDownload={() => handleDownload(filteredMachines, selectedApp)}
           isDownloadDisabled={!Boolean(filteredMachines?.length)}
         />

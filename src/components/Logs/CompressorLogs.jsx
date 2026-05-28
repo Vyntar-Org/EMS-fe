@@ -33,114 +33,124 @@ const CompressorLogsFilterHeader = ({
   };
 
   return (
-    <Box sx={{ pb: 1, borderBottom: "1px dashed", borderColor: "divider" }}>
-      <Grid container gap={2} alignItems="center">
-        <Grid item xs={12} sm md lg={3}>
-          <CustomAutocomplete
-            options={slaveOptions}
-            onChange={(val) => handleFieldCh("slave_id", val)}
-            value={payload?.slave_id || ""}
-            label="Select Device"
-            size="small"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
-                backgroundColor: "#f9f9f9",
-                transition: "0.3s",
-                "&:hover": {
-                  backgroundColor: "#fff",
-                },
-              },
-            }}
-          />
-        </Grid>
-
-        {/* <Grid item xs={12} sm md lg={3}>
-          <CustomAutocomplete
-            multiple
-            options={parameterOptions}
-            onChange={(val) => handleFieldCh("parameters", val)}
-            value={payload?.parameters || []}
-            label="Select Parameters"
-            size="small"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
-                backgroundColor: "#f9f9f9",
-                transition: "0.3s",
-                "&:hover": {
-                  backgroundColor: "#fff",
-                },
-              },
-            }}
-          />
-        </Grid> */}
-
-        <Grid item xs={12} md={4.5} lg>
-          <CustomDatePicker
-            mode="datetimerangepicker"
-            onChange={(val) => handleFieldCh("dateTime", val)}
-            value={payload?.dateTime || ""}
-          />
-        </Grid>
-
-        <Grid item xs="auto" display="flex" gap={2} ml={{ xs: "auto", md: 0 }}>
-          <Tooltip title="Search">
-            <span>
-              <Button
-                variant="contained"
-                onClick={() => handleSearch()}
-                disabled={!payload?.slave_id}
-                sx={{
-                  width: 40,
-                  height: 40,
-                  minWidth: 0,
-                  p: 0,
+  <Box
+        sx={{
+          pb: 1,
+          borderBottom: "1px dashed",
+          borderColor: "divider",
+        }}
+      >
+        <Grid container gap={2} alignItems="center">
+          <Grid item xs={12} sm md lg={3}>
+            <CustomAutocomplete
+              options={slaveOptions}
+              onChange={(val) => handleFieldCh("slave_id", val)}
+              value={payload?.slave_id || ""}
+              label="Select Devices"
+              size="small"
+              sx={{
+                "& .MuiOutlinedInput-root": {
                   borderRadius: 2,
-                  boxShadow: "none",
-                  backgroundColor: (theme) => theme.palette.primary.main || "#1976d2",
+  
+                  backgroundColor: "#f9f9f9",
+  
+                  transition: "0.3s",
+  
                   "&:hover": {
-                    boxShadow: "none",
-                    backgroundColor: (theme) => theme.palette.primary.dark || "#115293",
+                    backgroundColor: "#fff",
                   },
-                }}
-              >
-                <Search sx={{ fontSize: 20, color: "#fff" }} />
-              </Button>
-            </span>
-          </Tooltip>
-
-          <Tooltip title="Reset">
-            <span>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  setPayload((prev) => ({ ...(prev || {}), dateTime: getDefaultDateRange() }));
-                  handleReset();
-                }}
-                sx={{
-                  width: 40,
-                  height: 40,
-                  minWidth: 0,
-                  p: 0,
-                  borderRadius: 2,
-                  boxShadow: "none",
-                  backgroundColor: "#f5f5f5",
-                  color: "#666666",
-                  "&:hover": {
+                },
+              }}
+            />
+          </Grid>
+  
+          <Grid item xs={12} md={4.5} lg>
+            <CustomDatePicker
+              mode="datetimerangepicker"
+              onChange={(val) => handleFieldCh("dateTime", val)}
+              value={payload?.dateTime || ""}
+            />
+          </Grid>
+  
+          <Grid item xs="auto" display="flex" gap={2} ml={{ xs: "auto", md: 0 }}>
+            <Tooltip title="Search">
+              <span>
+                <Button
+                  variant="contained"
+                  onClick={() => handleSearch()}
+                  sx={{
+                    width: 40,
+  
+                    height: 40,
+  
+                    minWidth: 0,
+  
+                    p: 0,
+  
+                    borderRadius: 2,
+  
                     boxShadow: "none",
-                    backgroundColor: "#e0e0e0",
-                    color: "#333333",
-                  },
-                }}
-              >
-                <RestartAlt sx={{ fontSize: 20 }} />
-              </Button>
-            </span>
-          </Tooltip>
+  
+                    backgroundColor: (theme) =>
+                      theme.palette.primary.main || "#1976d2",
+  
+                    "&:hover": {
+                      boxShadow: "none",
+  
+                      backgroundColor: (theme) =>
+                        theme.palette.primary.dark || "#115293",
+                    },
+                  }}
+                >
+                  <Search sx={{ fontSize: 20, color: "#fff" }} />
+                </Button>
+              </span>
+            </Tooltip>
+  
+            <Tooltip title="Reset">
+              <span>
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    setPayload((prev) => ({
+                      ...(prev || {}),
+                      dateTime: getDefaultDateRange(),
+                    }));
+                    handleReset();
+                  }}
+                  sx={{
+                    width: 40,
+  
+                    height: 40,
+  
+                    minWidth: 0,
+  
+                    p: 0,
+  
+                    borderRadius: 2,
+  
+                    boxShadow: "none",
+  
+                    backgroundColor: "#f5f5f5",
+  
+                    color: "#666666",
+  
+                    "&:hover": {
+                      boxShadow: "none",
+  
+                      backgroundColor: "#e0e0e0",
+  
+                      color: "#333333",
+                    },
+                  }}
+                >
+                  <RestartAlt sx={{ fontSize: 20 }} />
+                </Button>
+              </span>
+            </Tooltip>
+          </Grid>
         </Grid>
-      </Grid>
-    </Box>
+      </Box>
   );
 };
 
