@@ -52,6 +52,8 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
   // Metric states (these would come from API)
   const [intakeTotal, setIntakeTotal] = useState(0);
   const [treatedWater, setTreatedWater] = useState(0);
+  const [intakeYesterday, setIntakeYesterday] = useState(0);
+  const [treatedWaterYesterday, setTreatedWaterYesterday] = useState(0);
 
   // Gauge values
   const [phValue, setPhValue] = useState(0);
@@ -90,8 +92,10 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         cards.forEach((card) => {
           if (card.title === "Intake Total") {
             setIntakeTotal(card.value);
+            setIntakeYesterday(card.previous_value);
           } else if (card.title === "Treated Water") {
             setTreatedWater(card.value);
+            setTreatedWaterYesterday(card.previous_value);
           } else if (card.title === "pH") {
             setPhValue(card.value);
           } else if (card.title === "TDS") {
@@ -383,7 +387,7 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
   };
 
   const metricValueStyle = {
-    fontSize: "24px",
+    fontSize: "20px",
     fontWeight: "bold",
     color: "#0156a6",
     fontFamily: "sans-serif",
@@ -465,7 +469,9 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
           },
         }}
       >
-        <CardContent sx={{ p: "16px !important" }}>{children}</CardContent>
+        <CardContent sx={{ p: "16px !important", pb: "0 !important" }}>
+          {children}
+        </CardContent>
       </Card>
     );
   };
@@ -493,7 +499,20 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box>
                       <Typography
                         align="center"
-                        sx={{ fontSize: "14px", color: "#6B7280" }}
+                        sx={{
+                          fontSize: "12px",
+                          color: "#3e485e",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Today
+                      </Typography>
+                      <Typography
+                        align="center"
+                        sx={{
+                          fontSize: "12px",
+                          color: "#6B7280",
+                        }}
                       >
                         (Waste Water)
                       </Typography>
@@ -508,12 +527,25 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box>
                       <Typography
                         align="center"
-                        sx={{ fontSize: "14px", color: "#6B7280" }}
+                        sx={{
+                          fontSize: "12px",
+                          color: "#3e485e",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Yesterday
+                      </Typography>
+                      <Typography
+                        align="center"
+                        sx={{
+                          fontSize: "12px",
+                          color: "#6B7280",
+                        }}
                       >
                         (Waste Water)
                       </Typography>
                       <Typography align="center" sx={metricValueStyle}>
-                        {intakeTotal.toLocaleString()}
+                        {intakeYesterday.toLocaleString()}
                       </Typography>
                       <Typography align="center" sx={metricUnitStyle}>
                         KL
@@ -535,7 +567,17 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box>
                       <Typography
                         align="center"
-                        sx={{ fontSize: "14px", color: "#6B7280" }}
+                        sx={{
+                          fontSize: "12px",
+                          color: "#3e485e",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Today
+                      </Typography>
+                      <Typography
+                        align="center"
+                        sx={{ fontSize: "12px", color: "#6B7280" }}
                       >
                         (Out)
                       </Typography>
@@ -550,12 +592,22 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     <Box>
                       <Typography
                         align="center"
-                        sx={{ fontSize: "14px", color: "#6B7280" }}
+                        sx={{
+                          fontSize: "12px",
+                          color: "#3e485e",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        Yesterday
+                      </Typography>
+                      <Typography
+                        align="center"
+                        sx={{ fontSize: "12px", color: "#6B7280" }}
                       >
                         (Out)
                       </Typography>
                       <Typography align="center" sx={metricValueStyle}>
-                        {treatedWater.toLocaleString()}
+                        {treatedWaterYesterday.toLocaleString()}
                       </Typography>
                       <Typography align="center" sx={metricUnitStyle}>
                         KL
