@@ -23,15 +23,16 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
+import { getStpSlaveList, getStpAnalytics } from '../../auth/stp/StpAnalytisApi';
 
 const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     // State for filters
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterDevice, setFilterDevice] = useState('all');
+    const [filterDevice, setFilterDevice] = useState('');
     const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(1, 'day'));
     const [filterEndDate, setFilterEndDate] = useState(dayjs());
     const [searchClicked, setSearchClicked] = useState(false);
-    const [devices, setDevices] = useState(['all']);
+    const [devices, setDevices] = useState([]);
     const [deviceObjects, setDeviceObjects] = useState([]);
     const [filterDevice2, setFilterDevice2] = useState('all');
     const [filterDevice3, setFilterDevice3] = useState('all');
@@ -39,7 +40,7 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     const [openEnd, setOpenEnd] = useState(false);
     
     // Loading and error states
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [dataLoading, setDataLoading] = useState(false);
     const [compareLoading, setCompareLoading] = useState(false);
     const [compareLoading2, setCompareLoading2] = useState(false);
@@ -104,50 +105,61 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Initialize Mock Devices
+    // Fetch Devices from API on component mount
     useEffect(() => {
-        const mockDevices = [
-            { slave_id: 1, slave_name: 'Water Inlet' },
-            { slave_id: 2, slave_name: 'Water Outlet' }
-        ];
-        
-        setDeviceObjects(mockDevices);
-        const deviceNames = mockDevices.map(device => device.slave_name);
-        setDevices(['all', ...deviceNames]);
-        setFilterDevice(mockDevices[0].slave_name);
-        setLoading(false);
+        const fetchDevices = async () => {
+            try {
+                setLoading(true);
+                const data = await getStpSlaveList();
+                
+                // FILTER: Only show Flow Meters (Water Inlet/Outlet) for Analytics
+                // This hides TDS, pH, and Water Level devices
+                const flowDevices = data.filter(device => device.slave_type === 'FLOW_METER');
+
+                const formattedDevices = flowDevices.map(device => ({
+                    slave_id: device.slave_id,
+                    slave_name: device.slave_name
+                }));
+
+                setDeviceObjects(formattedDevices);
+                const deviceNames = formattedDevices.map(device => device.slave_name);
+                setDevices(deviceNames);
+                
+                if (formattedDevices.length > 0) {
+                    setFilterDevice(formattedDevices[0].slave_name);
+                }
+                
+            } catch (err) {
+                console.error('Error fetching device list:', err);
+                setSnackbarMessage('Failed to fetch device list');
+                setSnackbarOpen(true);
+                setError('Failed to load devices');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDevices();
     }, []);
 
-    // Function to generate Mock Analytics Data
-    // MODIFIED: All flow_rate values are now set to 0
+    // Real API call for Analytics Data
     const fetchAnalyticsData = async (deviceName, startDate, endDate) => {
-        await new Promise(resolve => setTimeout(resolve, 500));
-
         const selectedDevice = deviceObjects.find(device => device.slave_name === deviceName);
         if (!selectedDevice) {
             throw new Error(`Device '${deviceName}' not found`);
         }
 
-        const data = [];
-        let current = dayjs(startDate);
-        const end = dayjs(endDate);
+        const start = dayjs(startDate).format('YYYY-MM-DD HH:mm:ss');
+        const end = dayjs(endDate).format('YYYY-MM-DD HH:mm:ss');
 
-        while (current.isBefore(end)) {
-            const entry = {
-                timestamp: current.format('YYYY-MM-DD HH:mm:ss'),
-                // Set value to 0 as requested
-                flow_rate: 0, 
-            };
-            data.push(entry);
-            current = current.add(1, 'hour');
-        }
-        
-        return data;
+        // Call the real API
+        const response = await getStpAnalytics(selectedDevice.slave_id, start, end);
+        return response || [];
     };
 
     // Handle search button click
     const handleSearch = async () => {
-        if (!filterDevice || filterDevice === 'all') {
+        if (!filterDevice) {
             setSnackbarMessage('Please select a device');
             setSnackbarOpen(true);
             return;
@@ -168,7 +180,6 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             setSearchClicked(true);
             setError(null);
             
-            // Fetch data for Flow Rate only
             const analyticsData = await fetchAnalyticsData(filterDevice, filterStartDate, filterEndDate);
             setFilteredChartData(analyticsData);
             
@@ -212,7 +223,7 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
     // Function to reset all filters
     const handleResetFilters = () => {
         setSearchTerm('');
-        setFilterDevice(deviceObjects.length > 0 ? deviceObjects[0].slave_name : 'all');
+        setFilterDevice(deviceObjects.length > 0 ? deviceObjects[0].slave_name : '');
         setFilterStartDate(dayjs().subtract(1, 'day'));
         setFilterEndDate(dayjs());
         setSearchClicked(false);
@@ -272,102 +283,55 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         }
     };
 
-    // Process the filtered chart data (Fixed to Flow Rate)
+    // Dynamic Data Processing
+    const processChartData = React.useCallback((chartData) => {
+        if (!chartData || !Array.isArray(chartData) || chartData.length === 0) {
+            return { series: [], categories: [], title: '' };
+        }
+
+        const categories = chartData.map(item => {
+            const timestamp = item.timestamp || item.created_at || item.date;
+            if (timestamp) {
+                const date = new Date(timestamp);
+                return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+            }
+            return 'N/A';
+        });
+
+        const firstItem = chartData[0];
+        const valueKeys = Object.keys(firstItem).filter(key => key !== 'timestamp');
+        
+        const series = [];
+        
+        valueKeys.forEach(key => {
+            const values = chartData.map((item) => {
+                const val = parseFloat(item[key]);
+                return isNaN(val) ? 0 : parseFloat(val.toFixed(2));
+            });
+
+            series.push({
+                name: key,
+                data: values
+            });
+        });
+
+        return { series, categories, title: valueKeys[0] || '' };
+    }, []);
+
     const processedFilteredData = React.useMemo(() => {
-        if (!filteredChartData || !Array.isArray(filteredChartData) || filteredChartData.length === 0) {
-            return { series: [], categories: [] };
-        }
+        return processChartData(filteredChartData);
+    }, [filteredChartData, processChartData]);
 
-        const categories = filteredChartData.map(item => {
-            const timestamp = item.timestamp || item.created_at || item.date;
-            if (timestamp) {
-                const date = new Date(timestamp);
-                return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
-            }
-            return 'N/A';
-        });
-
-        const series = [];
-
-        const values = filteredChartData.map((item) => {
-            return parseFloat((item.flow_rate || 0).toFixed(2));
-        });
-
-        if (filteredChartData.length > 0) {
-            series.push({
-                name: 'Flow Rate (m³/h)',
-                data: values
-            });
-        }
-
-        return { series, categories };
-    }, [filteredChartData, filterDevice]);
-
-    // Process the comparison chart data (Fixed to Flow Rate)
     const processedCompareData = React.useMemo(() => {
-        if (!compareChartData || !Array.isArray(compareChartData) || compareChartData.length === 0) {
-            return { series: [], categories: [] };
-        }
+        return processChartData(compareChartData);
+    }, [compareChartData, processChartData]);
 
-        const categories = compareChartData.map(item => {
-            const timestamp = item.timestamp || item.created_at || item.date;
-            if (timestamp) {
-                const date = new Date(timestamp);
-                return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
-            }
-            return 'N/A';
-        });
-
-        const series = [];
-        
-        const values = compareChartData.map((item) => {
-            return parseFloat((item.flow_rate || 0).toFixed(2));
-        });
-
-        if (compareChartData.length > 0) {
-            series.push({
-                name: 'Flow Rate (m³/h)',
-                data: values
-            });
-        }
-
-        return { series, categories };
-    }, [compareChartData, compareDevice, filterDevice2]);
-
-    // Process the second comparison chart data (Fixed to Flow Rate)
     const processedCompareData2 = React.useMemo(() => {
-        if (!compareChartData2 || !Array.isArray(compareChartData2) || compareChartData2.length === 0) {
-            return { series: [], categories: [] };
-        }
-
-        const categories = compareChartData2.map(item => {
-            const timestamp = item.timestamp || item.created_at || item.date;
-            if (timestamp) {
-                const date = new Date(timestamp);
-                return `${String(date.getDate()).padStart(2, '0')} ${date.toLocaleString('default', { month: 'short' })}`;
-            }
-            return 'N/A';
-        });
-
-        const series = [];
-        
-        const values = compareChartData2.map((item) => {
-            return parseFloat((item.flow_rate || 0).toFixed(2));
-        });
-
-        if (compareChartData2.length > 0) {
-            series.push({
-                name: 'Flow Rate (m³/h)',
-                data: values
-            });
-        }
-
-        return { series, categories };
-    }, [compareChartData2, compareDevice2, filterDevice3]);
+        return processChartData(compareChartData2);
+    }, [compareChartData2, processChartData]);
 
     const seriesColors = ['#d32f2f', '#1976d2', '#F59E0B', '#EF4444', '#8B5CF6', '#2563EB'];
 
-    // Dynamic chart configuration function
     const getChartOptions = (currentProcessedData, currentData) => {
         return {
             chart: {
@@ -439,7 +403,7 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                             const timestamp = item?.timestamp || item?.created_at || item?.date || '';
                             if (timestamp) {
                                 const date = new Date(timestamp);
-                                originalDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                                originalDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
                             }
                         }
                     }
@@ -509,13 +473,11 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                             >
                                                 {devices.map((device) => (
                                                     <MenuItem key={device} value={device}>
-                                                        {device === 'all' ? 'Select Device' : device}
+                                                        {device}
                                                     </MenuItem>
                                                 ))}
                                             </Select>
                                         </FormControl>
-
-                                        {/* Parameter Select Removed */}
 
                                         {/* Date Pickers Row */}
                                         <Box 
@@ -629,7 +591,7 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                 <>
                                     <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: 1, gap: { xs: 1, md: 0 } }}>
                                         <Typography gutterBottom sx={{ fontSize: { xs: '12px', sm: '14px' }, fontWeight: 'bold', color: '#50342c', mb: 0 }}>
-                                            {`${filterDevice} - Flow Rate (m³/h)`}
+                                            {`${filterDevice} - ${processedFilteredData.title}`}
                                         </Typography>
                                         <Box sx={{ width: { xs: '100%', md: 'auto' } }}>
                                             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 1, md: 2 }, alignItems: { xs: 'stretch', md: 'center' } }}>
@@ -641,7 +603,7 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                     <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 300 }, width: { xs: '100%', md: 'auto' } }}>
                                                         <InputLabel>Select Device to Compare</InputLabel>
                                                         <Select value={compareDevice} label="Select Device to Compare" onChange={(e) => handleCompareDeviceChange(e.target.value)}>
-                                                            {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice2).map((device) => (
+                                                            {devices.filter(device => device !== filterDevice && device !== compareDevice2).map((device) => (
                                                                 <MenuItem key={device} value={device}>{device}</MenuItem>
                                                             ))}
                                                         </Select>
@@ -657,7 +619,7 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                     {compareMode && compareDevice && (
                                         <Box sx={{ mt: 4 }}>
                                             <Typography gutterBottom sx={{ fontSize: { xs: '12px', sm: '14px' }, fontWeight: 'bold', color: '#50342c', mb: 1 }}>
-                                                {`${compareDevice} - Flow Rate (m³/h)`}
+                                                {`${compareDevice} - ${processedCompareData.title}`}
                                             </Typography>
                                             {compareLoading ? (
                                                 <Box style={styles.loadingContainer}><CircularProgress /></Box>
@@ -669,7 +631,7 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 <InputLabel>Select Device</InputLabel>
                                                                 <Select value={compareDevice} label="Select Device" onChange={(e) => handleCompareDeviceChange(e.target.value)}>
                                                                     {devices.map((device) => (
-                                                                        <MenuItem key={device} value={device}>{device === 'all' ? 'Select Device' : device}</MenuItem>
+                                                                        <MenuItem key={device} value={device}>{device}</MenuItem>
                                                                     ))}
                                                                 </Select>
                                                             </FormControl>
@@ -682,7 +644,7 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                 <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 300 }, width: { xs: '100%', md: 'auto' } }}>
                                                                     <InputLabel>Select Second Device to Compare</InputLabel>
                                                                     <Select value={compareDevice2} label="Select Second Device to Compare" onChange={(e) => handleCompareDevice2Change(e.target.value)}>
-                                                                        {devices.filter(device => device !== 'all' && device !== filterDevice && device !== compareDevice).map((device) => (
+                                                                        {devices.filter(device => device !== filterDevice && device !== compareDevice).map((device) => (
                                                                             <MenuItem key={device} value={device}>{device}</MenuItem>
                                                                         ))}
                                                                     </Select>
@@ -703,7 +665,7 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                     {compareMode2 && compareDevice2 && (
                                         <Box sx={{ mt: 4 }}>
                                             <Typography gutterBottom sx={{ fontSize: { xs: '12px', sm: '14px' }, fontWeight: 'bold', color: '#50342c', mb: 1 }}>
-                                                {`${compareDevice2} - Flow Rate (m³/h)`}
+                                                {`${compareDevice2} - ${processedCompareData2.title}`}
                                             </Typography>
                                             {compareLoading2 ? (
                                                 <Box style={styles.loadingContainer}><CircularProgress /></Box>
@@ -714,7 +676,7 @@ const StpAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                             <InputLabel>Select Device</InputLabel>
                                                             <Select value={compareDevice2} label="Select Device" onChange={(e) => handleCompareDevice2Change(e.target.value)}>
                                                                 {devices.map((device) => (
-                                                                    <MenuItem key={device} value={device}>{device === 'all' ? 'Select Device' : device}</MenuItem>
+                                                                    <MenuItem key={device} value={device}>{device}</MenuItem>
                                                                 ))}
                                                             </Select>
                                                         </FormControl>

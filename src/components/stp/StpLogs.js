@@ -31,18 +31,20 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
+import { getStpSlaveList, getStpLogs } from '../../auth/stp/StpLogsApi'; // Adjust import path as needed
 
 function StpLogs({ onSidebarToggle, sidebarVisible }) {
   // State variables
-  const [devices, setDevices] = useState(['all']);
+  const [devices, setDevices] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // Filter State variables
-  const [filterDevice, setFilterDevice] = useState('');
+  const [selectedSlaveId, setSelectedSlaveId] = useState('');
   const [page, setPage] = useState(1);
   const rowsPerPage = 30;
   const [filterStartDate, setFilterStartDate] = useState(dayjs().subtract(1, 'hour'));
@@ -50,18 +52,22 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
   const [searchClicked, setSearchClicked] = useState(false);
   const [openStart, setOpenStart] = React.useState(false);
   const [openEnd, setOpenEnd] = React.useState(false);
+  
+  // Meta info for pagination
+  const [totalRecords, setTotalRecords] = useState(0);
 
-  // Define device-specific columns configuration
+  // --- UPDATED CONFIGURATION ---
+  // Keys are mapped to lowercase to match normalized API response keys
   const deviceColumnsConfig = {
     'Water Inlet': [
       { key: 'timestamp', label: 'Timestamp' },
-      { key: 'inlet_flow', label: 'Inlet Flow (m³/hr)' },
-      { key: 'inlet_totalizer', label: 'Inlet Totalizer (KL)' },
+      { key: 'inlet flowrate', label: 'Inlet Flow (m³/hr)' },
+      { key: 'inlet totalizer', label: 'Inlet Totalizer (KL)' },
     ],
     'Water Outlet': [
       { key: 'timestamp', label: 'Timestamp' },
-      { key: 'outlet_flow', label: 'Outlet Flow (m³/hr)' },
-      { key: 'outlet_totalizer', label: 'Outlet Totalizer (KL)' },
+      { key: 'outlet flowrate', label: 'Outlet Flow (m³/hr)' },
+      { key: 'outlet totalizer', label: 'Outlet Totalizer (KL)' },
     ],
     'pH Monitor': [
       { key: 'timestamp', label: 'Timestamp' },
@@ -73,77 +79,70 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
     ],
     'Water Level Monitoring': [
       { key: 'timestamp', label: 'Timestamp' },
-      { key: 'collection_tank_level', label: 'Collection Tank Level' },
-      { key: 'collection_motor_status', label: 'Motor Status (Collection)' },
-      { key: 'filter_out_level', label: 'Filter Out Level' },
-      { key: 'filter_out_motor_status', label: 'Motor Status (Filter Out)' },
+      { key: 'level 1', label: 'Collection Tank Level' },
+      { key: 'motor 1 status', label: 'Motor Status (Collection)' },
+      { key: 'level 2', label: 'Filter Out Level' },
+      { key: 'motor 2 status', label: 'Motor Status (Filter Out)' },
     ]
+  };
+
+  // Helper to find the column config key based on slave name
+  const getColumnConfigKey = (slaveName) => {
+    if (!slaveName) return null;
+    if (slaveName.includes('Water Inlet')) return 'Water Inlet';
+    if (slaveName.includes('Water Outlet')) return 'Water Outlet';
+    if (slaveName.includes('pH')) return 'pH Monitor';
+    if (slaveName.includes('TDS')) return 'TDS Monitor';
+    if (slaveName.includes('Water Level')) return 'Water Level Monitoring';
+    return null;
   };
 
   // Function to get current columns based on selected device
   const getCurrentColumns = () => {
-    return deviceColumnsConfig[filterDevice] || [];
+    const selectedDevice = devices.find(d => d.slave_id === selectedSlaveId);
+    if (!selectedDevice) return [];
+    
+    const configKey = getColumnConfigKey(selectedDevice.slave_name);
+    return deviceColumnsConfig[configKey] || [];
   };
 
-  // Load devices on component mount
+  // Fetch devices on component mount
   useEffect(() => {
-    setTimeout(() => {
-      const mockDevices = ['Water Inlet', 'Water Outlet', 'pH Monitor', 'TDS Monitor', 'Water Level Monitoring'];
-      setDevices(['all', ...mockDevices]);
-      if (mockDevices.length > 0) {
-        setFilterDevice(mockDevices[0]);
+    const fetchDevices = async () => {
+      try {
+        setInitialLoading(true);
+        const data = await getStpSlaveList();
+        setDevices(data);
+        
+        // --- CHANGE: Set the first device as default ---
+        if (data && data.length > 0) {
+          setSelectedSlaveId(data[0].slave_id);
+        }
+      } catch (err) {
+        console.error(err);
+        setSnackbarMessage('Failed to fetch device list');
+        setSnackbarOpen(true);
+      } finally {
+        setInitialLoading(false);
       }
-    }, 500);
+    };
+    fetchDevices();
   }, []);
 
-  // Helper to generate mock logs based on device
-  const generateMockLogs = (device, start, end) => {
-    const data = [];
-    const startTime = start.valueOf();
-    const endTime = end.valueOf();
-    const diff = endTime - startTime;
-
-    if (diff <= 0) return [];
-
-    const numberOfEntries = Math.floor(Math.random() * 50) + 50;
-    // Options for Water Level Monitoring
-    const levels = ['Full', 'Low'];
-    const motorStatuses = ['On', 'Off'];
-
-    for (let i = 0; i < numberOfEntries; i++) {
-      const randomTime = startTime + Math.random() * diff;
-      const entry = {
-        timestamp: new Date(randomTime).toISOString(),
-      };
-
-      // Generate data based on device type
-      if (device === 'Water Inlet') {
-        entry.inlet_flow = 0;
-        entry.inlet_totalizer = 0;
-      } else if (device === 'Water Outlet') {
-        entry.outlet_flow = 0;
-        entry.outlet_totalizer = 0;
-      } else if (device === 'pH Monitor') {
-        entry.ph = 0;
-      } else if (device === 'TDS Monitor') {
-        entry.tds = 0;
-      } else if (device === 'Water Level Monitoring') {
-        // As requested: showing Low and Off (status strings) instead of 0
-        entry.collection_tank_level = levels[Math.floor(Math.random() * levels.length)];
-        entry.collection_motor_status = motorStatuses[Math.floor(Math.random() * motorStatuses.length)];
-        entry.filter_out_level = levels[Math.floor(Math.random() * levels.length)];
-        entry.filter_out_motor_status = motorStatuses[Math.floor(Math.random() * motorStatuses.length)];
-      }
-
-      data.push(entry);
-    }
-
-    return data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  // Normalize keys in log objects to lowercase to match config
+  const normalizeLogs = (logsData) => {
+    return logsData.map(log => {
+      const newLog = {};
+      Object.keys(log).forEach(key => {
+        newLog[key.toLowerCase()] = log[key];
+      });
+      return newLog;
+    });
   };
 
   // Handle search button click
-  const handleSearch = () => {
-    if (!filterDevice || filterDevice === 'all') {
+  const handleSearch = async () => {
+    if (!selectedSlaveId) {
       setSnackbarMessage('Please select a device');
       setSnackbarOpen(true);
       return;
@@ -156,51 +155,54 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
 
     setSearchClicked(true);
     setPage(1);
-    setLoading(true);
-    setError(null);
-
-    setTimeout(() => {
-      try {
-        const mockData = generateMockLogs(filterDevice, filterStartDate, filterEndDate);
-        setLogs(mockData);
-      } catch (err) {
-        setError('Failed to generate mock data');
-        setSnackbarMessage('Failed to generate mock data');
-        setSnackbarOpen(true);
-        setLogs([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 800);
+    fetchLogs(1);
   };
 
-  // Calculate pagination
-  const totalRecords = logs.length;
-  const totalPages = Math.ceil(totalRecords / rowsPerPage);
-  const shouldShowPagination = searchClicked && totalRecords > 0;
+  const fetchLogs = async (currentPage) => {
+    setLoading(true);
+    setError(null);
+    
+    const offset = (currentPage - 1) * rowsPerPage;
+    const start = filterStartDate.format('YYYY-MM-DD HH:mm:ss');
+    const end = filterEndDate.format('YYYY-MM-DD HH:mm:ss');
 
-  // Get logs for current page
-  const paginatedLogs = logs.slice(
-    (page - 1) * rowsPerPage,
-    page * rowsPerPage
-  );
+    try {
+      const response = await getStpLogs(selectedSlaveId, start, end, rowsPerPage, offset);
+      const normalizedLogs = normalizeLogs(response.logs || []);
+      setLogs(normalizedLogs);
+      setTotalRecords(response.meta.total || 0);
+    } catch (err) {
+      setError('Failed to fetch logs');
+      setSnackbarMessage('Failed to fetch logs');
+      setSnackbarOpen(true);
+      setLogs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle page change
+  const handlePageChange = (event, value) => {
+    setPage(value);
+    fetchLogs(value);
+  };
 
   // Function to reset all filters
   const handleResetFilters = () => {
-    if (devices.length > 1) {
-      setFilterDevice(devices[1]);
+    // Reset to first device instead of empty string
+    if (devices.length > 0) {
+      setSelectedSlaveId(devices[0].slave_id);
+    } else {
+      setSelectedSlaveId('');
     }
+    
     setFilterStartDate(dayjs().subtract(1, 'hour'));
     setFilterEndDate(dayjs());
     setPage(1);
     setSearchClicked(false);
     setLogs([]);
     setError(null);
-  };
-
-  // Handle page change
-  const handlePageChange = (event, value) => {
-    setPage(value);
+    setTotalRecords(0);
   };
 
   const styles = {
@@ -219,12 +221,12 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
       alignItems: 'center',
       height: '50vh',
     }
-  }
+  };
 
   // Helper to render cell content
   const renderCellContent = (log, colKey) => {
     if (colKey === 'timestamp') {
-      return new Date(log.timestamp).toLocaleString();
+      return dayjs(log.timestamp).format('DD/MM/YYYY hh:mm:ss A');
     }
     return log[colKey] !== undefined ? log[colKey] : '-';
   };
@@ -270,10 +272,10 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
     return value;
   };
 
-  if (loading && !searchClicked) {
+  if (initialLoading) {
     return (
       <Box sx={styles.mainContent} id="main-content">
-        <Card className="logs-card" sx={{ marginTop: '' }}>
+        <Card className="logs-card">
           <CardContent>
             <Box style={styles.loadingContainer}>
               <CircularProgress />
@@ -285,13 +287,14 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
   }
 
   const currentColumns = getCurrentColumns();
+  const totalPages = Math.ceil(totalRecords / rowsPerPage);
 
   return (
     <Box sx={styles.mainContent} id="main-content">
-      <Card className="logs-card" sx={{ marginTop: '' }}>
+      <Card className="logs-card">
         <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
           {loading && searchClicked && (
-            <Typography variant="body2" align="center" gutterBottom>
+            <Typography variant="body2" align="center" gutterBottom sx={{ mb: 2 }}>
               Loading logs...
             </Typography>
           )}
@@ -322,20 +325,17 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
               >
                 <InputLabel>Select Device</InputLabel>
                 <Select
-                  value={filterDevice}
+                  value={selectedSlaveId}
                   label="Select Device"
-                  onChange={(e) => setFilterDevice(e.target.value)}
+                  onChange={(e) => setSelectedSlaveId(e.target.value)}
                   disabled={devices.length === 0}
                 >
-                  {devices.length > 0 ? (
-                    devices.map((device) => (
-                      <MenuItem key={device} value={device}>
-                        {device === 'all' ? 'Select Device' : device}
-                      </MenuItem>
-                    ))
-                  ) : (
-                    <MenuItem value="" disabled>Loading devices...</MenuItem>
-                  )}
+                  {/* Removed the disabled placeholder MenuItem so the default value shows cleanly */}
+                  {devices.map((device) => (
+                    <MenuItem key={device.slave_id} value={device.slave_id}>
+                      {device.slave_name}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
 
@@ -380,6 +380,7 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
                   variant="contained"
                   startIcon={<SearchIcon />}
                   onClick={handleSearch}
+                  disabled={loading}
                   sx={{
                     backgroundColor: '#2F6FB0',
                     '&:hover': { backgroundColor: '#1E4A7C' },
@@ -438,8 +439,14 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {paginatedLogs.length > 0 ? (
-                      paginatedLogs.map((log, index) => (
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={currentColumns.length} align="center">
+                          <CircularProgress size={24} />
+                        </TableCell>
+                      </TableRow>
+                    ) : logs.length > 0 ? (
+                      logs.map((log, index) => (
                         <TableRow key={index} hover className="log-table-row">
                           {currentColumns.map((col) => {
                             const value = log[col.key];
@@ -462,7 +469,7 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
                     ) : (
                       <TableRow>
                         <TableCell 
-                          colSpan={currentColumns.length + 1} 
+                          colSpan={currentColumns.length} 
                           align="center"
                           sx={{
                             fontSize: { xs: '12px', sm: '14px' },
@@ -480,7 +487,7 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
           )}
 
           {/* Pagination */}
-          {shouldShowPagination && (
+          {searchClicked && totalRecords > 0 && (
             <Box sx={{ 
               display: 'flex', 
               flexDirection: { xs: 'column', sm: 'row' },
@@ -527,4 +534,4 @@ function StpLogs({ onSidebarToggle, sidebarVisible }) {
   );
 }
 
-export default StpLogs;
+export default StpLogs; 
