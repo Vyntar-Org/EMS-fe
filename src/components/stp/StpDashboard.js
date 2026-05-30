@@ -737,7 +737,7 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 Site Location Map
               </Typography>
               <MapContainer
-                center={[9.9252, 78.1198]}
+                center={[12.0045, 79.74594]}
                 zoom={14}
                 scrollWheelZoom={false}
                 style={{ height: "280px", width: "100%" }}
@@ -747,7 +747,7 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                   url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 <Circle
-                  center={[9.9252, 78.1198]}
+                  center={[12.0045, 79.74594]}
                   radius={400}
                   pathOptions={{
                     color: "#38bdf8",
@@ -755,13 +755,13 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                     fillOpacity: 0.15,
                   }}
                 />
-                <Marker position={[9.9252, 78.1198]}>
+                <Marker position={[12.0045, 79.74594]}>
                   <Popup>
                     <strong>Weather Station + Solar PV Site</strong>
                     <br />
-                    Lat: {9.9252}
+                    Lat: {12.0045}
                     <br />
-                    Lon: {78.1198}
+                    Lon: {79.74594}
                   </Popup>
                 </Marker>
               </MapContainer>

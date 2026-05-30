@@ -1051,14 +1051,16 @@ const StpMachineList = () => {
                             {metric.label}
                           </MenuItem>
                         ))
-                      : selectedCard?.metrics?.map((metric) => (
-                          <MenuItem
-                            key={metric.metric_key}
-                            value={metric.metric_key}
-                          >
-                            {metric.label}
-                          </MenuItem>
-                        ))}
+                      : selectedCard?.metrics
+                          .filter(metric => !['today_consumption', 'mtd_consumption'].includes(metric.metric_key))
+                          .map((metric) => (
+                            <MenuItem
+                              key={metric.metric_key}
+                              value={metric.metric_key}
+                            >
+                              {metric.label}
+                            </MenuItem>
+                          ))}
                   </Select>
                 </FormControl>
               )}
