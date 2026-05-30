@@ -98,10 +98,12 @@ const FireSafetyLogsFilterHeader = ({
                   p: 0,
                   borderRadius: 2,
                   boxShadow: "none",
-                  backgroundColor: (theme) => theme.palette.primary.main || "#1976d2",
+                  backgroundColor: (theme) =>
+                    theme.palette.primary.main || "#1976d2",
                   "&:hover": {
                     boxShadow: "none",
-                    backgroundColor: (theme) => theme.palette.primary.dark || "#115293",
+                    backgroundColor: (theme) =>
+                      theme.palette.primary.dark || "#115293",
                   },
                 }}
               >
@@ -115,7 +117,10 @@ const FireSafetyLogsFilterHeader = ({
               <Button
                 variant="contained"
                 onClick={() => {
-                  setPayload((prev) => ({ ...(prev || {}), dateTime: getDefaultDateRange() }));
+                  setPayload((prev) => ({
+                    ...(prev || {}),
+                    dateTime: getDefaultDateRange(),
+                  }));
                   handleReset();
                 }}
                 sx={{
@@ -149,10 +154,15 @@ const FireSafetyLogs = () => {
   const [loading, setLoading] = useState(false);
   const [logsData, setLogsData] = useState(null);
   const [payload, setPayload] = useState({ dateTime: getDefaultDateRange() });
-  const [apiPaginationParams, setApiPaginationParams] = useState({ limit: 50, offset: 0 });
+  const [apiPaginationParams, setApiPaginationParams] = useState({
+    limit: 50,
+    offset: 0,
+  });
   const [backendTotalRowsCount, setBackendTotalRowsCount] = useState(0);
 
-  const tablePageIndex = Math.floor(apiPaginationParams.offset / apiPaginationParams.limit);
+  const tablePageIndex = Math.floor(
+    apiPaginationParams.offset / apiPaginationParams.limit,
+  );
   const tablePageSize = apiPaginationParams.limit;
 
   const logsColumns = useMemo(() => {
@@ -163,10 +173,14 @@ const FireSafetyLogs = () => {
       : [];
 
     const availableKeys = Object.keys(logsData[0]);
-    let orderedKeys = FIRE_SAFETY_LOG_COLUMN_ORDER.filter((key) => availableKeys.includes(key));
+    let orderedKeys = FIRE_SAFETY_LOG_COLUMN_ORDER.filter((key) =>
+      availableKeys.includes(key),
+    );
 
     if (selectedParamKeys.length > 0) {
-      orderedKeys = orderedKeys.filter((key) => key === "timestamp" || selectedParamKeys.includes(key));
+      orderedKeys = orderedKeys.filter(
+        (key) => key === "timestamp" || selectedParamKeys.includes(key),
+      );
     }
 
     return orderedKeys.map((c) => ({
@@ -177,7 +191,9 @@ const FireSafetyLogs = () => {
 
         if (c === "timestamp" && value) {
           const date = dayjs(value);
-          return date.isValid() ? date.format("DD MMM YYYY HH:mm:ss") : String(value);
+          return date.isValid()
+            ? date.format("DD MMM YYYY HH:mm:ss")
+            : String(value);
         }
 
         if (typeof value === "number") {
@@ -196,13 +212,20 @@ const FireSafetyLogs = () => {
     try {
       const slaveId = payload.slave_id?.value ?? "";
       const parameterValues = Array.isArray(payload?.parameters)
-        ? payload.parameters.map((p) => p?.value).filter((v) => v && v !== "timestamp").join(",")
+        ? payload.parameters
+            .map((p) => p?.value)
+            .filter((v) => v && v !== "timestamp")
+            .join(",")
         : "";
 
       const startDateObj = payload?.dateTime?.[0];
       const endDateObj = payload?.dateTime?.[1];
-      const formattedStart = startDateObj?.isValid?.() ? startDateObj.format("YYYY-MM-DD HH:mm:ss") : "";
-      const formattedEnd = endDateObj?.isValid?.() ? endDateObj.format("YYYY-MM-DD HH:mm:ss") : "";
+      const formattedStart = startDateObj?.isValid?.()
+        ? startDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
+        : "";
+      const formattedEnd = endDateObj?.isValid?.()
+        ? endDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
+        : "";
 
       const url = API_URLS.FIRE_SAFETY_LOGS_DATA(
         slaveId,
@@ -232,7 +255,10 @@ const FireSafetyLogs = () => {
   };
 
   const handlePageChange = (event, newPageIndex) => {
-    const nextParams = { ...apiPaginationParams, offset: newPageIndex * apiPaginationParams.limit };
+    const nextParams = {
+      ...apiPaginationParams,
+      offset: newPageIndex * apiPaginationParams.limit,
+    };
     setApiPaginationParams(nextParams);
     handleSearch(nextParams);
   };
@@ -244,10 +270,19 @@ const FireSafetyLogs = () => {
     handleSearch(nextParams);
   };
 
-  const slaveOptions = slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) || [];
+  const slaveOptions =
+    slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) ||
+    [];
 
   return (
-    <Box sx={{ height: { xs: "calc(100vh - 56px - 16px)", sm: "calc(100vh - 64px - 16px)" } }}>
+    <Box
+      sx={{
+        height: {
+          xs: "calc(100vh - 56px - 16px)",
+          sm: "calc(100vh - 64px - 16px)",
+        },
+      }}
+    >
       <FireSafetyLogsFilterHeader
         slaveOptions={slaveOptions}
         parameterOptions={parametersData}
@@ -257,7 +292,15 @@ const FireSafetyLogs = () => {
         setPayload={setPayload}
       />
 
-      <Box height={{ xs: "calc(100% - 216px)", sm: "calc(100% - 160px)", md: "calc(100% - 48px)" }} pt={1} overflow="auto">
+      <Box
+        height={{
+          xs: "calc(100% - 216px)",
+          sm: "calc(100% - 160px)",
+          md: "calc(100% - 48px)",
+        }}
+        pt={1}
+        overflow="auto"
+      >
         {loading ? (
           <Loading />
         ) : !logsData?.length ? (

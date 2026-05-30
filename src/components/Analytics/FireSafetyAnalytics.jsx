@@ -3,14 +3,20 @@ import { useCommonData } from "../../contexts/CommonDataContext";
 import { Box, Button, Grid, Typography } from "@mui/material";
 import { CustomAutocomplete } from "../common/CustomAutocomplete";
 import { RestartAlt, Search } from "@mui/icons-material";
-import { KEY_PARAMETER_OPTIONS_MAPPING, UNIQUE_PASTEL_BGS } from "../../constants/energyAnalytics";
+import {
+  KEY_PARAMETER_OPTIONS_MAPPING,
+  UNIQUE_PASTEL_BGS,
+} from "../../constants/energyAnalytics";
 import { CustomDatePicker } from "../common/CustomDatePicker";
 import { api } from "../../helpers/api";
 import { API_URLS } from "../../helpers/apiUrls";
 import dayjs from "dayjs";
 import NoDataFound from "../common/errors/NoDataFound";
 import ReactApexChart from "react-apexcharts";
-import { basePickerStyles, downAnalyticsSampleData } from "../../helpers/common";
+import {
+  basePickerStyles,
+  downAnalyticsSampleData,
+} from "../../helpers/common";
 import { Loading } from "../common/Loading";
 
 const getDefaultDateRange = () => [dayjs().subtract(24, "hour"), dayjs()];
@@ -36,7 +42,11 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
     };
   });
 
-  const baseSampledData = downAnalyticsSampleData(rawData, maxPoints, plotKeys[0]);
+  const baseSampledData = downAnalyticsSampleData(
+    rawData,
+    maxPoints,
+    plotKeys[0],
+  );
   const categories = baseSampledData.map((item) =>
     item.timestamp ? dayjs(item.timestamp).format("DD MMM HH:mm") : "",
   );
@@ -198,18 +208,18 @@ const FireSafetyAnalytics = () => {
       const slaveId = currentPayload.slave_id?.value ?? "";
       const parameterValues = currentPayload.parameters
         ? currentPayload.parameters
-          .map((p) => p?.value)
-          .filter(Boolean)
-          .join(",")
+            .map((p) => p?.value)
+            .filter(Boolean)
+            .join(",")
         : "";
 
       const startDateObj = globalDateTime?.[0];
       const endDateObj = globalDateTime?.[1];
       const formattedStart = startDateObj?.isValid?.()
-        ? startDateObj.format("YYYY-MM-DD HH:mm:ss")
+        ? startDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
         : "";
       const formattedEnd = endDateObj?.isValid?.()
-        ? endDateObj.format("YYYY-MM-DD HH:mm:ss")
+        ? endDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
         : "";
 
       const url = API_URLS.FIRE_SAFETY_ANALYTICS_DATA(
@@ -269,7 +279,8 @@ const FireSafetyAnalytics = () => {
   };
 
   const slaveOptions =
-    slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) || [];
+    slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) ||
+    [];
 
   return (
     <Box
@@ -300,7 +311,9 @@ const FireSafetyAnalytics = () => {
           const isLoading = loadingMap[id];
 
           const activeKeys =
-            currentSelectedParams?.map((param) => param.value).filter(Boolean) || [];
+            currentSelectedParams
+              ?.map((param) => param.value)
+              .filter(Boolean) || [];
 
           const processedData = getProcessedChartData(rawAnalytics, activeKeys);
 
@@ -313,7 +326,8 @@ const FireSafetyAnalytics = () => {
             (option) => !selectedDeviceIdsInOtherRows.includes(option.value),
           );
 
-          const uniqueBgColor = UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
+          const uniqueBgColor =
+            UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
 
           const performanceChartOptions = {
             chart: {
@@ -339,7 +353,8 @@ const FireSafetyAnalytics = () => {
             grid: { borderColor: "#f1f1f1" },
           };
 
-          const deviceLabel = payloads[id]?.slave_id?.label || `Device Segment ${id}`;
+          const deviceLabel =
+            payloads[id]?.slave_id?.label || `Device Segment ${id}`;
 
           return (
             <Box

@@ -33,124 +33,124 @@ const CompressorLogsFilterHeader = ({
   };
 
   return (
-  <Box
-        sx={{
-          pb: 1,
-          borderBottom: "1px dashed",
-          borderColor: "divider",
-        }}
-      >
-        <Grid container gap={2} alignItems="center">
-          <Grid item xs={12} sm md lg={3}>
-            <CustomAutocomplete
-              options={slaveOptions}
-              onChange={(val) => handleFieldCh("slave_id", val)}
-              value={payload?.slave_id || ""}
-              label="Select Devices"
-              size="small"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-  
-                  backgroundColor: "#f9f9f9",
-  
-                  transition: "0.3s",
-  
-                  "&:hover": {
-                    backgroundColor: "#fff",
-                  },
+    <Box
+      sx={{
+        pb: 1,
+        borderBottom: "1px dashed",
+        borderColor: "divider",
+      }}
+    >
+      <Grid container gap={2} alignItems="center">
+        <Grid item xs={12} sm md lg={3}>
+          <CustomAutocomplete
+            options={slaveOptions}
+            onChange={(val) => handleFieldCh("slave_id", val)}
+            value={payload?.slave_id || ""}
+            label="Select Devices"
+            size="small"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+
+                backgroundColor: "#f9f9f9",
+
+                transition: "0.3s",
+
+                "&:hover": {
+                  backgroundColor: "#fff",
                 },
-              }}
-            />
-          </Grid>
-  
-          <Grid item xs={12} md={4.5} lg>
-            <CustomDatePicker
-              mode="datetimerangepicker"
-              onChange={(val) => handleFieldCh("dateTime", val)}
-              value={payload?.dateTime || ""}
-            />
-          </Grid>
-  
-          <Grid item xs="auto" display="flex" gap={2} ml={{ xs: "auto", md: 0 }}>
-            <Tooltip title="Search">
-              <span>
-                <Button
-                  variant="contained"
-                  onClick={() => handleSearch()}
-                  sx={{
-                    width: 40,
-  
-                    height: 40,
-  
-                    minWidth: 0,
-  
-                    p: 0,
-  
-                    borderRadius: 2,
-  
-                    boxShadow: "none",
-  
-                    backgroundColor: (theme) =>
-                      theme.palette.primary.main || "#1976d2",
-  
-                    "&:hover": {
-                      boxShadow: "none",
-  
-                      backgroundColor: (theme) =>
-                        theme.palette.primary.dark || "#115293",
-                    },
-                  }}
-                >
-                  <Search sx={{ fontSize: 20, color: "#fff" }} />
-                </Button>
-              </span>
-            </Tooltip>
-  
-            <Tooltip title="Reset">
-              <span>
-                <Button
-                  variant="contained"
-                  onClick={() => {
-                    setPayload((prev) => ({
-                      ...(prev || {}),
-                      dateTime: getDefaultDateRange(),
-                    }));
-                    handleReset();
-                  }}
-                  sx={{
-                    width: 40,
-  
-                    height: 40,
-  
-                    minWidth: 0,
-  
-                    p: 0,
-  
-                    borderRadius: 2,
-  
-                    boxShadow: "none",
-  
-                    backgroundColor: "#f5f5f5",
-  
-                    color: "#666666",
-  
-                    "&:hover": {
-                      boxShadow: "none",
-  
-                      backgroundColor: "#e0e0e0",
-  
-                      color: "#333333",
-                    },
-                  }}
-                >
-                  <RestartAlt sx={{ fontSize: 20 }} />
-                </Button>
-              </span>
-            </Tooltip>
-          </Grid>
+              },
+            }}
+          />
         </Grid>
-      </Box>
+
+        <Grid item xs={12} md={4.5} lg>
+          <CustomDatePicker
+            mode="datetimerangepicker"
+            onChange={(val) => handleFieldCh("dateTime", val)}
+            value={payload?.dateTime || ""}
+          />
+        </Grid>
+
+        <Grid item xs="auto" display="flex" gap={2} ml={{ xs: "auto", md: 0 }}>
+          <Tooltip title="Search">
+            <span>
+              <Button
+                variant="contained"
+                onClick={() => handleSearch()}
+                sx={{
+                  width: 40,
+
+                  height: 40,
+
+                  minWidth: 0,
+
+                  p: 0,
+
+                  borderRadius: 2,
+
+                  boxShadow: "none",
+
+                  backgroundColor: (theme) =>
+                    theme.palette.primary.main || "#1976d2",
+
+                  "&:hover": {
+                    boxShadow: "none",
+
+                    backgroundColor: (theme) =>
+                      theme.palette.primary.dark || "#115293",
+                  },
+                }}
+              >
+                <Search sx={{ fontSize: 20, color: "#fff" }} />
+              </Button>
+            </span>
+          </Tooltip>
+
+          <Tooltip title="Reset">
+            <span>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  setPayload((prev) => ({
+                    ...(prev || {}),
+                    dateTime: getDefaultDateRange(),
+                  }));
+                  handleReset();
+                }}
+                sx={{
+                  width: 40,
+
+                  height: 40,
+
+                  minWidth: 0,
+
+                  p: 0,
+
+                  borderRadius: 2,
+
+                  boxShadow: "none",
+
+                  backgroundColor: "#f5f5f5",
+
+                  color: "#666666",
+
+                  "&:hover": {
+                    boxShadow: "none",
+
+                    backgroundColor: "#e0e0e0",
+
+                    color: "#333333",
+                  },
+                }}
+              >
+                <RestartAlt sx={{ fontSize: 20 }} />
+              </Button>
+            </span>
+          </Tooltip>
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
 
@@ -159,10 +159,15 @@ const CompressorLogs = () => {
   const [loading, setLoading] = useState(false);
   const [logsData, setLogsData] = useState(null);
   const [payload, setPayload] = useState({ dateTime: getDefaultDateRange() });
-  const [apiPaginationParams, setApiPaginationParams] = useState({ limit: 50, offset: 0 });
+  const [apiPaginationParams, setApiPaginationParams] = useState({
+    limit: 50,
+    offset: 0,
+  });
   const [backendTotalRowsCount, setBackendTotalRowsCount] = useState(0);
 
-  const tablePageIndex = Math.floor(apiPaginationParams.offset / apiPaginationParams.limit);
+  const tablePageIndex = Math.floor(
+    apiPaginationParams.offset / apiPaginationParams.limit,
+  );
   const tablePageSize = apiPaginationParams.limit;
 
   const logsColumns = useMemo(() => {
@@ -173,10 +178,14 @@ const CompressorLogs = () => {
       : [];
 
     const availableKeys = Object.keys(logsData[0]);
-    let orderedKeys = COMPRESSOR_LOG_COLUMN_ORDER.filter((key) => availableKeys.includes(key));
+    let orderedKeys = COMPRESSOR_LOG_COLUMN_ORDER.filter((key) =>
+      availableKeys.includes(key),
+    );
 
     if (selectedParamKeys.length > 0) {
-      orderedKeys = orderedKeys.filter((key) => key === "timestamp" || selectedParamKeys.includes(key));
+      orderedKeys = orderedKeys.filter(
+        (key) => key === "timestamp" || selectedParamKeys.includes(key),
+      );
     }
 
     return orderedKeys.map((c) => ({
@@ -187,7 +196,9 @@ const CompressorLogs = () => {
 
         if (c === "timestamp" && value) {
           const date = dayjs(value);
-          return date.isValid() ? date.format("DD MMM YYYY HH:mm:ss") : String(value);
+          return date.isValid()
+            ? date.format("DD MMM YYYY HH:mm:ss")
+            : String(value);
         }
 
         return String(value ?? "N/A");
@@ -211,10 +222,10 @@ const CompressorLogs = () => {
       const startDateObj = payload?.dateTime?.[0];
       const endDateObj = payload?.dateTime?.[1];
       const formattedStart = startDateObj?.isValid?.()
-        ? startDateObj.format("YYYY-MM-DD HH:mm:ss")
+        ? startDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
         : "";
       const formattedEnd = endDateObj?.isValid?.()
-        ? endDateObj.format("YYYY-MM-DD HH:mm:ss")
+        ? endDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
         : "";
 
       const url = API_URLS.COMPRESSOR_LOGS_DATA(
@@ -244,7 +255,10 @@ const CompressorLogs = () => {
   };
 
   const handlePageChange = (event, newPageIndex) => {
-    const nextParams = { ...apiPaginationParams, offset: newPageIndex * apiPaginationParams.limit };
+    const nextParams = {
+      ...apiPaginationParams,
+      offset: newPageIndex * apiPaginationParams.limit,
+    };
     setApiPaginationParams(nextParams);
     handleSearch(nextParams);
   };
@@ -257,7 +271,8 @@ const CompressorLogs = () => {
   };
 
   const slaveOptions =
-    slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) || [];
+    slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) ||
+    [];
 
   return (
     <Box
@@ -278,7 +293,11 @@ const CompressorLogs = () => {
       />
 
       <Box
-        height={{ xs: "calc(100% - 216px)", sm: "calc(100% - 160px)", md: "calc(100% - 48px)" }}
+        height={{
+          xs: "calc(100% - 216px)",
+          sm: "calc(100% - 160px)",
+          md: "calc(100% - 48px)",
+        }}
         pt={1}
         overflow="auto"
       >

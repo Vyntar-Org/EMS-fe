@@ -103,8 +103,13 @@ const FIRE_SAFETY_MACHINE_LIST = {
 };
 
 const FIRE_SAFETY_ANALYTICS = {
-  FIRE_SAFETY_ANALYTICS_DATA: (slaveId, parameters, from_datetime, to_datetime) =>
-    `/applications/fire-safety/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${encodeURIComponent(from_datetime)}&to_datetime=${encodeURIComponent(to_datetime)}`,
+  FIRE_SAFETY_ANALYTICS_DATA: (
+    slaveId,
+    parameters,
+    from_datetime,
+    to_datetime,
+  ) =>
+    `/applications/fire-safety/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${from_datetime}&to_datetime=${to_datetime}`,
 };
 
 const FIRE_SAFETY_LOGS = {
@@ -116,17 +121,7 @@ const FIRE_SAFETY_LOGS = {
     limit = 50,
     offset = 0,
   ) => {
-    const query = new URLSearchParams({
-      slave_id: String(slaveId),
-      start_datetime,
-      end_datetime,
-      limit: String(limit),
-      offset: String(offset),
-    });
-    if (parameters) {
-      query.set("parameters", parameters);
-    }
-    return `/applications/fire-safety/logs/?${query.toString()}`;
+    return `/applications/fire-safety/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`;
   },
 };
 
@@ -147,23 +142,13 @@ const COMPRESSOR_LOGS = {
     limit = 50,
     offset = 0,
   ) => {
-    const query = new URLSearchParams({
-      slave_id: String(slaveId),
-      start_datetime,
-      end_datetime,
-      limit: String(limit),
-      offset: String(offset),
-    });
-    if (parameters) {
-      query.set("parameters", parameters);
-    }
-    return `/applications/compressor/logs/?${query.toString()}`;
+    return `/applications/compressor/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`;
   },
 };
 
 const COMPRESSOR_ANALYTICS = {
   COMPRESSOR_ANALYTICS_DATA: (slaveId, from_datetime, to_datetime) =>
-    `/applications/compressor/analytics/?slave_id=${slaveId}&from=${encodeURIComponent(from_datetime)}&to=${encodeURIComponent(to_datetime)}`,
+    `/applications/compressor/analytics/?slave_id=${slaveId}&from=${from_datetime}&to=${to_datetime}`,
 };
 
 const SOLAR_LOGS = {
