@@ -324,6 +324,8 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen, handleAppChange }) => {
             py: 1,
             borderBottom: "1px solid",
             borderColor: "divider",
+            alignItems: "center",
+            gap: 0.5,
           }}
         >
           <MobileApplicationsSelectMenu

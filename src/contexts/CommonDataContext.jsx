@@ -27,9 +27,12 @@ export const CommonDataContextProvider = ({ children }) => {
 
       if (slavesRes?.success) {
         setSlavesData(slavesRes?.data?.slaves || []);
+      } else {
+        setSlavesData([]);
       }
     } catch (error) {
       console.error("One of the API calls failed:", error);
+      setSlavesData([]);
     }
   };
 

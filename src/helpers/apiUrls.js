@@ -168,6 +168,44 @@ const SOLAR_ANALYTICS = {
     `/applications/solar/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${from_datetime}&to_datetime=${to_datetime}`,
 };
 
+const WATER_DASHBOARD = {
+  WATER_DASHBOARD_OVERVIEW: "/applications/water/dashboard-overview/",
+  WATER_DASHBOARD_DAILY_CONSUMPTION: (slaveId) =>
+    `/applications/water/daily-consumption/?slave_id=${slaveId}`,
+};
+
+const WATER_MACHINE_LIST = {
+  WATER_MACHINE_LIST_DATA: "/applications/water/machine-list/",
+  WATER_MACHINE_LIST_TREND: (slaveId) =>
+    `/applications/water/machine-trend/?slave_id=${slaveId}`,
+};
+
+const WATER_ANALYTICS = {
+  WATER_ANALYTICS_DATA: (slaveId, start_datetime, end_datetime) =>
+    `/applications/water/analytics/?slave_id=${slaveId}&start_datetime=${start_datetime}&end_datetime=${end_datetime}`,
+};
+
+const WATER_LOGS = {
+  WATER_LOGS_DATA: (
+    slaveId,
+    parameters,
+    start_datetime,
+    end_datetime,
+    limit = 50,
+    offset = 0,
+  ) =>
+    `/applications/water/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
+};
+
+const WATER_REPORTS = {
+  WATER_REPORTS_DATE_WISE_CONSUMPTION_DATA: (year, month) =>
+    `/applications/water/daily-consumption-reports/?month=${month}&year=${year}`,
+  WATER_REPORTS_MONTH_WISE_CONSUMPTION_DATA: (year) =>
+    `/applications/water/monthly-consumption-reports/?year=${year}`,
+  WATER_REPORTS_DATE_WISE_READING_DATA: (year, month) =>
+    `/applications/water/daily-reading-reports/?month=${month}&year=${year}`,
+};
+
 export const API_URLS = {
   ...ADMINS,
   ...AUTH,
@@ -188,4 +226,9 @@ export const API_URLS = {
   ...COMPRESSOR_MACHINE_LIST,
   ...COMPRESSOR_LOGS,
   ...COMPRESSOR_ANALYTICS,
+  ...WATER_DASHBOARD,
+  ...WATER_MACHINE_LIST,
+  ...WATER_ANALYTICS,
+  ...WATER_LOGS,
+  ...WATER_REPORTS,
 };

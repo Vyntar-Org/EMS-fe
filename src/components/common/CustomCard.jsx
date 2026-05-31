@@ -88,7 +88,7 @@ const CustomCard = ({
         )}
 
         <Box
-          height="calc(100% - 14px - 18px)"
+          height={`calc(100% ${title || subtitle || icon ? "- 14px - 18px" : ""}  )`}
           overflow="auto"
           {...childrenOtherProps}
         >

@@ -3,33 +3,32 @@ import CustomCard from "../../common/CustomCard";
 import { useCommonData } from "../../../contexts/CommonDataContext";
 import { api } from "../../../helpers/api";
 import { API_URLS } from "../../../helpers/apiUrls";
-import { BarChart, SsidChart } from "@mui/icons-material";
 import {
   Box,
   Button,
   Grid,
-  IconButton,
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
-import NoDataFound from "../../common/errors/NoDataFound";
+import { BarChart, SsidChart } from "@mui/icons-material";
+import ReactApexChart from "react-apexcharts";
 import { CustomAutocomplete } from "../../common/CustomAutocomplete";
 import { CustomInput } from "../../common/CustomInput";
-import ReactApexChart from "react-apexcharts";
 import ResponsiveTextWrapper from "../../common/ResponsiveTextWrapper";
+import NoDataFound from "../../common/errors/NoDataFound";
 
-const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
+const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
   const { slavesData } = useCommonData();
   const [mode, setMode] = useState(1);
   const [machineConsumption, setMachineConsumption] = useState(null);
   const [searchDevices, setSearchDevices] = useState(null);
 
   const slavesDisplayName = useMemo(() => {
-    if (!slavesData && mode === 1) return null;
+    if (!slavesData) return null;
 
     const slave = slavesData.find((s) => s.slave_id === slavesId);
     return slave ? `${slave.slave_name}` : "";
-  }, [slavesId, slavesData, mode]);
+  }, [slavesId, slavesData]);
 
   const filteredSlaves = useMemo(() => {
     if (!searchDevices?.trim()) return slavesData;
@@ -45,7 +44,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
   const fetchMachineConsumption = async () => {
     try {
       const getMachineConsumptionData = await api.get(
-        `${API_URLS.EMS_DASHBOARD_MACHINE_CONSUMPTION}?slave_id=${slavesId || 0}`,
+        `${API_URLS.WATER_DASHBOARD_DAILY_CONSUMPTION(slavesId || 0)}`,
       );
       if (getMachineConsumptionData?.success) {
         setMachineConsumption(getMachineConsumptionData?.data);
@@ -66,56 +65,64 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
       type: "bar",
       toolbar: { show: false },
     },
+    colors: ["#0156A6", "#A5AAB5"],
+
     plotOptions: {
       bar: {
-        borderRadius: 8,
-        columnWidth: "45%",
+        borderRadius: 4,
+        columnWidth: "70%",
         dataLabels: { position: "top" },
       },
     },
     dataLabels: {
-      enabled: true,
-      formatter: (val) => val,
-      offsetY: -20,
-      style: {
-        fontSize: "12px",
-        colors: ["#2E4355"],
-        fontWeight: "bold",
-      },
+      enabled: false,
     },
     xaxis: {
       categories: Array.isArray(machineConsumption)
-        ? machineConsumption?.map((item) => {
+        ? machineConsumption.map((item) => {
             const d = new Date(item.date);
             return d.toLocaleDateString("en-US", {
               month: "short",
-              day: "2-digit",
+              day: "numeric",
             });
           })
         : [],
       position: "bottom",
-      axisBorder: { show: false },
+      axisBorder: { show: true, color: "rgba(0,0,0,0.08)" },
       axisTicks: { show: false },
       labels: {
-        style: { colors: "#9e9e9e" },
+        rotate: -45,
+        style: {
+          colors: "#757575",
+          fontSize: "11px",
+        },
       },
     },
     yaxis: {
+      title: {
+        text: "Liters",
+        style: {
+          color: "#555",
+          fontWeight: "bold",
+        },
+      },
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: {
-        style: { colors: "#9e9e9e" },
-        formatter: (val) => val.toFixed(2),
+        style: { colors: "#757575" },
+        formatter: (val) => Math.round(val),
       },
     },
     tooltip: {
       x: { show: true },
       y: {
-        formatter: (val) => `${val} kWh`,
+        formatter: (val) => `${val} Liters`,
       },
     },
-    fill: {
-      colors: ["#0a223e"],
+    legend: {
+      show: false,
+      position: "top",
+      horizontalAlign: "center",
     },
     grid: {
       show: false,
@@ -124,9 +131,15 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 
   const series1 = [
     {
-      name: "(kWh)",
+      name: "Actual Consumption",
       data: Array.isArray(machineConsumption)
-        ? machineConsumption?.map((item) => item.value)
+        ? machineConsumption.map((item) => item.consumption || 0)
+        : [],
+    },
+    {
+      name: "Target",
+      data: Array.isArray(machineConsumption)
+        ? machineConsumption.map((item) => item.target || 0)
         : [],
     },
   ];
@@ -153,9 +166,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 
   return (
     <CustomCard
-      title={
-        mode === 2 ? `${slavesDisplayName} Energy` : "Machine Power Consumption"
-      }
+      title={`Monthly Water Consumption ${slavesDisplayName ? `- ${slavesDisplayName}` : ""}`}
       icon={
         <ToggleButtonGroup
           value={mode}
@@ -318,4 +329,4 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
   );
 };
 
-export default ENERGYMachinePowerConsumption;
+export default WATERMonthlyConsumption;
