@@ -81,16 +81,16 @@ const WaterDashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (slavesData?.length > 0 && !slavesId) {
-      const commonSlave = slavesData.find(
-        (s) => s.slave_name.trim().toLowerCase() === "common",
-      );
+    if (slavesData?.length > 0) {
+      // const commonSlave = slavesData.find(
+      //   (s) => s.slave_name.trim().toLowerCase() === "common",
+      // );
 
-      if (commonSlave) {
-        setSlavesId(commonSlave.slave_id);
-      } else {
-        setSlavesId(slavesData[0].slave_id);
-      }
+      // if (commonSlave) {
+      //   setSlavesId(commonSlave.slave_id);
+      // } else {
+      setSlavesId(slavesData[0].slave_id);
+      // }
     }
   }, [slavesData]);
 
