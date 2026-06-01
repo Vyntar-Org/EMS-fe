@@ -45,8 +45,6 @@ const StpMachineList = () => {
   // State for Charts
   const [trendData, setTrendData] = useState([]);
   const [trendMetricKey, setTrendMetricKey] = useState(null);
-  const [tankTrendSeries, setTankTrendSeries] = useState([]);
-  const [tankTrendCategories, setTankTrendCategories] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -354,117 +352,169 @@ const StpMachineList = () => {
   };
 
   // --- Chart Configurations ---
-  const currentMetricDetails = selectedCard?.metrics?.find(
-    (m) => m.metric_key === trendMetricKey,
-  ) || { label: "Value", unit: "" };
+  const currentMetricDetails = useMemo(() => {
+    const metric = selectedCard?.metrics?.find(
+      (m) => m.metric_key === trendMetricKey,
+    );
+    if (!metric) return { label: "Value", unit: "" };
 
-  const lineChartOptions = {
-    chart: {
-      type: "line",
-      height: 350,
-      toolbar: { show: true },
-      zoom: { enabled: true },
-      background: "#FFFFFF",
-    },
-    stroke: { curve: "smooth", width: 2 },
-    dataLabels: { enabled: false },
-    xaxis: {
-      categories: trendData.map((item) =>
-        new Date(item.timestamp).toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        }),
-      ),
-      labels: { style: { fontSize: "11px" }, rotate: -45 },
-    },
-    yaxis: {
-      title: {
-        text: currentMetricDetails.unit,
-        style: { fontSize: "12px", color: "#666" },
+    if (isTankTrend) {
+      return {
+        ...metric,
+        label:
+          metric.metric_key === "Motor 1 Status"
+            ? "Motor 1"
+            : metric.metric_key === "Motor 2 Status"
+              ? "Motor 2"
+              : metric.label,
+      };
+    }
+    return metric;
+  }, [selectedCard, trendMetricKey, isTankTrend]);
+
+  const chartCategories = useMemo(() => {
+    return trendData.map((item) =>
+      new Date(item.timestamp).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }),
+    );
+  }, [trendData]);
+
+  const lineChartOptions = useMemo(
+    () => ({
+      chart: {
+        type: "line",
+        height: 350,
+        toolbar: { show: true },
+        zoom: { enabled: true },
+        background: "#FFFFFF",
+        animations: { enabled: false },
       },
-      labels: { formatter: (val) => val.toFixed(2) },
-    },
-    tooltip: { enabled: true, theme: "light" },
-  };
-
-  const lineChartSeries = [
-    {
-      name: currentMetricDetails.label,
-      data: trendData.map((item) => item?.[currentMetricDetails?.label] || 0),
-    },
-  ];
-
-  const areaChartOptions = {
-    chart: {
-      type: "area",
-      height: 350,
-      toolbar: { show: true },
-      zoom: { enabled: true },
-      background: "#FFFFFF",
-    },
-    stroke: { curve: "stepline", width: 2 },
-    dataLabels: { enabled: false },
-    xaxis: {
-      categories: trendData.map((item) =>
-        new Date(item.timestamp).toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        }),
-      ),
-      labels: { style: { fontSize: "11px" }, rotate: -45 },
-    },
-    yaxis: {
-      title: {
-        text: "Load / Status",
-        style: { fontSize: "12px", color: "#666" },
+      stroke: { curve: "smooth", width: 2 },
+      dataLabels: { enabled: false },
+      xaxis: {
+        categories: chartCategories,
+        labels: { style: { fontSize: "11px" }, rotate: -45 },
+        tickAmount: 6,
       },
-      labels: { formatter: (val) => val.toFixed(0) },
-    },
-    tooltip: { enabled: true, theme: "light" },
-    legend: { position: "top", horizontalAlign: "center" },
-    colors: ["#2E93fA", "#66DA26"],
-  };
+      yaxis: {
+        title: {
+          text: currentMetricDetails.unit,
+          style: { fontSize: "12px", color: "#666" },
+        },
+        labels: { formatter: (val) => val.toFixed(2) },
+      },
+      tooltip: { enabled: true, theme: "light" },
+    }),
+    [chartCategories, currentMetricDetails],
+  );
 
-  const prepareAreaChartSeries = () => {
+  const lineChartSeries = useMemo(
+    () => [
+      {
+        name: currentMetricDetails.label,
+        data: trendData.map((item) => item?.[currentMetricDetails?.label] || 0),
+      },
+    ],
+    [currentMetricDetails, trendData],
+  );
+
+  const areaChartOptions = useMemo(
+    () => ({
+      chart: {
+        type: "area",
+        height: 350,
+        toolbar: { show: true },
+        zoom: { enabled: true },
+        background: "#FFFFFF",
+        animations: { enabled: false },
+      },
+      stroke: { curve: "stepline", width: 2 },
+      dataLabels: { enabled: false },
+      xaxis: {
+        categories: chartCategories,
+        labels: { style: { fontSize: "11px" }, rotate: -45 },
+        tickAmount: 6,
+      },
+      yaxis: {
+        title: {
+          text: "Load / Status",
+          style: { fontSize: "12px", color: "#666" },
+        },
+        labels: { formatter: (val) => val.toFixed(0) },
+      },
+      tooltip: {
+        enabled: true,
+        theme: "light",
+        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+          const val = series[seriesIndex][dataPointIndex];
+          const label = w.globals.seriesNames[seriesIndex];
+          const timestamp = w.globals.labels[dataPointIndex];
+          const isLevel = label.toLowerCase().includes("level");
+
+          let statusText = val;
+          let color = "#000";
+
+          if (val === 1) {
+            statusText = isLevel ? "Full" : "ON";
+            color = isLevel ? "#4f92d4" : "#2e7d32";
+          } else if (val === 0) {
+            statusText = isLevel ? "Low" : "OFF";
+            color = isLevel ? "#d05353" : "#d32f2f";
+          }
+
+          return (
+            '<div style="padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); background: #fff; font-family: Ubuntu, sans-serif; font-size: 12px;">' +
+            '<div style="color: #666; margin-bottom: 5px; font-weight: 500;">' +
+            timestamp +
+            "</div>" +
+            "<div>" +
+            '<span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ' +
+            w.globals.colors[seriesIndex] +
+            '; margin-right: 8px;"></span>' +
+            "<span>" +
+            label +
+            ': <b style="color: ' +
+            color +
+            ';">' +
+            statusText +
+            "</b></span>" +
+            "</div>" +
+            "</div>"
+          );
+        },
+      },
+      legend: { position: "top", horizontalAlign: "center" },
+      colors: [
+        currentMetricDetails.label.toLowerCase().includes("level")
+          ? "#4f92d4"
+          : "#30b44a",
+      ],
+    }),
+    [chartCategories, currentMetricDetails],
+  );
+
+  const tankTrendSeries = useMemo(() => {
+    if (!isTankTrend) return [];
     const mapValueToNumber = (val) => {
       if (val === "Full" || val === "ON") return 1;
       if (val === "Low" || val === "OFF") return 0;
       return parseFloat(val) || 0;
     };
 
-    const categories = [];
-    const level1Data = [];
-    const level2Data = [];
-    const motor1Data = [];
-    const motor2Data = [];
+    const seriesData = trendData.map((item) =>
+      mapValueToNumber(item[trendMetricKey]),
+    );
 
-    trendData.forEach((item) => {
-      // Format timestamp for a cleaner X-axis (extracts HH:MM:SS)
-      const timeLabel = new Date(item.timestamp).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-
-      categories.push(timeLabel);
-      level1Data.push(mapValueToNumber(item["Level 1"]));
-      level2Data.push(mapValueToNumber(item["Level 2"]));
-      motor1Data.push(mapValueToNumber(item["Motor 1 Status"]));
-      motor2Data.push(mapValueToNumber(item["Motor 2 Status"]));
-    });
-
-    return {
-      categories,
-      series: [
-        { name: "Level 1", data: level1Data },
-        { name: "Level 2", data: level2Data },
-        { name: "Motor 1", data: motor1Data },
-        { name: "Motor 2", data: motor2Data },
-      ],
-    };
-  };
+    return [
+      {
+        name: currentMetricDetails.label,
+        data: seriesData,
+      },
+    ];
+  }, [isTankTrend, trendData, trendMetricKey, currentMetricDetails]);
   // --- Render Logic ---
 
   const renderCard = (card) => {
@@ -552,24 +602,15 @@ const StpMachineList = () => {
 
                 const renderStatusChip = (metric) => {
                   if (!metric) return null;
-                  const isOn = metric.value === "ON" || metric.value === "FULL";
-                  const color =
-                    metric.status_color === "GREEN"
-                      ? "#2e7d32"
-                      : metric.status_color === "RED"
-                        ? "#d32f2f"
-                        : isOn
-                          ? "#2e7d32"
-                          : "#e0e0e0";
-                  const textColor =
-                    metric.status_color === "GREEN" || isOn ? "white" : "white";
-                  const isLevel = metric.metric_key.includes("Level");
-                  const bgColor = isLevel
-                    ? metric.value === "FULL"
-                      ? "#4f92d4"
-                      : "#d05353"
-                    : color;
-                  const fgColor = isLevel ? "white" : textColor;
+                  const value = metric.value?.toUpperCase();
+                  const isLevel = metric.metric_key.toLowerCase().includes("level");
+
+                  let bgColor = "#e0e0e0";
+                  if (isLevel) {
+                    bgColor = value === "FULL" ? "#4f92d4" : "#d05353";
+                  } else {
+                    bgColor = value === "ON" ? "#2e7d32" : "#d32f2f";
+                  }
 
                   return (
                     <Chip
@@ -577,7 +618,7 @@ const StpMachineList = () => {
                       size="small"
                       style={{
                         backgroundColor: bgColor,
-                        color: fgColor,
+                        color: "white",
                         fontWeight: "bold",
                         height: "24px",
                         fontSize: "11px",
@@ -899,25 +940,14 @@ const StpMachineList = () => {
   };
 
   const getWaterLevelOptions = () => {
-    const grouped = selectedCard?.metrics?.reduce((acc, item) => {
-      let category = "";
-      if (item.label.includes("Motor")) category = "Motor";
-      else if (item.label.includes("Level")) category = "Level";
-
-      if (category) {
-        if (!acc[category]) acc[category] = [];
-        acc[category].push(item.metric_key);
-      }
-
-      return acc;
-    }, {});
-
-    const result = Object.keys(grouped).map((category) => ({
-      label: category,
-      metric_key: grouped[category].join(", "),
-    }));
-
-    return result;
+    const targetKeys = ["Level 1", "Level 2", "Motor 1 Status", "Motor 2 Status"];
+    return (selectedCard?.metrics || [])
+      .filter((m) => targetKeys.includes(m.metric_key))
+      .map((m) => ({
+        ...m,
+        label: m.metric_key === "Motor 1 Status" ? "Motor 1" : 
+               m.metric_key === "Motor 2 Status" ? "Motor 2" : m.label
+      }));
   };
 
   return (
@@ -1051,14 +1081,16 @@ const StpMachineList = () => {
                             {metric.label}
                           </MenuItem>
                         ))
-                      : selectedCard?.metrics?.map((metric) => (
-                          <MenuItem
-                            key={metric.metric_key}
-                            value={metric.metric_key}
-                          >
-                            {metric.label}
-                          </MenuItem>
-                        ))}
+                      : selectedCard?.metrics
+                          .filter(metric => !['today_consumption', 'mtd_consumption'].includes(metric.metric_key))
+                          .map((metric) => (
+                            <MenuItem
+                              key={metric.metric_key}
+                              value={metric.metric_key}
+                            >
+                              {metric.label}
+                            </MenuItem>
+                          ))}
                   </Select>
                 </FormControl>
               )}
@@ -1081,10 +1113,10 @@ const StpMachineList = () => {
             </Box>
           ) : (
             <>
-              {isTankTrend && prepareAreaChartSeries().length > 0 && (
+              {isTankTrend && trendData.length > 0 && (
                 <Chart
                   options={areaChartOptions}
-                  series={prepareAreaChartSeries()}
+                  series={tankTrendSeries}
                   type="area"
                   height={350}
                 />

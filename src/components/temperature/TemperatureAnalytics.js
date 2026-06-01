@@ -43,6 +43,7 @@ const parameterOptions = [
     { value: "temperature", label: "Temperature (°C)" },
     { value: "humidity", label: "Humidity (RH)" },
     { value: "battery", label: "Battery (V)" },
+    { value: "pressure", label: "Pressure (Pa)" },
 ];
 
 const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
@@ -242,7 +243,7 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
             const formattedEndDate = dayjs(endDate).format('YYYY-MM-DD HH:mm:ss');
 
             // Default to all parameters if none selected
-            const params = parameters.length > 0 ? parameters : ['temperature', 'humidity', 'battery'];
+            const params = parameters.length > 0 ? parameters : ['temperature', 'humidity', 'battery', 'pressure'];
 
             // Fetch analytics data
             const response = await getTemperatureAnalytics(
@@ -451,7 +452,7 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter) && selectedParameter.length > 0
             ? selectedParameter
-            : ['temperature', 'humidity', 'battery']; // Default to all parameters
+            : ['temperature', 'humidity', 'battery', 'pressure']; // Default to all parameters
 
         console.log('Parameters to process:', parametersToProcess);
 
@@ -471,6 +472,9 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                             break;
                         case 'battery':
                             value = parseFloat(item.battery) || 0;
+                            break;
+                        case 'pressure':
+                            value = parseFloat(item.pressure) || 0;
                             break;
                         default:
                             value = 0;
@@ -525,7 +529,7 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter2) && selectedParameter2.length > 0
             ? selectedParameter2
-            : ['temperature', 'humidity', 'battery']; // Default to all parameters
+            : ['temperature', 'humidity', 'battery', 'pressure']; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the comparison data based on selected parameter and format to 2 decimal places
@@ -543,6 +547,9 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                             break;
                         case 'battery':
                             value = parseFloat(item.battery) || 0;
+                            break;
+                        case 'pressure':
+                            value = parseFloat(item.pressure) || 0;
                             break;
                         default:
                             value = 0;
@@ -594,7 +601,7 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
         // Handle multiple selected parameters
         const parametersToProcess = Array.isArray(selectedParameter3) && selectedParameter3.length > 0
             ? selectedParameter3
-            : ['temperature', 'humidity', 'battery']; // Default to all parameters
+            : ['temperature', 'humidity', 'battery', 'pressure']; // Default to all parameters
 
         parametersToProcess.forEach(param => {
             // Extract values from the second comparison data based on selected parameter and format to 2 decimal places
@@ -612,6 +619,9 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                             break;
                         case 'battery':
                             value = parseFloat(item.battery) || 0;
+                            break;
+                        case 'pressure':
+                            value = parseFloat(item.pressure) || 0;
                             break;
                         default:
                             value = 0;
@@ -1291,7 +1301,7 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                             setCompareLoading(true);
                                                                             fetchAnalyticsData(
                                                                                 compareDevice, 
-                                                                                filteredValue.length > 0 ? filteredValue : ['temperature', 'humidity', 'battery'], 
+                                                                                filteredValue.length > 0 ? filteredValue : ['temperature', 'humidity', 'battery', 'pressure'], 
                                                                                 filterStartDate, 
                                                                                 filterEndDate
                                                                             ).then(data => {
@@ -1508,7 +1518,7 @@ const TemperatureAnalytics = ({ onSidebarToggle, sidebarVisible }) => {
                                                                         setCompareLoading2(true);
                                                                         fetchAnalyticsData(
                                                                             compareDevice2, 
-                                                                            filteredValue.length > 0 ? filteredValue : ['temperature', 'humidity', 'battery'], 
+                                                                            filteredValue.length > 0 ? filteredValue : ['temperature', 'humidity', 'battery', 'pressure'], 
                                                                             filterStartDate, 
                                                                             filterEndDate
                                                                         ).then(data => {

@@ -122,8 +122,7 @@ export const getTemperatureMachineList = async () => {
             bv: machine.battery || 0,          // Using battery as voltage
             ib: machine.battery || 0,          // Using battery as current
             actpr_t: machine.temperature || 0, // Using temperature as active power
-            pf_t: 1.0,                        // Placeholder power factor
-            fq: 50.0                          // Placeholder frequency
+            pv: machine.pressure || 0  
           },
           energy: {
             today: machine.temperature || 0,   // Using temperature as today's energy

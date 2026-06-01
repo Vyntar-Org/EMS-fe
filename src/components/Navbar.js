@@ -280,7 +280,7 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                 background: "none",
                 border: "none",
                 borderRadius: "0",
-                width: "115px",
+                width: "140px",
                 verticalAlign: "top",
                 marginRight: "20px",
                 cursor: "pointer",

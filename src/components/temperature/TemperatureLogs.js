@@ -64,7 +64,8 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
     { val: 'timestamp', label: 'Timestamp' },
     { val: 'temperature', label: 'Temperature' },
     { val: 'humidity', label: 'Humidity' },
-    { val: 'battery', label: 'Battery' }
+    { val: 'battery', label: 'Battery' },
+    { val: 'pressure', label: 'Pressure' }
   ];
 
   // Get all parameter values for easy reference
@@ -196,7 +197,8 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
       (log.slave_name && log.slave_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (log.temperature !== undefined && log.temperature.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
       (log.humidity !== undefined && log.humidity.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (log.battery !== undefined && log.battery.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+      (log.battery !== undefined && log.battery.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.pressure !== undefined && log.pressure.toString().toLowerCase().includes(searchTerm.toLowerCase()))
     );
   });
 
@@ -648,6 +650,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                         <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Temperature (°C)</TableCell>
                         <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Humidity (%)</TableCell>
                         <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Battery (V)</TableCell>
+                        <TableCell className="log-header-cell" sx={{ textTransform: 'capitalize' }}>Pressure (Pa)</TableCell>
                       </>
                     )}
                   </TableRow>
@@ -659,6 +662,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                       const temperature = log.temperature;
                       const humidity = log.humidity;
                       const battery = log.battery;
+                      const pressure = log.pressure;
                       console.log(log);
 
                       return (
@@ -672,6 +676,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                                 {col === 'temperature' && (typeof temperature === 'number' ? temperature.toFixed(2) : temperature)}
                                 {col === 'humidity' && (typeof humidity === 'number' ? humidity.toFixed(2) : humidity)}
                                 {col === 'battery' && (typeof battery === 'number' ? battery.toFixed(2) : battery)}
+                                {col === 'pressure' && (typeof pressure === 'number' ? pressure.toFixed(2) : pressure)}
                               </TableCell>
                             ))
                           ) : (
@@ -688,6 +693,9 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                               </TableCell>
                               <TableCell className="log-table-cell">
                                 {typeof battery === 'number' ? battery.toFixed(2) : battery}
+                              </TableCell>
+                              <TableCell className="log-table-cell">
+                                {typeof pressure === 'number' ? pressure.toFixed(2) : pressure}
                               </TableCell>
                             </>
                           )}

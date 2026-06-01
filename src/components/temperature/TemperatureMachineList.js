@@ -50,6 +50,8 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 return '%';
             case 'battery':
                 return 'V';
+            case 'pressure':
+                return 'Pa';
             default:
                 return '';
         }
@@ -217,7 +219,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             return;
         }
 
-        const headers = ['Machine Name', 'Status', 'Temperature (°C)', 'Temperature Status', 'Humidity (%)', 'Battery (V)', 'Last Updated'];
+        const headers = ['Machine Name', 'Status', 'Temperature (°C)', 'Temperature Status', 'Humidity (%)', 'Battery (V)', 'pressure (Pa)', 'Last Updated'];
 
         const rows = filteredMachines.map(machine => {
             const isWithinTimeLimit = (lastTs) => {
@@ -229,10 +231,11 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             };
             const isOnline = machine.status === 'ONLINE' || isWithinTimeLimit(machine.last_ts);
 
-            const temp = machine.latest?.rv ? machine.latest.rv.toFixed(2) : 'N/A';
-            const tempStatus = machine.latest?.rv ? getTemperatureStatusText(machine.latest.rv, isOnline) : 'N/A';
-            const hum = machine.latest?.iy ? machine.latest.iy.toFixed(1) : 'N/A';
-            const bat = machine.latest?.bv ? machine.latest.bv.toFixed(2) : 'N/A';
+            const temp = (machine.latest?.rv !== undefined && machine.latest?.rv !== null) ? machine.latest.rv.toFixed(2) : 'N/A';
+            const tempStatus = (machine.latest?.rv !== undefined && machine.latest?.rv !== null) ? getTemperatureStatusText(machine.latest.rv, isOnline) : 'N/A';
+            const hum = (machine.latest?.iy !== undefined && machine.latest?.iy !== null) ? machine.latest.iy.toFixed(1) : 'N/A';
+            const bat = (machine.latest?.bv !== undefined && machine.latest?.bv !== null) ? machine.latest.bv.toFixed(2) : 'N/A';
+            const press = (machine.latest?.pv !== undefined && machine.latest?.pv !== null) ? machine.latest.pv.toFixed(2) : 'N/A';
             const date = machine.last_ts ? new Date(machine.last_ts).toLocaleString() : 'N/A';
 
             return [
@@ -242,6 +245,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 tempStatus,
                 hum,
                 bat,
+                press,
                 date
             ].join(',');
         });
@@ -601,6 +605,8 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                 return 'Humidity';
             case 'battery':
                 return 'Battery';
+            case 'pressure':
+                return 'Pressure';
             default:
                 return 'Value';
         }
@@ -671,6 +677,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
             actpr_t: getConditionalValue(latest.actpr_t, false),
             pf_t: getConditionalValue(latest.pf_t, false),
             fq: getConditionalValue(latest.fq, false),
+            pv: getConditionalValue(latest.pv, false),
         };
 
         const conditionalEnergy = {
@@ -831,6 +838,19 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                     </TableCell>
                                     <TableCell align="right" style={styles.tableCell}>
                                         {conditionalLatest.bv?.toFixed(2)} V
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell style={styles.tableCell}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <WaterDropIcon fontSize="10px" color="primary" />
+                                            Pressure
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                    </TableCell>
+                                    <TableCell align="right" style={styles.tableCell}>
+                                        {conditionalLatest.pv?.toFixed(2)} Pa
                                     </TableCell>
                                 </TableRow>
                             </TableBody>
@@ -1015,6 +1035,7 @@ const TemperatureMachineList = ({ onSidebarToggle, sidebarVisible }) => {
                                         <MenuItem value="temperature">Temperature</MenuItem>
                                         <MenuItem value="humidity">Humidity</MenuItem>
                                         <MenuItem value="battery">Battery</MenuItem>
+                                        <MenuItem value="pressure">Pressure</MenuItem>
                                     </Select>
                                 </FormControl>
                             </Box>
