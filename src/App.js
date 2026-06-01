@@ -95,7 +95,12 @@ function AppContent() {
     }
   }, [activeApp]);
 
-  const faviconUrl = userData?.branding?.favicon || "";
+  const fullUserDataString = localStorage.getItem("fullUserData");
+  const fullUserData = fullUserDataString
+    ? JSON.parse(fullUserDataString)
+    : null;
+
+  const faviconUrl = fullUserData?.branding?.favicon || "";
 
   useEffect(() => {
     if (!faviconUrl) return;

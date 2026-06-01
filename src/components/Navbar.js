@@ -253,6 +253,13 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
 
   console.log(contextUserData);
 
+  const fullUserDataString = localStorage.getItem("fullUserData");
+  const fullUserData = fullUserDataString
+    ? JSON.parse(fullUserDataString)
+    : null;
+
+  const LogoUrl = fullUserData?.branding?.logo || "";
+
   return (
     <>
       <nav className="navbar">
@@ -278,7 +285,7 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                 marginRight: "20px",
                 cursor: "pointer",
               }}
-              src={contextUserData?.branding?.logo}
+              src={LogoUrl}
               alt="Vyntar Logo"
             />
             {/* <img
