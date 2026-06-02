@@ -306,26 +306,26 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
       intersect: false,
       custom: function ({ series, seriesIndex, dataPointIndex, w }) {
         let originalDate = "";
-        let currentData = [];
+        let tooltipData = [];
 
         if (chartType === "voltage") {
-          currentData = voltageData;
+          tooltipData = voltageData;
         } else if (chartType === "current") {
-          currentData = currentData;
+          tooltipData = currentData;
         } else if (chartType === "powerFactor") {
-          currentData = powerFactorData;
+          tooltipData = powerFactorData;
         } else if (chartType === "frequency") {
-          currentData = frequencyData;
+          tooltipData = frequencyData;
         } else {
-          currentData = activePowerData;
+          tooltipData = activePowerData;
         }
 
         if (
-          currentData &&
-          currentData.length > 0 &&
-          currentData[dataPointIndex]
+          tooltipData &&
+          tooltipData.length > 0 &&
+          tooltipData[dataPointIndex]
         ) {
-          const item = currentData[dataPointIndex];
+          const item = tooltipData[dataPointIndex];
           const timestamp = item?.timestamp || "";
           if (timestamp) {
             const date = new Date(timestamp);
@@ -423,7 +423,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
   const fetchCurrentData = async (slaveId) => {
     try {
-      const response = getCurrentChart(slaveId);
+      const response = await getCurrentChart(slaveId);
 
       if (response.success) {
         setCurrentData(response.data.data);
@@ -457,7 +457,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
 
   const fetchFrequencyData = async (slaveId) => {
     try {
-      const response = getFrequencyChart(slaveId);
+      const response = await getFrequencyChart(slaveId);
 
       if (response.success) {
         setFrequencyData(response.data.data);
