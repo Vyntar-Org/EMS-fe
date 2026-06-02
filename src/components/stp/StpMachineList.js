@@ -399,6 +399,20 @@ const StpMachineList = () => {
         labels: { style: { fontSize: "11px" }, rotate: -45 },
         tickAmount: 6,
       },
+      grid: {
+            borderColor: '#ebe5e5',
+            strokeDashArray: 0,
+            xaxis: {
+                lines: {
+                    show: false,
+                },
+            },
+            yaxis: {
+                lines: {
+                    show: false,
+                },
+            },
+        },
       yaxis: {
         title: {
           text: currentMetricDetails.unit,
@@ -438,6 +452,20 @@ const StpMachineList = () => {
         labels: { style: { fontSize: "11px" }, rotate: -45 },
         tickAmount: 6,
       },
+      grid: {
+            borderColor: '#ebe5e5',
+            strokeDashArray: 0,
+            xaxis: {
+                lines: {
+                    show: false,
+                },
+            },
+            yaxis: {
+                lines: {
+                    show: false,
+                },
+            },
+        },
       yaxis: {
         title: {
           text: "Load / Status",
