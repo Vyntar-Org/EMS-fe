@@ -115,6 +115,9 @@ export const getTemperatureLogs = async (
 
     const logsResponse = await apiClient.get(
       `/applications/temperature/logs/?${params.toString()}`,
+      {
+        responseType: isDownload ? "blob" : "json",
+      },
     );
 
     console.log("Temperature logs API response:", logsResponse);

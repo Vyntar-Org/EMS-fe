@@ -422,7 +422,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
       return;
     }
 
-    const logsData = await getTemperatureLogsWithNames(
+    const fileBlob = await getTemperatureLogsWithNames(
       slaveId,
       startDateTime,
       endDateTime,
@@ -433,57 +433,23 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
       joinKeysWithComma(selectedColumn),
     );
 
-    const logsResult = logsData?.data?.logs || [];
+    const url = window.URL.createObjectURL(fileBlob);
 
-    if (!logsResult.length) {
-      setError("No data available to export.");
-      return;
-    }
-
-    const headers = [
-      "Timestamp",
-      "Temperature",
-      "Humidity",
-      "Battery",
-      "Pressure",
-      "Status",
-    ];
-
-    const rows = logsResult.map((item) => [
-      item.timestamp ?? "",
-      item.temperature ?? "",
-      item.humidity ?? "",
-      item.battery ?? "",
-      item.pressure ?? 0,
-      item.status ?? 0,
-    ]);
-
-    const csvContent = [
-      headers.join(","),
-      ...rows.map((row) =>
-        row
-          .map((cell) =>
-            typeof cell === "string" &&
-            (cell.includes(",") || cell.includes("\n"))
-              ? `"${cell}"`
-              : cell,
-          )
-          .join(","),
-      ),
-    ].join("\n");
-
-    const filename = `Temperature_Logs_${filterDevice}_${filterStartDate.format("YYYY-MM-DD")}_to_${filterEndDate.format("YYYY-MM-DD")}.csv`;
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename);
-    link.style.visibility = "hidden";
+
+    link.href = url;
+
+    link.download = `Temperature_Logs_${filterDevice}_${filterStartDate.format(
+      "YYYY-MM-DD",
+    )}_to_${filterEndDate.format("YYYY-MM-DD")}.xlsx`;
+
     document.body.appendChild(link);
+
     link.click();
+
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+
+    window.URL.revokeObjectURL(url);
   };
 
   // Show loading indicator
