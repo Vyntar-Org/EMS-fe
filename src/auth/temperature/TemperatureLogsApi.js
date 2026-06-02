@@ -84,6 +84,7 @@ export const getTemperatureLogs = async (
   offset = 0,
   isDownload,
   file_type,
+  parameters,
 ) => {
   try {
     // Get a valid access token (will refresh if expired)
@@ -109,6 +110,7 @@ export const getTemperatureLogs = async (
       offset: offset,
       download: isDownload ? "true" : "false",
       file_type: isDownload ? file_type || "excel" || "csv" : "",
+      parameters: parameters || "",
     });
 
     const logsResponse = await apiClient.get(
@@ -210,11 +212,23 @@ export const getTemperatureLogsWithNames = async (
   endDatetime,
   limit = 30,
   offset = 0,
+  isDownload = false,
+  file_type = "",
+  parameters = "",
 ) => {
   try {
     // Fetch both logs and slaves data
     const [logsData, slavesData] = await Promise.all([
-      getTemperatureLogs(slaveId, startDatetime, endDatetime, limit, offset),
+      getTemperatureLogs(
+        slaveId,
+        startDatetime,
+        endDatetime,
+        limit,
+        offset,
+        isDownload,
+        file_type,
+        parameters,
+      ),
       getTemperatureSlaves(),
     ]);
 

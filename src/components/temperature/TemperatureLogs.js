@@ -43,6 +43,14 @@ import {
   getTemperatureSlaves,
 } from "../../auth/temperature/TemperatureLogsApi";
 
+const joinKeysWithComma = (keysList) => {
+  if (!keysList || !Array.isArray(keysList)) {
+    return "";
+  }
+
+  return keysList.join(", ");
+};
+
 function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
   // State variables
   const [devices, setDevices] = useState([]);
@@ -74,6 +82,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
     { val: "humidity", label: "Humidity" },
     { val: "battery", label: "Battery" },
     { val: "pressure", label: "Pressure" },
+    { val: "status", label: "Status" },
   ];
 
   // Get all parameter values for easy reference
@@ -185,6 +194,9 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
         endDateTime,
         limit,
         offset,
+        false,
+        "",
+        joinKeysWithComma(selectedColumn),
       );
 
       let pageLogs = [];
@@ -240,7 +252,9 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
         log.pressure
           .toString()
           .toLowerCase()
-          .includes(searchTerm.toLowerCase()))
+          .includes(searchTerm.toLowerCase())) ||
+      (log.status !== undefined &&
+        log.status.toString().toLowerCase().includes(searchTerm.toLowerCase()))
     );
   });
 
@@ -317,6 +331,9 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
           endDateTime,
           limit,
           offset,
+          false,
+          "",
+          joinKeysWithComma(selectedColumn),
         );
 
         let pageLogs = [];
@@ -405,7 +422,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
       return;
     }
 
-    const logsData = await getTemperatureLogs(
+    const logsData = await getTemperatureLogsWithNames(
       slaveId,
       startDateTime,
       endDateTime,
@@ -413,6 +430,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
       0,
       true,
       "excel",
+      joinKeysWithComma(selectedColumn),
     );
 
     const logsResult = logsData?.data?.logs || [];
@@ -428,6 +446,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
       "Humidity",
       "Battery",
       "Pressure",
+      "Status",
     ];
 
     const rows = logsResult.map((item) => [
@@ -435,7 +454,8 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
       item.temperature ?? "",
       item.humidity ?? "",
       item.battery ?? "",
-      item.pressure ?? "",
+      item.pressure ?? 0,
+      item.status ?? 0,
     ]);
 
     const csvContent = [
@@ -871,6 +891,12 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                         >
                           Pressure (Pa)
                         </TableCell>
+                        <TableCell
+                          className="log-header-cell"
+                          sx={{ textTransform: "capitalize" }}
+                        >
+                          Status
+                        </TableCell>
                       </>
                     )}
                   </TableRow>
@@ -885,6 +911,7 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                       const humidity = log.humidity;
                       const battery = log.battery;
                       const pressure = log.pressure;
+                      const status = log.status;
                       console.log(log);
 
                       return (
@@ -911,6 +938,10 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                                   (typeof pressure === "number"
                                     ? pressure.toFixed(2)
                                     : pressure)}
+                                {col === "status" &&
+                                  (typeof status === "number"
+                                    ? status.toFixed(2)
+                                    : status)}
                               </TableCell>
                             ))
                           ) : (
@@ -940,7 +971,12 @@ function TemperatureLogs({ onSidebarToggle, sidebarVisible }) {
                               <TableCell className="log-table-cell">
                                 {typeof pressure === "number"
                                   ? pressure.toFixed(2)
-                                  : pressure}
+                                  : pressure || 0}
+                              </TableCell>
+                              <TableCell className="log-table-cell">
+                                {typeof status === "number"
+                                  ? status.toFixed(2)
+                                  : status || 0}
                               </TableCell>
                             </>
                           )}
