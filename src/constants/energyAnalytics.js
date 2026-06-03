@@ -2,6 +2,7 @@ import { SOLAR_PARAMETER_OPTIONS } from "./solarLogs";
 import { TEMPERATURE_PARAMETER_OPTIONS } from "./temperatureLogs";
 import { FIRE_SAFETY_PARAMETER_OPTIONS } from "./fireSafetyLogs";
 import { COMPRESSOR_PARAMETER_OPTIONS } from "./compressorLogs";
+import { STP_PARAMETER_OPTIONS } from "./stpLogs";
 
 export const ENERGY_PARAMETER_OPTIONS = [
   {
@@ -48,6 +49,7 @@ export const PARAMETER_OPTIONS = {
   TEMPERATURE: TEMPERATURE_PARAMETER_OPTIONS,
   "FIRE-SAFETY": FIRE_SAFETY_PARAMETER_OPTIONS,
   COMPRESSOR: COMPRESSOR_PARAMETER_OPTIONS,
+  STP: STP_PARAMETER_OPTIONS,
 };
 
 export const KEY_PARAMETER_OPTIONS_MAPPING = {
@@ -71,6 +73,15 @@ export const KEY_PARAMETER_OPTIONS_MAPPING = {
   avg_i: "Average Current (A)",
   temperature: "Temperature (°C)",
   water_level: "Water Level (m)",
+  "Inlet Flowrate": "Inlet Flowrate (m³/hr)",
+  "Inlet Totalizer": "Inlet Totalizer (KL)",
+  "Outlet Flowrate": "Outlet Flowrate (m³/hr)",
+  "Outlet Totalizer": "Outlet Totalizer (KL)",
+  TDS: "TDS (ppm)",
+  "Level 1": "Collection Tank Level",
+  "Level 2": "Filter Out Level",
+  "Motor 1 Status": "Motor Status (Collection)",
+  "Motor 2 Status": "Motor Status (Filter out)",
 };
 
 export const UNIQUE_PASTEL_BGS = [

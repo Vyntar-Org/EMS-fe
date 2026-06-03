@@ -1,5 +1,8 @@
 const ADMINS = {
-  SLAVES: (appName) => `/applications/${appName}/slaves/`,
+  SLAVES: (appName) => {
+    if (appName === "stp") return "/applications/stp/slave-list/";
+    return `/applications/${appName}/slaves/`;
+  },
 };
 
 const AUTH = {
@@ -197,6 +200,38 @@ const WATER_LOGS = {
     `/applications/water/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
+const STP_DASHBOARD = {
+  STP_DASHBOARD_SUMMARY: "/applications/stp/dashboard/summary/",
+  STP_DASHBOARD_HISTORICAL: "/applications/stp/dashboard/historical-trends/",
+  STP_DASHBOARD_COMPARISON: "/applications/stp/dashboard/water-comparison/",
+  STP_SLAVE_LIST: "/applications/stp/slave-list/",
+  
+};
+
+const STP_MACHINE_LIST = {
+ STP_MACHINE_LIST_DATA: "/applications/stp/machine-list/",
+  STP_MACHINE_LIST_TREND: (slaveId, parameter) =>
+    `/applications/stp/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}`,
+};
+
+const STP_ANALYTICS = {
+ STP_ANALYTICS_DATA: (slaveId, parameters, start_datetime, end_datetime) =>
+    `/applications/stp/analytics/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}`,
+};
+
+const STP_LOGS = {
+  STP_LOGS_DATA: (
+    slaveId,
+    parameters,
+    start_datetime,
+    end_datetime,
+    limit = 50,
+    offset = 0
+  ) =>
+    `/applications/stp/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
+  
+};
+
 const WATER_REPORTS = {
   WATER_REPORTS_DATE_WISE_CONSUMPTION_DATA: (year, month) =>
     `/applications/water/daily-consumption-reports/?month=${month}&year=${year}`,
@@ -231,4 +266,8 @@ export const API_URLS = {
   ...WATER_ANALYTICS,
   ...WATER_LOGS,
   ...WATER_REPORTS,
+  ...STP_DASHBOARD,
+  ...STP_MACHINE_LIST,
+  ...STP_ANALYTICS,
+  ...STP_LOGS,
 };

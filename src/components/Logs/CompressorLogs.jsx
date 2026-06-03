@@ -77,6 +77,7 @@ const CompressorLogsFilterHeader = ({
             <span>
               <Button
                 variant="contained"
+                disabled={!payload?.slave_id}
                 onClick={() => handleSearch()}
                 sx={{
                   width: 40,

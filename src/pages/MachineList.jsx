@@ -5,6 +5,7 @@ import TemperatureMachineList from "../components/MachineList/TemperatureMachine
 import SolarMachineList from "../components/MachineList/SolarMachineList";
 import FireSafetyMachineList from "../components/MachineList/FireSafetyMachineList";
 import CompressorMachineList from "../components/MachineList/CompressorMachineList";
+import STPMachineList from "../components/MachineList/STPMachineList";
 import { Box } from "@mui/material";
 
 const MACHINE_LIST_CONFIG = {
@@ -13,6 +14,7 @@ const MACHINE_LIST_CONFIG = {
   SOLAR: SolarMachineList,
   "FIRE-SAFETY": FireSafetyMachineList,
   COMPRESSOR: CompressorMachineList,
+  STP: STPMachineList,
 };
 
 const MachineList = () => {

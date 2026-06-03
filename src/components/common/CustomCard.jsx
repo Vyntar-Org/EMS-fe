@@ -34,66 +34,74 @@ const CustomCard = ({
   accentColor = "#CCC751",
   titleIcon,
   childrenOtherProps = {},
+  loading = false,
   ...props
 }) => {
   return (
     <StyledCard accentcolor={accentColor} {...props}>
       <CardContent sx={{ p: "14px !important", height: "100%" }}>
-        {(title || subtitle || icon) && (
+        {loading ? (
           <Box
             sx={{
               display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              mb: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100%",
             }}
-            width="100%"
           >
-            {title && (
+            <Typography variant="caption" color="text.secondary">
+              Loading...
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            {(title || subtitle || icon) && (
               <Box
-                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                sx={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  mb: 1,
+                }}
                 width="100%"
               >
-                {titleIcon && titleIcon}
+                {title && (
+                  <Box
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    width="100%"
+                  >
+                    {titleIcon && titleIcon}
 
-                <Box width={titleIcon ? "calc(100% - 24px - 8px)" : "100%"}>
-                  <ResponsiveTextWrapper
-                    value={title}
-                    color="#0A223E"
-                    fontWeight={700}
-                  />
-                </Box>
-
-                {/* <Typography
-                  sx={{
-                    fontWeight: 700,
-                    color: "#0A223E",
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {title}
-                </Typography> */}
+                    <Box width={titleIcon ? "calc(100% - 24px - 8px)" : "100%"}>
+                      <ResponsiveTextWrapper
+                        value={title}
+                        color="#0A223E"
+                        fontWeight={700}
+                      />
+                    </Box>
+                  </Box>
+                )}
+                {subtitle && (
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "text.secondary", fontWeight: 500 }}
+                  >
+                    {subtitle}
+                  </Typography>
+                )}
+                {icon && icon}
               </Box>
             )}
-            {subtitle && (
-              <Typography
-                variant="caption"
-                sx={{ color: "text.secondary", fontWeight: 500 }}
-              >
-                {subtitle}
-              </Typography>
-            )}
-            {icon && icon}
-          </Box>
-        )}
 
-        <Box
-          height={`calc(100% ${title || subtitle || icon ? "- 14px - 18px" : ""}  )`}
-          overflow="auto"
-          {...childrenOtherProps}
-        >
-          {children}
-        </Box>
+            <Box
+              height={`calc(100% ${title || subtitle || icon ? "- 14px - 18px" : ""}  )`}
+              overflow="auto"
+              {...childrenOtherProps}
+            >
+              {children}
+            </Box>
+          </>
+        )}
       </CardContent>
     </StyledCard>
   );
