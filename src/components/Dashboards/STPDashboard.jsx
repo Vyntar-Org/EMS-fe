@@ -64,7 +64,7 @@ const STPDashboard = () => {
             /> 
           </Grid> 
   
-          <Grid sx={{ height: { xs: "auto", md: "100%" } }}> 
+          <Grid sx={{ height: { xs: "auto", lg: "100%" }, marginTop: { md: 2, sx: 0 , lg: 0 } }}> 
             <STPWaterQuality 
               data={qualityGauges} 
               loading={loading}

@@ -71,12 +71,29 @@ const CircularGauge = ({ label, value, unit, color }) => {
 };
 
 const STPWaterQuality = ({ data }) => {
+  const getApiData = (title) => {
+    return Array.isArray(data) ? data.find((item) => item.title === title) : null;
+  };
+
+  const phData = getApiData("pH");
+  const tdsData = getApiData("TDS");
+
   const qualityMetrics = [
-    { label: "pH", value: data?.ph || 6.76, unit: "mg/L", color: "#0156A6" },
-    { label: "TDS", value: data?.tds || 3200, unit: "ppm", color: "#0156A6" },
-    { label: "COD", value: data?.cod || 0, unit: "mg/L", color: "#A5AAB5" },
-    { label: "BOD", value: data?.bod || 0, unit: "mg/L", color: "#A5AAB5" },
-    { label: "TSS", value: data?.tss || 0, unit: "mg/L", color: "#A5AAB5" },
+    {
+      label: "pH",
+      value: phData?.value ?? 6.76,
+      unit: phData?.unit || "mg/L",
+      color: "#0156A6",
+    },
+    {
+      label: "TDS",
+      value: tdsData?.value ?? 3200,
+      unit: tdsData?.unit || "ppm",
+      color: "#0156A6",
+    },
+    { label: "COD", value: 0, unit: "mg/L", color: "#A5AAB5" },
+    { label: "BOD", value: 0, unit: "mg/L", color: "#A5AAB5" },
+    { label: "TSS", value: 0, unit: "mg/L", color: "#A5AAB5" },
   ];
 
   return (
