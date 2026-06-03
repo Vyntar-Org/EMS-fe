@@ -285,6 +285,7 @@ const SolarLogs = () => {
   return (
     <Box
       sx={{
+        p: 0.7,
         height: {
           xs: "calc(100vh - 56px - 16px)",
           sm: "calc(100vh - 64px - 16px)",

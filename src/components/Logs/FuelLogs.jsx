@@ -1,20 +1,27 @@
-import { Box, Button, Chip, Grid, Tooltip } from "@mui/material";
+import { Box, Button, Grid, Tooltip } from "@mui/material";
 import React, { useMemo, useState } from "react";
-import { useCommonData } from "../../contexts/CommonDataContext";
-import { API_URLS } from "../../helpers/apiUrls";
 import { CustomAutocomplete } from "../common/CustomAutocomplete";
 import { CustomDatePicker } from "../common/CustomDatePicker";
 import { RestartAlt, Search } from "@mui/icons-material";
 import { Loading } from "../common/Loading";
 import NoDataFound from "../common/errors/NoDataFound";
-import { api } from "../../helpers/api";
-import { KEY_PARAMETER_OPTIONS_MAPPING } from "../../constants/energyAnalytics";
+import {
+  FUEL_LOG_COLUMN_MAPPING,
+  FUEL_LOG_COLUMN_ORDER,
+} from "../../constants/fuelLogs";
+import { DUMMY_FUEL_MACHINES } from "../../constants/fuelMachineList";
 import { CustomTable } from "../common/CustomTable";
 import dayjs from "dayjs";
 
 const getDefaultDateRange = () => [dayjs().subtract(24, "hour"), dayjs()];
 
-const LogsFilterHeader = ({
+const FUEL_PARAMETER_OPTIONS = [
+  { label: "timestamp", value: "timestamp" },
+  { label: "Consumed (Ltrs)", value: "consumed" },
+  { label: "Temperature (°C)", value: "temperature" },
+];
+
+const FuelLogsFilterHeader = ({
   slaveOptions,
   handleSearch,
   handleReset,
@@ -29,33 +36,45 @@ const LogsFilterHeader = ({
   };
 
   return (
-    <Box
-      sx={{
-        pb: 1,
-        borderBottom: "1px dashed",
-        borderColor: "divider",
-      }}
-    >
+    <Box sx={{ p: 0.7, borderBottom: "1px dashed", borderColor: "divider" }}>
       <Grid container gap={2} alignItems="center">
         <Grid item xs={12} sm md lg={3}>
           <CustomAutocomplete
             options={slaveOptions}
             onChange={(val) => handleFieldCh("slave_id", val)}
             value={payload?.slave_id || ""}
-            label="Select Devices"
+            label="Select Device"
             size="small"
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2,
                 backgroundColor: "#f9f9f9",
                 transition: "0.3s",
-                "&:hover": {
-                  backgroundColor: "#fff",
-                },
+                "&:hover": { backgroundColor: "#fff" },
               },
             }}
           />
         </Grid>
+
+        <Grid item xs={12} sm md lg={3}>
+          <CustomAutocomplete
+            multiple
+            options={FUEL_PARAMETER_OPTIONS}
+            onChange={(val) => handleFieldCh("parameters", val)}
+            value={payload?.parameters || []}
+            label="Select Parameters"
+            size="small"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                backgroundColor: "#f9f9f9",
+                transition: "0.3s",
+                "&:hover": { backgroundColor: "#fff" },
+              },
+            }}
+          />
+        </Grid>
+
         <Grid item xs={12} md={4.5} lg>
           <CustomDatePicker
             mode="datetimerangepicker"
@@ -69,8 +88,8 @@ const LogsFilterHeader = ({
             <span>
               <Button
                 variant="contained"
-                disabled={!payload?.slave_id}
                 onClick={() => handleSearch()}
+                disabled={!payload?.slave_id}
                 sx={{
                   width: 40,
                   height: 40,
@@ -78,13 +97,8 @@ const LogsFilterHeader = ({
                   p: 0,
                   borderRadius: 2,
                   boxShadow: "none",
-                  backgroundColor: (theme) =>
-                    theme.palette.primary.main || "#1976d2",
-                  "&:hover": {
-                    boxShadow: "none",
-                    backgroundColor: (theme) =>
-                      theme.palette.primary.dark || "#115293",
-                  },
+                  backgroundColor: "#1976d2",
+                  "&:hover": { backgroundColor: "#115293" },
                 }}
               >
                 <Search sx={{ fontSize: 20, color: "#fff" }} />
@@ -97,12 +111,9 @@ const LogsFilterHeader = ({
               <Button
                 variant="contained"
                 onClick={() => {
-                  setPayload((prev) => ({
-                    ...(prev || {}),
+                  setPayload({
                     dateTime: getDefaultDateRange(),
-                    slave_id: null,
-                    parameters: [],
-                  }));
+                  });
                   handleReset();
                 }}
                 sx={{
@@ -114,11 +125,7 @@ const LogsFilterHeader = ({
                   boxShadow: "none",
                   backgroundColor: "#f5f5f5",
                   color: "#666666",
-                  "&:hover": {
-                    boxShadow: "none",
-                    backgroundColor: "#e0e0e0",
-                    color: "#333333",
-                  },
+                  "&:hover": { backgroundColor: "#e0e0e0", color: "#333333" },
                 }}
               >
                 <RestartAlt sx={{ fontSize: 20 }} />
@@ -131,14 +138,11 @@ const LogsFilterHeader = ({
   );
 };
 
-const STPLogs = () => {
-  const { slavesData, parametersData } = useCommonData();
-  const [loading, setLoading] = useState(null);
+const FuelLogs = () => {
+  const [loading, setLoading] = useState(false);
   const [logsData, setLogsData] = useState(null);
   const [payload, setPayload] = useState({
     dateTime: getDefaultDateRange(),
-    slave_id: null,
-    parameters: [],
   });
   const [apiPaginationParams, setApiPaginationParams] = useState({
     limit: 50,
@@ -147,27 +151,28 @@ const STPLogs = () => {
   const [backendTotalRowsCount, setBackendTotalRowsCount] = useState(0);
 
   const tablePageIndex = Math.floor(
-    apiPaginationParams.offset / apiPaginationParams.limit
+    apiPaginationParams.offset / apiPaginationParams.limit,
   );
   const tablePageSize = apiPaginationParams.limit;
 
   const logsColumns = useMemo(() => {
     if (!logsData?.length) return [];
 
-    const getChipStyle = (value) => {
-      const val = String(value).toUpperCase();
-      if (val === "FULL") return { bgcolor: "#4f92d4", color: "#fff", fontWeight: "bold", minWidth: 60 };
-      if (val === "LOW") return { bgcolor: "#d05353", color: "#fff", fontWeight: "bold", minWidth: 60 };
-      if (val === "ON") return { bgcolor: "#008000", color: "#fff", fontWeight: "bold", minWidth: 60 };
-      if (val === "OFF") return { bgcolor: "#FF0000", color: "#fff", fontWeight: "bold", minWidth: 60 };
-      return null;
-    };
+    const selectedParamKeys = Array.isArray(payload?.parameters)
+      ? payload.parameters.map((p) => p?.value).filter(Boolean)
+      : [];
 
-    const sampleData = logsData[0];
-    const columnDef = Object.keys(sampleData).map((c) => ({
+    let orderedKeys = [...FUEL_LOG_COLUMN_ORDER];
+
+    if (selectedParamKeys.length > 0) {
+      orderedKeys = orderedKeys.filter(
+        (key) => key === "timestamp" || selectedParamKeys.includes(key),
+      );
+    }
+
+    return orderedKeys.map((c) => ({
       accessorKey: c,
-      header: KEY_PARAMETER_OPTIONS_MAPPING?.[c] || c,
-      size: c === "timestamp" ? 200 : 150,
+      header: FUEL_LOG_COLUMN_MAPPING[c] ?? c,
       cell: (info) => {
         const value = info.getValue();
 
@@ -178,92 +183,38 @@ const STPLogs = () => {
             : String(value);
         }
 
-        const chipStyle = getChipStyle(value);
-        if (chipStyle) {
-          return (
-            <Chip
-              label={String(value).toUpperCase()}
-              size="small"
-              sx={chipStyle}
-            />
-          );
+        if (typeof value === "number") {
+          return value.toFixed(2);
         }
 
         return String(value ?? "-");
       },
     }));
-
-    // Reorder logic: timestamp first, then following the user requested order
-    const desiredOrder = [
-      "timestamp",
-      "Level 1",
-      "Motor 1 Status",
-      "Level 2",
-      "Motor 2 Status",
-      "Inlet Flowrate",
-      "Inlet Totalizer",
-      "Outlet Flowrate",
-      "Outlet Totalizer",
-      "TDS",
-      "pH",
-    ];
-
-    const sortedCols = [];
-    desiredOrder.forEach((key) => {
-      const col = columnDef.find((cd) => cd.accessorKey === key);
-      if (col) sortedCols.push(col);
-    });
-
-    // Add any remaining columns that weren't in the desired order
-    columnDef.forEach((col) => {
-      if (!sortedCols.find((sc) => sc.accessorKey === col.accessorKey)) {
-        sortedCols.push(col);
-      }
-    });
-
-    return sortedCols;
-  }, [logsData]);
+  }, [logsData, payload?.parameters]);
 
   const handleSearch = async (paginationDetails = apiPaginationParams) => {
     if (!payload?.slave_id) return;
 
     setLoading(true);
-    try {
-      const slaveId = payload.slave_id?.value ?? "";
-      const parameterValues = payload?.parameters
-        ? payload.parameters
-            .map((p) => p?.value)
-            .filter(Boolean)
-            .join(",")
-        : "";
+    // Simulate API delay and generate dummy logs
+    setTimeout(() => {
+      const now = dayjs();
+      const count = 100; // Simulation total
+      const data = Array.from({ length: Math.min(paginationDetails.limit, count) }, (_, i) => {
+        const time = now.subtract(paginationDetails.offset + i, "minute");
+        return {
+          timestamp: time.toISOString(),
+          consumed: Math.floor(Math.random() * 20),
+          refilled: Math.random() > 0.9 ? Math.floor(Math.random() * 100) : 0,
+          temperature: Math.floor(Math.random() * 5) + 25,
+          fuel_level: Math.floor(Math.random() * 100) + 600,
+        };
+      });
 
-      const startDateObj = payload?.dateTime?.[0];
-      const endDateObj = payload?.dateTime?.[1];
-      const formattedStart = startDateObj?.isValid?.()
-        ? startDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
-        : "";
-      const formattedEnd = endDateObj?.isValid?.()
-        ? endDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
-        : "";
-
-      const newApiUrl = API_URLS.STP_LOGS_DATA(
-        slaveId,
-        parameterValues,
-        formattedStart,
-        formattedEnd,
-        paginationDetails.limit,
-        paginationDetails.offset
-      );
-      const res = await api.get(newApiUrl);
-      if (res?.success) {
-        setLogsData(res?.data?.logs || []);
-        setBackendTotalRowsCount(res?.meta?.total || 0);
-      }
-    } catch (error) {
-      console.error(`API Error:`, error);
-    } finally {
+      setLogsData(data);
+      setBackendTotalRowsCount(count);
       setLoading(false);
-    }
+    }, 600);
   };
 
   const handleReset = () => {
@@ -276,50 +227,40 @@ const STPLogs = () => {
   };
 
   const handlePageChange = (event, newPageIndex) => {
-    const newOffset = newPageIndex * apiPaginationParams.limit;
-    setApiPaginationParams((prev) => ({
-      ...prev,
-      offset: newOffset,
-    }));
-    handleSearch({
+    const nextParams = {
       ...apiPaginationParams,
-      offset: newOffset,
-    });
+      offset: newPageIndex * apiPaginationParams.limit,
+    };
+    setApiPaginationParams(nextParams);
+    handleSearch(nextParams);
   };
 
   const handleRowsPerPageChange = (event) => {
     const newLimit = parseInt(event.target.value, 10);
-    setApiPaginationParams({
+    const nextParams = {
       limit: newLimit,
       offset: 0,
-    });
-    handleSearch({
-      limit: newLimit,
-      offset: 0,
-    });
+    };
+    setApiPaginationParams(nextParams);
+    handleSearch(nextParams);
   };
 
-  const slaveOptions = useMemo(() => {
-    return (
-      slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) ||
-      []
-    );
-  }, [slavesData]);
+  const slaveOptions = DUMMY_FUEL_MACHINES.map((m) => ({
+    label: m.card_name,
+    value: m.slave_id,
+  }));
 
   return (
     <Box
       sx={{
-        p: 0.7,
         height: {
           xs: "calc(100vh - 56px - 16px)",
           sm: "calc(100vh - 64px - 16px)",
         },
-        p: 1,
       }}
     >
-      <LogsFilterHeader
+      <FuelLogsFilterHeader
         slaveOptions={slaveOptions}
-        parameterOptions={parametersData}
         handleSearch={handleSearch}
         handleReset={handleReset}
         payload={payload}
@@ -330,7 +271,7 @@ const STPLogs = () => {
         height={{
           xs: "calc(100% - 216px)",
           sm: "calc(100% - 160px)",
-          md: "calc(100% - 60px)",
+          md: "calc(100% - 48px)",
         }}
         pt={1}
         overflow="auto"
@@ -343,7 +284,7 @@ const STPLogs = () => {
           <CustomTable
             data={logsData}
             columns={logsColumns}
-            fillWidth={true}
+            fillWidth
             pageIndex={tablePageIndex}
             pageSize={tablePageSize}
             totalRowCount={backendTotalRowsCount}
@@ -356,4 +297,4 @@ const STPLogs = () => {
   );
 };
 
-export default STPLogs;
+export default FuelLogs;

@@ -33,7 +33,7 @@ const FireSafetyLogsFilterHeader = ({
   };
 
   return (
-    <Box sx={{ pb: 1, borderBottom: "1px dashed", borderColor: "divider" }}>
+    <Box sx={{ p: 0.7, borderBottom: "1px dashed", borderColor: "divider" }}>
       <Grid container gap={2} alignItems="center">
         <Grid item xs={12} sm md lg={3}>
           <CustomAutocomplete

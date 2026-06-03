@@ -35,7 +35,7 @@ const TemperatureLogsFilterHeader = ({
   return (
     <Box
       sx={{
-        pb: 1,
+        p: 0.7,
         borderBottom: "1px dashed",
         borderColor: "divider",
       }}

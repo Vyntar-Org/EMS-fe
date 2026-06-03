@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Divider,
   Grid,
   Tab,
   Tabs,
@@ -10,22 +9,20 @@ import {
 } from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  ENERGY_REPORTS_ALLOW_MONTH,
-  ENERGY_REPORTS_API_DATA_KEY_CONFIG,
-  ENERGY_REPORTS_TAB_OPTIONS,
-} from "../../constants/energyReports";
+  FUEL_REPORTS_ALLOW_MONTH,
+  FUEL_REPORTS_API_DATA_KEY_CONFIG,
+  FUEL_REPORTS_TAB_OPTIONS,
+} from "../../constants/fuelReports";
 import { CustomDatePicker } from "../common/CustomDatePicker";
 import { Description, FileDownload, Search } from "@mui/icons-material";
 import { Loading } from "../common/Loading";
 import NoDataFound from "../common/errors/NoDataFound";
 import { CustomTable } from "../common/CustomTable";
 import dayjs from "dayjs";
-import { API_URLS } from "../../helpers/apiUrls";
-import { api } from "../../helpers/api";
 import { transformDynamicDataToDailyMatrix } from "../../helpers/common";
 import { exportToCSV, exportToPDF } from "../../helpers/exports";
 import { CustomAutocomplete } from "../common/CustomAutocomplete";
-import { useCommonData } from "../../contexts/CommonDataContext";
+import { DUMMY_FUEL_MACHINES } from "../../constants/fuelMachineList";
 
 const ReportsHeader = ({
   selectedTab,
@@ -59,7 +56,6 @@ const ReportsHeader = ({
         value={selectedTab}
         onChange={(e, val) => {
           if (!val) return;
-
           handleTabChange(val);
         }}
         variant="scrollable"
@@ -75,7 +71,6 @@ const ReportsHeader = ({
           "& .MuiTab-root": {
             textTransform: "none",
             fontSize: "0.95rem",
-
             color: "#595959",
             minHeight: "40px",
             transition: "all 0.3s ease",
@@ -91,7 +86,7 @@ const ReportsHeader = ({
           },
         }}
       >
-        {ENERGY_REPORTS_TAB_OPTIONS.map((app) => (
+        {FUEL_REPORTS_TAB_OPTIONS.map((app) => (
           <Tab
             disableRipple
             key={app.tab}
@@ -111,7 +106,7 @@ const ReportsHeader = ({
         alignItems="center"
         sx={{ bgcolor: "#f5f5f5", p: 1.5, borderRadius: 2 }}
       >
-        {ENERGY_REPORTS_ALLOW_MONTH.includes(selectedTab) && (
+        {FUEL_REPORTS_ALLOW_MONTH.includes(selectedTab) && (
           <Grid item xs sm md={2}>
             <CustomDatePicker
               label="Select Month"
@@ -145,12 +140,10 @@ const ReportsHeader = ({
                   p: 0,
                   borderRadius: 2,
                   boxShadow: "none",
-                  backgroundColor: (theme) =>
-                    theme.palette.primary.main || "#1976d2",
+                  backgroundColor: "#1976d2",
                   "&:hover": {
                     boxShadow: "none",
-                    backgroundColor: (theme) =>
-                      theme.palette.primary.dark || "#115293",
+                    backgroundColor: "#115293",
                   },
                 }}
               >
@@ -176,7 +169,6 @@ const ReportsHeader = ({
             label="Search Devices..."
             size="small"
             sx={{
-              // mt: 0.5,
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2,
                 backgroundColor: "#f9f9f9",
@@ -243,27 +235,29 @@ const ReportsHeader = ({
   );
 };
 
-const EnergyReports = () => {
-  const { slavesData } = useCommonData();
+const FuelReports = () => {
   const [slavesId, setSlavesId] = useState(null);
   const [selectedTab, setSelectedTab] = useState(
-    "EMS_REPORTS_DATE_WISE_CONSUMPTION_DATA",
+    "FUEL_REPORTS_DATE_WISE_CONSUMPTION_DATA"
   );
-  const [loading, setLoading] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [reportsData, setReportsData] = useState(null);
   const [payload, setPayload] = useState({
     month: dayjs(new Date()),
     year: dayjs(new Date()),
   });
 
-  const slaveName = slavesData?.find(
-    (s) => s?.slave_id === slavesId,
-  )?.slave_name;
+  const slaveOptions = DUMMY_FUEL_MACHINES.map((m) => ({
+    label: m.card_name,
+    value: m.slave_id,
+  }));
+
+  const slaveName = slaveOptions.find((s) => s.value === slavesId)?.label;
 
   const { tableData, tableColumns } = useMemo(() => {
     const { tableData, tableColumns } = transformDynamicDataToDailyMatrix(
       reportsData,
-      ENERGY_REPORTS_API_DATA_KEY_CONFIG[selectedTab],
+      FUEL_REPORTS_API_DATA_KEY_CONFIG[selectedTab]
     );
 
     const filteredData = slaveName
@@ -273,50 +267,58 @@ const EnergyReports = () => {
     return { tableData: filteredData, tableColumns };
   }, [reportsData, selectedTab, slaveName]);
 
-  const fetchReportsData = async (curTab, newPayload) => {
+  const fetchReportsData = (curTab, newPayload) => {
     if (!curTab) return;
 
-    const isMonthAllowed = ENERGY_REPORTS_ALLOW_MONTH.includes(curTab);
-
-    if (isMonthAllowed && (!newPayload?.month || !newPayload?.year)) return;
-
-    if (!isMonthAllowed && !newPayload?.year) return;
-
     setLoading(true);
-    try {
-      const monthObj = newPayload?.month;
-      const yearObj = newPayload?.year;
-      const formattedMonthObj = monthObj?.isValid?.()
-        ? monthObj.format("M")
-        : "";
-      const formattedYearObj = yearObj?.isValid?.()
-        ? yearObj.format("YYYY")
-        : "";
+    // Simulate API call and generate dummy data
+    setTimeout(() => {
+      const isDateWise = FUEL_REPORTS_ALLOW_MONTH.includes(curTab);
+      const dummyData = {};
 
-      const newApiUrl = API_URLS[curTab](formattedYearObj, formattedMonthObj);
+      DUMMY_FUEL_MACHINES.forEach((m) => {
+        const machineData = [];
+        if (isDateWise) {
+          const daysInMonth = newPayload.month.daysInMonth();
+          for (let i = 1; i <= daysInMonth; i++) {
+            const dateStr = newPayload.month.date(i).format("YYYY-MM-DD");
+            const baseObj = { date: dateStr };
 
-      const res = await api.get(newApiUrl);
-      if (res?.success) {
-        setReportsData(res?.data || null);
-      }
-    } catch (error) {
-      console.error(`API Error:`, error);
-    } finally {
+            if (curTab === "FUEL_REPORTS_DATE_WISE_CONSUMPTION_DATA") {
+              baseObj.consumption = Math.floor(Math.random() * 50) + 10;
+            } else if (curTab === "EMS_REPORTS_DATE_WISE_READING_DATA") {
+              baseObj.reading = 5000 + i * 50 + Math.floor(Math.random() * 10);
+            } else if (curTab === "EMS_REPORTS_DATE_WISE_CONSUMPTION_COST_DATA") {
+              baseObj.cost_consumption = Math.floor(Math.random() * 5000) + 1000;
+            }
+
+            machineData.push(baseObj);
+          }
+        } else {
+          for (let i = 1; i <= 12; i++) {
+            const baseObj = { month: String(i) };
+
+            if (curTab === "FUEL_REPORTS_MONTH_WISE_CONSUMPTION_DATA") {
+              baseObj.consumption = Math.floor(Math.random() * 1000) + 200;
+            } else if (curTab === "EMS_REPORTS_MONTH_WISE_CONSUMPTION_COST_DATA") {
+              baseObj.consumption = Math.floor(Math.random() * 100000) + 20000;
+            }
+
+            machineData.push(baseObj);
+          }
+        }
+        dummyData[m.card_name] = machineData;
+      });
+
+      setReportsData(dummyData);
       setLoading(false);
-    }
+    }, 600);
   };
 
   const handleTabChange = (tabVal) => {
     setSelectedTab(tabVal);
-    setPayload({
-      month: dayjs(new Date()),
-      year: dayjs(new Date()),
-    });
     setReportsData(null);
-    fetchReportsData(tabVal, {
-      month: dayjs(new Date()),
-      year: dayjs(new Date()),
-    });
+    fetchReportsData(tabVal, payload);
   };
 
   const handleSearch = () => {
@@ -324,15 +326,15 @@ const EnergyReports = () => {
   };
 
   const handlePdfDownload = () => {
-    const findTabName = ENERGY_REPORTS_TAB_OPTIONS.find(
-      (r) => r.tab === selectedTab,
+    const findTabName = FUEL_REPORTS_TAB_OPTIONS.find(
+      (r) => r.tab === selectedTab
     );
     exportToPDF(tableData, tableColumns, findTabName.label);
   };
 
   const handleExcelDownload = () => {
-    const findTabName = ENERGY_REPORTS_TAB_OPTIONS.find(
-      (r) => r.tab === selectedTab,
+    const findTabName = FUEL_REPORTS_TAB_OPTIONS.find(
+      (r) => r.tab === selectedTab
     );
     exportToCSV(tableData, tableColumns, findTabName.label);
   };
@@ -361,10 +363,7 @@ const EnergyReports = () => {
         loading={loading}
         slavesId={slavesId}
         setSlavesId={setSlavesId}
-        slavesData={slavesData?.map((f) => ({
-          label: f?.slave_name,
-          value: f?.slave_id,
-        }))}
+        slavesData={slaveOptions}
       />
 
       <Box
@@ -374,13 +373,6 @@ const EnergyReports = () => {
         }}
         pt={1}
         overflow="auto"
-        // sx={{
-        //   "& .MuiTableCell-root:first-of-type": {
-        //     position: "sticky",
-        //     left: 0,
-        //     zIndex: 3,
-        //   },
-        // }}
       >
         {loading ? (
           <Loading />
@@ -390,7 +382,7 @@ const EnergyReports = () => {
           <CustomTable
             data={tableData}
             columns={tableColumns}
-            fillWidth={!ENERGY_REPORTS_ALLOW_MONTH.includes(selectedTab)}
+            fillWidth={!FUEL_REPORTS_ALLOW_MONTH.includes(selectedTab)}
           />
         )}
       </Box>
@@ -398,4 +390,4 @@ const EnergyReports = () => {
   );
 };
 
-export default EnergyReports;
+export default FuelReports;

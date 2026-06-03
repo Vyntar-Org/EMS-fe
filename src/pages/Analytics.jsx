@@ -5,6 +5,7 @@ import TemperatureAnalytics from "../components/Analytics/TemperatureAnalytics";
 import FireSafetyAnalytics from "../components/Analytics/FireSafetyAnalytics";
 import CompressorAnalytics from "../components/Analytics/CompressorAnalytics";
 import STPAnalytics from "../components/Analytics/STPAnalytics";
+import FuelAnalytics from "../components/Analytics/FuelAnalytics";
 import { useApplications } from "../contexts/ApplicationContext";
 import { Box } from "@mui/material";
 
@@ -15,6 +16,7 @@ const ANALYTICS_CONFIG = {
   "FIRE-SAFETY": FireSafetyAnalytics,
   COMPRESSOR: CompressorAnalytics,
   STP: STPAnalytics,
+  FUEL: FuelAnalytics,
 };
 
 const Analytics = () => {

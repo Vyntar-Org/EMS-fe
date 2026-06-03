@@ -1,10 +1,12 @@
 import React from "react";
 import { useApplications } from "../contexts/ApplicationContext";
 import EnergyReports from "../components/Reports/EnergyReports";
+import FuelReports from "../components/Reports/FuelReports";
 import { Box } from "@mui/material";
 
 const REPORTS_CONFIG = {
   ENERGY: EnergyReports,
+  FUEL: FuelReports,
 };
 
 const Reports = () => {
