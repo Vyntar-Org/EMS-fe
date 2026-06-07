@@ -18,7 +18,12 @@ import {
 } from "@mui/material";
 import { CustomSelect } from "../common/CustomSelect";
 import { CustomAutocomplete } from "../common/CustomAutocomplete";
-import { DownloadForOffline, Insights, Thermostat, WaterDrop } from "@mui/icons-material";
+import {
+  DownloadForOffline,
+  Insights,
+  Thermostat,
+  WaterDrop,
+} from "@mui/icons-material";
 import NoDataFound from "../common/errors/NoDataFound";
 import CustomCard from "../common/CustomCard";
 import ResponsiveTextWrapper from "../common/ResponsiveTextWrapper";
@@ -299,7 +304,9 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 
     try {
       setChartLoading(true);
-      const res = await api.get(API_URLS.FIRE_SAFETY_MACHINE_LIST_TREND(slaveId, parameter));
+      const res = await api.get(
+        API_URLS.FIRE_SAFETY_MACHINE_LIST_TREND(slaveId, parameter),
+      );
       if (res?.success) {
         setChartResponse({
           data: res?.data?.data || [],
@@ -342,7 +349,10 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
       tooltip: { enabled: false },
     },
     yaxis: {
-      title: { text: chartResponse?.unit || "", style: { color: "#6B7280", fontSize: "12px" } },
+      title: {
+        text: chartResponse?.unit || "",
+        style: { color: "#6B7280", fontSize: "12px" },
+      },
       labels: { style: { colors: "#6B7280", fontSize: "11px" } },
     },
     tooltip: {
@@ -388,7 +398,11 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 
   const activeTab = FIRE_SAFETY_TREND_TAB_OPTIONS.find((t) => t.tab === tab);
   const chartSeries = [
-    { name: `${slaveName} ${activeTab?.label || ""}`, data: chartResponse?.data?.map((item) => item.value), color: "#4A90E2" },
+    {
+      name: `${slaveName} ${activeTab?.label || ""}`,
+      data: chartResponse?.data?.map((item) => item.value),
+      color: "#4A90E2",
+    },
   ];
 
   return (
@@ -399,9 +413,14 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
           value={tab}
           size="small"
           fullWidth
-          options={FIRE_SAFETY_TREND_TAB_OPTIONS.map((option) => ({ value: option.tab, label: option.label }))}
+          options={FIRE_SAFETY_TREND_TAB_OPTIONS.map((option) => ({
+            value: option.tab,
+            label: option.label,
+          }))}
           onChange={(e) => {
-            const selected = FIRE_SAFETY_TREND_TAB_OPTIONS.find((t) => t.tab === e.target.value);
+            const selected = FIRE_SAFETY_TREND_TAB_OPTIONS.find(
+              (t) => t.tab === e.target.value,
+            );
             if (!selected) return;
             fetchTrendModalChartData(selected.tab);
             handleTabChange(selected.tab, selected.tabDesc);
@@ -413,7 +432,13 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
         {chartLoading ? (
           <Loading />
         ) : chartResponse?.data?.length ? (
-          <ReactApexChart options={chartOptions} series={chartSeries} type="line" height={350} width="100%" />
+          <ReactApexChart
+            options={chartOptions}
+            series={chartSeries}
+            type="line"
+            height={350}
+            width="100%"
+          />
         ) : (
           <NoDataFound />
         )}
@@ -433,8 +458,11 @@ const FireSafetyMachineList = () => {
   const machines = machineListData?.machines || [];
 
   const filteredMachines = useMemo(() => {
-    if (slavesId == null || slavesId === "" || !machines.length) return machines;
-    return machines.filter((m) => String(getMachineSlaveId(m)) === String(slavesId));
+    if (slavesId == null || slavesId === "" || !machines.length)
+      return machines;
+    return machines.filter(
+      (m) => String(getMachineSlaveId(m)) === String(slavesId),
+    );
   }, [machines, slavesId]);
 
   const handleTabChange = (tab, tabDesc) => {
@@ -442,7 +470,12 @@ const FireSafetyMachineList = () => {
   };
 
   const handleOpenModal = (item) => {
-    setModalDetails({ isOpen: true, data: item, tab: "temperature", tabDesc: "Last 6 hours data" });
+    setModalDetails({
+      isOpen: true,
+      data: item,
+      tab: "temperature",
+      tabDesc: "Last 6 hours data",
+    });
   };
 
   const handleCloseModal = () => {
@@ -469,9 +502,21 @@ const FireSafetyMachineList = () => {
 
   return (
     <>
-      <Box sx={{ height: { xs: "calc(100vh - 56px - 16px)", sm: "calc(100vh - 64px - 16px)" } }}>
+      <Box
+        sx={{
+          height: {
+            xs: "calc(100vh - 56px - 16px)",
+            sm: "calc(100vh - 64px - 16px)",
+          },
+        }}
+      >
         <MachineListHeader
-          slaveOptions={slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) ?? []}
+          slaveOptions={
+            slavesData?.map((f) => ({
+              label: f?.slave_name,
+              value: f?.slave_id,
+            })) ?? []
+          }
           setSlavesId={setSlavesId}
           slavesId={slavesId}
           handleDownload={() => handleDownload(filteredMachines, selectedApp)}
@@ -485,7 +530,14 @@ const FireSafetyMachineList = () => {
             ) : filteredMachines?.length ? (
               <Grid container rowGap={1} columnSpacing={1}>
                 {filteredMachines.map((mc) => (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={`firesafety-machine-${mc.id || mc.slave_id}`}>
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={4}
+                    lg={3}
+                    key={`firesafety-machine-${mc.id || mc.slave_id}`}
+                  >
                     <CustomCard childrenOtherProps={{ height: "100%" }}>
                       <FireSafetyMetricBlock
                         label={mc?.name || ""}
@@ -516,7 +568,12 @@ const FireSafetyMachineList = () => {
         cancelText={null}
       >
         {Boolean(modalDetails?.isOpen) ? (
-          <ModalContentForTrend handleTabChange={handleTabChange} tab={modalDetails?.tab} slaveId={getMachineSlaveId(modalDetails?.data)} slaveName={modalDetails?.data?.name} />
+          <ModalContentForTrend
+            handleTabChange={handleTabChange}
+            tab={modalDetails?.tab}
+            slaveId={getMachineSlaveId(modalDetails?.data)}
+            slaveName={modalDetails?.data?.name}
+          />
         ) : null}
       </PremiumModal>
     </>

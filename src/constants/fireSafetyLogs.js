@@ -4,12 +4,6 @@ export const FIRE_SAFETY_LOG_COLUMN_MAPPING = {
   water_level: "Water Level (m)",
 };
 
-export const FIRE_SAFETY_LOG_COLUMN_ORDER = [
-  "timestamp",
-  "temperature",
-  "water_level",
-];
-
 export const FIRE_SAFETY_PARAMETER_OPTIONS = [
   { label: "Timestamp", value: "timestamp" },
   { label: "Temperature", value: "temperature" },

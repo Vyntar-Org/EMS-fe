@@ -7,6 +7,6 @@ export default defineConfig({
     port: 3000,
   },
   optimizeDeps: {
-    include: ["react-window"],
+    include: ["react-window", "leaflet"],
   },
 });

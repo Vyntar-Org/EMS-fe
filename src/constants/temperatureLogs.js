@@ -5,13 +5,6 @@ export const TEMPERATURE_LOG_COLUMN_MAPPING = {
   battery: "Battery (V)",
 };
 
-export const TEMPERATURE_LOG_COLUMN_ORDER = [
-  "timestamp",
-  "temperature",
-  "humidity",
-  "battery",
-];
-
 export const TEMPERATURE_PARAMETER_OPTIONS = [
   { label: "Timestamp", value: "timestamp" },
   { label: "Temperature", value: "temperature" },

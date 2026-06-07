@@ -1,75 +1,50 @@
+import dayjs from "dayjs";
 import React, { useState } from "react";
-import { useCommonData } from "../../contexts/CommonDataContext";
+import {
+  basePickerStyles,
+  downAnalyticsSampleData,
+} from "../../helpers/common";
+import { WATER_LOG_COLUMN_MAPPING } from "../../constants/waterLogs";
 import { Box, Button, Grid, Typography } from "@mui/material";
+import { CustomDatePicker } from "../common/CustomDatePicker";
 import { CustomAutocomplete } from "../common/CustomAutocomplete";
 import { RestartAlt, Search } from "@mui/icons-material";
-import {
-  KEY_PARAMETER_OPTIONS_MAPPING,
-  UNIQUE_PASTEL_BGS,
-} from "../../constants/energyAnalytics";
-import { CustomDatePicker } from "../common/CustomDatePicker";
-import { api } from "../../helpers/api";
+import { useCommonData } from "../../contexts/CommonDataContext";
 import { API_URLS } from "../../helpers/apiUrls";
-import dayjs from "dayjs";
+import { api } from "../../helpers/api";
+import { UNIQUE_PASTEL_BGS } from "../../constants/energyAnalytics";
+import { Loading } from "../common/Loading";
 import NoDataFound from "../common/errors/NoDataFound";
 import ReactApexChart from "react-apexcharts";
-import { basePickerStyles } from "../../helpers/common";
-import { Loading } from "../common/Loading";
-
-// Constants defined based on the reference code
-const PARAMETER_OPTIONS = [
-  { value: "connectivity_status", label: "Connectivity History" },
-];
-
-const CHART_COLORS = [
-  "#30b44a",
-  "#2F6FB0",
-  "#e34d4d",
-  "#f4b400",
-  "#9c27b0",
-  "#00bcd4",
-];
 
 const getDefaultDateRange = () => [dayjs().subtract(24, "hour"), dayjs()];
 
-// Updated processing logic to return [timestamp, value] pairs for datetime axis
 const getProcessedChartData = (rawAnalytics, activeKeys) => {
   if (!rawAnalytics?.data || rawAnalytics.data.length === 0) {
-    return { series: [] };
+    return { series: [], categories: [] };
   }
 
   const rawData = rawAnalytics.data;
-
-  // Helper to process raw API data into [timestamp, status] tuples
-  const processRawData = (data, key) => {
-    const seriesData = [];
-    data.forEach((item) => {
-      const startTime = new Date(item.start).getTime();
-      const endTime = new Date(item.end).getTime();
-      // Determine the data key. For 'connectivity_status', the API uses 'status'.
-      const dataKey = key === "connectivity_status" ? "status" : key;
-      const value = item[dataKey] ?? item.status ?? null;
-
-      // Push start point
-      seriesData.push([startTime, value]);
-      // Push end point to maintain status until the end
-      seriesData.push([endTime, value]);
-    });
-    // Sort by timestamp
-    seriesData.sort((a, b) => a[0] - b[0]);
-    return seriesData;
-  };
+  const maxPoints = 1200;
 
   const series = activeKeys.map((key) => {
+    const sampledDataPoints = downAnalyticsSampleData(rawData, maxPoints, key);
     return {
-      name:
-        KEY_PARAMETER_OPTIONS_MAPPING[key] ||
-        key.replace(/_/g, " ").toUpperCase(),
-      data: processRawData(rawData, key),
+      name: WATER_LOG_COLUMN_MAPPING[key] || key,
+      data: sampledDataPoints.map((row) => row[key] ?? null),
     };
   });
 
-  return { series };
+  const baseSampledData = downAnalyticsSampleData(
+    rawData,
+    maxPoints,
+    activeKeys[0] || "timestamp",
+  );
+  const categories = baseSampledData.map((item) =>
+    item.timestamp ? dayjs(item.timestamp).format("DD MMM HH:mm") : "",
+  );
+
+  return { series, categories };
 };
 
 const GlobalFiltersRow = ({ dateTime, onDateChange, addNewComparisonRow }) => (
@@ -125,7 +100,7 @@ const DeviceFilterRow = ({
   handleSearch,
   handleReset,
   showCancel,
-  parameterOptions = PARAMETER_OPTIONS,
+  parameterOptions,
 }) => (
   <Box sx={{ py: 1.5, px: 2, bgcolor: "#fff", borderRadius: 2, mb: 1 }}>
     <Grid container spacing={2} alignItems="center">
@@ -144,7 +119,7 @@ const DeviceFilterRow = ({
           multiple
           options={parameterOptions}
           onChange={(val) => handleFieldChange(comparisonId, "parameters", val)}
-          value={payload?.parameters || []}
+          value={payload?.parameters || ""}
           label="Select Parameters"
           size="small"
           sx={basePickerStyles}
@@ -204,8 +179,8 @@ const DeviceFilterRow = ({
   </Box>
 );
 
-const CompressorAnalytics = () => {
-  const { slavesData } = useCommonData();
+const STPAnalytics = () => {
+  const { slavesData, parametersData } = useCommonData();
   const [globalDateTime, setGlobalDateTime] = useState(getDefaultDateRange());
   const [payloads, setPayloads] = useState({ 1: null });
   const [analyticsDataMap, setAnalyticsDataMap] = useState({});
@@ -240,7 +215,7 @@ const CompressorAnalytics = () => {
         ? endDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
         : "";
 
-      const newApiUrl = API_URLS.COMPRESSOR_ANALYTICS_DATA(
+      const newApiUrl = API_URLS.WATER_ANALYTICS_DATA(
         slaveId,
         parameterValues,
         formattedStart,
@@ -347,119 +322,28 @@ const CompressorAnalytics = () => {
           const uniqueBgColor =
             UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
 
-          const isMultiSeries = processedData.series.length > 1;
-
           const performanceChartOptions = {
             chart: {
-              type: "area",
-              height: 420,
-              toolbar: { show: false },
+              type: "line",
               zoom: { enabled: true },
+              toolbar: { show: false },
             },
-            stroke: {
-              width: 2,
-              curve: "stepline",
-            },
-            fill: {
-              type: "solid",
-              opacity: 0.2,
-            },
-            colors: CHART_COLORS,
             dataLabels: { enabled: false },
+            markers: { size: 0, hover: { sizeOffset: 4 } },
+            stroke: { curve: "straight", width: 1.5 },
             xaxis: {
-              type: "datetime",
-              title: {
-                text: "Time",
-                style: { color: "#6B7280", fontSize: "12px" },
-              },
-              labels: {
-                style: { colors: "#6B7280", fontSize: "11px" },
-                datetimeUTC: false,
-              },
+              categories: processedData.categories,
+              labels: { rotate: -45, style: { fontSize: "10px" } },
+              tooltip: { enabled: false },
             },
             yaxis: {
-              title: {
-                text: "Status",
-                style: { color: "#6B7280", fontSize: "12px" },
-              },
-              min: -0.1,
-              max: 1.1,
-              tickAmount: 2,
               labels: {
-                style: { colors: "#6B7280", fontSize: "12px" },
-                formatter: function (val) {
-                  if (val >= 0.9) return "Online";
-                  if (val <= 0.1) return "Offline";
-                  return "";
-                },
+                formatter: (val) => (val !== null ? val.toFixed(2) : ""),
               },
             },
-            grid: {
-              borderColor: "#E5E7EB",
-              xaxis: { lines: { show: false } },
-              yaxis: { lines: { show: true } },
-            },
-            tooltip: {
-              enabled: true,
-              theme: "light",
-              shared: isMultiSeries,
-              custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-                const allSeries = w.globals.initialSeries;
-                let tooltipHtml = "";
-                let timestamp = null;
-
-                const getStatusRow = (name, value) => {
-                  const statusText = value === 1 ? "Online" : "Offline";
-                  const statusColor = value === 1 ? "#30b44a" : "#e34d4d";
-                  return `
-                    <div style="display: flex; align-items: center; margin-top: 4px;">
-                      <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor}; margin-right: 8px;"></span>
-                      <span style="flex: 1; color: #333; font-size: 12px;">${deviceLabel}:</span>
-                      <span style="font-weight: bold; color: ${statusColor}; margin-left: 5px; font-size: 12px;">${statusText}</span>
-                    </div>
-                  `;
-                };
-
-                if (isMultiSeries) {
-                  allSeries.forEach((s, i) => {
-                    const point = s.data[dataPointIndex];
-                    if (point) {
-                      if (!timestamp) timestamp = point[0];
-                      tooltipHtml += getStatusRow(s.name, point[1]);
-                    }
-                  });
-                } else {
-                  const point = allSeries[seriesIndex].data[dataPointIndex];
-                  if (point) {
-                    timestamp = point[0];
-                    tooltipHtml += getStatusRow(
-                      allSeries[seriesIndex].name,
-                      point[1],
-                    );
-                  }
-                }
-
-                const formattedDate = timestamp
-                  ? dayjs(timestamp).format("DD/MM/YYYY hh:mm:ss A")
-                  : "N/A";
-
-                return `
-                  <div style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-                    <div style="font-weight: bold; margin-bottom: 8px; color: #333; font-size: 12px;">${formattedDate}</div>
-                    ${tooltipHtml}
-                  </div>
-                `;
-              },
-            },
-            legend: {
-              show: isMultiSeries,
-              position: "top",
-              horizontalAlign: "center",
-            },
-            markers: {
-              size: 0,
-              hover: { size: 5 },
-            },
+            tooltip: { shared: true, intersect: false },
+            legend: { position: "top", horizontalAlign: "left" },
+            grid: { borderColor: "#f1f1f1" },
           };
 
           const deviceLabel =
@@ -474,10 +358,13 @@ const CompressorAnalytics = () => {
                 bgcolor: uniqueBgColor,
                 transition: "background-color 0.3s ease",
                 boxShadow: "0px 4px 12px rgba(0,0,0,0.02)",
+                // height: "100%",
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                {deviceLabel} Status Analysis
+                {deviceLabel} Analysis{" "}
+                {rawAnalytics?.data?.length > 1200 &&
+                  `(Downsampled from ${rawAnalytics.data.length} points)`}
               </Typography>
 
               <DeviceFilterRow
@@ -488,7 +375,7 @@ const CompressorAnalytics = () => {
                 handleSearch={handleSearch}
                 handleReset={handleReset}
                 showCancel={rowIds.length > 1}
-                parameterOptions={PARAMETER_OPTIONS}
+                parameterOptions={parametersData}
               />
 
               <Box sx={{ height: { xs: 500, sm: 380 } }}>
@@ -500,7 +387,7 @@ const CompressorAnalytics = () => {
                   <ReactApexChart
                     options={performanceChartOptions}
                     series={processedData.series}
-                    type="area"
+                    type="line"
                     height="100%"
                     width="100%"
                   />
@@ -514,4 +401,4 @@ const CompressorAnalytics = () => {
   );
 };
 
-export default CompressorAnalytics;
+export default STPAnalytics;

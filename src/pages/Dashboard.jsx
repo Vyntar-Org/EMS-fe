@@ -7,11 +7,13 @@ import { useApplications } from "../contexts/ApplicationContext";
 import EnergyDashboard from "../components/Dashboards/EnergyDashboard";
 import WaterDashboard from "../components/Dashboards/WaterDashboard";
 import FuelDashboard from "../components/Dashboards/FuelDashboard";
+import STPDashboard from "../components/Dashboards/STPDashboard";
 
 const DASHBOARD_CONFIG = {
   ENERGY: EnergyDashboard,
   WATER: WaterDashboard,
   FUEL: FuelDashboard,
+  STP: STPDashboard,
 };
 
 const Dashboard = () => {

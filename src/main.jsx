@@ -4,6 +4,7 @@ import App from "./App.jsx";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { theme } from "./theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import "leaflet/dist/leaflet.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {

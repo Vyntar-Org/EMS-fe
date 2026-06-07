@@ -8,10 +8,7 @@ import { RestartAlt, Search } from "@mui/icons-material";
 import { Loading } from "../common/Loading";
 import NoDataFound from "../common/errors/NoDataFound";
 import { api } from "../../helpers/api";
-import {
-  FIRE_SAFETY_LOG_COLUMN_MAPPING,
-  FIRE_SAFETY_LOG_COLUMN_ORDER,
-} from "../../constants/fireSafetyLogs";
+import { FIRE_SAFETY_LOG_COLUMN_MAPPING } from "../../constants/fireSafetyLogs";
 import { CustomTable } from "../common/CustomTable";
 import dayjs from "dayjs";
 
@@ -168,22 +165,9 @@ const FireSafetyLogs = () => {
   const logsColumns = useMemo(() => {
     if (!logsData?.length) return [];
 
-    const selectedParamKeys = Array.isArray(payload?.parameters)
-      ? payload.parameters.map((p) => p?.value).filter(Boolean)
-      : [];
-
     const availableKeys = Object.keys(logsData[0]);
-    let orderedKeys = FIRE_SAFETY_LOG_COLUMN_ORDER.filter((key) =>
-      availableKeys.includes(key),
-    );
 
-    if (selectedParamKeys.length > 0) {
-      orderedKeys = orderedKeys.filter(
-        (key) => key === "timestamp" || selectedParamKeys.includes(key),
-      );
-    }
-
-    return orderedKeys.map((c) => ({
+    return availableKeys.map((c) => ({
       accessorKey: c,
       header: FIRE_SAFETY_LOG_COLUMN_MAPPING[c] ?? c,
       cell: (info) => {
@@ -203,7 +187,7 @@ const FireSafetyLogs = () => {
         return String(value ?? "-");
       },
     }));
-  }, [logsData, payload?.parameters]);
+  }, [logsData]);
 
   const handleSearch = async (paginationDetails = apiPaginationParams) => {
     if (!payload?.slave_id) return;
@@ -214,7 +198,7 @@ const FireSafetyLogs = () => {
       const parameterValues = Array.isArray(payload?.parameters)
         ? payload.parameters
             .map((p) => p?.value)
-            .filter((v) => v && v !== "timestamp")
+            .filter(Boolean)
             .join(",")
         : "";
 
@@ -251,7 +235,7 @@ const FireSafetyLogs = () => {
   const handleReset = () => {
     setLogsData(null);
     setBackendTotalRowsCount(0);
-    setApiPaginationParams({ limit: 30, offset: 0 });
+    setApiPaginationParams({ limit: 50, offset: 0 });
   };
 
   const handlePageChange = (event, newPageIndex) => {

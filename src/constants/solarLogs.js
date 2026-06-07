@@ -7,15 +7,6 @@ export const SOLAR_LOG_COLUMN_MAPPING = {
   pressure: "Pressure",
 };
 
-export const SOLAR_LOG_COLUMN_ORDER = [
-  "timestamp",
-  "instant_flow",
-  "flow_temperature",
-  "pressure",
-  "inlet_temperature",
-  "outlet_temperature",
-];
-
 export const SOLAR_PARAMETER_OPTIONS = [
   { label: "Timestamp", value: "timestamp" },
   { label: "Instant Flow", value: "instant_flow" },

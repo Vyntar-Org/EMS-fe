@@ -16,6 +16,7 @@ import { CustomAutocomplete } from "../../common/CustomAutocomplete";
 import { CustomInput } from "../../common/CustomInput";
 import ResponsiveTextWrapper from "../../common/ResponsiveTextWrapper";
 import NoDataFound from "../../common/errors/NoDataFound";
+import { getChartOptions, getChartSeries } from "../../../helpers/chartConfig";
 
 const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
   const { slavesData } = useCommonData();
@@ -47,7 +48,7 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
         `${API_URLS.WATER_DASHBOARD_DAILY_CONSUMPTION(slavesId || 0)}`,
       );
       if (getMachineConsumptionData?.success) {
-        setMachineConsumption(getMachineConsumptionData?.data);
+        setMachineConsumption(getMachineConsumptionData?.data?.data);
       }
     } catch (error) {
       console.error("One of the API calls failed:", error);
@@ -59,110 +60,6 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
 
     fetchMachineConsumption();
   }, [slavesId]);
-
-  const options1 = {
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
-    },
-    colors: ["#0156A6", "#A5AAB5"],
-
-    plotOptions: {
-      bar: {
-        borderRadius: 4,
-        columnWidth: "70%",
-        dataLabels: { position: "top" },
-      },
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    xaxis: {
-      categories: Array.isArray(machineConsumption)
-        ? machineConsumption.map((item) => {
-            const d = new Date(item.date);
-            return d.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            });
-          })
-        : [],
-      position: "bottom",
-      axisBorder: { show: true, color: "rgba(0,0,0,0.08)" },
-      axisTicks: { show: false },
-      labels: {
-        rotate: -45,
-        style: {
-          colors: "#757575",
-          fontSize: "11px",
-        },
-      },
-    },
-    yaxis: {
-      title: {
-        text: "Liters",
-        style: {
-          color: "#555",
-          fontWeight: "bold",
-        },
-      },
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-      labels: {
-        style: { colors: "#757575" },
-        formatter: (val) => Math.round(val),
-      },
-    },
-    tooltip: {
-      x: { show: true },
-      y: {
-        formatter: (val) => `${val} Liters`,
-      },
-    },
-    legend: {
-      show: false,
-      position: "top",
-      horizontalAlign: "center",
-    },
-    grid: {
-      show: false,
-    },
-  };
-
-  const series1 = [
-    {
-      name: "Actual Consumption",
-      data: Array.isArray(machineConsumption)
-        ? machineConsumption.map((item) => item.consumption || 0)
-        : [],
-    },
-    {
-      name: "Target",
-      data: Array.isArray(machineConsumption)
-        ? machineConsumption.map((item) => item.target || 0)
-        : [],
-    },
-  ];
-
-  const options2 = {
-    ...options1,
-    chart: {
-      ...options1.chart,
-      type: "line",
-    },
-    stroke: {
-      curve: "smooth",
-      width: 3,
-      colors: ["#2E4355"],
-    },
-    plotOptions: {
-      bar: { enabled: false },
-    },
-    dataLabels: {
-      ...options1.dataLabels,
-      formatter: (val) => Math.round(val),
-    },
-  };
 
   return (
     <CustomCard
@@ -207,28 +104,23 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
             width={{ sm: "calc(100% - 200px - 12px)" }}
             overflow="hidden"
           >
-            {
-              {
-                1: (
-                  <ReactApexChart
-                    options={options1}
-                    series={series1}
-                    type="bar"
-                    height="100%"
-                    width="100%"
-                  />
-                ),
-                2: (
-                  <ReactApexChart
-                    options={options2}
-                    series={series1}
-                    type="line"
-                    height="100%"
-                    width="100%"
-                  />
-                ),
-              }[mode]
-            }
+            <ReactApexChart
+              key={`chart-${mode}`}
+              options={getChartOptions(
+                mode === 1 ? "bar" : "line",
+                machineConsumption,
+                { yLabel: "Liters", xLabel: "Day" },
+              )}
+              series={getChartSeries(machineConsumption, {
+                actual: "consumption",
+                target: "target",
+                actualLabel: "Actual Consumption",
+                targetLabel: "Target",
+              })}
+              type={mode === 1 ? "bar" : "line"}
+              height="100%"
+              width="100%"
+            />
           </Box>
 
           <Box

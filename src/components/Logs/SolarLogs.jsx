@@ -8,10 +8,7 @@ import { RestartAlt, Search } from "@mui/icons-material";
 import { Loading } from "../common/Loading";
 import NoDataFound from "../common/errors/NoDataFound";
 import { api } from "../../helpers/api";
-import {
-  SOLAR_LOG_COLUMN_MAPPING,
-  SOLAR_LOG_COLUMN_ORDER,
-} from "../../constants/solarLogs";
+import { SOLAR_LOG_COLUMN_MAPPING } from "../../constants/solarLogs";
 import { CustomTable } from "../common/CustomTable";
 import dayjs from "dayjs";
 
@@ -177,11 +174,8 @@ const SolarLogs = () => {
     if (!logsData?.length) return [];
 
     const availableKeys = Object.keys(logsData[0]);
-    const orderedKeys = SOLAR_LOG_COLUMN_ORDER.filter((key) =>
-      availableKeys.includes(key),
-    );
 
-    const columnDef = orderedKeys.map((c) => ({
+    const columnDef = availableKeys.map((c) => ({
       accessorKey: c,
       header: SOLAR_LOG_COLUMN_MAPPING?.[c] ?? c,
       cell: (info) => {

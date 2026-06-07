@@ -6,6 +6,9 @@ import TemperatureLogs from "../components/Logs/TemperatureLogs";
 import FireSafetyLogs from "../components/Logs/FireSafetyLogs";
 import CompressorLogs from "../components/Logs/CompressorLogs";
 import { Box } from "@mui/material";
+import WaterLogs from "../components/Logs/WaterLogs";
+import FuelLogs from "../components/Logs/FuelLogs";
+import STPLogs from "../components/Logs/STPLogs";
 
 const LOGS_CONFIG = {
   ENERGY: EnergyLogs,
@@ -13,6 +16,9 @@ const LOGS_CONFIG = {
   TEMPERATURE: TemperatureLogs,
   "FIRE-SAFETY": FireSafetyLogs,
   COMPRESSOR: CompressorLogs,
+  WATER: WaterLogs,
+  FUEL: FuelLogs,
+  STP: STPLogs,
 };
 
 const Logs = () => {

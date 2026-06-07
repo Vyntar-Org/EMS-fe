@@ -29,7 +29,7 @@ export const PublicLayout = () => {
   return (
     <Box
       sx={{
-        border: "5px solid #0156A6",
+        // border: "5px solid #0156A6",
         minHeight: "100vh",
         width: "100vw",
         backgroundImage: "url(/assets/login-background.png)",
@@ -55,7 +55,7 @@ export const PublicLayout = () => {
           position: "relative",
           zIndex: 1,
           width: "100%",
-          maxWidth: "400px",
+          maxWidth: { xs: "90%", sm: "400px" },
         }}
       >
         <Outlet />

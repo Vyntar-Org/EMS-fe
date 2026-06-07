@@ -58,6 +58,7 @@ const Login = () => {
         background: "rgba(255, 255, 255, 0.38)",
         backdropFilter: "blur(2px)",
         border: "1px solid rgba(255, 255, 255, 0.2)",
+        // border: "5px solid #0156A6",
         borderRadius: 4,
         p: 4,
         boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",

@@ -1,16 +1,16 @@
-import { Box, Button, Grid, Tooltip } from "@mui/material";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useCommonData } from "../../contexts/CommonDataContext";
+import { WATER_LOG_COLUMN_MAPPING } from "../../constants/waterLogs";
+import dayjs from "dayjs";
 import { API_URLS } from "../../helpers/apiUrls";
+import { api } from "../../helpers/api";
+import { Box, Button, Grid, Tooltip } from "@mui/material";
 import { CustomAutocomplete } from "../common/CustomAutocomplete";
 import { CustomDatePicker } from "../common/CustomDatePicker";
 import { RestartAlt, Search } from "@mui/icons-material";
 import { Loading } from "../common/Loading";
 import NoDataFound from "../common/errors/NoDataFound";
-import { api } from "../../helpers/api";
-import { KEY_PARAMETER_OPTIONS_MAPPING } from "../../constants/energyAnalytics";
 import { CustomTable } from "../common/CustomTable";
-import dayjs from "dayjs";
 
 const getDefaultDateRange = () => [dayjs().subtract(24, "hour"), dayjs()];
 
@@ -175,8 +175,7 @@ const LogsFilterHeader = ({
     </Box>
   );
 };
-
-const EnergyLogs = () => {
+const FuelLogs = () => {
   const { slavesData, parametersData } = useCommonData();
   const [loading, setLoading] = useState(null);
   const [logsData, setLogsData] = useState(null);
@@ -201,7 +200,7 @@ const EnergyLogs = () => {
 
     const columnDef = availableKeys.map((c) => ({
       accessorKey: c,
-      header: KEY_PARAMETER_OPTIONS_MAPPING?.[c],
+      header: WATER_LOG_COLUMN_MAPPING?.[c],
       size: c === "timestamp" ? 150 : 130,
       cell: (info) => {
         const value = info.getValue();
@@ -242,7 +241,7 @@ const EnergyLogs = () => {
         ? endDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
         : "";
 
-      const newApiUrl = API_URLS.EMS_LOGS_DATA(
+      const newApiUrl = API_URLS.WATER_LOGS_DATA(
         slaveId,
         parameterValues,
         formattedStart,
@@ -252,7 +251,7 @@ const EnergyLogs = () => {
       );
       const res = await api.get(newApiUrl);
       if (res?.success) {
-        setLogsData(res?.data || []);
+        setLogsData(res?.data?.logs || []);
         setBackendTotalRowsCount(res?.meta?.total || 0);
       }
     } catch (error) {
@@ -345,4 +344,4 @@ const EnergyLogs = () => {
   );
 };
 
-export default EnergyLogs;
+export default FuelLogs;

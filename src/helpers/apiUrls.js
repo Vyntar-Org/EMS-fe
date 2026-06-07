@@ -1,5 +1,6 @@
 const ADMINS = {
   SLAVES: (appName) => `/applications/${appName}/slaves/`,
+  SLAVE_LIST: (appName) => `/applications/${appName}/slave-list/`,
 };
 
 const AUTH = {
@@ -147,8 +148,13 @@ const COMPRESSOR_LOGS = {
 };
 
 const COMPRESSOR_ANALYTICS = {
-  COMPRESSOR_ANALYTICS_DATA: (slaveId, from_datetime, to_datetime) =>
-    `/applications/compressor/analytics/?slave_id=${slaveId}&from=${from_datetime}&to=${to_datetime}`,
+  COMPRESSOR_ANALYTICS_DATA: (
+    slaveId,
+    parameters,
+    from_datetime,
+    to_datetime,
+  ) =>
+    `/applications/compressor/analytics/?slave_id=${slaveId}&parameters=${parameters}&from=${from_datetime}&to=${to_datetime}`,
 };
 
 const SOLAR_LOGS = {
@@ -181,8 +187,8 @@ const WATER_MACHINE_LIST = {
 };
 
 const WATER_ANALYTICS = {
-  WATER_ANALYTICS_DATA: (slaveId, start_datetime, end_datetime) =>
-    `/applications/water/analytics/?slave_id=${slaveId}&start_datetime=${start_datetime}&end_datetime=${end_datetime}`,
+  WATER_ANALYTICS_DATA: (slaveId, parameters, start_datetime, end_datetime) =>
+    `/applications/water/analytics/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}`,
 };
 
 const WATER_LOGS = {
@@ -204,6 +210,79 @@ const WATER_REPORTS = {
     `/applications/water/monthly-consumption-reports/?year=${year}`,
   WATER_REPORTS_DATE_WISE_READING_DATA: (year, month) =>
     `/applications/water/daily-reading-reports/?month=${month}&year=${year}`,
+};
+
+const FUEL_DASHBOARD = {
+  FUEL_DASHBOARD_OVERVIEW: "/applications/water/dashboard-overview/",
+  FUEL_DASHBOARD_DAILY_CONSUMPTION: (slaveId) =>
+    `/applications/water/daily-consumption/?slave_id=${slaveId}`,
+};
+
+const FUEL_MACHINE_LIST = {
+  FUEL_MACHINE_LIST_DATA: "/applications/water/machine-list/",
+  FUEL_MACHINE_LIST_TREND: (slaveId, parameter) =>
+    `/applications/water/machine-trend/?slave_id=${slaveId}&parameter=${parameter}`,
+};
+
+const FUEL_ANALYTICS = {
+  FUEL_ANALYTICS_DATA: (slaveId, parameters, start_datetime, end_datetime) =>
+    `/applications/water/analytics/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}`,
+};
+
+const FUEL_LOGS = {
+  FUEL_LOGS_DATA: (
+    slaveId,
+    parameters,
+    start_datetime,
+    end_datetime,
+    limit = 50,
+    offset = 0,
+  ) =>
+    `/applications/water/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
+};
+
+const FUEL_REPORTS = {
+  FUEL_REPORTS_DATE_WISE_CONSUMPTION_DATA: (year, month) =>
+    `/applications/water/daily-consumption-reports/?month=${month}&year=${year}`,
+  FUEL_REPORTS_MONTH_WISE_CONSUMPTION_DATA: (year) =>
+    `/applications/water/monthly-consumption-reports/?year=${year}`,
+  FUEL_REPORTS_DATE_WISE_READING_DATA: (year, month) =>
+    `/applications/water/daily-reading-reports/?month=${month}&year=${year}`,
+  FUEL_REPORTS_DATE_WISE_CONSUMPTION_COST_DATA: (year, month) =>
+    `/reports/date-wise/consumption-cost?month=${month}&year=${year}`,
+  FUEL_REPORTS_MONTH_WISE_CONSUMPTION_COST_DATA: (year) =>
+    `/reports/month-wise/consumption-cost?year=${year}`,
+};
+
+const STP_DASHBOARD = {
+  STP_DASHBOARD_OVERVIEW: "/applications/stp/dashboard/summary/",
+  STP_DASHBOARD_HISTORICAL_TRENDS:
+    "/applications/stp/dashboard/historical-trends/",
+  STP_DASHBOARD_WATER_COMPARISON:
+    "/applications/stp/dashboard/water-comparison/",
+};
+
+const STP_MACHINE_LIST = {
+  STP_MACHINE_LIST_DATA: "/applications/stp/machine-list/",
+  STP_MACHINE_LIST_TREND: (slaveId, parameter) =>
+    `/applications/stp/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}`,
+};
+
+const STP_ANALYTICS = {
+  STP_ANALYTICS_DATA: (slaveId, parameters, start_datetime, end_datetime) =>
+    `/applications/stp/analytics/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}`,
+};
+
+const STP_LOGS = {
+  STP_LOGS_DATA: (
+    slaveId,
+    parameters,
+    start_datetime,
+    end_datetime,
+    limit = 50,
+    offset = 0,
+  ) =>
+    `/applications/stp/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
 export const API_URLS = {
@@ -231,4 +310,13 @@ export const API_URLS = {
   ...WATER_ANALYTICS,
   ...WATER_LOGS,
   ...WATER_REPORTS,
+  ...FUEL_REPORTS,
+  ...FUEL_DASHBOARD,
+  ...FUEL_MACHINE_LIST,
+  ...FUEL_ANALYTICS,
+  ...FUEL_LOGS,
+  ...STP_DASHBOARD,
+  ...STP_MACHINE_LIST,
+  ...STP_ANALYTICS,
+  ...STP_LOGS,
 };

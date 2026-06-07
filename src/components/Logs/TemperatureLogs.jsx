@@ -8,10 +8,7 @@ import { RestartAlt, Search } from "@mui/icons-material";
 import { Loading } from "../common/Loading";
 import NoDataFound from "../common/errors/NoDataFound";
 import { api } from "../../helpers/api";
-import {
-  TEMPERATURE_LOG_COLUMN_MAPPING,
-  TEMPERATURE_LOG_COLUMN_ORDER,
-} from "../../constants/temperatureLogs";
+import { TEMPERATURE_LOG_COLUMN_MAPPING } from "../../constants/temperatureLogs";
 import { CustomTable } from "../common/CustomTable";
 import dayjs from "dayjs";
 
@@ -176,22 +173,9 @@ const TemperatureLogs = () => {
   const logsColumns = useMemo(() => {
     if (!logsData?.length) return [];
 
-    const selectedParamKeys = Array.isArray(payload?.parameters)
-      ? payload.parameters.map((p) => p?.value).filter(Boolean)
-      : [];
-
     const availableKeys = Object.keys(logsData[0]);
-    let orderedKeys = TEMPERATURE_LOG_COLUMN_ORDER.filter((key) =>
-      availableKeys.includes(key),
-    );
 
-    if (selectedParamKeys.length > 0) {
-      orderedKeys = orderedKeys.filter(
-        (key) => key === "timestamp" || selectedParamKeys.includes(key),
-      );
-    }
-
-    return orderedKeys.map((c) => ({
+    return availableKeys.map((c) => ({
       accessorKey: c,
       header: TEMPERATURE_LOG_COLUMN_MAPPING[c] ?? c,
       cell: (info) => {
@@ -211,7 +195,7 @@ const TemperatureLogs = () => {
         return String(value ?? "-");
       },
     }));
-  }, [logsData, payload?.parameters]);
+  }, [logsData]);
 
   const handleSearch = async (paginationDetails = apiPaginationParams) => {
     if (!payload?.slave_id) return;
@@ -222,7 +206,7 @@ const TemperatureLogs = () => {
       const parameterValues = Array.isArray(payload?.parameters)
         ? payload.parameters
             .map((p) => p?.value)
-            .filter((v) => v && v !== "timestamp")
+            .filter(Boolean)
             .join(",")
         : "";
 

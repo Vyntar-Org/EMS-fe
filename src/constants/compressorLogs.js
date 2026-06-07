@@ -5,13 +5,6 @@ export const COMPRESSOR_LOG_COLUMN_MAPPING = {
   alert: "Alert",
 };
 
-export const COMPRESSOR_LOG_COLUMN_ORDER = [
-  "timestamp",
-  "status",
-  "idle",
-  "alert",
-];
-
 export const COMPRESSOR_PARAMETER_OPTIONS = [
   { label: "Timestamp", value: "timestamp" },
   { label: "Status", value: "status" },
