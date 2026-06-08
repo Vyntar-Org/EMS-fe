@@ -20,7 +20,7 @@ import {
   getStpWaterComparison,
   getStpHistoricalTrends,
 } from "../../auth/stp/StpDashboardApi";
-import { Circle, MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
@@ -32,6 +32,17 @@ L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
 });
+
+// Helper component to update map view
+const ChangeView = ({ center, zoom }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView(center, zoom);
+    }
+  }, [center, zoom, map]);
+  return null;
+};
 
 const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const theme = useTheme();
@@ -69,6 +80,10 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
   const [power, setPower] = useState(3.9);
   const [rpm, setRpm] = useState(1250);
 
+  // Map state
+  const [locations, setLocations] = useState([]);
+  const [mapCenter, setMapCenter] = useState([9.9252, 78.1198]);
+
   // Chart data states
   const [historicalCategories, setHistoricalCategories] = useState([]);
   const [historicalSeries, setHistoricalSeries] = useState([]);
@@ -87,6 +102,15 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
         // 1. Fetch Summary Data
         const summaryRes = await getStpDashboardSummary();
         const cards = summaryRes.data.cards || [];
+        const locs = summaryRes.data.locations || [];
+
+        setLocations(locs);
+        if (locs.length > 0) {
+          setMapCenter([
+            parseFloat(locs[0].latitude),
+            parseFloat(locs[0].longitude),
+          ]);
+        }
 
         // Map summary data to state
         cards.forEach((card) => {
@@ -737,33 +761,43 @@ const STPDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 Site Location Map
               </Typography>
               <MapContainer
-                center={[9.9252, 78.1198]}
+                center={mapCenter}
                 zoom={14}
                 scrollWheelZoom={false}
                 style={{ height: "280px", width: "100%" }}
               >
+                <ChangeView center={mapCenter} zoom={14} />
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <Circle
-                  center={[9.9252, 78.1198]}
-                  radius={400}
-                  pathOptions={{
-                    color: "#38bdf8",
-                    fillColor: "#38bdf8",
-                    fillOpacity: 0.15,
-                  }}
-                />
-                <Marker position={[9.9252, 78.1198]}>
-                  <Popup>
-                    <strong>Weather Station + Solar PV Site</strong>
-                    <br />
-                    Lat: {9.9252}
-                    <br />
-                    Lon: {78.1198}
-                  </Popup>
-                </Marker>
+                {locations.map((loc, idx) => (
+                  <React.Fragment key={loc.device_id || idx}>
+                    <Circle
+                      center={[parseFloat(loc.latitude), parseFloat(loc.longitude)]}
+                      radius={400}
+                      pathOptions={{
+                        color: "#38bdf8",
+                        fillColor: "#38bdf8",
+                        fillOpacity: 0.15,
+                      }}
+                    />
+                    <Marker
+                      position={[
+                        parseFloat(loc.latitude),
+                        parseFloat(loc.longitude),
+                      ]}
+                    >
+                      <Popup>
+                        <strong>STP Site</strong>
+                        <br />
+                        Lat: {loc.latitude}
+                        <br />
+                        Lon: {loc.longitude}
+                      </Popup>
+                    </Marker>
+                  </React.Fragment>
+                ))}
               </MapContainer>
             </MetricCard>
           </Grid>
