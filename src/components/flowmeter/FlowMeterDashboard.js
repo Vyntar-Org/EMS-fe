@@ -429,11 +429,11 @@ const FlowMeterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                 px={1}
                 pb={1}
             >
-                <Grid container gap={1} height={{ md: "100%" }}>
+                <Grid container gap={1} height={{ md: "88%", lg: "78%" }}>
                     <Grid
                         size={{ xs: 12, md: 7 }}
                         sx={{
-                            height: { md: "100%" },
+                            height: { md: "70%" },
                             display: "flex",
                             flexDirection: "column",
                             gap: 1,
@@ -583,104 +583,91 @@ const FlowMeterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
                             </Grid>
                         </Grid>
 
-                        <Grid container size={{ xs: 12, md: "grow" }} height={{ md: "100%" }}>
+                        <Grid container size={{ xs: 12, md: "grow" }} height={{ md: "70%" }}>
                             <Grid size={{ sm: 12 }}>
                                 <MetricCard>
-                                    <Typography
-                                        sx={{ fontSize: "14px", fontWeight: 700, color: "#1F2937", mb: 1 }}
-                                    >
-                                        Site Location Map
+                                    <Typography sx={{ ...titleStyle, mb: 2 }}>
+                                        water comparison
                                     </Typography>
-                                    <MapContainer
-                                        center={mapCenter}
-                                        zoom={14}
-                                        scrollWheelZoom={false}
-                                        style={{ height: "100%", width: "100%", minHeight: "300px" }}
-                                    >
-                                        <ChangeView center={mapCenter} zoom={14} />
-                                        <TileLayer
-                                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                                            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                        />
-                                        {locations.map((loc, idx) => (
-                                            <React.Fragment key={loc.device_id || idx}>
-                                                <Circle
-                                                    center={[parseFloat(loc.latitude), parseFloat(loc.longitude)]}
-                                                    radius={400}
-                                                    pathOptions={{
-                                                        color: "#38bdf8",
-                                                        fillColor: "#38bdf8",
-                                                        fillOpacity: 0.15,
-                                                    }}
-                                                />
-                                                <Marker position={[parseFloat(loc.latitude), parseFloat(loc.longitude)]}>
-                                                    <Popup>
-                                                        <strong>FlowMeter Site</strong>
-                                                        <br />
-                                                        Lat: {loc.latitude}
-                                                        <br />
-                                                        Lon: {loc.longitude}
-                                                    </Popup>
-                                                </Marker>
-                                            </React.Fragment>
-                                        ))}
-                                    </MapContainer>
+
+                                    <Box sx={{ position: "relative" }}>
+                                        {chartLoading && (
+                                            <Box
+                                                sx={{
+                                                    position: "absolute",
+                                                    top: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    bottom: 0,
+                                                    display: "flex",
+                                                    justifyContent: "center",
+                                                    alignItems: "center",
+                                                    backgroundColor: "rgba(255,255,255,0.8)",
+                                                    zIndex: 10,
+                                                    borderRadius: "8px",
+                                                }}
+                                            >
+                                                <CircularProgress />
+                                            </Box>
+                                        )}
+                                        {!chartLoading && waterCompSeries.length > 0 && (
+                                            <Chart
+                                                options={blowerUsageOptions}
+                                                series={waterCompSeries}
+                                                type="bar"
+                                                height={240}
+                                            />
+                                        )}
+                                    </Box>
                                 </MetricCard>
+
                             </Grid>
                         </Grid>
                     </Grid>
 
-              <Grid size={{ xs: 12, md: "grow" }} height={{ md: "100%" }}>
-    <MetricCard>
-        <Typography sx={{ ...titleStyle, mb: 2 }}>
-            water comparison
-        </Typography>
-
-        <Box sx={{ position: "relative" }}>
-            {chartLoading && (
-                <Box
-                    sx={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        backgroundColor: "rgba(255,255,255,0.8)",
-                        zIndex: 10,
-                        borderRadius: "8px",
-                    }}
-                >
-                    <CircularProgress />
-                </Box>
-            )}
-
-            {!chartLoading && waterCompSeries.length > 0 && (
-                <Box
-                    sx={{
-                        height: {
-                            xs: 250, // mobile
-                            sm: 300, // tablet
-                            md: 500, // desktop
-                            lg: 550
-                        },
-                        width: "100%",
-                    }}
-                >
-                    <Chart
-                        options={blowerUsageOptions}
-                        series={waterCompSeries}
-                        type="bar"
-                        height="100%"
-                        width="100%"
-                    />
-                </Box>
-            )}
-        </Box>
-    </MetricCard>
-</Grid>
+                    <Grid size={{ xs: 12, md: "grow" }} height={{ md: "100%" }}>
+                        <MetricCard>
+                            <Typography
+                                sx={{ fontSize: "14px", fontWeight: 700, color: "#1F2937", mb: 1 }}
+                            >
+                                Site Location Map
+                            </Typography>
+                            <MapContainer
+                                center={mapCenter}
+                                zoom={14}
+                                scrollWheelZoom={false}
+                                style={{ height: "100%", width: "100%", minHeight: "300px" }}
+                            >
+                                <ChangeView center={mapCenter} zoom={14} />
+                                <TileLayer
+                                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                    url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                />
+                                {locations.map((loc, idx) => (
+                                    <React.Fragment key={loc.device_id || idx}>
+                                        <Circle
+                                            center={[parseFloat(loc.latitude), parseFloat(loc.longitude)]}
+                                            radius={400}
+                                            pathOptions={{
+                                                color: "#38bdf8",
+                                                fillColor: "#38bdf8",
+                                                fillOpacity: 0.15,
+                                            }}
+                                        />
+                                        <Marker position={[parseFloat(loc.latitude), parseFloat(loc.longitude)]}>
+                                            <Popup>
+                                                <strong>FlowMeter Site</strong>
+                                                <br />
+                                                Lat: {loc.latitude}
+                                                <br />
+                                                Lon: {loc.longitude}
+                                            </Popup>
+                                        </Marker>
+                                    </React.Fragment>
+                                ))}
+                            </MapContainer>
+                        </MetricCard>
+                    </Grid>
                 </Grid>
             </Box>
 
