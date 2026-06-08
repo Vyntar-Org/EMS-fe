@@ -618,7 +618,7 @@ const WaterDashboard = ({ onSidebarToggle, sidebarVisible }) => {
 
                             {/* Right Column - Chart & Alerts Card */}
                             <Grid item xs={12} sm={12} md={12}>
-                                <Card sx={{ ...cardStyle1, width: isMobile ? '85%' : isTablet ? '100%' : getChartCardWidth1(), height: { xs: 'auto', md: '399px' }, padding: { xs: '20px', sm: '28px', md: '20px', lg: '20px' }, marginLeft: { sm: '40px', md: '-20px', lg: '0px' }, marginBottom: '10px', transition: 'all 0.3s ease' }}>
+                                <Card sx={{ ...cardStyle1, width: isMobile ? '85%' : isTablet ? '100%' : getChartCardWidth1(), height: { xs: 'auto', md: '399px' }, padding: { xs: '20px', sm: '28px', md: '20px', lg: '20px' }, marginLeft: { sm: '40px', md: '-20px', lg: '0px' }, marginBottom: '10px', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-2px)', } }}>
                                     <Grid container spacing={2}>
                                         {/* Left Column - Charts */}
                                         <Grid item xs={12} sm={12} md={8}>

@@ -46,6 +46,12 @@ function Sidebar({ mobileOpen, onClose, visible, onSidebarHide, onSidebarToggle,
       { id: 3, name: 'Analytics', path: '/stp/analytics', icon: 'bar-chart' },
       { id: 4, name: 'Logs', path: '/stp/logs', icon: 'file-text' },
       { id: 5, name: 'Reports', path: '/stp/reports', icon: 'reports' },
+    ] : activeApp.code === 'FLOWMETER' ? [
+      { id: 1, name: 'Dashboard', path: '/flow-meter/dashboard', icon: 'home' },
+      { id: 2, name: 'Device Hub', path: '/flow-meter/machine-list', icon: 'list' },
+      { id: 3, name: 'Analytics', path: '/flow-meter/analytics', icon: 'bar-chart' },
+      { id: 4, name: 'Logs', path: '/flow-meter/logs', icon: 'file-text' },
+      { id: 5, name: 'Reports', path: '/flow-meter/reports', icon: 'reports' },
     ] : [ // Default (ENERGY)
       { id: 1, name: 'Dashboard', path: '/dashboard', icon: 'home' },
       { id: 2, name: 'Device Hub', path: '/machine-list', icon: 'list' },

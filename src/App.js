@@ -47,6 +47,12 @@ import STPMachineList from "./components/stp/StpMachineList";
 import STPAnalytics from "./components/stp/StpAnalytics";
 import STPLogs from "./components/stp/StpLogs";
 import STPReports from "./components/stp/StpReports";
+// Import Flow Meter components
+import FlowMeterDashboard from "./components/flowmeter/FlowMeterDashboard";
+import FlowMeterMachineList from "./components/flowmeter/FlowMeterMachineList";
+import FlowMeterAnalytics from "./components/flowmeter/FlowMeterAnalytics";
+import FlowMeterLogs from "./components/flowmeter/FlowMeterLogs";
+import FlowMeterReports from "./components/flowmeter/FlowMeterReports";
 
 import "./App.css";
 import StpMachineList from "./components/stp/StpMachineList";
@@ -165,6 +171,8 @@ function AppContent() {
             return <Navigate to="/compressor/machine-list" replace />;
           } else if (defaultApp.code === "STP") {
             return <Navigate to="/stp/machine-list" replace />;
+          } else if (defaultApp.code === "FLOWMETER") {
+            return <Navigate to="/flow-meter/dashboard" replace />;
           }
         }
         return <Navigate to="/dashboard" replace />;
@@ -1181,6 +1189,157 @@ function AppContent() {
                   className={`main-content ${sidebarVisible ? "sidebar-visible" : "sidebar-hidden"}`}
                 >
                   <StpReports
+                    onSidebarToggle={handleSidebarToggle}
+                    sidebarVisible={sidebarVisible}
+                  />
+                </main>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Flow-Meter application routes */}
+          <Route
+            path="/flow-meter/dashboard"
+            element={
+              <ProtectedRoute requiredAppCode="FLOWMETER">
+                <Navbar
+                  onMenuClick={handleMenuToggle}
+                  onSidebarToggle={handleSidebarToggle}
+                  activeApp={activeApp}
+                  setActiveApp={setActiveApp}
+                />
+                <Sidebar
+                  mobileOpen={mobileMenuOpen}
+                  onClose={handleMenuClose}
+                  visible={sidebarVisible}
+                  onSidebarHide={handleSidebarHide}
+                  onSidebarToggle={handleSidebarToggle}
+                  activeApp={activeApp}
+                />
+                <main
+                  className={`main-content ${sidebarVisible ? "sidebar-visible" : "sidebar-hidden"}`}
+                >
+                  <FlowMeterDashboard
+                    onSidebarToggle={handleSidebarToggle}
+                    sidebarVisible={sidebarVisible}
+                  />
+                </main>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/flow-meter/machine-list"
+            element={
+              <ProtectedRoute requiredAppCode="FLOWMETER">
+                <Navbar
+                  onMenuClick={handleMenuToggle}
+                  onSidebarToggle={handleSidebarToggle}
+                  activeApp={activeApp}
+                  setActiveApp={setActiveApp}
+                />
+                <Sidebar
+                  mobileOpen={mobileMenuOpen}
+                  onClose={handleMenuClose}
+                  visible={sidebarVisible}
+                  onSidebarHide={handleSidebarHide}
+                  onSidebarToggle={handleSidebarToggle}
+                  activeApp={activeApp}
+                />
+                <main
+                  className={`main-content ${sidebarVisible ? "sidebar-visible" : "sidebar-hidden"}`}
+                >
+                  <FlowMeterMachineList
+                    onSidebarToggle={handleSidebarToggle}
+                    sidebarVisible={sidebarVisible}
+                  />
+                </main>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/flow-meter/analytics"
+            element={
+              <ProtectedRoute requiredAppCode="FLOWMETER">
+                <Navbar
+                  onMenuClick={handleMenuToggle}
+                  onSidebarToggle={handleSidebarToggle}
+                  activeApp={activeApp}
+                  setActiveApp={setActiveApp}
+                />
+                <Sidebar
+                  mobileOpen={mobileMenuOpen}
+                  onClose={handleMenuClose}
+                  visible={sidebarVisible}
+                  onSidebarHide={handleSidebarHide}
+                  onSidebarToggle={handleSidebarToggle}
+                  activeApp={activeApp}
+                />
+                <main
+                  className={`main-content ${sidebarVisible ? "sidebar-visible" : "sidebar-hidden"}`}
+                >
+                  <FlowMeterAnalytics
+                    onSidebarToggle={handleSidebarToggle}
+                    sidebarVisible={sidebarVisible}
+                  />
+                </main>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/flow-meter/logs"
+            element={
+              <ProtectedRoute requiredAppCode="FLOWMETER">
+                <Navbar
+                  onMenuClick={handleMenuToggle}
+                  onSidebarToggle={handleSidebarToggle}
+                  activeApp={activeApp}
+                  setActiveApp={setActiveApp}
+                />
+                <Sidebar
+                  mobileOpen={mobileMenuOpen}
+                  onClose={handleMenuClose}
+                  visible={sidebarVisible}
+                  onSidebarHide={handleSidebarHide}
+                  onSidebarToggle={handleSidebarToggle}
+                  activeApp={activeApp}
+                />
+                <main
+                  className={`main-content ${sidebarVisible ? "sidebar-visible" : "sidebar-hidden"}`}
+                >
+                  <FlowMeterLogs
+                    onSidebarToggle={handleSidebarToggle}
+                    sidebarVisible={sidebarVisible}
+                  />
+                </main>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/flow-meter/reports"
+            element={
+              <ProtectedRoute requiredAppCode="FLOWMETER">
+                <Navbar
+                  onMenuClick={handleMenuToggle}
+                  onSidebarToggle={handleSidebarToggle}
+                  activeApp={activeApp}
+                  setActiveApp={setActiveApp}
+                />
+                <Sidebar
+                  mobileOpen={mobileMenuOpen}
+                  onClose={handleMenuClose}
+                  visible={sidebarVisible}
+                  onSidebarHide={handleSidebarHide}
+                  onSidebarToggle={handleSidebarToggle}
+                  activeApp={activeApp}
+                />
+                <main
+                  className={`main-content ${sidebarVisible ? "sidebar-visible" : "sidebar-hidden"}`}
+                >
+                  <FlowMeterReports
                     onSidebarToggle={handleSidebarToggle}
                     sidebarVisible={sidebarVisible}
                   />
