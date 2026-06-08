@@ -25,13 +25,11 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import EventIcon from "@mui/icons-material/Event";
 import MenuItem from "@mui/material/MenuItem";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-
-// Import API functions
 import {
-    fetchWaterDailyConsumption,
-    fetchWaterDailyReading,
-    fetchWaterMonthlyConsumption
-} from '../../auth/water/WaterReportsApi';
+    getFlowMeterDailyConsumptionReports,
+    getFlowMeterDailyReadingReports,
+    getFlowMeterMonthlyConsumptionReports,
+} from "../../auth/flowmeter/FlowMeterReportsApi";
 
 const months = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -43,7 +41,7 @@ const getDaysInMonth = (month, year) => {
     return new Date(year, month, 0).getDate();
 };
 
-function WaterReports({ onSidebarToggle, sidebarVisible }) {
+function FlowMeterReports({ onSidebarToggle, sidebarVisible }) {
     // Get current date for default values
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1;
@@ -60,7 +58,7 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
     const [matchedStation, setMatchedStation] = useState('');
     const [isSearchApplied, setIsSearchApplied] = useState(false);
 
-    // State for API Data
+    // State for Data
     const [consumptionData, setConsumptionData] = useState(null);
     const [readingData, setReadingData] = useState(null);
     const [monthlyConsumptionData, setMonthlyConsumptionData] = useState(null);
@@ -69,7 +67,7 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
     const daysInCurrentMonth = getDaysInMonth(selectedMonth, selectedYear);
     const currentMonthDays = Array.from({ length: daysInCurrentMonth }, (_, i) => i + 1);
 
-    // Fetch Data from API
+    // Fetch Real Data
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
@@ -78,20 +76,20 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
             try {
                 if (activeTab === 0) {
                     // Daily Consumption
-                    const res = await fetchWaterDailyConsumption(selectedMonth, selectedYear);
+                    const res = await getFlowMeterDailyConsumptionReports(selectedMonth, selectedYear);
                     setConsumptionData(res);
                 } else if (activeTab === 1) {
                     // Monthly Consumption
-                    const res = await fetchWaterMonthlyConsumption(selectedYear);
+                    const res = await getFlowMeterMonthlyConsumptionReports(selectedYear);
                     setMonthlyConsumptionData(res);
                 } else if (activeTab === 2) {
                     // Daily Reading
-                    const res = await fetchWaterDailyReading(selectedMonth, selectedYear);
+                    const res = await getFlowMeterDailyReadingReports(selectedMonth, selectedYear);
                     setReadingData(res);
                 }
             } catch (err) {
                 console.error("API Error:", err);
-                setError(err.message || "Failed to fetch data");
+                setError(err.message || "Failed to fetch reports");
             } finally {
                 setLoading(false);
             }
@@ -138,17 +136,9 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                 return dayData && dayData.value != null ? dayData.value : '--';
             });
 
-            // Calculate Total Consumption (Sum of daily values)
-            // We filter for numbers to avoid trying to sum '--' strings
-            const numericValues = readingValues.filter(v => typeof v === 'number');
-            
-            // Use reduce to sum up the values
-            const total = numericValues.reduce((sum, val) => sum + val, 0);
-            
             return {
                 station,
-                data: readingValues,
-                total: total.toFixed(2) // Returns the total sum
+                data: readingValues
             };
         });
     };
@@ -238,8 +228,8 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
             headers = ['STATION', ...months, 'TOTAL'];
             return { headers, data: rows.map(r => [r.station, ...r.data, r.total]), title: 'Monthwise Consumption Report' };
         } else if (activeTab === 2) {
-            headers = ['STATION', ...currentMonthDays.map(d => `Day ${d}`), 'TOTAL'];
-            return { headers, data: rows.map(r => [r.station, ...r.data, r.total]), title: 'Daily Meter Reading Report' };
+            headers = ['STATION', ...currentMonthDays.map(d => `Day ${d}`)];
+            return { headers, data: rows.map(r => [r.station, ...r.data]), title: 'Daily Meter Reading Report' };
         }
         return { headers: [], data: [], title: '' };
     };
@@ -263,6 +253,7 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
         document.body.removeChild(link);
     };
 
+    // Export to PDF functionality
     const exportToPDF = () => {
         import("jspdf").then(({ default: jsPDF }) => {
             import("jspdf-autotable").then(({ default: autoTable }) => {
@@ -309,7 +300,7 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
 
                 doc.setFontSize(16);
                 doc.setFont("helvetica", "bold");
-                doc.setTextColor(0, 0, 0); 
+                doc.setTextColor(0, 0, 0);
                 doc.text(finalTitle, 14, 15);
 
                 doc.setFontSize(10);
@@ -317,7 +308,7 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                 doc.setTextColor(60, 60, 60);
                 doc.text(dateRangeText, 14, 22);
 
-                const { data } = getCurrentData(); 
+                const { data } = getCurrentData();
 
                 let pdfHeaders = [];
                 if (isDaywise) {
@@ -341,9 +332,9 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
 
                 const margin = 14; 
                 const usableWidth = pageWidth - (margin * 2);
-                const stationWidth = 40; 
+                const stationWidth = 40;
                 
-                const colCount = filteredHeaders.length - 1; 
+                const colCount = filteredHeaders.length - 1;
                 const dataColWidth = (usableWidth - stationWidth) / (colCount > 0 ? colCount : 1);
 
                 const columnStyles = {
@@ -522,7 +513,6 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                             setSelectedStation(inputValue);
                             setIsSearchApplied(false);
 
-                            // Find matching station
                             const matched = findMatchingStation(inputValue);
                             setMatchedStation(matched);
                         }}
@@ -631,8 +621,6 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                                 {currentMonthDays.map(day => (
                                     <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>{day}</b></TableCell>
                                 ))}
-                                {/* FIX: Added Total Header */}
-                                <TableCell align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>Total</b></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -644,8 +632,6 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
                                             {typeof val === 'number' ? val.toFixed(2) : val}
                                         </TableCell>
                                     ))}
-                                    {/* FIX: Added Total Cell */}
-                                    <TableCell align="center">{typeof row.total === 'number' ? row.total.toFixed(2) : row.total}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -656,4 +642,4 @@ function WaterReports({ onSidebarToggle, sidebarVisible }) {
     );
 }
 
-export default WaterReports;
+export default FlowMeterReports;

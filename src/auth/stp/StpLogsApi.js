@@ -57,7 +57,7 @@ export const getStpSlaveList = async () => {
     }
 
     // Endpoint specific to STP application
-    const response = await apiClient.get('/applications/stp/slave-list/');
+    const response = await apiClient.get('/applications/flowmeter/slave-list/');
 
     if (response.data && response.data.success === true) {
       return response.data.data.slaves || [];
@@ -84,7 +84,7 @@ export const getStpLogs = async (slaveId, startDatetime, endDatetime, limit = 30
       throw new Error('Authentication token not found. Please log in first.');
     }
 
-    const url = `/applications/stp/logs/?slave_id=${slaveId}&start_datetime=${encodeURIComponent(startDatetime)}&end_datetime=${encodeURIComponent(endDatetime)}&limit=${limit}&offset=${offset}`;
+    const url = `/applications/flowmeter/logs/?slave_id=${slaveId}&start_datetime=${encodeURIComponent(startDatetime)}&end_datetime=${encodeURIComponent(endDatetime)}&limit=${limit}&offset=${offset}`;
     
     const response = await apiClient.get(url);
 

@@ -64,9 +64,12 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
         navigate(`/compressor/${route}`);
       } else if (app.code === "STP") {
         navigate(`/stp/${route}`);
+      } else if (app.code === "FLOWMETER") {
+        navigate(`/flow-meter/${route}`);
       } else {
         navigate(`/${route}`);
       }
+      
     } else {
       // Default fallback routes
       if (app.code === "TEMPERATURE") {
@@ -83,6 +86,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
         navigate("/compressor/machine-list");
       } else if (app.code === "STP") {
         navigate("/stp/dashboard");
+      } else if (app.code === "FLOWMETER") {
+        navigate("/flow-meter/dashboard");
       } else {
         navigate("/dashboard");
       }
@@ -170,6 +175,7 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
       "COMPRESSOR",
       "TEMPERATURE",
       "STP",
+      "FLOWMETER",
     ];
 
     return applications.slice().sort((a, b) => {
@@ -333,6 +339,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                   displayName = "Compressor";
                 } else if (app.code === "STP") {
                   displayName = "STP";
+                } else if (app.code === "FLOWMETER") {
+                  displayName = "Flow Meter";
                 }
 
                 return (
@@ -452,6 +460,8 @@ function Navbar({ onMenuClick, activeApp, setActiveApp }) {
                     displayName = "Compressor";
                   } else if (app.code === "STP") {
                     displayName = "STP";
+                  } else if (app.code === "FLOWMETER") {
+                    displayName = "Flow Meter";
                   }
 
                   return (
