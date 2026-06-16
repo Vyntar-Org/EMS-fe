@@ -1,347 +1,347 @@
-import React, { useMemo, useState } from "react";
-import { useCommonData } from "../../contexts/CommonDataContext";
-import { WATER_LOG_COLUMN_MAPPING } from "../../constants/waterLogs";
-import dayjs from "dayjs";
-import { API_URLS } from "../../helpers/apiUrls";
-import { api } from "../../helpers/api";
-import { Box, Button, Grid, Tooltip } from "@mui/material";
-import { CustomAutocomplete } from "../common/CustomAutocomplete";
-import { CustomDatePicker } from "../common/CustomDatePicker";
-import { RestartAlt, Search } from "@mui/icons-material";
-import { Loading } from "../common/Loading";
-import NoDataFound from "../common/errors/NoDataFound";
-import { CustomTable } from "../common/CustomTable";
+import React, { useMemo, useState } from 'react';
+import { useCommonData } from '../../contexts/CommonDataContext';
+import { WATER_LOG_COLUMN_MAPPING } from '../../constants/waterLogs';
+import dayjs from 'dayjs';
+import { API_URLS } from '../../helpers/apiUrls';
+import { api } from '../../helpers/api';
+import { Box, Button, Grid, Tooltip } from '@mui/material';
+import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import { CustomDatePicker } from '../common/CustomDatePicker';
+import { RestartAlt, Search } from '@mui/icons-material';
+import { Loading } from '../common/Loading';
+import NoDataFound from '../common/errors/NoDataFound';
+import { CustomTable } from '../common/CustomTable';
 
-const getDefaultDateRange = () => [dayjs().subtract(24, "hour"), dayjs()];
+const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 
 const LogsFilterHeader = ({
-  slaveOptions,
-  parameterOptions,
-  handleSearch,
-  handleReset,
-  payload,
-  setPayload,
+	slaveOptions,
+	parameterOptions,
+	handleSearch,
+	handleReset,
+	payload,
+	setPayload,
 }) => {
-  const handleFieldCh = (key, value) => {
-    setPayload((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
+	const handleFieldCh = (key, value) => {
+		setPayload((prev) => ({
+			...prev,
+			[key]: value,
+		}));
+	};
 
-  return (
-    <Box
-      sx={{
-        pb: 1,
-        borderBottom: "1px dashed",
-        borderColor: "divider",
-      }}
-    >
-      <Grid container gap={2} alignItems="center">
-        <Grid item xs={12} sm md lg={3}>
-          <CustomAutocomplete
-            options={slaveOptions}
-            onChange={(val) => handleFieldCh("slave_id", val)}
-            value={payload?.slave_id || ""}
-            label="Select Devices"
-            size="small"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
+	return (
+		<Box
+			sx={{
+				pb: 1,
+				borderBottom: '1px dashed',
+				borderColor: 'divider',
+			}}
+		>
+			<Grid container gap={2} alignItems="center">
+				<Grid item xs={12} sm md lg={3}>
+					<CustomAutocomplete
+						options={slaveOptions}
+						onChange={(val) => handleFieldCh('slave_id', val)}
+						value={payload?.slave_id || ''}
+						label="Select Devices"
+						size="small"
+						sx={{
+							'& .MuiOutlinedInput-root': {
+								borderRadius: 2,
 
-                backgroundColor: "#f9f9f9",
+								backgroundColor: '#f9f9f9',
 
-                transition: "0.3s",
+								transition: '0.3s',
 
-                "&:hover": {
-                  backgroundColor: "#fff",
-                },
-              },
-            }}
-          />
-        </Grid>
+								'&:hover': {
+									backgroundColor: '#fff',
+								},
+							},
+						}}
+					/>
+				</Grid>
 
-        <Grid item xs={12} sm md lg={3}>
-          <CustomAutocomplete
-            multiple
-            options={parameterOptions}
-            onChange={(val) => handleFieldCh("parameters", val)}
-            value={payload?.parameters || []}
-            label="Select Parameters"
-            size="small"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
+				<Grid item xs={12} sm md lg={3}>
+					<CustomAutocomplete
+						multiple
+						options={parameterOptions}
+						onChange={(val) => handleFieldCh('parameters', val)}
+						value={payload?.parameters || []}
+						label="Select Parameters"
+						size="small"
+						sx={{
+							'& .MuiOutlinedInput-root': {
+								borderRadius: 2,
 
-                backgroundColor: "#f9f9f9",
+								backgroundColor: '#f9f9f9',
 
-                transition: "0.3s",
+								transition: '0.3s',
 
-                "&:hover": {
-                  backgroundColor: "#fff",
-                },
-              },
-            }}
-          />
-        </Grid>
+								'&:hover': {
+									backgroundColor: '#fff',
+								},
+							},
+						}}
+					/>
+				</Grid>
 
-        <Grid item xs={12} md={4.5} lg>
-          <CustomDatePicker
-            mode="datetimerangepicker"
-            onChange={(val) => handleFieldCh("dateTime", val)}
-            value={payload?.dateTime || ""}
-          />
-        </Grid>
+				<Grid item xs={12} md={4.5} lg>
+					<CustomDatePicker
+						mode="datetimerangepicker"
+						onChange={(val) => handleFieldCh('dateTime', val)}
+						value={payload?.dateTime || ''}
+					/>
+				</Grid>
 
-        <Grid item xs="auto" display="flex" gap={2} ml={{ xs: "auto", md: 0 }}>
-          <Tooltip title="Search">
-            <span>
-              <Button
-                variant="contained"
-                disabled={!payload?.slave_id}
-                onClick={() => handleSearch()}
-                sx={{
-                  width: 40,
+				<Grid item xs="auto" display="flex" gap={2} ml={{ xs: 'auto', md: 0 }}>
+					<Tooltip title="Search">
+						<span>
+							<Button
+								variant="contained"
+								disabled={!payload?.slave_id}
+								onClick={() => handleSearch()}
+								sx={{
+									width: 40,
 
-                  height: 40,
+									height: 40,
 
-                  minWidth: 0,
+									minWidth: 0,
 
-                  p: 0,
+									p: 0,
 
-                  borderRadius: 2,
+									borderRadius: 2,
 
-                  boxShadow: "none",
+									boxShadow: 'none',
 
-                  backgroundColor: (theme) =>
-                    theme.palette.primary.main || "#1976d2",
+									backgroundColor: (theme) =>
+										theme.palette.primary.main || '#1976d2',
 
-                  "&:hover": {
-                    boxShadow: "none",
+									'&:hover': {
+										boxShadow: 'none',
 
-                    backgroundColor: (theme) =>
-                      theme.palette.primary.dark || "#115293",
-                  },
-                }}
-              >
-                <Search sx={{ fontSize: 20, color: "#fff" }} />
-              </Button>
-            </span>
-          </Tooltip>
+										backgroundColor: (theme) =>
+											theme.palette.primary.dark || '#115293',
+									},
+								}}
+							>
+								<Search sx={{ fontSize: 20, color: '#fff' }} />
+							</Button>
+						</span>
+					</Tooltip>
 
-          <Tooltip title="Reset">
-            <span>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  setPayload((prev) => ({
-                    ...(prev || {}),
-                    dateTime: getDefaultDateRange(),
-                  }));
-                  handleReset();
-                }}
-                sx={{
-                  width: 40,
+					<Tooltip title="Reset">
+						<span>
+							<Button
+								variant="contained"
+								onClick={() => {
+									setPayload((prev) => ({
+										...(prev || {}),
+										dateTime: getDefaultDateRange(),
+									}));
+									handleReset();
+								}}
+								sx={{
+									width: 40,
 
-                  height: 40,
+									height: 40,
 
-                  minWidth: 0,
+									minWidth: 0,
 
-                  p: 0,
+									p: 0,
 
-                  borderRadius: 2,
+									borderRadius: 2,
 
-                  boxShadow: "none",
+									boxShadow: 'none',
 
-                  backgroundColor: "#f5f5f5",
+									backgroundColor: '#f5f5f5',
 
-                  color: "#666666",
+									color: '#666666',
 
-                  "&:hover": {
-                    boxShadow: "none",
+									'&:hover': {
+										boxShadow: 'none',
 
-                    backgroundColor: "#e0e0e0",
+										backgroundColor: '#e0e0e0',
 
-                    color: "#333333",
-                  },
-                }}
-              >
-                <RestartAlt sx={{ fontSize: 20 }} />
-              </Button>
-            </span>
-          </Tooltip>
-        </Grid>
-      </Grid>
-    </Box>
-  );
+										color: '#333333',
+									},
+								}}
+							>
+								<RestartAlt sx={{ fontSize: 20 }} />
+							</Button>
+						</span>
+					</Tooltip>
+				</Grid>
+			</Grid>
+		</Box>
+	);
 };
 const WaterLogs = () => {
-  const { slavesData, parametersData } = useCommonData();
-  const [loading, setLoading] = useState(null);
-  const [logsData, setLogsData] = useState(null);
-  const [payload, setPayload] = useState({
-    dateTime: getDefaultDateRange(),
-  });
-  const [apiPaginationParams, setApiPaginationParams] = useState({
-    limit: 50,
-    offset: 0,
-  });
-  const [backendTotalRowsCount, setBackendTotalRowsCount] = useState(0);
+	const { slavesData, parametersData } = useCommonData();
+	const [loading, setLoading] = useState(null);
+	const [logsData, setLogsData] = useState(null);
+	const [payload, setPayload] = useState({
+		dateTime: getDefaultDateRange(),
+	});
+	const [apiPaginationParams, setApiPaginationParams] = useState({
+		limit: 50,
+		offset: 0,
+	});
+	const [backendTotalRowsCount, setBackendTotalRowsCount] = useState(0);
 
-  const tablePageIndex = Math.floor(
-    apiPaginationParams.offset / apiPaginationParams.limit,
-  );
-  const tablePageSize = apiPaginationParams.limit;
+	const tablePageIndex = Math.floor(
+		apiPaginationParams.offset / apiPaginationParams.limit
+	);
+	const tablePageSize = apiPaginationParams.limit;
 
-  const logsColumns = useMemo(() => {
-    if (!logsData?.length) return [];
+	const logsColumns = useMemo(() => {
+		if (!logsData?.length) return [];
 
-    const availableKeys = Object.keys(logsData[0]);
+		const availableKeys = Object.keys(logsData[0]);
 
-    const columnDef = availableKeys.map((c) => ({
-      accessorKey: c,
-      header: WATER_LOG_COLUMN_MAPPING?.[c],
-      size: c === "timestamp" ? 150 : 130,
-      cell: (info) => {
-        const value = info.getValue();
+		const columnDef = availableKeys.map((c) => ({
+			accessorKey: c,
+			header: WATER_LOG_COLUMN_MAPPING?.[c],
+			size: c === 'timestamp' ? 150 : 130,
+			cell: (info) => {
+				const value = info.getValue();
 
-        if (c === "timestamp" && value) {
-          const date = dayjs(value);
-          return date.isValid()
-            ? date.format("DD MMM YYYY HH:mm:ss")
-            : String(value);
-        }
+				if (c === 'timestamp' && value) {
+					const date = dayjs(value);
+					return date.isValid()
+						? date.format('DD MMM YYYY HH:mm:ss')
+						: String(value);
+				}
 
-        return String(value ?? "-");
-      },
-    }));
+				return String(value ?? '-');
+			},
+		}));
 
-    return columnDef;
-  }, [logsData]);
+		return columnDef;
+	}, [logsData]);
 
-  const handleSearch = async (paginationDetails = apiPaginationParams) => {
-    if (!payload?.slave_id) return;
+	const handleSearch = async (paginationDetails = apiPaginationParams) => {
+		if (!payload?.slave_id) return;
 
-    setLoading(true);
-    try {
-      const slaveId = payload.slave_id?.value ?? "";
-      const parameterValues = payload?.parameters
-        ? payload.parameters
-            .map((p) => p?.value)
-            .filter(Boolean)
-            .join(",")
-        : "";
+		setLoading(true);
+		try {
+			const slaveId = payload.slave_id?.value ?? '';
+			const parameterValues = payload?.parameters
+				? payload.parameters
+						.map((p) => p?.value)
+						.filter(Boolean)
+						.join(',')
+				: '';
 
-      const startDateObj = payload?.dateTime?.[0];
-      const endDateObj = payload?.dateTime?.[1];
-      const formattedStart = startDateObj?.isValid?.()
-        ? startDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
-        : "";
-      const formattedEnd = endDateObj?.isValid?.()
-        ? endDateObj.format("YYYY-MM-DD[T]HH:mm:ss")
-        : "";
+			const startDateObj = payload?.dateTime?.[0];
+			const endDateObj = payload?.dateTime?.[1];
+			const formattedStart = startDateObj?.isValid?.()
+				? startDateObj.format('YYYY-MM-DD[T]HH:mm:ss')
+				: '';
+			const formattedEnd = endDateObj?.isValid?.()
+				? endDateObj.format('YYYY-MM-DD[T]HH:mm:ss')
+				: '';
 
-      const newApiUrl = API_URLS.WATER_LOGS_DATA(
-        slaveId,
-        parameterValues,
-        formattedStart,
-        formattedEnd,
-        paginationDetails.limit,
-        paginationDetails.offset,
-      );
-      const res = await api.get(newApiUrl);
-      if (res?.success) {
-        setLogsData(res?.data?.logs || []);
-        setBackendTotalRowsCount(res?.meta?.total || 0);
-      }
-    } catch (error) {
-      console.error(`API Error:`, error);
-    } finally {
-      setLoading(false);
-    }
-  };
+			const newApiUrl = API_URLS.WATER_LOGS_DATA(
+				slaveId,
+				parameterValues,
+				formattedStart,
+				formattedEnd,
+				paginationDetails.limit,
+				paginationDetails.offset
+			);
+			const res = await api.get(newApiUrl);
+			if (res?.success) {
+				setLogsData(res?.data?.logs || []);
+				setBackendTotalRowsCount(res?.meta?.total || 0);
+			}
+		} catch (error) {
+			console.error(`API Error:`, error);
+		} finally {
+			setLoading(false);
+		}
+	};
 
-  const handleReset = () => {
-    setLogsData(null);
-    setBackendTotalRowsCount(0);
-    setApiPaginationParams({
-      limit: 50,
-      offset: 0,
-    });
-  };
+	const handleReset = () => {
+		setLogsData(null);
+		setBackendTotalRowsCount(0);
+		setApiPaginationParams({
+			limit: 50,
+			offset: 0,
+		});
+	};
 
-  const handlePageChange = (event, newPageIndex) => {
-    setApiPaginationParams((prev) => ({
-      ...prev,
-      offset: newPageIndex * prev.limit,
-    }));
-    handleSearch({
-      ...apiPaginationParams,
-      offset: newPageIndex * apiPaginationParams.limit,
-    });
-  };
+	const handlePageChange = (event, newPageIndex) => {
+		setApiPaginationParams((prev) => ({
+			...prev,
+			offset: newPageIndex * prev.limit,
+		}));
+		handleSearch({
+			...apiPaginationParams,
+			offset: newPageIndex * apiPaginationParams.limit,
+		});
+	};
 
-  const handleRowsPerPageChange = (event) => {
-    const newLimit = parseInt(event.target.value, 10);
-    setApiPaginationParams({
-      limit: newLimit,
-      offset: 0,
-    });
-    handleSearch({
-      limit: newLimit,
-      offset: 0,
-    });
-  };
+	const handleRowsPerPageChange = (event) => {
+		const newLimit = parseInt(event.target.value, 10);
+		setApiPaginationParams({
+			limit: newLimit,
+			offset: 0,
+		});
+		handleSearch({
+			limit: newLimit,
+			offset: 0,
+		});
+	};
 
-  const slaveOptions =
-    slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) ||
-    [];
+	const slaveOptions =
+		slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) ||
+		[];
 
-  return (
-    <Box
-      sx={{
-        height: {
-          xs: "calc(100vh - 56px - 16px)",
-          sm: "calc(100vh - 64px - 16px)",
-        },
-      }}
-    >
-      <LogsFilterHeader
-        slaveOptions={slaveOptions}
-        parameterOptions={parametersData}
-        handleSearch={handleSearch}
-        handleReset={handleReset}
-        payload={payload}
-        setPayload={setPayload}
-      />
+	return (
+		<Box
+			sx={{
+				height: {
+					xs: 'calc(100vh - 56px - 16px)',
+					sm: 'calc(100vh - 64px - 16px)',
+				},
+			}}
+		>
+			<LogsFilterHeader
+				slaveOptions={slaveOptions}
+				parameterOptions={parametersData}
+				handleSearch={handleSearch}
+				handleReset={handleReset}
+				payload={payload}
+				setPayload={setPayload}
+			/>
 
-      <Box
-        height={{
-          xs: "calc(100% - 216px)",
-          sm: "calc(100% - 160px)",
-          md: "calc(100% - 48px)",
-        }}
-        pt={1}
-        overflow="auto"
-      >
-        {loading ? (
-          <Loading />
-        ) : !logsData?.length ? (
-          <NoDataFound />
-        ) : (
-          <CustomTable
-            data={logsData}
-            columns={logsColumns}
-            pageIndex={tablePageIndex}
-            pageSize={tablePageSize}
-            totalRowCount={backendTotalRowsCount}
-            onPageChange={handlePageChange}
-            onRowsPerPageChange={handleRowsPerPageChange}
-          />
-        )}
-      </Box>
-    </Box>
-  );
+			<Box
+				height={{
+					xs: 'calc(100% - 216px)',
+					sm: 'calc(100% - 160px)',
+					md: 'calc(100% - 48px)',
+				}}
+				pt={1}
+				overflow="auto"
+			>
+				{loading ? (
+					<Loading />
+				) : !logsData?.length ? (
+					<NoDataFound />
+				) : (
+					<CustomTable
+						data={logsData}
+						columns={logsColumns}
+						pageIndex={tablePageIndex}
+						pageSize={tablePageSize}
+						totalRowCount={backendTotalRowsCount}
+						onPageChange={handlePageChange}
+						onRowsPerPageChange={handleRowsPerPageChange}
+					/>
+				)}
+			</Box>
+		</Box>
+	);
 };
 
 export default WaterLogs;
