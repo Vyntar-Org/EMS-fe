@@ -93,7 +93,6 @@ const GlobalFiltersRow = ({ dateTime, onDateChange, addNewComparisonRow }) => (
 		</Grid>
 	</Box>
 );
-
 const DeviceFilterRow = ({
 	comparisonId,
 	slaveOptions,
