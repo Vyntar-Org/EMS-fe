@@ -191,7 +191,7 @@ export const transformDynamicDataToDailyMatrix = (
 					item?.[dateKey] !== undefined ? String(item[dateKey]).trim() : null;
 				const itemValue = item?.[valueKey];
 
-				if (itemDate && row.hasOwn(itemDate)) {
+				if (itemDate && itemDate in row) {
 					row[itemDate] = parseFloat(Number(itemValue || 0).toFixed(2));
 				}
 			});

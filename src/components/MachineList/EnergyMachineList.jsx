@@ -1,8 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useCommonData } from '../../contexts/CommonDataContext';
-import { API_URLS } from '../../helpers/apiUrls';
-import { api } from '../../helpers/api';
-import EnergyMachineListSkeleton from '../skeletonLoaders/EnergyMachineListSkeleton';
+import { DownloadForOffline, Insights } from '@mui/icons-material';
 import {
 	Box,
 	Button,
@@ -19,24 +15,28 @@ import {
 	TableRow,
 	Tabs,
 	Tooltip,
-	Typography,
 } from '@mui/material';
-import { CustomAutocomplete } from '../common/CustomAutocomplete';
-import { AccessTime, DownloadForOffline, Insights } from '@mui/icons-material';
-import NoDataFound from '../common/errors/NoDataFound';
-import CustomCard from '../common/CustomCard';
-import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
-import { formatTimestamp } from '../../helpers/common';
-import { useApplications } from '../../contexts/ApplicationContext';
 import Papa from 'papaparse';
-import PremiumModal from '../common/PremiumModal';
-import { CustomSelect } from '../common/CustomSelect';
+import { useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
-import { Loading } from '../common/Loading';
+
 import {
 	KEY_PARAMETER_OPTIONS,
 	TREND_TAB_OPTIONS,
 } from '../../constants/energyMachineList';
+import { useApplications } from '../../contexts/ApplicationContext';
+import { useCommonData } from '../../contexts/CommonDataContext';
+import { api } from '../../helpers/api';
+import { API_URLS } from '../../helpers/apiUrls';
+import { formatTimestamp } from '../../helpers/common';
+import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import CustomCard from '../common/CustomCard';
+import { CustomSelect } from '../common/CustomSelect';
+import NoDataFound from '../common/errors/NoDataFound';
+import { Loading } from '../common/Loading';
+import PremiumModal from '../common/PremiumModal';
+import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
+import EnergyMachineListSkeleton from '../skeletonLoaders/EnergyMachineListSkeleton';
 
 const MachineListHeader = ({
 	slaveOptions,
@@ -60,13 +60,6 @@ const MachineListHeader = ({
 				justifyContent="space-between"
 			>
 				<Box sx={{ flexGrow: 1, maxWidth: { sm: 300 } }}>
-					{/* <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ ml: 1, fontWeight: 600 }}
-          >
-            DEVICE FILTER
-          </Typography> */}
 					<CustomAutocomplete
 						options={slaveOptions}
 						onChange={(e) => setSlavesId(e?.value || '')}
@@ -74,7 +67,6 @@ const MachineListHeader = ({
 						label="Search Devices..."
 						size="small"
 						sx={{
-							// mt: 0.5,
 							'& .MuiOutlinedInput-root': {
 								borderRadius: 2,
 								backgroundColor: '#f9f9f9',
@@ -120,7 +112,6 @@ const MetricBlock = ({
 	frequency,
 	today,
 	mtd,
-	slave_id,
 	last_ts,
 	handleOpenModal,
 }) => {
@@ -168,8 +159,8 @@ const MetricBlock = ({
 						<ResponsiveTextWrapper
 							value={formatTimestamp(last_ts)}
 							color="#595959"
-							fontWeight="bold"
-							fontSize="16px"
+							fontWeight={500}
+							fontSize="14px"
 						/>
 					</Box>
 
@@ -177,7 +168,7 @@ const MetricBlock = ({
 						<ResponsiveTextWrapper
 							value={`${total?.toFixed(1)} kWh`}
 							variant="subtitle1"
-							fontWeight="bold"
+							fontWeight={500}
 						/>
 					</Box>
 				</Stack>
@@ -252,7 +243,7 @@ const MetricBlock = ({
 											<ResponsiveTextWrapper
 												fontSize="14px"
 												color="#333333"
-												fontWeight="bold"
+												fontWeight={500}
 												value={row.name}
 											/>
 										</Box>
@@ -265,7 +256,7 @@ const MetricBlock = ({
 									<ResponsiveTextWrapper
 										fontSize="14px"
 										color="#333333"
-										fontWeight="bold"
+										fontWeight={500}
 										value={row.v?.toFixed(2)}
 									/>
 								</TableCell>
@@ -276,7 +267,7 @@ const MetricBlock = ({
 									<ResponsiveTextWrapper
 										fontSize="14px"
 										color="#333333"
-										fontWeight="bold"
+										fontWeight={500}
 										value={row.a?.toFixed(1)}
 									/>
 								</TableCell>
@@ -469,16 +460,21 @@ const ModalContentForTrend = ({
 
 		let API_URL_NAME = '';
 
-		if (selectedTab === 'ACTIVE_POWER')
+		if (selectedTab === 'ACTIVE_POWER') {
 			API_URL_NAME = API_URLS.EMS_MACHINE_LIST_ACTIVE_POWER(slaveId);
-		if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'voltage')
+		}
+		if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'voltage') {
 			API_URL_NAME = API_URLS.EMS_MACHINE_LIST_VOLTAGE(slaveId);
-		if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'current')
+		}
+		if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'current') {
 			API_URL_NAME = API_URLS.EMS_MACHINE_LIST_CURRENT(slaveId);
-		if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'pf')
+		}
+		if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'pf') {
 			API_URL_NAME = API_URLS.EMS_MACHINE_LIST_POWER_FACTOR(slaveId);
-		if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'frequency')
+		}
+		if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'frequency') {
 			API_URL_NAME = API_URLS.EMS_MACHINE_LIST_FREQUENCY(slaveId);
+		}
 
 		if (!API_URL_NAME) {
 			setChartResponse(null);
@@ -500,7 +496,9 @@ const ModalContentForTrend = ({
 	};
 
 	useEffect(() => {
-		if (tab === 'ACTIVE_POWER') fetchTrendModalChartData(tab);
+		if (tab === 'ACTIVE_POWER') {
+			fetchTrendModalChartData(tab);
+		}
 	}, [tab]);
 
 	const chartOptions = {
@@ -556,7 +554,7 @@ const ModalContentForTrend = ({
 			style: { fontSize: '12px' },
 			shared: true,
 			intersect: false,
-			custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+			custom: function ({ series, dataPointIndex, w }) {
 				let originalDate = '';
 
 				const targetArray = chartResponse?.data || [];
@@ -677,6 +675,7 @@ const ModalContentForTrend = ({
 							},
 						];
 				}
+				break;
 			default:
 				return [];
 		}
@@ -694,11 +693,12 @@ const ModalContentForTrend = ({
 				<Tabs
 					value={tab}
 					onChange={(e, val) => {
-						if (!val) return;
+						if (!val) {
+							return;
+						}
 
-						const { tabDesc, tab: newTab } = TREND_TAB_OPTIONS?.find(
-							(t) => t.tab === val
-						);
+						const { tabDesc, tab: newTab } =
+							TREND_TAB_OPTIONS?.find((t) => t.tab === val) || {};
 						handleTabChange(newTab, tabDesc);
 					}}
 					variant="scrollable"
@@ -751,9 +751,10 @@ const ModalContentForTrend = ({
 							label="Key Parameters"
 							size="small"
 							onChange={(e) => {
-								const { desc } = KEY_PARAMETER_OPTIONS?.find(
-									(k) => k.value === e?.target?.value
-								);
+								const { desc } =
+									KEY_PARAMETER_OPTIONS?.find(
+										(k) => k.value === e?.target?.value
+									) || {};
 								fetchTrendModalChartData(tab, e?.target?.value);
 								handleTabChange(tab, desc, e?.target?.value);
 							}}
@@ -813,7 +814,9 @@ const EnergyMachineList = () => {
 	const filteredMachines = useMemo(() => {
 		const machinesData = machineListData?.machines || [];
 
-		if (!slavesId || !machinesData?.length) return machinesData;
+		if (!slavesId || !machinesData?.length) {
+			return machinesData;
+		}
 
 		return machinesData.filter((mac) => mac.slave_id === slavesId);
 	}, [machineListData, slavesId]);
@@ -857,13 +860,7 @@ const EnergyMachineList = () => {
 					isDownloadDisabled={!filteredMachines?.length || isLoading}
 				/>
 
-				<Grid
-					container
-					// spacing={1}
-					height="calc(100% - 44px - 8px)"
-					pt={1}
-					overflow="auto"
-				>
+				<Grid container height="calc(100% - 44px - 8px)" pt={1} overflow="auto">
 					<Grid item xs={12}>
 						{isLoading ? (
 							<EnergyMachineListSkeleton />
@@ -917,7 +914,7 @@ const EnergyMachineList = () => {
 				confirmText={null}
 				cancelText={null}
 			>
-				{Boolean(modalDetails?.isOpen) ? (
+				{modalDetails?.isOpen ? (
 					<ModalContentForTrend
 						handleTabChange={handleTabChange}
 						tab={modalDetails?.tab}

@@ -1,22 +1,23 @@
-import React, { useState } from 'react';
-import { useCommonData } from '../../contexts/CommonDataContext';
-import { Box, Button, Grid, Typography } from '@mui/material';
-import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { RestartAlt, Search } from '@mui/icons-material';
+import { Box, Button, Grid, Typography } from '@mui/material';
+import dayjs from 'dayjs';
+import { useState } from 'react';
+import ReactApexChart from 'react-apexcharts';
+
 import {
 	KEY_PARAMETER_OPTIONS_MAPPING,
 	UNIQUE_PASTEL_BGS,
 } from '../../constants/energyAnalytics';
-import { CustomDatePicker } from '../common/CustomDatePicker';
+import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import dayjs from 'dayjs';
-import NoDataFound from '../common/errors/NoDataFound';
-import ReactApexChart from 'react-apexcharts';
 import {
 	basePickerStyles,
 	downAnalyticsSampleData,
 } from '../../helpers/common';
+import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import { CustomDatePicker } from '../common/CustomDatePicker';
+import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
@@ -61,12 +62,12 @@ const GlobalFiltersRow = ({ dateTime, onDateChange, addNewComparisonRow }) => (
 	>
 		<Grid container alignItems="end" spacing={2}>
 			<Grid item xs={12} md={8} lg={6}>
-				<Typography
+				{/* <Typography
 					variant="subtitle2"
 					sx={{ mb: 0.5, color: 'text.secondary' }}
 				>
 					Global Date/Time
-				</Typography>
+				</Typography> */}
 				<CustomDatePicker
 					mode="datetimerangepicker"
 					onChange={onDateChange}
@@ -292,7 +293,7 @@ const EnergyAnalytics = () => {
 			/>
 
 			<Box
-				height={{ xs: 'calc(100% - 141px)', md: 'calc(100% - 82px)' }}
+				height={{ xs: 'calc(100% - 115px)', md: 'calc(100% - 58px)' }}
 				pt={1}
 				overflow="auto"
 				display="flex"

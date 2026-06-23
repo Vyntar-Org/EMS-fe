@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import {
 	Box,
 	Button,
@@ -6,15 +9,14 @@ import {
 	IconButton,
 	InputAdornment,
 	Link,
+	CircularProgress,
 } from '@mui/material';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { useFormik } from 'formik';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import { CustomInput } from '../../components/common/CustomInput';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { useFormik } from 'formik';
 
 const Login = () => {
 	const [showPassword, setShowPassword] = useState(false);
@@ -172,7 +174,16 @@ const Login = () => {
 								},
 							}}
 						>
-							SIGN IN
+							{formik.isSubmitting ? (
+								<CircularProgress
+									size={24}
+									sx={{
+										color: '#000',
+									}}
+								/>
+							) : (
+								'SIGN IN'
+							)}
 						</Button>
 						{formik.status && (
 							<Typography color="error" variant="body2" sx={{ mt: 1 }}>

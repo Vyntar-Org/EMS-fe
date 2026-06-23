@@ -29,12 +29,12 @@ const GlobalFiltersRow = ({ dateTime, onDateChange, addNewComparisonRow }) => (
 	>
 		<Grid container alignItems="end" spacing={2}>
 			<Grid item xs={12} md={8} lg={6}>
-				<Typography
+				{/* <Typography
 					variant="subtitle2"
 					sx={{ mb: 0.5, color: 'text.secondary' }}
 				>
 					Global Date/Time
-				</Typography>
+				</Typography> */}
 				<CustomDatePicker
 					mode="datetimerangepicker"
 					onChange={onDateChange}
@@ -263,7 +263,7 @@ const FlowMeterAnalytics = () => {
 			/>
 
 			<Box
-				height={{ xs: 'calc(100% - 141px)', md: 'calc(100% - 82px)' }}
+				height={{ xs: 'calc(100% - 115px)', md: 'calc(100% - 58px)' }}
 				pt={1}
 				overflow="auto"
 				display="flex"

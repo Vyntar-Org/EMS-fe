@@ -288,8 +288,8 @@ const CompressorMetricBlock = ({
 					<ResponsiveTextWrapper
 						value={formatTimestamp(lastUpdated)}
 						color="#595959"
-						fontWeight="bold"
-						fontSize="16px"
+						fontWeight={500}
+						fontSize="14px"
 					/>
 				</Box>
 			</Stack>
@@ -1282,7 +1282,6 @@ const CompressorMachineList = () => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [modalDetails, setModalDetails] = useState(null);
 
-	// Stoppage Modal State
 	const [stoppageModal, setStoppageModal] = useState({
 		open: false,
 		machine: null,

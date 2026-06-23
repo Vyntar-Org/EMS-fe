@@ -289,21 +289,12 @@ const WaterLevelTableRows = ({ groupedMetricsData }) => {
 								<ResponsiveTextWrapper
 									fontSize="14px"
 									color="#333333"
-									fontWeight="bold"
+									fontWeight={500}
 									value={row.left.label}
 								/>
 							</Box>
 
 							<StatusChips value={String(row.left.value ?? 'Nil')} />
-							{/* <Chip
-								sx={{
-									ml: 0.5,
-									fontWeight: 700,
-								}}
-								size="small"
-								color={getChipColor(row.left.color)}
-								label={row.left.value || 'Nil'}
-							/> */}
 						</Box>
 					</TableCell>
 
@@ -327,20 +318,11 @@ const WaterLevelTableRows = ({ groupedMetricsData }) => {
 								<ResponsiveTextWrapper
 									fontSize="14px"
 									color="#333333"
-									fontWeight="bold"
+									fontWeight={500}
 									value={row.right.label}
 								/>
 							</Box>
 							<StatusChips value={String(row.right.value ?? 'Nil')} />
-							{/* <Chip
-								sx={{
-									ml: 0.5,
-									fontWeight: 700,
-								}}
-								size="small"
-								color={getChipColor(row.right.color)}
-								label={row.right.value || 'Nil'}
-							/> */}
 						</Box>
 					</TableCell>
 				</TableRow>
@@ -405,8 +387,8 @@ const MetricBlock = ({
 						<ResponsiveTextWrapper
 							value={formatTimestamp(lastUpdated)}
 							color="#595959"
-							fontWeight="bold"
-							fontSize="16px"
+							fontWeight={500}
+							fontSize="14px"
 						/>
 					</Box>
 				</Stack>
@@ -467,7 +449,7 @@ const MetricBlock = ({
 										<ResponsiveTextWrapper
 											fontSize="14px"
 											color="#333333"
-											fontWeight="bold"
+											fontWeight={500}
 											value={row.label}
 										/>
 									</TableCell>
@@ -478,7 +460,7 @@ const MetricBlock = ({
 										<ResponsiveTextWrapper
 											fontSize="14px"
 											color="#333333"
-											fontWeight="bold"
+											fontWeight={500}
 											value={Number(row?.value ?? 0).toFixed(2)}
 										/>
 									</TableCell>

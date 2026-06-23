@@ -114,7 +114,7 @@ export const Header = ({ setIsMobileOpen, isMobileOpen, handleAppChange }) => {
 							alt="Vyntar Logo"
 							onClick={() => navigate('/dashboard')}
 							sx={{
-								height: { xs: '50px', sm: '100%' },
+								height: '50px',
 								width: 'auto',
 								maxWidth: '140px',
 								objectFit: 'contain',
@@ -175,7 +175,7 @@ export const Header = ({ setIsMobileOpen, isMobileOpen, handleAppChange }) => {
 										transition: 'all 0.3s ease',
 										'&.Mui-selected': {
 											color: '#0156A6',
-											fontWeight: 1000,
+											fontWeight: 700,
 										},
 									},
 									'& .MuiTabs-indicator': {
@@ -239,10 +239,10 @@ export const Header = ({ setIsMobileOpen, isMobileOpen, handleAppChange }) => {
 					},
 				}}
 			>
-				<List sx={{ minWidth: 200, pb: 0 }}>
+				<List sx={{ width: 200, pb: 0 }}>
 					<ListItem>
 						<ListItemText
-							primary={`Welcome, ${user?.name || user?.username || 'User'}`}
+							primary={`Welcome, ${user?.tenant?.name || 'User'}`}
 							primaryTypographyProps={{
 								fontWeight: 700,
 								textAlign: 'center',
@@ -286,6 +286,7 @@ export const Header = ({ setIsMobileOpen, isMobileOpen, handleAppChange }) => {
 				onConfirm={handleLogoutConfirm}
 				confirmText="Logout"
 				cancelText="Cancel"
+				type="logout"
 			/>
 		</>
 	);

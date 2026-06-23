@@ -1,4 +1,10 @@
-import React, { useState } from 'react';
+import { Close } from '@mui/icons-material';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import DescriptionIcon from '@mui/icons-material/Description';
+import HistoryIcon from '@mui/icons-material/History';
+import ListIcon from '@mui/icons-material/List';
+import SettingsIcon from '@mui/icons-material/Settings';
 import {
 	Drawer,
 	List,
@@ -8,29 +14,21 @@ import {
 	Box,
 	Toolbar,
 	Typography,
-	Divider,
 	IconButton,
 	MenuItem,
 	Menu,
 	Button,
 } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import ListIcon from '@mui/icons-material/List';
-import DescriptionIcon from '@mui/icons-material/Description';
-import HistoryIcon from '@mui/icons-material/History';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import SettingsIcon from '@mui/icons-material/Settings';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+
 import { useApplications } from '../../contexts/ApplicationContext';
-import { useAuth } from '../../contexts/AuthContext';
 import {
 	getPagePath,
 	pageDisplayInfo,
 	getPageCodeFromPath,
-	pageComponentMap,
 } from '../../helpers/pageMapping.jsx';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper.jsx';
-import { Close } from '@mui/icons-material';
 
 const drawerWidth = 70;
 
@@ -198,7 +196,9 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen, handleAppChange }) => {
 
 	const getPageDisplayName = (pageCode) => {
 		const info = pageDisplayInfo[pageCode];
-		if (info) return info.name;
+		if (info) {
+			return info.name;
+		}
 		return pageCode
 			?.split('_')
 			.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -269,7 +269,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen, handleAppChange }) => {
 									sx={{
 										width: '100%',
 										'& .MuiTypography-root': {
-											fontWeight: isActive ? 1000 : 400,
+											fontWeight: isActive ? 700 : 400,
 											color: '#0156A6',
 											transition: 'color 0.2s ease',
 											textAlign: { sm: 'center' },

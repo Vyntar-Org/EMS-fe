@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { useCommonData } from '../../contexts/CommonDataContext';
-import { useApplications } from '../../contexts/ApplicationContext';
-import { useMemo } from 'react';
-import { api } from '../../helpers/api';
-import { API_URLS } from '../../helpers/apiUrls';
+import {
+	DownloadForOffline,
+	Insights,
+	LocalGasStation,
+	Opacity,
+	Speed,
+} from '@mui/icons-material';
 import {
 	Box,
 	Button,
@@ -21,24 +22,23 @@ import {
 	Tooltip,
 	Typography,
 } from '@mui/material';
-import { formatTimestamp } from '../../helpers/common';
 import Papa from 'papaparse';
-import { CustomAutocomplete } from '../common/CustomAutocomplete';
-import {
-	DownloadForOffline,
-	Insights,
-	LocalGasStation,
-	Opacity,
-	Speed,
-} from '@mui/icons-material';
-import NoDataFound from '../common/errors/NoDataFound';
-import TemperatureMachineListSkeleton from '../skeletonLoaders/TemperatureMachineListSkeleton';
-import CustomCard from '../common/CustomCard';
-import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
-import PremiumModal from '../common/PremiumModal';
-import { Loading } from '../common/Loading';
+import { useEffect, useState, useMemo } from 'react';
 import ReactApexChart from 'react-apexcharts';
+
+import { useApplications } from '../../contexts/ApplicationContext';
+import { useCommonData } from '../../contexts/CommonDataContext';
+import { api } from '../../helpers/api';
+import { API_URLS } from '../../helpers/apiUrls';
+import { formatTimestamp } from '../../helpers/common';
+import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import CustomCard from '../common/CustomCard';
 import { CustomSelect } from '../common/CustomSelect';
+import NoDataFound from '../common/errors/NoDataFound';
+import { Loading } from '../common/Loading';
+import PremiumModal from '../common/PremiumModal';
+import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
+import TemperatureMachineListSkeleton from '../skeletonLoaders/TemperatureMachineListSkeleton';
 
 const handleDownload = (filteredMachines, selectedApp) => {
 	const headers = [
@@ -242,7 +242,9 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 						const selected = parametersData.find(
 							(t) => t.value === e.target.value
 						);
-						if (!selected) return;
+						if (!selected) {
+							return;
+						}
 						handleTabChange(selected.value, selected.desc);
 					}}
 				/>
@@ -274,14 +276,10 @@ const FuelLevelCard = ({
 	return (
 		<Box
 			sx={{
-				// px: 1,
 				width: '100%',
-				// backgroundColor: "rgba(0,0,0,0.03)",
 				borderRadius: 1,
-				// boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
 				display: 'flex',
 				flexDirection: 'column',
-				// gap: 1,
 				mb: 1,
 			}}
 		>
@@ -378,7 +376,6 @@ const MetricBlock = ({
 	rateOfFlow,
 	latestTimestamp,
 	totalizer,
-	mtd,
 	handleOpenModal,
 }) => {
 	const isOnline = status?.toLowerCase() === 'online';
@@ -425,8 +422,8 @@ const MetricBlock = ({
 						<ResponsiveTextWrapper
 							value={formatTimestamp(latestTimestamp)}
 							color="#595959"
-							fontWeight="bold"
-							fontSize="16px"
+							fontWeight={500}
+							fontSize="14px"
 						/>
 					</Box>
 
@@ -434,7 +431,7 @@ const MetricBlock = ({
 						<ResponsiveTextWrapper
 							value={`${totalizer?.toFixed(1)} m³`}
 							variant="subtitle1"
-							fontWeight="bold"
+							fontWeight={500}
 						/>
 					</Box>
 				</Stack>
@@ -514,7 +511,7 @@ const MetricBlock = ({
 												<ResponsiveTextWrapper
 													fontSize="14px"
 													color="#333333"
-													fontWeight="bold"
+													fontWeight={500}
 													value={row.name}
 												/>
 											</Box>
@@ -527,7 +524,7 @@ const MetricBlock = ({
 										<ResponsiveTextWrapper
 											fontSize="14px"
 											color="#333333"
-											fontWeight="bold"
+											fontWeight={500}
 											value={row.value}
 										/>
 									</TableCell>
@@ -569,8 +566,9 @@ const FuelMachineList = () => {
 	const machinesData = machineListData?.machines || [];
 
 	const filteredMachines = useMemo(() => {
-		if (slavesId == null || slavesId === '' || !machinesData.length)
+		if (slavesId === null || slavesId === '' || !machinesData.length) {
 			return machinesData;
+		}
 
 		return machinesData.filter((mac) => mac.slave_id === slavesId);
 	}, [machinesData, slavesId]);
@@ -747,7 +745,7 @@ const FuelMachineList = () => {
 				confirmText={null}
 				cancelText={null}
 			>
-				{Boolean(modalDetails?.isOpen) ? (
+				{modalDetails?.isOpen ? (
 					<ModalContentForTrend
 						handleTabChange={handleTabChange}
 						tab={modalDetails?.tab}

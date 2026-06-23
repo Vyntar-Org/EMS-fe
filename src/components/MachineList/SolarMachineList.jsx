@@ -1,6 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { API_URLS } from '../../helpers/apiUrls';
-import { api } from '../../helpers/api';
+import {
+	Speed,
+	DownloadForOffline,
+	Insights,
+	Opacity,
+	Thermostat,
+} from '@mui/icons-material';
 import {
 	Box,
 	Button,
@@ -16,26 +20,23 @@ import {
 	TableRow,
 	Tooltip,
 } from '@mui/material';
-import { CustomSelect } from '../common/CustomSelect';
-import { CustomAutocomplete } from '../common/CustomAutocomplete';
-import {
-	Speed,
-	DownloadForOffline,
-	Insights,
-	Opacity,
-	Thermostat,
-} from '@mui/icons-material';
-import NoDataFound from '../common/errors/NoDataFound';
-import CustomCard from '../common/CustomCard';
-import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
-import { formatTimestamp } from '../../helpers/common';
+import Papa from 'papaparse';
+import { useEffect, useMemo, useState } from 'react';
+import ReactApexChart from 'react-apexcharts';
+
+import { SOLAR_TREND_TAB_OPTIONS } from '../../constants/solarMachineList';
 import { useApplications } from '../../contexts/ApplicationContext';
 import { useCommonData } from '../../contexts/CommonDataContext';
-import Papa from 'papaparse';
-import PremiumModal from '../common/PremiumModal';
-import ReactApexChart from 'react-apexcharts';
+import { api } from '../../helpers/api';
+import { API_URLS } from '../../helpers/apiUrls';
+import { formatTimestamp } from '../../helpers/common';
+import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import CustomCard from '../common/CustomCard';
+import { CustomSelect } from '../common/CustomSelect';
+import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
-import { SOLAR_TREND_TAB_OPTIONS } from '../../constants/solarMachineList';
+import PremiumModal from '../common/PremiumModal';
+import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
 import SolarMachineListSkeleton from '../skeletonLoaders/SolarMachineListSkeleton';
 
 const getMachineSlaveId = (machine) => machine?.slave_id ?? machine?.id;
@@ -185,8 +186,8 @@ const SolarMetricBlock = ({
 				<ResponsiveTextWrapper
 					value={formatTimestamp(lastUpdated)}
 					color="#595959"
-					fontWeight="bold"
-					fontSize="16px"
+					fontWeight={500}
+					fontSize="14px"
 					sx={{ mb: 1, display: 'block' }}
 				/>
 			)}
@@ -252,7 +253,7 @@ const SolarMetricBlock = ({
 												<ResponsiveTextWrapper
 													fontSize="14px"
 													color="#333333"
-													fontWeight="bold"
+													fontWeight={500}
 													value={row.name}
 												/>
 											</Box>
@@ -265,7 +266,7 @@ const SolarMetricBlock = ({
 										<ResponsiveTextWrapper
 											fontSize="14px"
 											color="#333333"
-											fontWeight="bold"
+											fontWeight={500}
 											value={row.value}
 										/>
 									</TableCell>
@@ -507,7 +508,9 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 						const selected = SOLAR_TREND_TAB_OPTIONS.find(
 							(t) => t.tab === e.target.value
 						);
-						if (!selected) return;
+						if (!selected) {
+							return;
+						}
 						handleTabChange(selected.tab, selected.tabDesc);
 					}}
 				/>
@@ -543,8 +546,9 @@ const SolarMachineList = () => {
 	const machines = machineListData?.machines || [];
 
 	const filteredMachines = useMemo(() => {
-		if (slavesId == null || slavesId === '' || !machines.length)
+		if (slavesId === null || slavesId === '' || !machines.length) {
 			return machines;
+		}
 		return machines.filter(
 			(m) => String(getMachineSlaveId(m)) === String(slavesId)
 		);
@@ -657,7 +661,7 @@ const SolarMachineList = () => {
 				confirmText={null}
 				cancelText={null}
 			>
-				{Boolean(modalDetails?.isOpen) ? (
+				{modalDetails?.isOpen ? (
 					<ModalContentForTrend
 						handleTabChange={handleTabChange}
 						tab={modalDetails?.tab}
