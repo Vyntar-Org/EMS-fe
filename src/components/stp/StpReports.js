@@ -25,6 +25,7 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import EventIcon from "@mui/icons-material/Event";
 import MenuItem from "@mui/material/MenuItem";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import { fetchStpDailyReports, fetchStpMonthlyReports, fetchStpDailyReadingReports } from "../../auth/stp/StpReportsApi";
 
 const months = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -98,32 +99,29 @@ function StpReports({ onSidebarToggle, sidebarVisible }) {
         return result;
     };
 
-    // Fetch Mock Data
+    // Fetch Real Data
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             setError(null);
 
             try {
-                // Simulate network delay
-                await new Promise(resolve => setTimeout(resolve, 500));
-
                 if (activeTab === 0) {
-                    // Daily Consumption
-                    const res = generateMockData(selectedMonth, selectedYear, 'consumption');
+                    // Daily Reports
+                    const res = await fetchStpDailyReports(selectedMonth, selectedYear);
                     setConsumptionData(res);
                 } else if (activeTab === 1) {
-                    // Monthly Consumption
-                    const res = generateMockMonthlyData(selectedYear);
+                    // Monthly Reports
+                    const res = await fetchStpMonthlyReports(selectedYear);
                     setMonthlyConsumptionData(res);
                 } else if (activeTab === 2) {
-                    // Daily Reading
-                    const res = generateMockData(selectedMonth, selectedYear, 'reading');
+                    // Daily Reading Reports
+                    const res = await fetchStpDailyReadingReports(selectedYear, selectedMonth);
                     setReadingData(res);
                 }
             } catch (err) {
-                console.error("Mock Data Error:", err);
-                setError(err.message || "Failed to generate data");
+                console.error("Data Fetch Error:", err);
+                setError(err.message || "Failed to fetch data");
             } finally {
                 setLoading(false);
             }
@@ -144,10 +142,12 @@ function StpReports({ onSidebarToggle, sidebarVisible }) {
                     const dDay = d.date ? Number(String(d.date).split('-').pop()) : Number(d.date);
                     return dDay === day;
                 });
-                return dayData ? (dayData.value || 0) : 0;
+                return dayData && dayData.value != null ? dayData.value : '--';
             });
 
-            const total = consumptionValues.reduce((sum, val) => sum + val, 0);
+            // Calculate Total only from numeric values
+            const numericValues = consumptionValues.filter(v => typeof v === 'number');
+            const total = numericValues.reduce((sum, val) => sum + val, 0);
 
             return {
                 station,
@@ -170,9 +170,14 @@ function StpReports({ onSidebarToggle, sidebarVisible }) {
                 return dayData && dayData.value != null ? dayData.value : '--';
             });
 
+            // Calculate Total
+            const numericValues = readingValues.filter(v => typeof v === 'number');
+            const total = numericValues.reduce((sum, val) => sum + val, 0);
+            
             return {
                 station,
-                data: readingValues
+                data: readingValues,
+                total: total.toFixed(2)
             };
         });
     };
@@ -185,10 +190,12 @@ function StpReports({ onSidebarToggle, sidebarVisible }) {
             const consumptionValues = months.map((_, index) => {
                 const monthNumber = index + 1;
                 const monthRecord = monthlyData.find(d => parseInt(d.month) === monthNumber);
-                return monthRecord ? (monthRecord.value || 0) : 0;
+                return monthRecord && monthRecord.value != null ? monthRecord.value : '--';
             });
 
-            const total = consumptionValues.reduce((sum, val) => sum + val, 0);
+            // Calculate Total only from numeric values
+            const numericValues = consumptionValues.filter(v => typeof v === 'number');
+            const total = numericValues.reduce((sum, val) => sum + val, 0);
 
             return {
                 station,
@@ -262,8 +269,8 @@ function StpReports({ onSidebarToggle, sidebarVisible }) {
             headers = ['STATION', ...months, 'TOTAL'];
             return { headers, data: rows.map(r => [r.station, ...r.data, r.total]), title: 'Monthwise Consumption Report' };
         } else if (activeTab === 2) {
-            headers = ['STATION', ...currentMonthDays.map(d => `Day ${d}`)];
-            return { headers, data: rows.map(r => [r.station, ...r.data]), title: 'Daily Meter Reading Report' };
+            headers = ['STATION', ...currentMonthDays.map(d => `Day ${d}`), 'TOTAL'];
+            return { headers, data: rows.map(r => [r.station, ...r.data, r.total]), title: 'Daily Meter Reading Report' };
         }
         return { headers: [], data: [], title: '' };
     };
@@ -651,6 +658,7 @@ function StpReports({ onSidebarToggle, sidebarVisible }) {
                                 {currentMonthDays.map(day => (
                                     <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>{day}</b></TableCell>
                                 ))}
+                                <TableCell align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>Total</b></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -662,6 +670,7 @@ function StpReports({ onSidebarToggle, sidebarVisible }) {
                                             {typeof val === 'number' ? val.toFixed(2) : val}
                                         </TableCell>
                                     ))}
+                                    <TableCell align="center">{typeof row.total === 'number' ? row.total.toFixed(2) : row.total}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

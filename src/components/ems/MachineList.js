@@ -1196,7 +1196,7 @@ const MachineList = ({ onSidebarToggle, sidebarVisible }) => {
           display: "flex",
           flexDirection: "row",
           flexWrap: "wrap",
-          justifyContent: "space-between",
+          // justifyContent: "space-between",
           gap: { xs: "15px", sm: "20px", md: "20px 50px" },
           padding: { xs: "0 5px", sm: "0 15px", md: "0 30px" },
         }}

@@ -66,37 +66,37 @@ export const getFlowMeterSlaveList = async () => {
 };
 
 /**
- * Get FlowMeter Daily Consumption Reports
+ * Get FlowMeter Daily Reports
  * @param {number} month - The month number (1-12)
  * @param {number} year - The year number
  * @returns {Promise} Promise object represents the report data
  */
-export const getFlowMeterDailyConsumptionReports = async (month, year) => {
+export const getFlowMeterDailyReports = async (month, year) => {
   try {
-    const response = await apiClient.get('/applications/flowmeter/daily-consumption-reports/', {
+    const response = await apiClient.get('/applications/flowmeter/daily-reports/', {
       params: { month, year }
     });
     if (response.data.success) {
       return response.data;
     } else {
-      throw new Error(response.data.message || 'Failed to fetch daily consumption reports');
+      throw new Error(response.data.message || 'Failed to fetch daily reports');
     }
   } catch (error) {
-    console.error('Error fetching daily consumption reports:', error);
+    console.error('Error fetching daily reports:', error);
     throw error;
   }
 };
 
 /**
  * Get FlowMeter Daily Reading Reports
- * @param {number} month - The month number (1-12)
  * @param {number} year - The year number
+ * @param {number} month - The month number (1-12)
  * @returns {Promise} Promise object represents the report data
  */
-export const getFlowMeterDailyReadingReports = async (month, year) => {
+export const getFlowMeterDailyReadingReports = async (year, month) => {
   try {
     const response = await apiClient.get('/applications/flowmeter/daily-reading-reports/', {
-      params: { month, year }
+      params: { year, month }
     });
     if (response.data.success) {
       return response.data;
@@ -110,22 +110,22 @@ export const getFlowMeterDailyReadingReports = async (month, year) => {
 };
 
 /**
- * Get FlowMeter Monthly Consumption Reports
+ * Get FlowMeter Monthly Reports
  * @param {number} year - The year number
  * @returns {Promise} Promise object represents the report data
  */
-export const getFlowMeterMonthlyConsumptionReports = async (year) => {
+export const getFlowMeterMonthlyReports = async (year) => {
   try {
-    const response = await apiClient.get('/applications/flowmeter/monthly-consumption-reports/', {
+    const response = await apiClient.get('/applications/flowmeter/monthly-reports/', {
       params: { year }
     });
     if (response.data.success) {
       return response.data;
     } else {
-      throw new Error(response.data.message || 'Failed to fetch monthly consumption reports');
+      throw new Error(response.data.message || 'Failed to fetch monthly reports');
     }
   } catch (error) {
-    console.error('Error fetching monthly consumption reports:', error);
+    console.error('Error fetching monthly reports:', error);
     throw error;
   }
 };
