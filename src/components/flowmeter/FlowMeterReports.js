@@ -26,9 +26,9 @@ import EventIcon from "@mui/icons-material/Event";
 import MenuItem from "@mui/material/MenuItem";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import {
-    getFlowMeterDailyConsumptionReports,
+    getFlowMeterDailyReports,
     getFlowMeterDailyReadingReports,
-    getFlowMeterMonthlyConsumptionReports,
+    getFlowMeterMonthlyReports,
 } from "../../auth/flowmeter/FlowMeterReportsApi";
 
 const months = [
@@ -75,16 +75,16 @@ function FlowMeterReports({ onSidebarToggle, sidebarVisible }) {
 
             try {
                 if (activeTab === 0) {
-                    // Daily Consumption
-                    const res = await getFlowMeterDailyConsumptionReports(selectedMonth, selectedYear);
+                    // Daily Reports
+                    const res = await getFlowMeterDailyReports(selectedMonth, selectedYear);
                     setConsumptionData(res);
                 } else if (activeTab === 1) {
-                    // Monthly Consumption
-                    const res = await getFlowMeterMonthlyConsumptionReports(selectedYear);
+                    // Monthly Reports
+                    const res = await getFlowMeterMonthlyReports(selectedYear);
                     setMonthlyConsumptionData(res);
                 } else if (activeTab === 2) {
-                    // Daily Reading
-                    const res = await getFlowMeterDailyReadingReports(selectedMonth, selectedYear);
+                    // Daily Reading Reports
+                    const res = await getFlowMeterDailyReadingReports(selectedYear, selectedMonth);
                     setReadingData(res);
                 }
             } catch (err) {
@@ -110,10 +110,11 @@ function FlowMeterReports({ onSidebarToggle, sidebarVisible }) {
                     const dDay = d.date ? Number(String(d.date).split('-').pop()) : Number(d.date);
                     return dDay === day;
                 });
-                return dayData ? (dayData.value || 0) : 0;
+                return dayData && dayData.value != null ? dayData.value : '--';
             });
 
-            const total = consumptionValues.reduce((sum, val) => sum + val, 0);
+            const numericValues = consumptionValues.filter(v => typeof v === 'number');
+            const total = numericValues.reduce((sum, val) => sum + val, 0);
 
             return {
                 station,
@@ -136,9 +137,13 @@ function FlowMeterReports({ onSidebarToggle, sidebarVisible }) {
                 return dayData && dayData.value != null ? dayData.value : '--';
             });
 
+            const numericValues = readingValues.filter(v => typeof v === 'number');
+            const total = numericValues.reduce((sum, val) => sum + val, 0);
+            
             return {
                 station,
-                data: readingValues
+                data: readingValues,
+                total: total.toFixed(2)
             };
         });
     };
@@ -151,10 +156,11 @@ function FlowMeterReports({ onSidebarToggle, sidebarVisible }) {
             const consumptionValues = months.map((_, index) => {
                 const monthNumber = index + 1;
                 const monthRecord = monthlyData.find(d => parseInt(d.month) === monthNumber);
-                return monthRecord ? (monthRecord.value || 0) : 0;
+                return monthRecord && monthRecord.value != null ? monthRecord.value : '--';
             });
 
-            const total = consumptionValues.reduce((sum, val) => sum + val, 0);
+            const numericValues = consumptionValues.filter(v => typeof v === 'number');
+            const total = numericValues.reduce((sum, val) => sum + val, 0);
 
             return {
                 station,
@@ -228,8 +234,8 @@ function FlowMeterReports({ onSidebarToggle, sidebarVisible }) {
             headers = ['STATION', ...months, 'TOTAL'];
             return { headers, data: rows.map(r => [r.station, ...r.data, r.total]), title: 'Monthwise Consumption Report' };
         } else if (activeTab === 2) {
-            headers = ['STATION', ...currentMonthDays.map(d => `Day ${d}`)];
-            return { headers, data: rows.map(r => [r.station, ...r.data]), title: 'Daily Meter Reading Report' };
+            headers = ['STATION', ...currentMonthDays.map(d => `Day ${d}`), 'TOTAL'];
+            return { headers, data: rows.map(r => [r.station, ...r.data, r.total]), title: 'Daily Meter Reading Report' };
         }
         return { headers: [], data: [], title: '' };
     };
@@ -621,6 +627,7 @@ function FlowMeterReports({ onSidebarToggle, sidebarVisible }) {
                                 {currentMonthDays.map(day => (
                                     <TableCell key={day} align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>{day}</b></TableCell>
                                 ))}
+                                <TableCell align="center" sx={{ backgroundColor: "#0156a6", color: "#fff" }}><b>Total</b></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -632,6 +639,7 @@ function FlowMeterReports({ onSidebarToggle, sidebarVisible }) {
                                             {typeof val === 'number' ? val.toFixed(2) : val}
                                         </TableCell>
                                     ))}
+                                    <TableCell align="center">{typeof row.total === 'number' ? row.total.toFixed(2) : row.total}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
