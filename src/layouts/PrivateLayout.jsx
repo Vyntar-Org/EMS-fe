@@ -77,7 +77,7 @@ export const PrivateLayout = () => {
 					sx={{
 						flexGrow: 1,
 						minHeight: 0,
-						overflowY: {xs:'auto',md:'hidden'},
+						overflowY: { xs: 'auto', md: 'hidden' },
 						overflowX: 'hidden',
 						p: 1,
 						backgroundColor: 'background.default',
