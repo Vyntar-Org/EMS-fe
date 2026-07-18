@@ -30,7 +30,7 @@ const ENERGYLoadBalance = ({ data }) => {
 			<Box sx={{ width: '40%' }} textAlign="end">
 				<ResponsiveTextWrapper
 					fontSize="14px"
-					color="primary.main"
+					color="text.accent"
 					fontWeight={800}
 					mt={1}
 					value={`${value?.toLocaleString() || 0} ${unit && unit}`}
@@ -79,7 +79,7 @@ const ENERGYLoadBalance = ({ data }) => {
 					<MetricBlock label="Current LBI %" value={data?.lbi || 0} unit="" />
 				</Grid>
 			) : (
-				<NoDataFound />
+				<NoDataFound message="Waiting for live device data — readings appear automatically" />
 			)}
 		</CustomCard>
 	);

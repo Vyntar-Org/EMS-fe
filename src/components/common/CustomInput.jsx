@@ -36,7 +36,7 @@ export const CustomInput = ({
 				placeholder={placeholder}
 				fullWidth={fullWidth}
 				InputLabelProps={{
-					style: { color: '#A0AAB4' },
+					sx: { color: 'text.secondary' },
 				}}
 				InputProps={{
 					endAdornment: icon,

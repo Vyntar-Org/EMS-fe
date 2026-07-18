@@ -15,6 +15,7 @@ import {
 	TableRow,
 	Paper,
 	TablePagination,
+	useTheme,
 } from '@mui/material';
 import { List } from 'react-window';
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
@@ -29,6 +30,7 @@ export const CustomTable = ({
 	onPageChange,
 	onRowsPerPageChange,
 }) => {
+	const theme = useTheme();
 	const isServerSide = Boolean(onPageChange && onRowsPerPageChange);
 
 	const [localPagination, setLocalPagination] = useState({
@@ -92,7 +94,15 @@ export const CustomTable = ({
 						display: 'flex',
 						width: fillWidth ? '100%' : undefined,
 						backgroundColor:
-							index % 2 === 0 ? 'background.default ' : '#e7f3ff4a',
+							index % 2 === 0
+								? theme.palette.background.paper
+								: theme.palette.surface.zebra,
+					}}
+					sx={{
+						transition: 'background-color 0.15s ease',
+						'&:hover': {
+							backgroundColor: `${theme.palette.action.hover} !important`,
+						},
 					}}
 					key={row.id}
 				>
@@ -126,7 +136,7 @@ export const CustomTable = ({
 				</TableRow>
 			);
 		},
-		[rows, fillWidth]
+		[rows, fillWidth, theme]
 	);
 
 	const handleLocalPageChange = (event, newPage) => {
@@ -167,7 +177,7 @@ export const CustomTable = ({
 								sx={{
 									display: 'flex',
 									width: '100%',
-									backgroundColor: '#0156A6',
+									backgroundColor: 'primary.main',
 								}}
 							>
 								{headerGroup.headers.map((header) => (
@@ -187,7 +197,7 @@ export const CustomTable = ({
 														maxWidth: header?.getSize(),
 												  }),
 											p: 1,
-											color: '#fff',
+											color: 'primary.contrastText',
 											border: '1px solid',
 											borderColor: 'divider',
 										}}
@@ -236,10 +246,10 @@ export const CustomTable = ({
 					border: '1px solid',
 					borderRadius: 1,
 					borderColor: 'divider',
-					backgroundColor: '#e7f3ff4a',
+					backgroundColor: 'surface.zebra',
 					'.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows':
 						{
-							color: '#4A5568',
+							color: 'text.secondary',
 							fontSize: '14px',
 							fontWeight: 500,
 						},

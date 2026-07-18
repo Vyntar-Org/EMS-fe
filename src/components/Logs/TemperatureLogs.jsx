@@ -48,10 +48,10 @@ const TemperatureLogsFilterHeader = ({
 						sx={{
 							'& .MuiOutlinedInput-root': {
 								borderRadius: 2,
-								backgroundColor: '#f9f9f9',
+								backgroundColor: 'surface.muted',
 								transition: '0.3s',
 								'&:hover': {
-									backgroundColor: '#fff',
+									backgroundColor: 'background.paper',
 								},
 							},
 						}}
@@ -69,10 +69,10 @@ const TemperatureLogsFilterHeader = ({
 						sx={{
 							'& .MuiOutlinedInput-root': {
 								borderRadius: 2,
-								backgroundColor: '#f9f9f9',
+								backgroundColor: 'surface.muted',
 								transition: '0.3s',
 								'&:hover': {
-									backgroundColor: '#fff',
+									backgroundColor: 'background.paper',
 								},
 							},
 						}}
@@ -133,12 +133,12 @@ const TemperatureLogsFilterHeader = ({
 									p: 0,
 									borderRadius: 2,
 									boxShadow: 'none',
-									backgroundColor: '#f5f5f5',
-									color: '#666666',
+									backgroundColor: 'surface.muted',
+									color: 'text.secondary',
 									'&:hover': {
 										boxShadow: 'none',
-										backgroundColor: '#e0e0e0',
-										color: '#333333',
+										backgroundColor: 'action.hover',
+										color: 'text.primary',
 									},
 								}}
 							>
@@ -301,7 +301,7 @@ const TemperatureLogs = () => {
 				{loading ? (
 					<Loading />
 				) : !logsData?.length ? (
-					<NoDataFound />
+					<NoDataFound message="Select a device and date range, then click Search to view logs" />
 				) : (
 					<CustomTable
 						data={logsData}

@@ -1,29 +1,43 @@
-const CHIP_VALUE_COLORS = {
+import { useTheme } from '@mui/material';
+import { alpha, darken, lighten } from '@mui/material/styles';
+
+// Semantic tone per status value — resolved against the active theme
+// palette so chips stay readable in both light and dark modes.
+const STATUS_TONE = {
 	// level values
-	Full: { bg: '#C6F6D5', color: '#276749' },
-	Low: { bg: '#FEEBC8', color: '#7B341E' },
-	Empty: { bg: '#FED7D7', color: '#742A2A' },
-	Medium: { bg: '#BEE3F8', color: '#2A4365' },
+	FULL: 'success',
+	LOW: 'warning',
+	EMPTY: 'error',
+	MEDIUM: 'primary',
 
 	// motor / status values
-	ON: { bg: '#C6F6D5', color: '#276749' },
-	OFF: { bg: '#FED7D7', color: '#742A2A' },
-	RUNNING: { bg: '#C6F6D5', color: '#276749' },
-	STOPPED: { bg: '#FED7D7', color: '#742A2A' },
-	IDLE: { bg: '#EDF2F7', color: '#4A5568' },
-	FAULT: { bg: '#FED7D7', color: '#742A2A' },
-	ACTIVE: { bg: '#C6F6D5', color: '#276749' },
-	INACTIVE: { bg: '#EDF2F7', color: '#4A5568' },
+	ON: 'success',
+	OFF: 'error',
+	RUNNING: 'success',
+	STOPPED: 'error',
+	IDLE: 'neutral',
+	FAULT: 'error',
+	ACTIVE: 'success',
+	INACTIVE: 'neutral',
 };
 
 const StatusChips = ({ value }) => {
-	const style =
-		CHIP_VALUE_COLORS[String(value).toUpperCase()] ??
-		CHIP_VALUE_COLORS[String(value)];
+	const theme = useTheme();
+	const tone = STATUS_TONE[String(value).toUpperCase()];
 
-	if (!style) {
-		return <span style={{ fontSize: '13px' }}>{value ?? '-'}</span>;
+	if (!tone) {
+		return (
+			<span style={{ fontSize: '13px', color: theme.palette.text.primary }}>
+				{value ?? '-'}
+			</span>
+		);
 	}
+
+	const isDark = theme.palette.mode === 'dark';
+	const base =
+		tone === 'neutral'
+			? theme.palette.text.secondary
+			: theme.palette[tone].main;
 
 	return (
 		<span
@@ -33,8 +47,8 @@ const StatusChips = ({ value }) => {
 				borderRadius: '20px',
 				fontSize: '11px',
 				fontWeight: 600,
-				backgroundColor: style.bg,
-				color: style.color,
+				backgroundColor: alpha(base, isDark ? 0.24 : 0.14),
+				color: isDark ? lighten(base, 0.35) : darken(base, 0.3),
 				letterSpacing: '0.02em',
 			}}
 		>

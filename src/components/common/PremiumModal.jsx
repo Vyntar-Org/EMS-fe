@@ -13,13 +13,11 @@ import { styled } from '@mui/material/styles';
 
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 
-const StyledDialog = styled(Dialog)(() => ({
+const StyledDialog = styled(Dialog)(({ theme }) => ({
 	'& .MuiDialog-paper': {
 		borderRadius: '16px',
-		backgroundColor: '#fff',
-		color: '#334155',
-		boxShadow:
-			'0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+		backgroundColor: theme.palette.background.paper,
+		color: theme.palette.text.primary,
 	},
 }));
 
@@ -55,7 +53,8 @@ const PremiumModal = ({
 					justifyContent: 'space-between',
 					alignItems: 'center',
 					fontWeight: 'bold',
-					borderBottom: isLogout ? 'none' : '1px solid rgba(0,0,0,0.08)',
+					borderBottom: isLogout ? 'none' : '1px solid',
+					borderColor: isLogout ? 'transparent' : 'divider',
 					pt: isLogout ? 3 : 1.5,
 					pb: 1,
 					pr: 1.5,
@@ -70,7 +69,7 @@ const PremiumModal = ({
 					width="calc(100% - 40px)"
 				>
 					{isLogout && (
-						<LogoutOutlined sx={{ color: '#EF4444', fontSize: '22px' }} />
+						<LogoutOutlined sx={{ color: 'error.main', fontSize: '22px' }} />
 					)}
 					<Box sx={{ width: '100%' }}>
 						<ResponsiveTextWrapper
@@ -90,8 +89,8 @@ const PremiumModal = ({
 							position: isLogout ? 'absolute' : 'static',
 							right: isLogout ? 12 : 'auto',
 							top: isLogout ? 12 : 'auto',
-							color: '#94A3B8',
-							'&:hover': { color: '#64748B' },
+							color: 'text.secondary',
+							'&:hover': { color: 'text.primary' },
 						}}
 					>
 						<Close />
@@ -113,7 +112,11 @@ const PremiumModal = ({
 					<Box sx={{ textAlign: 'left', py: 0 }}>
 						<Typography
 							variant="body2"
-							sx={{ color: '#64748B', fontSize: '14px', lineHeight: 1.6 }}
+							sx={{
+								color: 'text.secondary',
+								fontSize: '14px',
+								lineHeight: 1.6,
+							}}
 						>
 							{content ||
 								(isLogout &&
@@ -128,7 +131,8 @@ const PremiumModal = ({
 						justifyContent: 'end',
 						p: 2.5,
 						pt: isLogout ? 1.5 : 1,
-						borderTop: isLogout ? 'none' : '1px solid rgba(0,0,0,0.08)',
+						borderTop: isLogout ? 'none' : '1px solid',
+						borderColor: isLogout ? 'transparent' : 'divider',
 						gap: 1.5,
 					}}
 				>
@@ -141,12 +145,12 @@ const PremiumModal = ({
 								px: 2.5,
 								height: '40px',
 								fontWeight: 600,
-								color: '#64748B',
+								color: 'text.secondary',
 								textTransform: 'none',
 								borderRadius: '8px',
 								'&:hover': {
-									backgroundColor: '#F1F5F9',
-									color: '#1E293B',
+									backgroundColor: 'surface.muted',
+									color: 'text.primary',
 								},
 							}}
 						>
@@ -165,10 +169,14 @@ const PremiumModal = ({
 								fontWeight: 600,
 								textTransform: 'none',
 								borderRadius: '8px',
-								background: isLogout ? '#EF4444' : '#F5D547',
-								color: isLogout ? '#fff' : '#000',
+								backgroundColor: isLogout ? 'error.main' : 'secondary.main',
+								color: isLogout
+									? 'primary.contrastText'
+									: 'secondary.contrastText',
 								'&:hover': {
-									background: isLogout ? '#DC2626' : '#e8c011',
+									backgroundColor: isLogout
+										? 'brand.dangerHover'
+										: 'secondary.dark',
 								},
 							}}
 						>

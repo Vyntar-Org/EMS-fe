@@ -1,3 +1,5 @@
+import { alpha } from '@mui/material/styles';
+import { CHART_COLORS } from '../../../helpers/chartConfig';
 import React, { useEffect, useMemo, useState } from 'react';
 import CustomCard from '../../common/CustomCard';
 import { useCommonData } from '../../../contexts/CommonDataContext';
@@ -66,7 +68,18 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	const options1 = {
 		chart: {
 			type: 'bar',
-			toolbar: { show: false },
+			toolbar: {
+				show: true,
+				tools: {
+					download: true,
+					selection: false,
+					zoom: false,
+					zoomin: false,
+					zoomout: false,
+					pan: false,
+					reset: false,
+				},
+			},
 		},
 		plotOptions: {
 			bar: {
@@ -81,7 +94,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 			offsetY: -20,
 			style: {
 				fontSize: '12px',
-				colors: ['#2E4355'],
+				colors: [CHART_COLORS.navy],
 				fontWeight: 'bold',
 			},
 		},
@@ -117,7 +130,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 			},
 		},
 		fill: {
-			colors: ['#0a223e'],
+			colors: [CHART_COLORS.navy],
 		},
 		grid: {
 			show: false,
@@ -142,7 +155,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 		stroke: {
 			curve: 'smooth',
 			width: 3,
-			colors: ['#2E4355'],
+			colors: [CHART_COLORS.navy],
 		},
 		plotOptions: {
 			bar: { enabled: false },
@@ -164,12 +177,38 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 					exclusive
 					onChange={(e, newMode) => newMode !== null && setMode(newMode)}
 					sx={{
-						height: '28px',
-						bgcolor: 'background.paper',
-						'& .MuiToggleButton-root.Mui-selected': {
-							bgcolor: 'primary.main',
-							color: 'white',
-							'&:hover': { bgcolor: 'primary.dark' },
+						height: '30px',
+						p: '3px',
+						gap: '2px',
+						borderRadius: '10px',
+						bgcolor: (t) =>
+							alpha(
+								t.palette.primary.main,
+								t.palette.mode === 'dark' ? 0.16 : 0.06
+							),
+						border: '1px solid',
+						borderColor: 'divider',
+						'& .MuiToggleButton-root': {
+							border: 0,
+							borderRadius: '8px !important',
+							px: 1.2,
+							color: 'text.secondary',
+							transition: 'all 0.2s ease',
+							'&:hover': {
+								bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
+								color: 'primary.main',
+							},
+							'&.Mui-selected': {
+								color: 'primary.contrastText',
+								background: (t) =>
+									`linear-gradient(135deg, ${t.palette.primary.main} 0%, ${t.palette.primary.dark} 100%)`,
+								boxShadow: (t) =>
+									`0 2px 8px ${alpha(t.palette.primary.main, 0.35)}`,
+								'&:hover': {
+									background: (t) =>
+										`linear-gradient(135deg, ${t.palette.primary.main} 0%, ${t.palette.primary.dark} 100%)`,
+								},
+							},
 						},
 						...(slavesData?.length
 							? { marginRight: { sm: '212px', md: '0', lg: '212px' } }
@@ -228,7 +267,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 						position={{ sm: 'absolute', md: 'unset', lg: 'absolute' }}
 						// bgcolor="#fff"
 						right={{ sm: 14 }}
-						top={{ sm: 6 }}
+						top={{ sm: 0 }}
 					>
 						<CustomAutocomplete
 							options={filteredSlaves?.map((f) => ({
@@ -285,11 +324,15 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 														justifyContent: 'start',
 														borderRadius: 2,
 														textTransform: 'none',
-														bgcolor: isActive ? '#0a223e' : '#fff',
+														bgcolor: isActive
+															? 'primary.main'
+															: 'background.paper',
 														border: '2px solid',
-														borderColor: isActive ? '#0a223e' : '#ccc',
+														borderColor: isActive ? 'primary.main' : 'divider',
 														':hover': {
-															bgcolor: isActive ? '#0a223e' : '#fff',
+															bgcolor: isActive
+																? 'primary.main'
+																: 'background.paper',
 														},
 													}}
 													variant="contained"
@@ -297,7 +340,9 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 												>
 													<ResponsiveTextWrapper
 														value={s.slave_name}
-														color={isActive ? '#fff' : '#0a223e'}
+														color={
+															isActive ? 'primary.contrastText' : 'text.primary'
+														}
 														fontSize="14px"
 														textAlign="start"
 														fontWeight={600}
@@ -308,13 +353,13 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 									})}
 								</Grid>
 							) : (
-								<NoDataFound />
+								<NoDataFound message="Waiting for live device data — readings appear automatically" />
 							)}
 						</Box>
 					</Box>
 				</Box>
 			) : (
-				<NoDataFound />
+				<NoDataFound message="Waiting for live device data — readings appear automatically" />
 			)}
 		</CustomCard>
 	);

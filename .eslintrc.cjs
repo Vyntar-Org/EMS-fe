@@ -24,7 +24,7 @@ module.exports = {
 		},
 	},
 	plugins: ['react', 'react-hooks', 'react-refresh', 'import'],
-	ignorePatterns: ['dist', 'node_modules', 'build'],
+	ignorePatterns: ['dist', 'node_modules', 'build', 'android', 'ios'],
 	rules: {
 		'react/react-in-jsx-scope': 'off',
 		'react/prop-types': 'off',

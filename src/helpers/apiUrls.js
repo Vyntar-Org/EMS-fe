@@ -4,7 +4,7 @@ const ADMINS = {
 };
 
 const AUTH = {
-	LOGOUT: '/auth/logout',
+	LOGOUT: '/auth/logout/',
 	LOGIN: '/auth/login/',
 	REFRESH: '/auth/refresh/',
 	CURRENT_USER: '/auth/me/',

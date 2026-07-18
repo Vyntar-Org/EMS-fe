@@ -26,7 +26,7 @@ const MetricBlock = ({ icon, label, value, yesterdayVal }) => (
 
 		{label && (
 			<ResponsiveTextWrapper
-				color="#0A223E"
+				color="text.primary"
 				fontWeight={700}
 				value={label}
 				align="center"
@@ -40,7 +40,7 @@ const MetricBlock = ({ icon, label, value, yesterdayVal }) => (
 			mt={1}
 			value={`${value?.toLocaleString() || 0} KLD`}
 			align="center"
-			color="#0156A6"
+			color="text.accent"
 		/>
 
 		{yesterdayVal ? (
@@ -122,7 +122,7 @@ const WaterDashboard = () => {
 								/>
 							</Grid>
 						) : (
-							<NoDataFound />
+							<NoDataFound message="Waiting for live device data — readings appear automatically" />
 						)}
 					</CustomCard>
 				</Grid>
@@ -145,7 +145,7 @@ const WaterDashboard = () => {
 								/>
 							</Grid>
 						) : (
-							<NoDataFound />
+							<NoDataFound message="Waiting for live device data — readings appear automatically" />
 						)}
 					</CustomCard>
 				</Grid>
@@ -170,7 +170,7 @@ const WaterDashboard = () => {
 								/>
 							</Grid>
 						) : (
-							<NoDataFound />
+							<NoDataFound message="Waiting for live device data — readings appear automatically" />
 						)}
 					</CustomCard>
 				</Grid>
@@ -193,7 +193,7 @@ const WaterDashboard = () => {
 								/>
 							</Grid>
 						) : (
-							<NoDataFound />
+							<NoDataFound message="Waiting for live device data — readings appear automatically" />
 						)}
 					</CustomCard>
 				</Grid>
@@ -216,7 +216,7 @@ const WaterDashboard = () => {
 								/>
 							</Grid>
 						) : (
-							<NoDataFound />
+							<NoDataFound message="Waiting for live device data — readings appear automatically" />
 						)}
 					</CustomCard>
 				</Grid>
@@ -250,7 +250,7 @@ const WaterDashboard = () => {
 										/>
 									</Grid>
 								) : (
-									<NoDataFound />
+									<NoDataFound message="Waiting for live device data — readings appear automatically" />
 								)}
 							</CustomCard>
 						</Grid>
@@ -271,7 +271,7 @@ const WaterDashboard = () => {
 										/>
 									</Grid>
 								) : (
-									<NoDataFound />
+									<NoDataFound message="Waiting for live device data — readings appear automatically" />
 								)}
 							</CustomCard>
 						</Grid>
@@ -297,7 +297,7 @@ const WaterDashboard = () => {
 										/>
 									</Grid>
 								) : (
-									<NoDataFound />
+									<NoDataFound message="Waiting for live device data — readings appear automatically" />
 								)}
 							</CustomCard>
 						</Grid>

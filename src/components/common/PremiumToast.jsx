@@ -1,31 +1,27 @@
 import React, { createContext, useContext, useState } from 'react';
 import { Snackbar, Alert } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { styled, lighten } from '@mui/material/styles';
 
-const StyledAlert = styled(Alert)(({ theme, severity }) => ({
-	borderRadius: '12px',
-	fontWeight: 'bold',
-	boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-	'& .MuiAlert-icon': {
-		fontSize: '1.5rem',
-	},
-	...(severity === 'success' && {
-		background: 'linear-gradient(135deg, #4caf50, #66bb6a)',
-		color: 'white',
-	}),
-	...(severity === 'error' && {
-		background: 'linear-gradient(135deg, #f44336, #e57373)',
-		color: 'white',
-	}),
-	...(severity === 'warning' && {
-		background: 'linear-gradient(135deg, #ff9800, #ffb74d)',
-		color: 'white',
-	}),
-	...(severity === 'info' && {
-		background: 'linear-gradient(135deg, #0156A6, #CCC751)',
-		color: 'white',
-	}),
-}));
+const StyledAlert = styled(Alert)(({ theme, severity }) => {
+	const severityColor = {
+		success: theme.palette.success.main,
+		error: theme.palette.error.main,
+		warning: theme.palette.warning.main,
+		info: theme.palette.primary.main,
+	};
+	const base = severityColor[severity] || theme.palette.primary.main;
+
+	return {
+		borderRadius: '12px',
+		fontWeight: 'bold',
+		boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+		'& .MuiAlert-icon': {
+			fontSize: '1.5rem',
+		},
+		background: `linear-gradient(135deg, ${base}, ${lighten(base, 0.18)})`,
+		color: theme.palette.getContrastText(base),
+	};
+});
 
 const ToastContext = createContext();
 

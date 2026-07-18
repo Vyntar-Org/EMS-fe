@@ -75,13 +75,13 @@ const ReportsHeader = ({
 						textTransform: 'none',
 						fontSize: '0.95rem',
 
-						color: '#595959',
+						color: 'text.secondary',
 						minHeight: '40px',
 						transition: 'all 0.3s ease',
 						p: 0,
 						mr: 3,
 						'&.Mui-selected': {
-							color: '#0156A6',
+							color: 'primary.main',
 							fontWeight: 1000,
 						},
 					},
@@ -108,7 +108,7 @@ const ReportsHeader = ({
 				container
 				gap={2}
 				alignItems="center"
-				sx={{ bgcolor: '#f5f5f5', p: 1.5, borderRadius: 2 }}
+				sx={{ bgcolor: 'surface.muted', p: 1.5, borderRadius: 2 }}
 			>
 				{WATER_REPORTS_ALLOW_MONTH.includes(selectedTab) && (
 					<Grid item xs sm md={2}>
@@ -178,10 +178,10 @@ const ReportsHeader = ({
 							// mt: 0.5,
 							'& .MuiOutlinedInput-root': {
 								borderRadius: 2,
-								backgroundColor: '#f9f9f9',
+								backgroundColor: 'surface.muted',
 								transition: '0.3s',
 								'&:hover': {
-									backgroundColor: '#fff',
+									backgroundColor: 'background.paper',
 								},
 							},
 						}}
@@ -200,10 +200,10 @@ const ReportsHeader = ({
 									p: 0,
 									borderRadius: 2,
 									boxShadow: 'none',
-									backgroundColor: '#1D7344',
+									backgroundColor: 'success.main',
 									'&:hover': {
 										boxShadow: 'none',
-										backgroundColor: '#134B2C',
+										backgroundColor: 'success.dark',
 									},
 								}}
 							>
@@ -225,10 +225,10 @@ const ReportsHeader = ({
 									p: 0,
 									borderRadius: 2,
 									boxShadow: 'none',
-									backgroundColor: '#E11D48',
+									backgroundColor: 'error.main',
 									'&:hover': {
 										boxShadow: 'none',
-										backgroundColor: '#9F1239',
+										backgroundColor: 'error.dark',
 									},
 								}}
 							>
@@ -384,7 +384,7 @@ const FuelReports = () => {
 				{loading ? (
 					<Loading />
 				) : !reportsData || !tableData?.length ? (
-					<NoDataFound />
+					<NoDataFound message="Choose your filters and click Search to generate the report" />
 				) : (
 					<CustomTable data={tableData} columns={tableColumns} />
 				)}

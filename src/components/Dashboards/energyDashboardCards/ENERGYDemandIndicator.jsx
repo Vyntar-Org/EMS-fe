@@ -1,3 +1,4 @@
+import { CHART_COLORS } from '../../../helpers/chartConfig';
 import React, { useEffect, useMemo, useState } from 'react';
 import CustomCard from '../../common/CustomCard';
 import { api } from '../../../helpers/api';
@@ -45,8 +46,19 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 	const options = {
 		chart: {
 			type: 'area',
-			toolbar: { show: false },
-			zoom: { enabled: true },
+			toolbar: {
+				show: true,
+				tools: {
+					download: true,
+					selection: false,
+					zoom: false,
+					zoomin: false,
+					zoomout: false,
+					pan: false,
+					reset: false,
+				},
+			},
+			zoom: { enabled: false },
 		},
 		dataLabels: {
 			enabled: false,
@@ -54,7 +66,7 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 		stroke: {
 			curve: 'smooth',
 			width: 3,
-			colors: ['#2E4355'],
+			colors: [CHART_COLORS.navy],
 		},
 		markers: {
 			size: 5,
@@ -133,7 +145,7 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 					/>
 				</Box>
 			) : (
-				<NoDataFound />
+				<NoDataFound message="Waiting for live device data — readings appear automatically" />
 			)}
 		</CustomCard>
 	);

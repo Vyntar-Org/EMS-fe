@@ -28,14 +28,14 @@ const ENERGYConsumption = ({ data }) => {
 
 				<ResponsiveTextWrapper
 					fontSize="14px"
-					color="primary.main"
+					color="text.accent"
 					fontWeight={800}
 					mt={1}
 					value={value?.toLocaleString() || 0}
 				/>
 
 				<Typography
-					sx={{ color: 'primary.main', fontSize: '12px', fontWeight: 500 }}
+					sx={{ color: 'text.accent', fontSize: '12px', fontWeight: 500 }}
 				>
 					{unit}
 				</Typography>
@@ -95,7 +95,7 @@ const ENERGYConsumption = ({ data }) => {
 					/>
 				</Grid>
 			) : (
-				<NoDataFound />
+				<NoDataFound message="Waiting for live device data — readings appear automatically" />
 			)}
 		</CustomCard>
 	);

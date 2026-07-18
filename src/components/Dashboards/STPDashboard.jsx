@@ -25,7 +25,7 @@ const MetricBlock = ({ label, value, subLabel, showDivider }) => (
 	>
 		{label && (
 			<ResponsiveTextWrapper
-				color="#0A223E"
+				color="text.primary"
 				fontWeight={700}
 				value={label}
 				align="center"
@@ -39,7 +39,7 @@ const MetricBlock = ({ label, value, subLabel, showDivider }) => (
 			mt={1}
 			value={`${value?.toLocaleString() || 0} KL`}
 			align="center"
-			color="#0156A6"
+			color="text.accent"
 		/>
 
 		{subLabel ? (
@@ -161,7 +161,7 @@ const STPDashboard = () => {
 												</Grid>
 											</Grid>
 										) : (
-											<NoDataFound />
+											<NoDataFound message="Waiting for live device data — readings appear automatically" />
 										)}
 									</CustomCard>
 								</Grid>
@@ -198,7 +198,7 @@ const STPDashboard = () => {
 												</Grid>
 											</Grid>
 										) : (
-											<NoDataFound />
+											<NoDataFound message="Waiting for live device data — readings appear automatically" />
 										)}
 									</CustomCard>
 								</Grid>
@@ -286,7 +286,7 @@ const STPDashboard = () => {
 								/>
 							</Box>
 						) : (
-							<NoDataFound />
+							<NoDataFound message="Waiting for live device data — readings appear automatically" />
 						)}
 					</CustomCard>
 				</Grid>
@@ -311,7 +311,7 @@ const STPDashboard = () => {
 								/>
 							</Box>
 						) : (
-							<NoDataFound />
+							<NoDataFound message="Waiting for live device data — readings appear automatically" />
 						)}
 					</CustomCard>
 				</Grid>

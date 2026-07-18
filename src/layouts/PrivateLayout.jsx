@@ -1,17 +1,30 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Box, Toolbar } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
 import { useApplications } from '../contexts/ApplicationContext';
 import { getPagePath, pageComponentMap } from '../helpers/pageMapping';
+import { layoutBackgroundSx } from '../helpers/layoutImages';
+import { preloadAppImages } from '../helpers/preloadImages';
 
 export const PrivateLayout = () => {
 	const { user } = useAuth();
 	const [isMobileOpen, setIsMobileOpen] = useState(false);
-	const { applications, switchApp } = useApplications();
+	const [isDesktopOpen, setIsDesktopOpen] = useState(false);
+	const { applications, selectedApp, switchApp } = useApplications();
 	const navigate = useNavigate();
+	const theme = useTheme();
+
+	// Warm the cache with every app's layout artwork + shared assets so
+	// switching applications never flashes an unloaded background.
+	useEffect(() => {
+		preloadAppImages(
+			applications.map((app) => app.code),
+			[user?.branding?.logo, user?.branding?.favicon]
+		);
+	}, [applications, user]);
 
 	const handleAppChange = (event, newAppCode) => {
 		switchApp(newAppCode);
@@ -33,30 +46,47 @@ export const PrivateLayout = () => {
 	}
 
 	return (
-		<>
-			<Header
-				setIsMobileOpen={setIsMobileOpen}
-				isMobileOpen={isMobileOpen}
-				handleAppChange={handleAppChange}
-			/>
+		// Fixed app shell: the viewport never scrolls — the header stays put
+		// on every screen size while main and the sidebar scroll internally.
+		<Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
 			<Sidebar
 				isMobileOpen={isMobileOpen}
 				setIsMobileOpen={setIsMobileOpen}
+				isDesktopOpen={isDesktopOpen}
 				handleAppChange={handleAppChange}
+				setIsDesktopOpen={setIsDesktopOpen}
 			/>
 			<Box
-				component="main"
 				sx={{
 					flexGrow: 1,
-					p: 1,
-					backgroundColor: 'background.default',
-					minHeight: '100vh',
-					ml: { sm: '70px' },
+					minWidth: 0,
+					height: '100vh',
+					display: 'flex',
+					flexDirection: 'column',
 				}}
 			>
-				<Toolbar />
-				<Outlet />
+				<Header
+					setIsMobileOpen={setIsMobileOpen}
+					isMobileOpen={isMobileOpen}
+					setIsDesktopOpen={setIsDesktopOpen}
+					isDesktopOpen={isDesktopOpen}
+					handleAppChange={handleAppChange}
+				/>
+				<Box
+					component="main"
+					sx={{
+						flexGrow: 1,
+						minHeight: 0,
+						overflowY: {xs:'auto',md:'hidden'},
+						overflowX: 'hidden',
+						p: 1,
+						backgroundColor: 'background.default',
+						...layoutBackgroundSx('main', selectedApp, theme.palette.mode),
+					}}
+				>
+					<Outlet />
+				</Box>
 			</Box>
-		</>
+		</Box>
 	);
 };

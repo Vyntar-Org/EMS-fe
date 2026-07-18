@@ -2,9 +2,29 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<!-- <link rel="icon" type="image/png" href="/assets/vyntar-logo-icon.jpeg" /> -->
+		<link rel="icon" type="image/png" href="/assets/vyntar-logo-icon.jpeg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>:: Vyntar ::</title>
+
+		<!-- Preload critical imagery so the shell and login paint instantly -->
+		<link
+			rel="preload"
+			as="image"
+			href="/assets/DEFAULT-LAYOUT-IMAGES/sidebar.svg"
+		/>
+		<link
+			rel="preload"
+			as="image"
+			href="/assets/DEFAULT-LAYOUT-IMAGES/header.svg"
+		/>
+		<link
+			rel="preload"
+			as="image"
+			href="/assets/DEFAULT-LAYOUT-IMAGES/main.svg"
+		/>
+		<link rel="preload" as="image" href="/assets/login-bg-day.png" />
+		<link rel="preload" as="image" href="/assets/login-bg-night.png" />
+		<link rel="preload" as="image" href="/assets/vyntar-logo-full.png" />
 
 		<style>
 			/* 1. Force the background to stay transparent/white on the input itself */

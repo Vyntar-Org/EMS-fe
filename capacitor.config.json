@@ -1,0 +1,9 @@
+{
+	"appId": "com.bms.app",
+	"appName": "BMS",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https",
+		"hostname": "localhost"
+	}
+}

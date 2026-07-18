@@ -262,7 +262,7 @@ export const CustomAutocomplete = ({
 							sx={{
 								wordBreak: 'break-all',
 								fontSize: '14px',
-								color: '#595959',
+								color: 'text.primary',
 								fontWeight: 500,
 							}}
 							noWrap

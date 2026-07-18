@@ -54,7 +54,7 @@ export const CustomSelect = ({
 						<MenuItem
 							sx={{
 								fontSize: '14px',
-								color: '#595959',
+								color: 'text.primary',
 								fontWeight: 'bold',
 							}}
 							key={opt.value}

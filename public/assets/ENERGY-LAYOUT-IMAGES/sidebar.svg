@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 1600" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#12233E"/>
+      <stop offset="0.45" stop-color="#0A1B33"/>
+      <stop offset="1" stop-color="#003366"/>
+    </linearGradient>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0A1B33" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0A1B33" stop-opacity="0.85"/>
+    </linearGradient>
+    
+  <pattern id="gd" width="16" height="16" patternUnits="userSpaceOnUse">
+    <circle cx="2" cy="2" r="2" fill="#F5D547" opacity="0.55"/>
+  </pattern>
+    
+  <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+    <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#F5D547" flood-opacity="0.55"/>
+  </filter>
+  </defs>
+  <rect width="440" height="1600" fill="url(#bg)"/>
+  <rect x="24" y="26" width="230" height="150" fill="url(#gd)"/>
+  <rect x="230" y="1180" width="190" height="150" fill="url(#gd)" opacity="0.6"/>
+  <path d="M-40,1240 L300,900 L520,900" stroke="#F5D547" stroke-opacity="0.35" fill="none" stroke-width="2"/>
+  <path d="M-40,1300 L330,930" stroke="#7FB3E8" stroke-opacity="0.18" fill="none" stroke-width="2"/>
+  <circle cx="380" cy="760" r="120" stroke="#F5D547" stroke-opacity="0.10" fill="none" stroke-width="1.5"/>
+  <circle cx="380" cy="760" r="170" stroke="#F5D547" stroke-opacity="0.06" fill="none" stroke-width="1.5"/>
+  <circle cx="220" cy="1250" r="180" fill="#F5D547" opacity="0.07"/>
+  
+  <g transform="translate(95,1130) scale(1.25)" opacity="1"
+     stroke-width="4" stroke-linecap="round" stroke-linejoin="round"
+     filter="url(#glow)">
+    
+    <path d="M62,178 L90,42 L110,42 L138,178" stroke="#A9D2FF" fill="none"/>
+    <path d="M70,148 L130,148 M77,116 L123,116 M84,84 L116,84 M70,148 L123,116 M130,148 L77,116" stroke="#A9D2FF" fill="none" stroke-width="2.5"/>
+    <path d="M66,62 L134,62" stroke="#A9D2FF" fill="none"/>
+    <path d="M106,74 L86,116 h13 L92,152 L118,106 h-14 Z" fill="#F5D547" stroke="none"/>
+  </g>
+  
+  <g transform="translate(250,480) scale(0.7)" opacity="0.1"
+     stroke-width="4" stroke-linecap="round" stroke-linejoin="round"
+     >
+    
+    <path d="M62,178 L90,42 L110,42 L138,178" stroke="#7FB3E8" fill="none"/>
+    <path d="M70,148 L130,148 M77,116 L123,116 M84,84 L116,84 M70,148 L123,116 M130,148 L77,116" stroke="#7FB3E8" fill="none" stroke-width="2.5"/>
+    <path d="M66,62 L134,62" stroke="#7FB3E8" fill="none"/>
+    <path d="M106,74 L86,116 h13 L92,152 L118,106 h-14 Z" fill="#F5D547" stroke="none"/>
+  </g>
+  <rect y="1440" width="440" height="160" fill="url(#fade)"/>
+</svg>

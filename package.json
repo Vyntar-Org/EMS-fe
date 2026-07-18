@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite --mode dev",
-		"build": "vite build",
+		"build": "vite build --mode dev",
 		"preview": "vite preview",
 		"lint": "eslint . --fix",
 		"lint:check": "eslint . --max-warnings=0",
@@ -14,6 +14,10 @@
 		"prepare": "husky"
 	},
 	"dependencies": {
+		"@capacitor/android": "^8.4.1",
+		"@capacitor/cli": "^8.4.1",
+		"@capacitor/core": "^8.4.1",
+		"@capacitor/ios": "^8.4.1",
 		"@emotion/react": "^11.14.0",
 		"@emotion/styled": "^11.14.1",
 		"@mui/icons-material": "^5.15.20",

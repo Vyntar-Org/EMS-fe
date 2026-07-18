@@ -61,7 +61,7 @@ const ENERGYDevices = ({ data }) => {
 					<MetricBlock label="OFFLINE" value={data?.offline || 0} />
 				</Grid>
 			) : (
-				<NoDataFound />
+				<NoDataFound message="Waiting for live device data — readings appear automatically" />
 			)}
 		</CustomCard>
 	);

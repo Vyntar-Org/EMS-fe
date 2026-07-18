@@ -131,7 +131,7 @@ const FuelDashboard = () => {
 										/>
 									</Grid>
 								) : (
-									<NoDataFound />
+									<NoDataFound message="Waiting for live device data — readings appear automatically" />
 								)}
 							</CustomCard>
 						</Grid>
@@ -171,11 +171,17 @@ const FuelDashboard = () => {
 																justifyContent: 'start',
 																borderRadius: 2,
 																textTransform: 'none',
-																bgcolor: isActive ? '#0a223e' : '#fff',
+																bgcolor: isActive
+																	? 'primary.main'
+																	: 'background.paper',
 																border: '2px solid',
-																borderColor: isActive ? '#0a223e' : '#ccc',
+																borderColor: isActive
+																	? 'primary.main'
+																	: 'divider',
 																':hover': {
-																	bgcolor: isActive ? '#0a223e' : '#fff',
+																	bgcolor: isActive
+																		? 'primary.main'
+																		: 'background.paper',
 																},
 															}}
 															variant="contained"
@@ -183,7 +189,11 @@ const FuelDashboard = () => {
 														>
 															<ResponsiveTextWrapper
 																value={s.slave_name}
-																color={isActive ? '#fff' : '#0a223e'}
+																color={
+																	isActive
+																		? 'primary.contrastText'
+																		: 'text.primary'
+																}
 																fontSize="14px"
 																textAlign="start"
 																fontWeight={600}
@@ -194,7 +204,7 @@ const FuelDashboard = () => {
 											})}
 										</Grid>
 									) : (
-										<NoDataFound />
+										<NoDataFound message="Waiting for live device data — readings appear automatically" />
 									)}
 								</Box>
 							</CustomCard>
@@ -216,7 +226,7 @@ const FuelDashboard = () => {
 									height: '28px',
 									bgcolor: 'background.paper',
 									'& .MuiToggleButton-root.Mui-selected': {
-										bgcolor: 'primary.main',
+										bgcolor: 'text.accent',
 										color: 'white',
 										'&:hover': { bgcolor: 'primary.dark' },
 									},
@@ -252,7 +262,7 @@ const FuelDashboard = () => {
 								/>
 							</Box>
 						) : (
-							<NoDataFound />
+							<NoDataFound message="Waiting for live device data — readings appear automatically" />
 						)}
 					</CustomCard>
 				</Grid>

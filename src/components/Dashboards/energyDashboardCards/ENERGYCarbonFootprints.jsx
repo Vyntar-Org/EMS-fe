@@ -29,13 +29,13 @@ const ENERGYCarbonFootprints = ({ data }) => {
 				<ResponsiveTextWrapper
 					mt={1}
 					fontSize="14px"
-					color="primary.main"
+					color="text.accent"
 					fontWeight={800}
 					value={`${value?.toLocaleString() || 0}`}
 				/>
 
 				<ResponsiveTextWrapper
-					color="primary.main"
+					color="text.accent"
 					fontWeight={500}
 					value={unit}
 					fontSize="12px"
@@ -83,7 +83,7 @@ const ENERGYCarbonFootprints = ({ data }) => {
 					/>
 				</Grid>
 			) : (
-				<NoDataFound />
+				<NoDataFound message="Waiting for live device data — readings appear automatically" />
 			)}
 		</CustomCard>
 	);

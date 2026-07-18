@@ -102,7 +102,9 @@ const DeviceFilterRow = ({
 	showCancel,
 	parameterOptions,
 }) => (
-	<Box sx={{ py: 1.5, px: 2, bgcolor: '#fff', borderRadius: 2, mb: 1 }}>
+	<Box
+		sx={{ py: 1.5, px: 2, bgcolor: 'background.paper', borderRadius: 2, mb: 1 }}
+	>
 		<Grid container spacing={2} alignItems="center">
 			<Grid item xs={12} md={3.5}>
 				<CustomAutocomplete
@@ -325,8 +327,19 @@ const FuelAnalytics = () => {
 					const performanceChartOptions = {
 						chart: {
 							type: 'line',
-							zoom: { enabled: true },
-							toolbar: { show: false },
+							zoom: { enabled: false },
+							toolbar: {
+								show: true,
+								tools: {
+									download: true,
+									selection: false,
+									zoom: false,
+									zoomin: false,
+									zoomout: false,
+									pan: false,
+									reset: false,
+								},
+							},
 						},
 						dataLabels: { enabled: false },
 						markers: { size: 0, hover: { sizeOffset: 4 } },
@@ -382,7 +395,7 @@ const FuelAnalytics = () => {
 								{isLoading ? (
 									<Loading />
 								) : !processedData.series.length ? (
-									<NoDataFound />
+									<NoDataFound message="Select a device and parameters, then click Analyze to view insights" />
 								) : (
 									<ReactApexChart
 										options={performanceChartOptions}

@@ -37,6 +37,11 @@ import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 import PremiumModal from '../common/PremiumModal';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
+import {
+	MachineAvatar,
+	machineCardSx,
+	metricIconSx,
+} from '../common/MachineCardBits';
 import SolarMachineListSkeleton from '../skeletonLoaders/SolarMachineListSkeleton';
 
 const getMachineSlaveId = (machine) => machine?.slave_id ?? machine?.id;
@@ -78,10 +83,10 @@ const MachineListHeader = ({
 						sx={{
 							'& .MuiOutlinedInput-root': {
 								borderRadius: 2,
-								backgroundColor: '#f9f9f9',
+								backgroundColor: 'surface.muted',
 								transition: '0.3s',
 								'&:hover': {
-									backgroundColor: '#fff',
+									backgroundColor: 'background.paper',
 								},
 							},
 						}}
@@ -156,19 +161,28 @@ const SolarMetricBlock = ({
 		<Box
 			sx={{
 				p: 1,
-				bgcolor: isOnline ? '#e8f5e9' : '#f2f2f2',
+				...machineCardSx(isOnline),
 				borderRadius: '16px',
 			}}
 		>
 			<Stack direction="row" justifyContent="space-between" alignItems="center">
-				<Box width="calc(100% - 65px)">
-					<ResponsiveTextWrapper
-						value={label}
-						variant="h6"
-						fontWeight="bold"
-						color="text.primary"
-					/>
-				</Box>
+				<Stack
+					direction="row"
+					alignItems="center"
+					gap={1}
+					width="calc(100% - 65px)"
+					minWidth={0}
+				>
+					<MachineAvatar app="SOLAR" />
+					<Box minWidth={0} flex={1}>
+						<ResponsiveTextWrapper
+							value={label}
+							variant="h6"
+							fontWeight="bold"
+							color="text.primary"
+						/>
+					</Box>
+				</Stack>
 
 				<Chip
 					label={status?.toUpperCase()}
@@ -185,7 +199,7 @@ const SolarMetricBlock = ({
 			{lastUpdated && (
 				<ResponsiveTextWrapper
 					value={formatTimestamp(lastUpdated)}
-					color="#595959"
+					color="text.secondary"
 					fontWeight={500}
 					fontSize="14px"
 					sx={{ mb: 1, display: 'block' }}
@@ -194,8 +208,10 @@ const SolarMetricBlock = ({
 
 			<Box
 				sx={{
-					bgcolor: 'rgba(0,0,0,0.03)',
-					borderRadius: 1,
+					bgcolor: 'surface.muted',
+					border: '1px solid',
+					borderColor: 'surface.mutedBorder',
+					borderRadius: 2,
 					mb: 1,
 					width: '100%',
 				}}
@@ -241,18 +257,11 @@ const SolarMetricBlock = ({
 										sx={{ border: 0, py: 0.5, width: { xs: '50%', lg: '60%' } }}
 									>
 										<Box sx={{ display: 'flex', alignItems: 'center' }}>
-											<RowIcon
-												sx={{
-													fontSize: '14px',
-													color: row.color,
-													mr: 1,
-													flexShrink: 0,
-												}}
-											/>
+											<RowIcon sx={metricIconSx(row.color)} />
 											<Box width="calc(100% - 14px - 8px)">
 												<ResponsiveTextWrapper
 													fontSize="14px"
-													color="#333333"
+													color="text.primary"
 													fontWeight={500}
 													value={row.name}
 												/>
@@ -265,7 +274,7 @@ const SolarMetricBlock = ({
 									>
 										<ResponsiveTextWrapper
 											fontSize="14px"
-											color="#333333"
+											color="text.primary"
 											fontWeight={500}
 											value={row.value}
 										/>
@@ -279,20 +288,27 @@ const SolarMetricBlock = ({
 
 			<Divider sx={{ mb: 0.5 }} />
 
-			<Button
-				onClick={handleOpenModal}
-				size="small"
-				startIcon={<Insights />}
-				disableElevation
-				variant="contained"
-				fullWidth
-				sx={{
-					fontWeight: 'bold',
-					borderRadius: '16px',
-				}}
+			<Stack
+				direction="row"
+				alignItems="center"
+				justifyContent="flex-end"
+				gap={1}
+				mt={0.5}
 			>
-				TREND
-			</Button>
+				<Button
+					onClick={handleOpenModal}
+					size="small"
+					startIcon={<Insights />}
+					disableElevation
+					variant="contained"
+					sx={{
+						fontWeight: 'bold',
+						borderRadius: '16px',
+					}}
+				>
+					TREND
+				</Button>
+			</Stack>
 		</Box>
 	);
 };
@@ -385,7 +401,18 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 	const chartOptions = {
 		chart: {
 			type: 'line',
-			toolbar: { show: false },
+			toolbar: {
+				show: true,
+				tools: {
+					download: true,
+					selection: false,
+					zoom: false,
+					zoomin: false,
+					zoomout: false,
+					pan: false,
+					reset: false,
+				},
+			},
 		},
 		stroke: {
 			curve: 'smooth',
@@ -528,7 +555,7 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 						width="100%"
 					/>
 				) : (
-					<NoDataFound />
+					<NoDataFound message="No machine readings received yet — data appears once the device reports" />
 				)}
 			</Box>
 		</>
@@ -648,7 +675,7 @@ const SolarMachineList = () => {
 								))}
 							</Grid>
 						) : (
-							<NoDataFound />
+							<NoDataFound message="No machine readings received yet — data appears once the device reports" />
 						)}
 					</Grid>
 				</Grid>

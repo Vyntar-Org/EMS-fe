@@ -49,12 +49,12 @@ const CompressorLogsFilterHeader = ({
 							'& .MuiOutlinedInput-root': {
 								borderRadius: 2,
 
-								backgroundColor: '#f9f9f9',
+								backgroundColor: 'surface.muted',
 
 								transition: '0.3s',
 
 								'&:hover': {
-									backgroundColor: '#fff',
+									backgroundColor: 'background.paper',
 								},
 							},
 						}}
@@ -128,16 +128,16 @@ const CompressorLogsFilterHeader = ({
 
 									boxShadow: 'none',
 
-									backgroundColor: '#f5f5f5',
+									backgroundColor: 'surface.muted',
 
-									color: '#666666',
+									color: 'text.secondary',
 
 									'&:hover': {
 										boxShadow: 'none',
 
-										backgroundColor: '#e0e0e0',
+										backgroundColor: 'action.hover',
 
-										color: '#333333',
+										color: 'text.primary',
 									},
 								}}
 							>
@@ -288,7 +288,7 @@ const CompressorLogs = () => {
 				{loading ? (
 					<Loading />
 				) : !logsData?.length ? (
-					<NoDataFound />
+					<NoDataFound message="Select a device and date range, then click Search to view logs" />
 				) : (
 					<CustomTable
 						data={logsData}

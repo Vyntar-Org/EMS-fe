@@ -7,6 +7,11 @@ import { storage } from '../helpers/storage';
 
 const AuthContext = createContext();
 
+// Access token lives 30 minutes (seconds — multiplied by 1000 when stored);
+// refresh token lives 7 days
+const ACCESS_TOKEN_LIFETIME_SECONDS = 30 * 60;
+const REFRESH_TOKEN_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
+
 const buildTokenPayload = (data) => {
 	const payload = data?.data || data || {};
 	return {
@@ -16,7 +21,7 @@ const buildTokenPayload = (data) => {
 			payload.access_expires_in ||
 			payload.expires_in ||
 			payload.expiresIn ||
-			3600,
+			ACCESS_TOKEN_LIFETIME_SECONDS,
 		user: payload.user || data.user || null,
 		permissions: payload.permissions || data.permissions || [],
 	};
@@ -32,16 +37,23 @@ const saveAuthData = ({
 	if (accessToken) {
 		storage.setLocal('access_token', accessToken);
 	}
+
 	if (refreshToken) {
 		storage.setLocal('refresh_token', refreshToken);
+		storage.setLocal(
+			'refresh_expiry',
+			new Date().getTime() + REFRESH_TOKEN_LIFETIME_MS
+		);
 	}
+
 	storage.setLocal(
 		'token_expiry',
-		new Date().getTime() + Number(expiresIn || 3600) * 1000
+		new Date().getTime() +
+			Number(expiresIn || ACCESS_TOKEN_LIFETIME_SECONDS) * 1000
 	);
-	if (user) {
-		storage.setLocal('user', user);
-	}
+
+	if (user) storage.setLocal('user', user);
+
 	storage.setLocal('permissions', permissions);
 };
 
@@ -159,9 +171,7 @@ export const AuthProvider = ({ children }) => {
 	};
 
 	const hasPermission = (permissionKey) => {
-		if (!permissionKey) {
-			return true;
-		}
+		if (!permissionKey) return true;
 		return permissions.includes(permissionKey);
 	};
 

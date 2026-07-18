@@ -29,6 +29,7 @@ import {
 import NoDataFound from '../common/errors/NoDataFound';
 import CustomCard from '../common/CustomCard';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
+import { MachineAvatar, machineCardSx } from '../common/MachineCardBits';
 import PremiumModal from '../common/PremiumModal';
 import { Loading } from '../common/Loading';
 import ReactApexChart from 'react-apexcharts';
@@ -130,10 +131,10 @@ const MachineListHeader = ({
 					sx={{
 						'& .MuiOutlinedInput-root': {
 							borderRadius: 2,
-							backgroundColor: '#f9f9f9',
+							backgroundColor: 'surface.muted',
 							transition: '0.3s',
 							'&:hover': {
-								backgroundColor: '#fff',
+								backgroundColor: 'background.paper',
 							},
 						},
 					}}
@@ -244,7 +245,7 @@ const CompressorMetricBlock = ({
 		<Box
 			sx={{
 				p: 1,
-				bgcolor: isOnline ? '#e8f5e9' : '#f2f2f2',
+				...machineCardSx(isOnline),
 				borderRadius: '16px',
 				minHeight: 340,
 			}}
@@ -256,14 +257,22 @@ const CompressorMetricBlock = ({
 				spacing={1}
 				sx={{ mb: 1 }}
 			>
-				<Box sx={{ flex: 1, minWidth: 0 }}>
-					<ResponsiveTextWrapper
-						value={name}
-						variant="h6"
-						fontWeight="bold"
-						color="text.primary"
-					/>
-				</Box>
+				<Stack
+					direction="row"
+					alignItems="center"
+					gap={1}
+					sx={{ flex: 1, minWidth: 0 }}
+				>
+					<MachineAvatar app="COMPRESSOR" />
+					<Box sx={{ flex: 1, minWidth: 0 }}>
+						<ResponsiveTextWrapper
+							value={name}
+							variant="h6"
+							fontWeight="bold"
+							color="text.primary"
+						/>
+					</Box>
+				</Stack>
 
 				<Chip
 					label={status?.toUpperCase()}
@@ -287,7 +296,7 @@ const CompressorMetricBlock = ({
 				<Box width="100%">
 					<ResponsiveTextWrapper
 						value={formatTimestamp(lastUpdated)}
-						color="#595959"
+						color="text.secondary"
 						fontWeight={500}
 						fontSize="14px"
 					/>
@@ -321,7 +330,7 @@ const CompressorMetricBlock = ({
 				{statusFrom ? (
 					<ResponsiveTextWrapper
 						value={`from ${statusFrom}`}
-						color="#595959"
+						color="text.secondary"
 						fontSize="12px"
 						fontWeight="bold"
 						align="center"
@@ -476,21 +485,28 @@ const CompressorMetricBlock = ({
 				</Table>
 			</Box>
 
-			<Button
-				onClick={() => handleOpenModal(machine)}
-				size="small"
-				startIcon={<Insights />}
-				disableElevation
-				variant="contained"
-				fullWidth
-				sx={{
-					fontWeight: 'bold',
-					borderRadius: '16px',
-					mt: 1,
-				}}
+			<Stack
+				direction="row"
+				alignItems="center"
+				justifyContent="flex-end"
+				gap={1}
+				mt={0.5}
 			>
-				TREND
-			</Button>
+				<Button
+					onClick={() => handleOpenModal(machine)}
+					size="small"
+					startIcon={<Insights />}
+					disableElevation
+					variant="contained"
+					sx={{
+						fontWeight: 'bold',
+						borderRadius: '16px',
+						mt: 1,
+					}}
+				>
+					TREND
+				</Button>
+			</Stack>
 		</Box>
 	);
 };
@@ -727,8 +743,19 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 			chart: {
 				type: 'area',
 				height: 350,
-				toolbar: { show: false },
-				zoom: { enabled: true },
+				toolbar: {
+					show: true,
+					tools: {
+						download: true,
+						selection: false,
+						zoom: false,
+						zoomin: false,
+						zoomout: false,
+						pan: false,
+						reset: false,
+					},
+				},
+				zoom: { enabled: false },
 				background: '#FFFFFF',
 				animations: { enabled: false, dynamicAnimation: { enabled: false } },
 			},
@@ -906,7 +933,7 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 									height={320}
 								/>
 							) : (
-								<NoDataFound />
+								<NoDataFound message="No machine readings received yet — data appears once the device reports" />
 							)}
 						</Box>
 					)}
@@ -966,7 +993,7 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 									</Table>
 								</TableContainer>
 							) : (
-								<NoDataFound />
+								<NoDataFound message="No machine readings received yet — data appears once the device reports" />
 							)}
 
 							{stoppages.length > 0 && (
@@ -974,7 +1001,7 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 									sx={{
 										mt: 2,
 										p: 1.5,
-										bgcolor: '#f5f5f5',
+										bgcolor: 'surface.muted',
 										borderRadius: 1,
 										display: 'flex',
 										justifyContent: 'space-between',
@@ -1145,8 +1172,19 @@ const ModalContentForTrend = ({
 				...baseOptions,
 				chart: {
 					...baseOptions.chart,
-					toolbar: { show: false }, // Exact match to Code 1
-					zoom: { enabled: true }, // Exact match to Code 1
+					toolbar: {
+						show: true,
+						tools: {
+							download: true,
+							selection: false,
+							zoom: false,
+							zoomin: false,
+							zoomout: false,
+							pan: false,
+							reset: false,
+						},
+					}, // Exact match to Code 1
+					zoom: { enabled: false }, // Exact match to Code 1
 				},
 				stroke: {
 					curve: 'stepline',
@@ -1267,7 +1305,7 @@ const ModalContentForTrend = ({
 						/>
 					</Box>
 				) : (
-					<NoDataFound />
+					<NoDataFound message="No machine readings received yet — data appears once the device reports" />
 				)}
 			</Stack>
 		</Box>
@@ -1397,7 +1435,7 @@ const CompressorMachineList = () => {
 								))}
 							</Grid>
 						) : (
-							<NoDataFound />
+							<NoDataFound message="No machine readings received yet — data appears once the device reports" />
 						)}
 					</Grid>
 				</Grid>

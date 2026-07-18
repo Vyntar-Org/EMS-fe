@@ -1,8 +1,9 @@
-import { Error } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
-import React from 'react';
 
-const NoDataFound = ({ message = 'No data available', icon }) => {
+const NoDataFound = ({
+	message = 'Nothing to show here yet — adjust your selections above',
+	icon,
+}) => {
 	return (
 		<Box
 			width="100%"
@@ -11,11 +12,36 @@ const NoDataFound = ({ message = 'No data available', icon }) => {
 			flexDirection="column"
 			alignItems="center"
 			justifyContent="center"
-			sx={{ opacity: 0.6 }}
-			color="warning.main"
+			gap={0.5}
 		>
-			{icon || <Error sx={{ fontSize: 55 }} />}
-			<Typography textAlign="center" fontSize="1.25rem" fontWeight="bolder">
+			{icon || (
+				<Box
+					component="img"
+					src="/assets/no-data.gif"
+					alt="No data"
+					sx={{
+						width: 'min(160px, 60%)',
+						maxHeight: '60%',
+						objectFit: 'contain',
+						borderRadius: '12px',
+						// keep the gif readable on dark surfaces
+						backgroundColor: (t) =>
+							t.palette.mode === 'dark'
+								? 'rgba(255,255,255,0.92)'
+								: 'transparent',
+						p: (t) => (t.palette.mode === 'dark' ? 0.5 : 0),
+					}}
+				/>
+			)}
+			<Typography
+				textAlign="center"
+				sx={{
+					fontSize: '0.95rem',
+					fontWeight: 700,
+					color: 'text.secondary',
+					letterSpacing: '0.3px',
+				}}
+			>
 				{message}
 			</Typography>
 		</Box>

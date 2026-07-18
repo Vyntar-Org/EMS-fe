@@ -36,6 +36,7 @@ import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 import PremiumModal from '../common/PremiumModal';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
+import { MachineAvatar, machineCardSx } from '../common/MachineCardBits';
 import EnergyMachineListSkeleton from '../skeletonLoaders/EnergyMachineListSkeleton';
 
 const MachineListHeader = ({
@@ -69,10 +70,10 @@ const MachineListHeader = ({
 						sx={{
 							'& .MuiOutlinedInput-root': {
 								borderRadius: 2,
-								backgroundColor: '#f9f9f9',
+								backgroundColor: 'surface.muted',
 								transition: '0.3s',
 								'&:hover': {
-									backgroundColor: '#fff',
+									backgroundColor: 'background.paper',
 								},
 							},
 						}}
@@ -121,19 +122,28 @@ const MetricBlock = ({
 		<Box
 			sx={{
 				p: 1,
-				bgcolor: isOnline ? '#e8f5e9' : '#f2f2f2',
+				...machineCardSx(isOnline),
 				borderRadius: '16px',
 			}}
 		>
 			<Stack direction="row" justifyContent="space-between" alignItems="center">
-				<Box width="calc(100% - 65px)">
-					<ResponsiveTextWrapper
-						value={label}
-						variant="h6"
-						fontWeight="bold"
-						color="text.primary"
-					/>
-				</Box>
+				<Stack
+					direction="row"
+					alignItems="center"
+					gap={1}
+					width="calc(100% - 65px)"
+					minWidth={0}
+				>
+					<MachineAvatar app="ENERGY" />
+					<Box minWidth={0} flex={1}>
+						<ResponsiveTextWrapper
+							value={label}
+							variant="h6"
+							fontWeight="bold"
+							color="text.primary"
+						/>
+					</Box>
+				</Stack>
 
 				<Chip
 					label={status?.toUpperCase()}
@@ -158,7 +168,7 @@ const MetricBlock = ({
 					<Box width="65%">
 						<ResponsiveTextWrapper
 							value={formatTimestamp(last_ts)}
-							color="#595959"
+							color="text.secondary"
 							fontWeight={500}
 							fontSize="14px"
 						/>
@@ -176,8 +186,10 @@ const MetricBlock = ({
 
 			<Box
 				sx={{
-					bgcolor: 'rgba(0,0,0,0.03)',
-					borderRadius: 1,
+					bgcolor: 'surface.muted',
+					border: '1px solid',
+					borderColor: 'surface.mutedBorder',
+					borderRadius: 2,
 					mb: 1,
 					width: '100%',
 				}}
@@ -242,7 +254,7 @@ const MetricBlock = ({
 										<Box width="calc(100% - 10px)">
 											<ResponsiveTextWrapper
 												fontSize="14px"
-												color="#333333"
+												color="text.primary"
 												fontWeight={500}
 												value={row.name}
 											/>
@@ -255,7 +267,7 @@ const MetricBlock = ({
 								>
 									<ResponsiveTextWrapper
 										fontSize="14px"
-										color="#333333"
+										color="text.primary"
 										fontWeight={500}
 										value={row.v?.toFixed(2)}
 									/>
@@ -266,7 +278,7 @@ const MetricBlock = ({
 								>
 									<ResponsiveTextWrapper
 										fontSize="14px"
-										color="#333333"
+										color="text.primary"
 										fontWeight={500}
 										value={row.a?.toFixed(1)}
 									/>
@@ -356,20 +368,27 @@ const MetricBlock = ({
 				</Grid>
 
 				<Grid item xs={4}>
-					<Button
-						onClick={handleOpenModal}
-						size="small"
-						startIcon={<Insights />}
-						disableElevation
-						variant="contained"
-						fullWidth
-						sx={{
-							fontWeight: 'bold',
-							borderRadius: '16px',
-						}}
+					<Stack
+						direction="row"
+						alignItems="center"
+						justifyContent="flex-end"
+						gap={1}
+						mt={0.5}
 					>
-						TREND
-					</Button>
+						<Button
+							onClick={handleOpenModal}
+							size="small"
+							startIcon={<Insights />}
+							disableElevation
+							variant="contained"
+							sx={{
+								fontWeight: 'bold',
+								borderRadius: '16px',
+							}}
+						>
+							TREND
+						</Button>
+					</Stack>
 				</Grid>
 			</Grid>
 		</Box>
@@ -504,7 +523,18 @@ const ModalContentForTrend = ({
 	const chartOptions = {
 		chart: {
 			type: 'line',
-			toolbar: { show: false },
+			toolbar: {
+				show: true,
+				tools: {
+					download: true,
+					selection: false,
+					zoom: false,
+					zoomin: false,
+					zoomout: false,
+					pan: false,
+					reset: false,
+				},
+			},
 		},
 		stroke: {
 			curve: 'smooth',
@@ -711,13 +741,13 @@ const ModalContentForTrend = ({
 							textTransform: 'none',
 							fontSize: '0.95rem',
 
-							color: '#0156A6',
+							color: 'primary.main',
 							minHeight: '32px',
 							transition: 'all 0.3s ease',
 							p: 0,
 							mr: 3,
 							'&.Mui-selected': {
-								color: '#0156A6',
+								color: 'primary.main',
 								fontWeight: 1000,
 							},
 						},
@@ -901,7 +931,7 @@ const EnergyMachineList = () => {
 								})}
 							</Grid>
 						) : (
-							<NoDataFound />
+							<NoDataFound message="No machine readings received yet — data appears once the device reports" />
 						)}
 					</Grid>
 				</Grid>

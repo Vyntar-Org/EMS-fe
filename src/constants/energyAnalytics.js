@@ -60,11 +60,14 @@ export const KEY_PARAMETER_OPTIONS_MAPPING = {
 	water_level: 'Water Level (m)',
 };
 
+// Theme-reactive analytics section backgrounds. The actual colors are CSS
+// variables defined per theme mode in main.jsx (GlobalStyles) — light mode
+// keeps the original soft pastels, dark mode uses subtle navy tints.
 export const UNIQUE_PASTEL_BGS = [
-	'#f4f8fa',
-	'#f7f5fa',
-	'#faf8f5',
-	'#f5faf6',
-	'#faf5f5',
-	'#fbfaf4',
+	'var(--analytics-panel-0)',
+	'var(--analytics-panel-1)',
+	'var(--analytics-panel-2)',
+	'var(--analytics-panel-3)',
+	'var(--analytics-panel-4)',
+	'var(--analytics-panel-5)',
 ];

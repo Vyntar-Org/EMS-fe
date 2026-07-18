@@ -83,10 +83,10 @@ export const downAnalyticsSampleData = (data, threshold, key) => {
 export const basePickerStyles = {
 	'& .MuiOutlinedInput-root': {
 		borderRadius: 2,
-		backgroundColor: '#f9f9f9',
+		backgroundColor: 'surface.muted',
 		transition: '0.3s',
 		'&:hover': {
-			backgroundColor: '#fff',
+			backgroundColor: 'background.paper',
 		},
 	},
 };

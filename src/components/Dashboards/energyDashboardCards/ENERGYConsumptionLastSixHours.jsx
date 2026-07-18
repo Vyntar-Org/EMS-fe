@@ -1,3 +1,4 @@
+import { CHART_COLORS } from '../../../helpers/chartConfig';
 import React, { useEffect, useState } from 'react';
 import CustomCard from '../../common/CustomCard';
 import { API_URLS } from '../../../helpers/apiUrls';
@@ -37,13 +38,24 @@ const ENERGYConsumptionLastSixHours = () => {
 	const options = {
 		chart: {
 			type: 'area',
-			toolbar: { show: false },
-			zoom: { enabled: true },
+			toolbar: {
+				show: true,
+				tools: {
+					download: true,
+					selection: false,
+					zoom: false,
+					zoomin: false,
+					zoomout: false,
+					pan: false,
+					reset: false,
+				},
+			},
+			zoom: { enabled: false },
 		},
 		stroke: {
 			curve: 'smooth',
 			width: 3,
-			colors: ['#2E4355'],
+			colors: [CHART_COLORS.navy],
 		},
 		fill: {
 			type: 'gradient',
@@ -59,7 +71,7 @@ const ENERGYConsumptionLastSixHours = () => {
 			offsetY: -10,
 			style: {
 				fontSize: '12px',
-				colors: ['#304758'],
+				colors: [CHART_COLORS.navy],
 			},
 		},
 		xaxis: {
@@ -82,7 +94,7 @@ const ENERGYConsumptionLastSixHours = () => {
 				formatter: (val) => `${val} kWh`,
 			},
 		},
-		colors: ['#2E4355'],
+		colors: [CHART_COLORS.navy],
 		grid: {
 			show: false,
 		},
@@ -101,7 +113,7 @@ const ENERGYConsumptionLastSixHours = () => {
 					/>
 				</Box>
 			) : (
-				<NoDataFound />
+				<NoDataFound message="Waiting for live device data — readings appear automatically" />
 			)}
 		</CustomCard>
 	);
