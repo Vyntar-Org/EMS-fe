@@ -163,12 +163,12 @@ export const Header = ({
 									boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
 									transition: 'all 0.2s ease',
 									// '&:hover': {
-										backgroundColor: '#0A2B51',
-										borderColor: 'rgba(245, 213, 71, 0.75)',
-										color: 'secondary.main',
+									backgroundColor: '#0A2B51',
+									borderColor: 'rgba(245, 213, 71, 0.75)',
+									color: 'secondary.main',
 									// },
 									'&:hover': {
-backgroundColor: '#0A2B51',
+										backgroundColor: '#0A2B51',
 									},
 									'&.Mui-disabled': {
 										backgroundColor: 'rgba(255,255,255,0.08)',

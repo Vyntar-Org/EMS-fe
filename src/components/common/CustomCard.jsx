@@ -176,8 +176,8 @@ const CustomCard = ({
 								<Box width={titleIcon ? 'calc(100% - 36px - 8px)' : '100%'}>
 									<ResponsiveTextWrapper
 										value={title}
-										color='text.primary'
-										letterSpacing='0.2px'
+										color="text.primary"
+										letterSpacing="0.2px"
 										fontWeight={700}
 									/>
 								</Box>

@@ -285,7 +285,10 @@ export const CustomAutocomplete = ({
 				renderTags={(value, getTagProps) => {
 					if (value.length === 0) return null;
 					return (
-						<Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+						<Typography
+							variant="caption"
+							sx={{ ml: 1, color: 'text.secondary' }}
+						>
 							{value.length} items selected
 						</Typography>
 					);

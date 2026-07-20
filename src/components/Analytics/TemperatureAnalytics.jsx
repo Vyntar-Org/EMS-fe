@@ -337,11 +337,11 @@ const TemperatureAnalytics = () => {
 
 					const performanceChartOptions = {
 						chart: {
-						type: 'line',
-						zoom: { enabled: false },
-						animations: {
-							enabled: false,
-						},
+							type: 'line',
+							zoom: { enabled: false },
+							animations: {
+								enabled: false,
+							},
 							toolbar: {
 								show: true,
 								tools: {

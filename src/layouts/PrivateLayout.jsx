@@ -77,7 +77,7 @@ export const PrivateLayout = () => {
 					sx={{
 						flexGrow: 1,
 						minHeight: 0,
-						overflow:'hidden',
+						overflow: 'hidden',
 						p: 1,
 						backgroundColor: 'background.default',
 						...layoutBackgroundSx('main', selectedApp, theme.palette.mode),

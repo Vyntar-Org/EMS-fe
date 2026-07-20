@@ -55,7 +55,7 @@ const ReportsHeader = ({
 				borderColor: 'divider',
 			}}
 		>
-			<Tabs 
+			<Tabs
 				value={selectedTab}
 				onChange={(e, val) => {
 					if (!val) return;
@@ -92,7 +92,8 @@ const ReportsHeader = ({
 				}}
 			>
 				{ENERGY_REPORTS_TAB_OPTIONS.map((app) => (
-					<Tab disabled={loading}
+					<Tab
+						disabled={loading}
 						disableRipple
 						key={app.tab}
 						label={

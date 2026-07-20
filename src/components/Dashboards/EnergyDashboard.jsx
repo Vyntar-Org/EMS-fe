@@ -57,12 +57,12 @@ const EnergyDashboard = () => {
 	) : (
 		<Box
 			sx={{
-				overflow:'auto',
+				overflow: 'auto',
 				height: {
-						xs: 'calc(100vh - 56px - 16px)',
-						sm: 'calc(100vh - 64px - 16px)',
-						md: 'calc(100vh - 64px - 8px)',
-					},
+					xs: 'calc(100vh - 56px - 16px)',
+					sm: 'calc(100vh - 64px - 16px)',
+					md: 'calc(100vh - 64px - 8px)',
+				},
 			}}
 		>
 			<Grid container spacing={1} height={{ sm: '350px', md: '200px' }}>
@@ -91,21 +91,16 @@ const EnergyDashboard = () => {
 			>
 				<Grid item xs={12} sm={12} md={5.4} height={{ md: '100%' }}>
 					<Grid container rowGap={1} height={{ md: '100%' }}>
-						<Grid item xs={12} sm={12} height={{  md: '50%' }}>
+						<Grid item xs={12} sm={12} height={{ md: '50%' }}>
 							<ENERGYConsumptionLastSixHours />
 						</Grid>
-						<Grid
-							item
-							xs={12}
-							sm={12}
-							height={{  md: 'calc(50% - 8px)' }}
-						>
+						<Grid item xs={12} sm={12} height={{ md: 'calc(50% - 8px)' }}>
 							<ENERGYDemandIndicator slavesId={slavesId} />
 						</Grid>
 					</Grid>
 				</Grid>
 
-				<Grid item xs={12} sm={12} md={6.6} height={{  md: '100%' }}>
+				<Grid item xs={12} sm={12} md={6.6} height={{ md: '100%' }}>
 					<ENERGYMachinePowerConsumption
 						slavesId={slavesId}
 						setSlavesId={setSlavesId}
