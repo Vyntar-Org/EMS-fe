@@ -57,7 +57,7 @@ export const Header = ({
 	const { mode, setMode } = useThemeMode();
 	const navigate = useNavigate();
 	const theme = useTheme();
-	const isDesktop = useMediaQuery(theme.breakpoints.up('sm'));
+	const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
 	const [anchorEl, setAnchorEl] = useState(null);
 	const [logoutModalOpen, setLogoutModalOpen] = useState(false);
@@ -157,15 +157,18 @@ export const Header = ({
 									borderRadius: '10px',
 									// Sits on the navy wedge of the header artwork —
 									// white/gold reads well there in both themes.
-									color: isDesktop ? '#FFFFFF' : 'primary.main',
-									backgroundColor: 'rgba(255,255,255,0.12)',
+									// color: isDesktop ? '#FFFFFF' : 'primary.main',
+									// backgroundColor: 'rgba(255,255,255,0.12)',
 									border: '1px solid rgba(255,255,255,0.35)',
 									boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
 									transition: 'all 0.2s ease',
-									'&:hover': {
-										backgroundColor: 'rgba(255,255,255,0.22)',
+									// '&:hover': {
+										backgroundColor: '#0A2B51',
 										borderColor: 'rgba(245, 213, 71, 0.75)',
 										color: 'secondary.main',
+									// },
+									'&:hover': {
+backgroundColor: '#0A2B51',
 									},
 									'&.Mui-disabled': {
 										backgroundColor: 'rgba(255,255,255,0.08)',
@@ -220,7 +223,7 @@ export const Header = ({
 						<Box
 							sx={{
 								flex: 1,
-								display: { xs: 'none', sm: 'flex' },
+								display: { xs: 'none', md: 'flex' },
 								justifyContent: 'start',
 							}}
 						>

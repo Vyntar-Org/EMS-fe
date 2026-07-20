@@ -520,7 +520,7 @@ export const Sidebar = ({
 					keepMounted: true,
 				}}
 				sx={{
-					display: { xs: 'block', sm: 'none' },
+					display: { xs: 'block', md: 'none' },
 					zIndex: (theme) => theme.zIndex.drawer + 2,
 					[`& .MuiDrawer-paper`]: {
 						width: '95%',
@@ -580,7 +580,7 @@ export const Sidebar = ({
 
 				<Box
 					sx={{
-						display: { xs: 'flex', sm: 'none' },
+						display: { xs: 'flex', md: 'none' },
 						width: '100%',
 						justifyContent: 'space-between',
 						p: 1,
@@ -609,7 +609,7 @@ export const Sidebar = ({
 			<Drawer
 				variant="permanent"
 				sx={{
-					display: { xs: 'none', sm: 'block' },
+					display: { xs: 'none', md: 'block' },
 					flexShrink: 0,
 					position: 'sticky',
 					top: 0,

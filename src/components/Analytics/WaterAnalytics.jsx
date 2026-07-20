@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import React, { useState } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import {
 	basePickerStyles,
 	downAnalyticsSampleData,
@@ -25,7 +25,7 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
 	}
 
 	const rawData = rawAnalytics.data;
-	const maxPoints = 1200;
+	const maxPoints = 300;
 
 	const series = activeKeys.map((key) => {
 		const sampledDataPoints = downAnalyticsSampleData(rawData, maxPoints, key);
@@ -40,8 +40,14 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
 		maxPoints,
 		activeKeys[0] || 'timestamp'
 	);
-	const categories = baseSampledData.map((item) =>
+	const allDates = baseSampledData.map((item) =>
 		item.timestamp ? dayjs(item.timestamp).format('DD MMM HH:mm') : ''
+	);
+
+	const maxLabels = 12;
+	const labelStep = Math.max(1, Math.ceil(allDates.length / maxLabels));
+	const categories = allDates.map((date, idx) =>
+		idx % labelStep === 0 ? date : ''
 	);
 
 	return { series, categories };
@@ -326,8 +332,11 @@ const WaterAnalytics = () => {
 
 					const performanceChartOptions = {
 						chart: {
-							type: 'line',
-							zoom: { enabled: false },
+						type: 'line',
+						zoom: { enabled: false },
+						animations: {
+							enabled: false,
+						},
 							toolbar: {
 								show: true,
 								tools: {
@@ -357,6 +366,11 @@ const WaterAnalytics = () => {
 						tooltip: { shared: true, intersect: false },
 						legend: { position: 'top', horizontalAlign: 'left' },
 						grid: { borderColor: '#f1f1f1' },
+						states: {
+							normal: { filter: { type: 'none' } },
+							hover: { filter: { type: 'none' } },
+							active: { filter: { type: 'none' } },
+						},
 					};
 
 					const deviceLabel =

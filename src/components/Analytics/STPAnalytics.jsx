@@ -29,7 +29,7 @@ const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 // 	}
 
 // 	const rawData = rawAnalytics.data;
-// 	const maxPoints = 1200;
+// 	const maxPoints = 300;
 
 // 	const series = activeKeys.map((key) => {
 // 		const sampledDataPoints = downAnalyticsSampleData(rawData, maxPoints, key);

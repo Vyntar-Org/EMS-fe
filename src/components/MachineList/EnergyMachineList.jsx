@@ -890,7 +890,7 @@ const EnergyMachineList = () => {
 					isDownloadDisabled={!filteredMachines?.length || isLoading}
 				/>
 
-				<Grid container height="calc(100% - 44px - 8px)" pt={1} overflow="auto">
+				<Grid container height="calc(100% - 41px - 8px)" pt={1} overflow="auto">
 					<Grid item xs={12}>
 						{isLoading ? (
 							<EnergyMachineListSkeleton />

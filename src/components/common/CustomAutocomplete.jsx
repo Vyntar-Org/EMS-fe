@@ -228,7 +228,7 @@ export const CustomAutocomplete = ({
 							'& .MuiOutlinedInput-root': {
 								borderRadius: 2,
 								height: '40px',
-								overflowY: 'auto',
+								overflowY: 'hidden',
 								display: 'flex',
 								flexWrap: 'nowrap',
 								alignItems: 'center',
@@ -285,7 +285,7 @@ export const CustomAutocomplete = ({
 				renderTags={(value, getTagProps) => {
 					if (value.length === 0) return null;
 					return (
-						<Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
+						<Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
 							{value.length} items selected
 						</Typography>
 					);
