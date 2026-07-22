@@ -275,7 +275,7 @@ export const Sidebar = ({
 								left: 0,
 								right: 0,
 								height: 54,
-								borderRadius: '0 40px 0 0',
+								borderRadius: '0 20px 0 0',
 								backgroundColor: '#12233E',
 							},
 							bgcolor: '#fff',

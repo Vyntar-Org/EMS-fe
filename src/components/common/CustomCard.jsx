@@ -48,7 +48,7 @@ const StyledCard = styled(Card)(({ theme, accentcolor }) => {
 			isDark ? 0.22 : 0.13
 		)} 0%, ${theme.palette.background.paper} 62%)`,
 		transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-		border: `1px solid ${alpha(accent, isDark ? 0.34 : 0.26)}`,
+		border: `2px solid ${alpha(accent, isDark ? 0.34 : 0.26)}`,
 		// Layered elevation: tight key shadow + wide soft ambient + a subtle
 		// inner top highlight for a glass finish
 		boxShadow: isDark
@@ -122,7 +122,7 @@ const CustomCard = ({
 							// KPI look: large icons in a gradient accent chip with a
 							// soft ring; the chip lifts slightly when the card hovers
 							'& > svg, & .MuiSvgIcon-root': {
-								fontSize: 36,
+								fontSize: 50,
 								padding: '6px',
 								borderRadius: '12px',
 								// Dark mode: white icons on the tinted chip read better
@@ -206,9 +206,9 @@ const CustomCard = ({
 				)}
 
 				<Box
-					height={`calc(100% ${
-						title || subtitle || icon ? '- 14px - 18px' : ''
-					}  )`}
+					height={`calc(100% - 8px ${titleIcon || icon ? '- 50px' : ''} ${
+						title && !titleIcon && !icon ? '- 24px' : ''
+					} ${subtitle ? '- 20px' : ''})`}
 					overflow="auto"
 					{...childrenOtherProps}
 				>

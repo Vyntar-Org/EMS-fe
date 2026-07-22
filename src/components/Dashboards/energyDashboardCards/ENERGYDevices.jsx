@@ -5,6 +5,9 @@ import NoDataFound from '../../common/errors/NoDataFound';
 import { Box, Divider, Grid, Typography } from '@mui/material';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
+const ONLINE_COLOR = '#16A34A';
+const OFFLINE_COLOR = '#DC2626';
+
 const ENERGYDevices = ({ data }) => {
 	const MetricBlock = ({ label, value, showDivider }) => (
 		<Grid
@@ -19,16 +22,17 @@ const ENERGYDevices = ({ data }) => {
 		>
 			<Box sx={{ textAlign: 'center', width: '100%', px: 0.5 }}>
 				<ResponsiveTextWrapper
+					fontSize="16px"
 					variant="caption"
-					color="text.secondary"
 					fontWeight={700}
 					textTransform="uppercase"
 					value={label}
+					color={label === 'ONLINE' ? ONLINE_COLOR : OFFLINE_COLOR}
 				/>
 
 				<ResponsiveTextWrapper
-					fontSize="14px"
-					color={label === 'ONLINE' ? 'green' : 'red'}
+					fontSize="26px"
+					color={label === 'ONLINE' ? ONLINE_COLOR : OFFLINE_COLOR}
 					fontWeight={800}
 					mt={1}
 					value={value?.toLocaleString() || 0}

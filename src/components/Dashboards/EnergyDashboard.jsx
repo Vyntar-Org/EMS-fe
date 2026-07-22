@@ -65,20 +65,20 @@ const EnergyDashboard = () => {
 				},
 			}}
 		>
-			<Grid container spacing={1} height={{ sm: '350px', md: '200px' }}>
-				<Grid item xs={12} sm={4} md={1.7}>
+			<Grid container spacing={1} height={{ md: '200px' }}>
+				<Grid item xs={12} sm={4} md={1.7} height={{ md: '100%' }}>
 					<ENERGYDevices data={overviewData?.devices} />
 				</Grid>
-				<Grid item xs={12} sm={8} md={3.7}>
+				<Grid item xs={12} sm={8} md={3.7} height={{ md: '100%' }}>
 					<ENERGYConsumption data={overviewData?.energy_consumption} />
 				</Grid>
-				<Grid item xs={12} sm={4} md={2}>
+				<Grid item xs={12} sm={4} md={2} height={{ md: '100%' }}>
 					<ENERGYEnerTree data={overviewData?.ener_tree} />
 				</Grid>
-				<Grid item xs={12} sm={4} md={2.6}>
+				<Grid item xs={12} sm={4} md={2.6} height={{ md: '100%' }}>
 					<ENERGYCarbonFootprints data={overviewData?.carbon_footprints} />
 				</Grid>
-				<Grid item xs={12} sm={4} md={2}>
+				<Grid item xs={12} sm={4} md={2} height={{ md: '100%' }}>
 					<ENERGYLoadBalance data={overviewData?.load_balance} />
 				</Grid>
 			</Grid>
