@@ -52,7 +52,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 				}`
 			);
 			if (getMachineConsumptionData?.success) {
-				setMachineConsumption(getMachineConsumptionData?.data);
+				setMachineConsumption(getMachineConsumptionData?.data?.data);
 			}
 		} catch (error) {
 			console.error('One of the API calls failed:', error);

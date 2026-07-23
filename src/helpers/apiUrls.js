@@ -11,26 +11,26 @@ const AUTH = {
 };
 
 const EMS_DASHBOARD = {
-	EMS_DASHBOARD_OVERVIEW: '/dashboards/overview/',
+	EMS_DASHBOARD_OVERVIEW: '/applications/energy/dashboard-overview/',
 	EMS_DASHBOARD_HOURLY_CONSUMPTION:
 		'/applications/energy/hourly-consumption-trend/',
 	EMS_DASHBOARD_MACHINE_CONSUMPTION:
-		'/admin/charts/slave/acte-im-consumption-7days/',
+		'/applications/energy/dashboard-energy-chart/',
 	EMS_DASHBOARD_DEMAND_INDICATOR: '/applications/energy/peak-demand-trend/',
 };
 
 const EMS_MACHINE_LIST = {
-	EMS_MACHINE_LIST_DATA: '/admin/machine-list/',
+	EMS_MACHINE_LIST_DATA: '/applications/energy/machine-list/',
 	EMS_MACHINE_LIST_ACTIVE_POWER: (slaveId) =>
-		`/admin/machine-list/active-power-chart/?slave_id=${slaveId}`,
+		`/applications/energy/machine-list/active-power-chart/?slave_id=${slaveId}`,
 	EMS_MACHINE_LIST_VOLTAGE: (slaveId) =>
-		`/admin/machine-list/voltage/?slave_id=${slaveId}`,
+		`/applications/energy/machine-list/voltage-chart/?slave_id=${slaveId}`,
 	EMS_MACHINE_LIST_CURRENT: (slaveId) =>
-		`/admin/machine-list/current/?slave_id=${slaveId}`,
+		`/applications/energy/machine-list/current-chart/?slave_id=${slaveId}`,
 	EMS_MACHINE_LIST_POWER_FACTOR: (slaveId) =>
-		`/admin/machine-list/power-factor/?slave_id=${slaveId}`,
+		`/applications/energy/machine-list/pf-chart/?slave_id=${slaveId}`,
 	EMS_MACHINE_LIST_FREQUENCY: (slaveId) =>
-		`/admin/machine-list/frequency/?slave_id=${slaveId}`,
+		`/applications/energy/machine-list/frequency-chart/?slave_id=${slaveId}`,
 };
 
 const EMS_ANALYTICS = {
