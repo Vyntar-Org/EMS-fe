@@ -248,7 +248,8 @@ export const buildPremiumTooltip = ({ unit = '', titleFormat } = {}) =>
 				if (raw === undefined || raw === null) {
 					return '';
 				}
-				const color = w.globals.colors?.[i] || w.config.colors?.[i] || '#2a78d6';
+				const color =
+					w.globals.colors?.[i] || w.config.colors?.[i] || '#2a78d6';
 				const emphasize = i === seriesIndex ? 'font-weight:700;' : '';
 				return `
 					<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:3px 0;${emphasize}">
@@ -256,17 +257,17 @@ export const buildPremiumTooltip = ({ unit = '', titleFormat } = {}) =>
 							<span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></span>
 							<span style="font-size:12px;color:${ink.secondary};">${name}</span>
 						</span>
-						<span style="font-size:12px;font-weight:700;color:${ink.primary};white-space:nowrap;">${raw}${
-					unit ? ` ${unit}` : ''
-				}</span>
+						<span style="font-size:12px;font-weight:700;color:${
+							ink.primary
+						};white-space:nowrap;">${raw}${unit ? ` ${unit}` : ''}</span>
 					</div>`;
 			})
 			.join('');
 
 		return `
 			<div style="background:${ink.surface};border:1px solid ${
-			ink.border
-		};border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.22);min-width:130px;">
+				ink.border
+			};border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.22);min-width:130px;">
 				${
 					title
 						? `<div style="font-size:11px;font-weight:700;color:${ink.secondary};margin-bottom:6px;">${title}</div>`
@@ -288,14 +289,14 @@ export const buildDonutTooltip = ({ unit = '' } = {}) =>
 
 		return `
 			<div style="background:${ink.surface};border:1px solid ${
-			ink.border
-		};border-radius:10px;padding:8px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.22);">
+				ink.border
+			};border-radius:10px;padding:8px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.22);">
 				<div style="display:flex;align-items:center;gap:8px;">
 					<span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></span>
 					<span style="font-size:12px;color:${ink.secondary};">${name}</span>
 					<span style="font-size:12px;font-weight:700;color:${ink.primary};">${value}${
-			unit ? ` ${unit}` : ''
-		}</span>
+						unit ? ` ${unit}` : ''
+					}</span>
 				</div>
 			</div>`;
 	};

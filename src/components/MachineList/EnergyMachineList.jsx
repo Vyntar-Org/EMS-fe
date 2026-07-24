@@ -738,7 +738,11 @@ const ModalContentForTrend = ({
 								(k) => k.value
 							);
 							fetchTrendModalChartData(newTab, defaultKeyParam?.value);
-							handleTabChange(newTab, defaultKeyParam?.desc, defaultKeyParam?.value);
+							handleTabChange(
+								newTab,
+								defaultKeyParam?.desc,
+								defaultKeyParam?.value
+							);
 							return;
 						}
 

@@ -72,7 +72,8 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	// Downsample once so the x-axis categories and the bar/line series stay
 	// aligned, and a long history doesn't crowd a card-sized chart.
 	const chartData = useMemo(
-		() => downsample(Array.isArray(machineConsumption) ? machineConsumption : []),
+		() =>
+			downsample(Array.isArray(machineConsumption) ? machineConsumption : []),
 		[machineConsumption]
 	);
 

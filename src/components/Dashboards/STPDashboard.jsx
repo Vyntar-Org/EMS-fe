@@ -4,7 +4,10 @@ import ReactApexChart from 'react-apexcharts';
 
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { getChartOptions, getCategoricalColors } from '../../helpers/chartConfig';
+import {
+	getChartOptions,
+	getCategoricalColors,
+} from '../../helpers/chartConfig';
 import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
