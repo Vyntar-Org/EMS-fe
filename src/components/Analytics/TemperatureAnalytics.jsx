@@ -1,5 +1,12 @@
 import { RestartAlt, Search } from '@mui/icons-material';
-import { Box, Button, Checkbox, FormControlLabel, Grid, Typography } from '@mui/material';
+import {
+	Box,
+	Button,
+	Checkbox,
+	FormControlLabel,
+	Grid,
+	Typography,
+} from '@mui/material';
 import dayjs from 'dayjs';
 import React, { memo, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
@@ -91,7 +98,15 @@ const GlobalFiltersRow = ({
 				/>
 			</Grid>
 
-			<Grid item xs={12} sm="auto" ml="auto" display="flex" alignItems="center" gap={1.5}>
+			<Grid
+				item
+				xs={12}
+				sm="auto"
+				ml="auto"
+				display="flex"
+				alignItems="center"
+				gap={1.5}
+			>
 				{showMergeOption && (
 					<FormControlLabel
 						control={
@@ -231,7 +246,9 @@ const TemperatureAnalytics = () => {
 
 	const handleSearch = async (id) => {
 		const currentPayload = payloads[id];
-		if (!currentPayload?.slave_id) {return;}
+		if (!currentPayload?.slave_id) {
+			return;
+		}
 
 		setLoadingMap((prev) => ({ ...prev, [id]: true }));
 		try {
@@ -349,7 +366,10 @@ const TemperatureAnalytics = () => {
 								?.map((param) => param.value)
 								.filter(Boolean) || [];
 
-						const processedData = getProcessedChartData(rawAnalytics, activeKeys);
+						const processedData = getProcessedChartData(
+							rawAnalytics,
+							activeKeys
+						);
 
 						const selectedDeviceIdsInOtherRows = Object.keys(payloads)
 							.filter((rowId) => Number(rowId) !== id)

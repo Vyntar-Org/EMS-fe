@@ -1,7 +1,10 @@
 import { Box } from '@mui/material';
 
 import { getTemperatureStatus } from '../../../helpers/temperatureStatus';
-import { MachineMetricPanel, MachineTemperatureGauge } from '../../common/MachineCardBits';
+import {
+	MachineMetricPanel,
+	MachineTemperatureGauge,
+} from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 
 /**

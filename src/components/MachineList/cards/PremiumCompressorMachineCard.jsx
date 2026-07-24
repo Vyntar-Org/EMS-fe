@@ -8,7 +8,10 @@ import {
 	TableRow,
 } from '@mui/material';
 
-import { MachineRatioDonut, APP_ACCENT_COLOR } from '../../common/MachineCardBits';
+import {
+	MachineRatioDonut,
+	APP_ACCENT_COLOR,
+} from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
@@ -61,7 +64,13 @@ const PremiumCompressorMachineCard = ({
 			lastUpdated={lastUpdated}
 			onOpenTrend={onOpenTrend}
 		>
-			<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" mb={1.25}>
+			<Stack
+				direction="row"
+				spacing={1}
+				alignItems="center"
+				flexWrap="wrap"
+				mb={1.25}
+			>
 				<ResponsiveTextWrapper
 					value="Current Status:"
 					fontWeight="bold"
@@ -105,17 +114,32 @@ const PremiumCompressorMachineCard = ({
 			)}
 
 			<Box mb={1.25}>
-				<ResponsiveTextWrapper value="Last Stoppage" fontWeight="bold" fontSize="13px" />
-				<Table size="small" sx={{ mt: 0.5, width: '100%', tableLayout: 'fixed' }}>
+				<ResponsiveTextWrapper
+					value="Last Stoppage"
+					fontWeight="bold"
+					fontSize="13px"
+				/>
+				<Table
+					size="small"
+					sx={{ mt: 0.5, width: '100%', tableLayout: 'fixed' }}
+				>
 					<TableHead>
 						<TableRow>
-							<TableCell sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}>
+							<TableCell
+								sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}
+							>
 								Start Time
 							</TableCell>
-							<TableCell align="center" sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}>
+							<TableCell
+								align="center"
+								sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}
+							>
 								End Time
 							</TableCell>
-							<TableCell align="center" sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}>
+							<TableCell
+								align="center"
+								sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}
+							>
 								Duration
 							</TableCell>
 						</TableRow>
@@ -125,10 +149,16 @@ const PremiumCompressorMachineCard = ({
 							<TableCell sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}>
 								{lastStoppageStart || '-'}
 							</TableCell>
-							<TableCell align="center" sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}>
+							<TableCell
+								align="center"
+								sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}
+							>
 								{lastStoppageEnd || '-'}
 							</TableCell>
-							<TableCell align="center" sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}>
+							<TableCell
+								align="center"
+								sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}
+							>
 								{lastStoppageDuration || '-'}
 							</TableCell>
 						</TableRow>
@@ -139,37 +169,67 @@ const PremiumCompressorMachineCard = ({
 			<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
 				<TableHead>
 					<TableRow>
-						<TableCell sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}>
+						<TableCell
+							sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}
+						>
 							Stoppages History
 						</TableCell>
-						<TableCell align="center" sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}>
+						<TableCell
+							align="center"
+							sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}
+						>
 							Previous 8hrs
 						</TableCell>
-						<TableCell align="center" sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}>
+						<TableCell
+							align="center"
+							sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}
+						>
 							Previous 24hrs
 						</TableCell>
 					</TableRow>
 				</TableHead>
 				<TableBody>
 					<TableRow>
-						<TableCell sx={{ border: 0, p: 0.5, fontSize: '11.5px', fontWeight: 'bold' }}>
+						<TableCell
+							sx={{ border: 0, p: 0.5, fontSize: '11.5px', fontWeight: 'bold' }}
+						>
 							No. of Stoppages
 						</TableCell>
-						<TableCell align="center" sx={{ border: 0, p: 0.5, fontSize: '11.5px', fontWeight: 'bold' }}>
-							<StoppageCount count={previous8Count} onClick={() => onStoppageClick(8)} />
+						<TableCell
+							align="center"
+							sx={{ border: 0, p: 0.5, fontSize: '11.5px', fontWeight: 'bold' }}
+						>
+							<StoppageCount
+								count={previous8Count}
+								onClick={() => onStoppageClick(8)}
+							/>
 						</TableCell>
-						<TableCell align="center" sx={{ border: 0, p: 0.5, fontSize: '11.5px', fontWeight: 'bold' }}>
-							<StoppageCount count={previous24Count} onClick={() => onStoppageClick(24)} />
+						<TableCell
+							align="center"
+							sx={{ border: 0, p: 0.5, fontSize: '11.5px', fontWeight: 'bold' }}
+						>
+							<StoppageCount
+								count={previous24Count}
+								onClick={() => onStoppageClick(24)}
+							/>
 						</TableCell>
 					</TableRow>
 					<TableRow>
-						<TableCell sx={{ border: 0, p: 0.5, fontSize: '11.5px', fontWeight: 'bold' }}>
+						<TableCell
+							sx={{ border: 0, p: 0.5, fontSize: '11.5px', fontWeight: 'bold' }}
+						>
 							Stoppage Duration
 						</TableCell>
-						<TableCell align="center" sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}>
+						<TableCell
+							align="center"
+							sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}
+						>
 							{previous8Duration}
 						</TableCell>
-						<TableCell align="center" sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}>
+						<TableCell
+							align="center"
+							sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}
+						>
 							{previous24Duration}
 						</TableCell>
 					</TableRow>

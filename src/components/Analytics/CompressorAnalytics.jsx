@@ -1,5 +1,12 @@
 import { RestartAlt, Search } from '@mui/icons-material';
-import { Box, Button, Checkbox, FormControlLabel, Grid, Typography } from '@mui/material';
+import {
+	Box,
+	Button,
+	Checkbox,
+	FormControlLabel,
+	Grid,
+	Typography,
+} from '@mui/material';
 import dayjs from 'dayjs';
 import React, { useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
@@ -106,7 +113,15 @@ const GlobalFiltersRow = ({
 				/>
 			</Grid>
 
-			<Grid item xs={12} sm="auto" ml="auto" display="flex" alignItems="center" gap={1.5}>
+			<Grid
+				item
+				xs={12}
+				sm="auto"
+				ml="auto"
+				display="flex"
+				alignItems="center"
+				gap={1.5}
+			>
 				{showMergeOption && (
 					<FormControlLabel
 						control={
@@ -246,7 +261,9 @@ const CompressorAnalytics = () => {
 
 	const handleSearch = async (id) => {
 		const currentPayload = payloads[id];
-		if (!currentPayload?.slave_id) {return;}
+		if (!currentPayload?.slave_id) {
+			return;
+		}
 
 		setLoadingMap((prev) => ({ ...prev, [id]: true }));
 		try {
@@ -404,8 +421,12 @@ const CompressorAnalytics = () => {
 							labels: {
 								style: { colors: '#6B7280', fontSize: '12px' },
 								formatter: function (val) {
-									if (val >= 0.9) {return 'Online';}
-									if (val <= 0.1) {return 'Offline';}
+									if (val >= 0.9) {
+										return 'Online';
+									}
+									if (val <= 0.1) {
+										return 'Offline';
+									}
 									return '';
 								},
 							},
@@ -440,7 +461,9 @@ const CompressorAnalytics = () => {
 									allSeries.forEach((s) => {
 										const point = s.data[dataPointIndex];
 										if (point) {
-											if (!timestamp) {timestamp = point[0];}
+											if (!timestamp) {
+												timestamp = point[0];
+											}
 											tooltipHtml += getStatusRow(s.name, point[1]);
 										}
 									});
@@ -491,7 +514,10 @@ const CompressorAnalytics = () => {
 						const deviceLabel =
 							payloads[id]?.slave_id?.label || `Device Segment ${id}`;
 
-						const processedData = getProcessedChartData(rawAnalytics, activeKeys);
+						const processedData = getProcessedChartData(
+							rawAnalytics,
+							activeKeys
+						);
 
 						const selectedDeviceIdsInOtherRows = Object.keys(payloads)
 							.filter((rowId) => Number(rowId) !== id)
@@ -610,7 +636,9 @@ const CompressorAnalytics = () => {
 									<NoDataFound message="Select a device and parameters, then click Analyze to view insights" />
 								) : (
 									<ReactApexChart
-										options={buildChartOptions(row.processedData.series.length > 1)}
+										options={buildChartOptions(
+											row.processedData.series.length > 1
+										)}
 										series={row.processedData.series}
 										type="area"
 										height="100%"

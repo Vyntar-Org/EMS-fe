@@ -7,7 +7,10 @@ import {
 	TableRow,
 } from '@mui/material';
 
-import { APP_ACCENT_COLOR, MachineRatioDonut } from '../../common/MachineCardBits';
+import {
+	APP_ACCENT_COLOR,
+	MachineRatioDonut,
+} from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 import StatusChips from '../../common/StatusChips';
@@ -15,7 +18,8 @@ import StatusChips from '../../common/StatusChips';
 // Two-column collection-tank readout (Water Level / Motor Status per tank) —
 // unique to the STP/FlowMeter TANK_CARD variant.
 const WaterLevelTableRows = ({ groupedMetricsData }) => {
-	const findMetric = (key) => groupedMetricsData?.find((m) => m.metric_key === key);
+	const findMetric = (key) =>
+		groupedMetricsData?.find((m) => m.metric_key === key);
 
 	const level1 = findMetric('Level 1');
 	const level2 = findMetric('Level 2');
@@ -27,17 +31,27 @@ const WaterLevelTableRows = ({ groupedMetricsData }) => {
 			left: {
 				label: 'Water Level',
 				value: level1?.value,
-				color: level1?.status_color || (level1?.value === 'Full' ? 'RED' : 'GREEN'),
+				color:
+					level1?.status_color || (level1?.value === 'Full' ? 'RED' : 'GREEN'),
 			},
 			right: {
 				label: 'Water Level',
 				value: level2?.value,
-				color: level2?.status_color || (level2?.value === 'Low' ? 'RED' : 'GREEN'),
+				color:
+					level2?.status_color || (level2?.value === 'Low' ? 'RED' : 'GREEN'),
 			},
 		},
 		{
-			left: { label: 'Motor Status', value: motor1?.value, color: motor1?.status_color },
-			right: { label: 'Motor Status', value: motor2?.value, color: motor2?.status_color },
+			left: {
+				label: 'Motor Status',
+				value: motor1?.value,
+				color: motor1?.status_color,
+			},
+			right: {
+				label: 'Motor Status',
+				value: motor2?.value,
+				color: motor2?.status_color,
+			},
 		},
 	];
 
@@ -55,17 +69,46 @@ const WaterLevelTableRows = ({ groupedMetricsData }) => {
 							borderRight: (t) => `1px solid ${t.palette.divider}`,
 						}}
 					>
-						<Box width="100%" display="flex" justifyContent="space-between" alignItems="center">
+						<Box
+							width="100%"
+							display="flex"
+							justifyContent="space-between"
+							alignItems="center"
+						>
 							<Box width="calc(100% - 40px - 4px)" textAlign="left">
-								<ResponsiveTextWrapper fontSize="14px" color="text.primary" fontWeight={500} value={row.left.label} />
+								<ResponsiveTextWrapper
+									fontSize="14px"
+									color="text.primary"
+									fontWeight={500}
+									value={row.left.label}
+								/>
 							</Box>
 							<StatusChips value={String(row.left.value ?? 'Nil')} />
 						</Box>
 					</TableCell>
-					<TableCell align="right" sx={{ border: 0, py: 0.5, width: '50%', px: 0.5, backgroundColor: 'background.paper' }}>
-						<Box width="100%" display="flex" justifyContent="space-between" alignItems="center">
+					<TableCell
+						align="right"
+						sx={{
+							border: 0,
+							py: 0.5,
+							width: '50%',
+							px: 0.5,
+							backgroundColor: 'background.paper',
+						}}
+					>
+						<Box
+							width="100%"
+							display="flex"
+							justifyContent="space-between"
+							alignItems="center"
+						>
 							<Box width="calc(100% - 41px - 4px)" textAlign="left">
-								<ResponsiveTextWrapper fontSize="14px" color="text.primary" fontWeight={500} value={row.right.label} />
+								<ResponsiveTextWrapper
+									fontSize="14px"
+									color="text.primary"
+									fontWeight={500}
+									value={row.right.label}
+								/>
 							</Box>
 							<StatusChips value={String(row.right.value ?? 'Nil')} />
 						</Box>
@@ -101,7 +144,8 @@ const PremiumFlowCardMachineCard = ({
 	const isTankCard = cardType === 'TANK_CARD';
 	const isFlowCard = cardType === 'FLOW_CARD';
 	const mtdNum = Number(mtdValue ?? 0);
-	const donutPercent = mtdNum > 0 ? (Number(todayValue ?? 0) / mtdNum) * 100 : 0;
+	const donutPercent =
+		mtdNum > 0 ? (Number(todayValue ?? 0) / mtdNum) * 100 : 0;
 
 	return (
 		<PremiumMachineCard
@@ -163,9 +207,17 @@ const PremiumFlowCardMachineCard = ({
 							metrics.map((row) => (
 								<TableRow key={row.metric_key}>
 									<TableCell sx={{ border: 0, py: 0.5, width: '50%' }}>
-										<ResponsiveTextWrapper fontSize="13px" color="text.primary" fontWeight={500} value={row.label} />
+										<ResponsiveTextWrapper
+											fontSize="13px"
+											color="text.primary"
+											fontWeight={500}
+											value={row.label}
+										/>
 									</TableCell>
-									<TableCell align="right" sx={{ border: 0, py: 0.5, width: '50%' }}>
+									<TableCell
+										align="right"
+										sx={{ border: 0, py: 0.5, width: '50%' }}
+									>
 										<ResponsiveTextWrapper
 											fontSize="13.5px"
 											color="text.primary"

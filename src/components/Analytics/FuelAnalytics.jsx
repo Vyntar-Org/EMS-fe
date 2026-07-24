@@ -1,5 +1,12 @@
 import { RestartAlt, Search } from '@mui/icons-material';
-import { Box, Button, Checkbox, FormControlLabel, Grid, Typography } from '@mui/material';
+import {
+	Box,
+	Button,
+	Checkbox,
+	FormControlLabel,
+	Grid,
+	Typography,
+} from '@mui/material';
 import dayjs from 'dayjs';
 import React, { memo, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
@@ -17,7 +24,6 @@ import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
-
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 
@@ -87,7 +93,15 @@ const GlobalFiltersRow = ({
 				/>
 			</Grid>
 
-			<Grid item xs={12} sm="auto" ml="auto" display="flex" alignItems="center" gap={1.5}>
+			<Grid
+				item
+				xs={12}
+				sm="auto"
+				ml="auto"
+				display="flex"
+				alignItems="center"
+				gap={1.5}
+			>
 				{showMergeOption && (
 					<FormControlLabel
 						control={
@@ -227,7 +241,9 @@ const FuelAnalytics = () => {
 
 	const handleSearch = async (id) => {
 		const currentPayload = payloads[id];
-		if (!currentPayload?.slave_id) {return;}
+		if (!currentPayload?.slave_id) {
+			return;
+		}
 
 		setLoadingMap((prev) => ({ ...prev, [id]: true }));
 		try {
@@ -345,7 +361,10 @@ const FuelAnalytics = () => {
 								param.value ? param.value.split(',') : []
 							) || [];
 
-						const processedData = getProcessedChartData(rawAnalytics, activeKeys);
+						const processedData = getProcessedChartData(
+							rawAnalytics,
+							activeKeys
+						);
 
 						const selectedDeviceIdsInOtherRows = Object.keys(payloads)
 							.filter((rowId) => Number(rowId) !== id)

@@ -8,13 +8,23 @@ import {
 	TableRow,
 } from '@mui/material';
 
-import { APP_ACCENT_COLOR, MachineRatioDonut } from '../../common/MachineCardBits';
+import {
+	APP_ACCENT_COLOR,
+	MachineRatioDonut,
+} from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
 // 3-phase R/Y/B voltage+current table — unique to Energy, kept as its own
 // dedicated visual rather than folded into the generic metric panel.
-const PhaseTable = ({ phaseRV, phaseRA, phaseYV, phaseYA, phaseBV, phaseBA }) => (
+const PhaseTable = ({
+	phaseRV,
+	phaseRA,
+	phaseYV,
+	phaseYA,
+	phaseBV,
+	phaseBA,
+}) => (
 	<Box
 		sx={{
 			bgcolor: 'surface.muted',
@@ -29,13 +39,31 @@ const PhaseTable = ({ phaseRV, phaseRA, phaseYV, phaseYA, phaseBV, phaseBA }) =>
 			<TableHead>
 				<TableRow>
 					<TableCell sx={{ fontWeight: 'bold', border: 0, width: '40%' }}>
-						<ResponsiveTextWrapper fontSize="13px" fontWeight="bold" value="Phase" />
+						<ResponsiveTextWrapper
+							fontSize="13px"
+							fontWeight="bold"
+							value="Phase"
+						/>
 					</TableCell>
-					<TableCell align="right" sx={{ fontWeight: 'bold', border: 0, width: '30%' }}>
-						<ResponsiveTextWrapper fontSize="13px" fontWeight="bold" value="V" />
+					<TableCell
+						align="right"
+						sx={{ fontWeight: 'bold', border: 0, width: '30%' }}
+					>
+						<ResponsiveTextWrapper
+							fontSize="13px"
+							fontWeight="bold"
+							value="V"
+						/>
 					</TableCell>
-					<TableCell align="right" sx={{ fontWeight: 'bold', border: 0, width: '30%' }}>
-						<ResponsiveTextWrapper fontSize="13px" fontWeight="bold" value="A" />
+					<TableCell
+						align="right"
+						sx={{ fontWeight: 'bold', border: 0, width: '30%' }}
+					>
+						<ResponsiveTextWrapper
+							fontSize="13px"
+							fontWeight="bold"
+							value="A"
+						/>
 					</TableCell>
 				</TableRow>
 			</TableHead>
@@ -57,14 +85,26 @@ const PhaseTable = ({ phaseRV, phaseRA, phaseYV, phaseYA, phaseBV, phaseBA }) =>
 										mr: 1,
 									}}
 								/>
-								<ResponsiveTextWrapper fontSize="13px" fontWeight={500} value={row.name} />
+								<ResponsiveTextWrapper
+									fontSize="13px"
+									fontWeight={500}
+									value={row.name}
+								/>
 							</Box>
 						</TableCell>
 						<TableCell align="right" sx={{ border: 0, py: 0.5, width: '30%' }}>
-							<ResponsiveTextWrapper fontSize="13px" fontWeight={500} value={Number(row.v ?? 0).toFixed(2)} />
+							<ResponsiveTextWrapper
+								fontSize="13px"
+								fontWeight={500}
+								value={Number(row.v ?? 0).toFixed(2)}
+							/>
 						</TableCell>
 						<TableCell align="right" sx={{ border: 0, py: 0.5, width: '30%' }}>
-							<ResponsiveTextWrapper fontSize="13px" fontWeight={500} value={Number(row.a ?? 0).toFixed(1)} />
+							<ResponsiveTextWrapper
+								fontSize="13px"
+								fontWeight={500}
+								value={Number(row.a ?? 0).toFixed(1)}
+							/>
 						</TableCell>
 					</TableRow>
 				))}
@@ -76,8 +116,18 @@ const PhaseTable = ({ phaseRV, phaseRA, phaseYV, phaseYA, phaseBV, phaseBA }) =>
 const StatCell = ({ label, value }) => (
 	<Grid item xs={4} minWidth={0}>
 		<Box minWidth={0}>
-			<ResponsiveTextWrapper value={label} fontSize="11.5px" color="text.secondary" fontWeight={500} />
-			<ResponsiveTextWrapper value={value} fontSize="14px" color="text.primary" fontWeight={700} />
+			<ResponsiveTextWrapper
+				value={label}
+				fontSize="11.5px"
+				color="text.secondary"
+				fontWeight={500}
+			/>
+			<ResponsiveTextWrapper
+				value={value}
+				fontSize="14px"
+				color="text.primary"
+				fontWeight={700}
+			/>
 		</Box>
 	</Grid>
 );
@@ -116,12 +166,28 @@ const PremiumEnergyMachineCard = ({
 		trend={slaveId ? { url: trendUrl } : null}
 		onOpenTrend={onOpenTrend}
 	>
-		<Box display="flex" justifyContent="space-between" alignItems="baseline" mb={1} gap={1}>
+		<Box
+			display="flex"
+			justifyContent="space-between"
+			alignItems="baseline"
+			mb={1}
+			gap={1}
+		>
 			<Box minWidth={0} flex={1}>
-				<ResponsiveTextWrapper value="Total Energy" fontSize="12px" color="text.secondary" fontWeight={500} />
+				<ResponsiveTextWrapper
+					value="Total Energy"
+					fontSize="12px"
+					color="text.secondary"
+					fontWeight={500}
+				/>
 			</Box>
 			<Box flexShrink={0}>
-				<ResponsiveTextWrapper value={`${Number(total ?? 0).toFixed(1)} kWh`} fontSize="16px" color="text.primary" fontWeight={700} />
+				<ResponsiveTextWrapper
+					value={`${Number(total ?? 0).toFixed(1)} kWh`}
+					fontSize="16px"
+					color="text.primary"
+					fontWeight={700}
+				/>
 			</Box>
 		</Box>
 		<PhaseTable

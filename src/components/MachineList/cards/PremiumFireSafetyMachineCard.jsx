@@ -1,7 +1,10 @@
 import { Box } from '@mui/material';
 
 import { getTemperatureStatus } from '../../../helpers/temperatureStatus';
-import { MachineMetricPanel, MachineTemperatureGauge } from '../../common/MachineCardBits';
+import {
+	MachineMetricPanel,
+	MachineTemperatureGauge,
+} from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 
 /**
@@ -32,8 +35,14 @@ const PremiumFireSafetyMachineCard = ({
 		>
 			<MachineMetricPanel
 				rows={[
-					{ label: 'Temperature', value: `${Number(temperature ?? 0).toFixed(2)} °C` },
-					{ label: 'Water Level', value: `${Number(waterLevel ?? 0).toFixed(2)} m` },
+					{
+						label: 'Temperature',
+						value: `${Number(temperature ?? 0).toFixed(2)} °C`,
+					},
+					{
+						label: 'Water Level',
+						value: `${Number(waterLevel ?? 0).toFixed(2)} m`,
+					},
 				]}
 			/>
 			{tempStatus && (

@@ -1,7 +1,10 @@
 import { Box } from '@mui/material';
 
 import { getTemperatureStatus } from '../../../helpers/temperatureStatus';
-import { MachineMetricPanel, MachineTemperatureGauge } from '../../common/MachineCardBits';
+import {
+	MachineMetricPanel,
+	MachineTemperatureGauge,
+} from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 
 /**
@@ -36,11 +39,23 @@ const PremiumSolarMachineCard = ({
 		>
 			<MachineMetricPanel
 				rows={[
-					{ label: 'Instant Flow', value: `${Number(instantFlow ?? 0).toFixed(3)} m³/hr` },
-					{ label: 'Flow Temperature', value: `${Number(flowTemperature ?? 0).toFixed(2)} °C` },
+					{
+						label: 'Instant Flow',
+						value: `${Number(instantFlow ?? 0).toFixed(3)} m³/hr`,
+					},
+					{
+						label: 'Flow Temperature',
+						value: `${Number(flowTemperature ?? 0).toFixed(2)} °C`,
+					},
 					{ label: 'Pressure', value: Number(pressure ?? 0).toFixed(2) },
-					{ label: 'Inlet Temperature', value: `${Number(inletTemperature ?? 0).toFixed(2)} °C` },
-					{ label: 'Outlet Temperature', value: `${Number(outletTemperature ?? 0).toFixed(2)} °C` },
+					{
+						label: 'Inlet Temperature',
+						value: `${Number(inletTemperature ?? 0).toFixed(2)} °C`,
+					},
+					{
+						label: 'Outlet Temperature',
+						value: `${Number(outletTemperature ?? 0).toFixed(2)} °C`,
+					},
 				]}
 			/>
 			{outletStatus && (

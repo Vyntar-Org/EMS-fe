@@ -382,15 +382,12 @@ const STPMachineList = () => {
 													mc?.slave_id,
 													paramOptions?.[0]?.value
 												)}
-												onOpenTrend={() =>
-													handleOpenModal(mc, paramOptions)
-												}
+												onOpenTrend={() => handleOpenModal(mc, paramOptions)}
 												metrics={mc?.metrics?.filter(
 													(f) =>
-														![
-															'today_consumption',
-															'mtd_consumption',
-														].includes(f?.metric_key)
+														!['today_consumption', 'mtd_consumption'].includes(
+															f?.metric_key
+														)
 												)}
 											/>
 										</Grid>

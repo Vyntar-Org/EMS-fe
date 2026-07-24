@@ -1,6 +1,10 @@
 import { Box } from '@mui/material';
 
-import { APP_ACCENT_COLOR, MachineMetricPanel, MachineRatioDonut } from '../../common/MachineCardBits';
+import {
+	APP_ACCENT_COLOR,
+	MachineMetricPanel,
+	MachineRatioDonut,
+} from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 
 /**
@@ -44,8 +48,14 @@ const PremiumFuelMachineCard = ({
 		</Box>
 		<MachineMetricPanel
 			rows={[
-				{ label: 'Rate of Flow', value: `${Number(rateOfFlow ?? 0).toFixed(2)} m³/h` },
-				{ label: 'Totalizer', value: `${Number(totalizer ?? 0).toFixed(1)} m³` },
+				{
+					label: 'Rate of Flow',
+					value: `${Number(rateOfFlow ?? 0).toFixed(2)} m³/h`,
+				},
+				{
+					label: 'Totalizer',
+					value: `${Number(totalizer ?? 0).toFixed(1)} m³`,
+				},
 			]}
 		/>
 	</PremiumMachineCard>

@@ -114,7 +114,15 @@ const GlobalFiltersRow = memo(
 					/>
 				</Grid>
 
-				<Grid item xs={12} sm="auto" ml="auto" display="flex" alignItems="center" gap={1.5}>
+				<Grid
+					item
+					xs={12}
+					sm="auto"
+					ml="auto"
+					display="flex"
+					alignItems="center"
+					gap={1.5}
+				>
 					{showMergeOption && (
 						<FormControlLabel
 							control={
@@ -281,13 +289,17 @@ const AnalyticsRow = memo(
 		);
 
 		const hoveredData = useMemo(() => {
-			if (!rawAnalytics?.data?.length) {return null;}
+			if (!rawAnalytics?.data?.length) {
+				return null;
+			}
 			const pointIndex =
 				hoveredPointIndex !== null
 					? hoveredPointIndex
 					: rawAnalytics.data.length - 1;
 			const dataPoint = rawAnalytics.data[pointIndex];
-			if (!dataPoint) {return null;}
+			if (!dataPoint) {
+				return null;
+			}
 			return {
 				timestamp: dataPoint.timestamp,
 				values: activeKeys.map((key) => ({
@@ -552,7 +564,15 @@ AnalyticsRow.displayName = 'AnalyticsRow';
 // per-row data processing, just concatenated into a single series list
 // (each series prefixed with its device label) on a shared category axis.
 const MergedAnalyticsRow = memo(
-	({ rows, payloads, parametersData, handleFieldChange, handleSearch, handleReset, rowIds }) => {
+	({
+		rows,
+		payloads,
+		parametersData,
+		handleFieldChange,
+		handleSearch,
+		handleReset,
+		rowIds,
+	}) => {
 		const rowsWithProcessedData = rows.map((row) => ({
 			...row,
 			deviceLabel: row.payload?.slave_id?.label || `Device Segment ${row.id}`,
@@ -678,8 +698,9 @@ const EnergyAnalytics = () => {
 		async (id) => {
 			setPayloads((prevPayloads) => {
 				const currentPayload = prevPayloads[id];
-				if (!currentPayload?.slave_id || !currentPayload?.parameters?.length)
-					{return prevPayloads;}
+				if (!currentPayload?.slave_id || !currentPayload?.parameters?.length) {
+					return prevPayloads;
+				}
 
 				setLoadingMap((prev) => ({ ...prev, [id]: true }));
 				(async () => {

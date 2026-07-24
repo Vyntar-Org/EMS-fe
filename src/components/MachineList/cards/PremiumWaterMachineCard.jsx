@@ -1,6 +1,10 @@
 import { Box } from '@mui/material';
 
-import { APP_ACCENT_COLOR, MachineMetricPanel, MachineRatioDonut } from '../../common/MachineCardBits';
+import {
+	APP_ACCENT_COLOR,
+	MachineMetricPanel,
+	MachineRatioDonut,
+} from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 
 /**

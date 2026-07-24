@@ -36,10 +36,14 @@ import PremiumCompressorMachineCard from './cards/PremiumCompressorMachineCard';
 // --- Helper Functions ---
 
 const parseDowntimeDate = (dateStr) => {
-	if (!dateStr) {return null;}
+	if (!dateStr) {
+		return null;
+	}
 	// Handle "DD-MM-YYYY HH:mm" format
 	const parts = dateStr.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
-	if (!parts) {return null;}
+	if (!parts) {
+		return null;
+	}
 	return new Date(
 		parseInt(parts[3]),
 		parseInt(parts[2]) - 1,
@@ -50,9 +54,13 @@ const parseDowntimeDate = (dateStr) => {
 };
 
 const parseFlexibleDate = (dateStr) => {
-	if (!dateStr) {return null;}
+	if (!dateStr) {
+		return null;
+	}
 	const nativeTs = new Date(dateStr).getTime();
-	if (!isNaN(nativeTs) && nativeTs > 0) {return nativeTs;}
+	if (!isNaN(nativeTs) && nativeTs > 0) {
+		return nativeTs;
+	}
 	return parseDowntimeDate(dateStr);
 };
 
@@ -333,11 +341,15 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 
 	// Chart Series Logic - Mirroring Code 1 Logic
 	const chartSeries = useMemo(() => {
-		if (!windowRange?.from || !windowRange?.to) {return [];}
+		if (!windowRange?.from || !windowRange?.to) {
+			return [];
+		}
 
 		const fromTs = parseFlexibleDate(windowRange.from);
 		const toTs = parseFlexibleDate(windowRange.to);
-		if (fromTs == null || toTs == null) {return [];}
+		if (fromTs == null || toTs == null) {
+			return [];
+		}
 
 		const sorted = [...stoppages]
 			.map((p, idx) => ({
@@ -349,7 +361,9 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 			.filter((p) => p.startTs != null && !isNaN(p.startTs))
 			.sort((a, b) => a.startTs - b.startTs);
 
-		if (sorted.length === 0) {return [];}
+		if (sorted.length === 0) {
+			return [];
+		}
 
 		const points = [];
 
@@ -436,8 +450,12 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 				labels: {
 					style: { colors: '#6B7280', fontSize: '11px' },
 					formatter: function (val) {
-						if (val >= 0.9) {return 'Online';}
-						if (val <= 0.1) {return 'Offline';}
+						if (val >= 0.9) {
+							return 'Online';
+						}
+						if (val <= 0.1) {
+							return 'Offline';
+						}
 						return '';
 					},
 				},
@@ -449,7 +467,9 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 				custom: function ({ seriesIndex, dataPointIndex, w }) {
 					const dataPoint =
 						w.globals.initialSeries[seriesIndex]?.data[dataPointIndex];
-					if (!dataPoint) {return '';}
+					if (!dataPoint) {
+						return '';
+					}
 
 					const date = new Date(dataPoint.x);
 					const formattedDate = date.toLocaleString();
@@ -734,7 +754,9 @@ const ModalContentForTrend = ({
 
 	// ─── FIXED: Handle both numeric (1/0) and string ("online"/"offline") status values ───
 	const chartSeries = useMemo(() => {
-		if (!chartData.length) {return [];}
+		if (!chartData.length) {
+			return [];
+		}
 
 		if (isStatusTrend) {
 			const data = [];
@@ -859,8 +881,12 @@ const ModalContentForTrend = ({
 					labels: {
 						style: { colors: '#6B7280', fontSize: '11px' },
 						formatter: function (val) {
-							if (val >= 0.9) {return 'Online';}
-							if (val <= 0.1) {return 'Offline';}
+							if (val >= 0.9) {
+								return 'Online';
+							}
+							if (val <= 0.1) {
+								return 'Offline';
+							}
 							return '';
 						},
 					},
@@ -894,7 +920,9 @@ const ModalContentForTrend = ({
 			const chartCategories = chartData.map((item) => {
 				const timestamp =
 					item.start || item.timestamp || item.time || item.date;
-				if (!timestamp) {return '';}
+				if (!timestamp) {
+					return '';
+				}
 				return new Date(timestamp).toLocaleTimeString('en-US', {
 					hour: '2-digit',
 					minute: '2-digit',

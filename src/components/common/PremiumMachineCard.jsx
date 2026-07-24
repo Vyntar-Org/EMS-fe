@@ -28,7 +28,8 @@ const PremiumMachineCard = ({
 	children,
 }) => {
 	const isOnline = status?.toLowerCase() === 'online';
-	const accent = accentColor || (isOnline ? APP_ACCENT_COLOR[app] : null) || '#DC2626';
+	const accent =
+		accentColor || (isOnline ? APP_ACCENT_COLOR[app] : null) || '#DC2626';
 
 	return (
 		<Box
@@ -39,13 +40,28 @@ const PremiumMachineCard = ({
 				p: 1.5,
 				borderRadius: '20px',
 				border: '2px solid',
-				borderColor: (t) => alpha(accent, t.palette.mode === 'dark' ? 0.36 : 0.24),
+				borderColor: (t) =>
+					alpha(accent, t.palette.mode === 'dark' ? 0.36 : 0.24),
 				background: (t) =>
-					`linear-gradient(155deg, ${alpha(accent, t.palette.mode === 'dark' ? 0.22 : 0.11)} 0%, ${t.palette.background.paper} 58%)`,
+					`linear-gradient(155deg, ${alpha(
+						accent,
+						t.palette.mode === 'dark' ? 0.22 : 0.11
+					)} 0%, ${t.palette.background.paper} 58%)`,
 			}}
 		>
-			<Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1}>
-				<Stack direction="row" alignItems="center" gap={1.25} minWidth={0} flex={1}>
+			<Stack
+				direction="row"
+				justifyContent="space-between"
+				alignItems="flex-start"
+				gap={1}
+			>
+				<Stack
+					direction="row"
+					alignItems="center"
+					gap={1.25}
+					minWidth={0}
+					flex={1}
+				>
 					<AnimatedMachineAvatar app={app} isOnline={isOnline} />
 					<Box minWidth={0} flex={1}>
 						<ResponsiveTextWrapper
@@ -81,14 +97,31 @@ const PremiumMachineCard = ({
 				/>
 			</Stack>
 
-			<Divider sx={{ my: 1, borderColor: (t) => alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16) }} />
+			<Divider
+				sx={{
+					my: 1,
+					borderColor: (t) =>
+						alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16),
+				}}
+			/>
 
 			<Box width="100%">{children}</Box>
 
 			{todayMtd && (
 				<>
-					<Divider sx={{ my: 1, borderColor: (t) => alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16) }} />
-					<Stack direction="row" justifyContent="space-between" gap={1} px={0.25}>
+					<Divider
+						sx={{
+							my: 1,
+							borderColor: (t) =>
+								alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16),
+						}}
+					/>
+					<Stack
+						direction="row"
+						justifyContent="space-between"
+						gap={1}
+						px={0.25}
+					>
 						<Box minWidth={0} flex={1}>
 							<ResponsiveTextWrapper
 								value={todayMtd.todayLabel || 'Today'}
@@ -127,7 +160,14 @@ const PremiumMachineCard = ({
 
 			{footer !== null && (
 				<>
-					<Divider sx={{ mt: 1, mb: 0.75, borderColor: (t) => alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16) }} />
+					<Divider
+						sx={{
+							mt: 1,
+							mb: 0.75,
+							borderColor: (t) =>
+								alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16),
+						}}
+					/>
 					<Stack direction="row" justifyContent="flex-end" alignItems="center">
 						{footer || (
 							<Button

@@ -113,7 +113,12 @@ const CustomCard = ({
 
 	return (
 		<StyledCard accentcolor={accent} {...props}>
-			<CardContent sx={{ p: disableContentPadding ? '0px !important' : '8px !important', height: '100%' }}>
+			<CardContent
+				sx={{
+					p: disableContentPadding ? '0px !important' : '8px !important',
+					height: '100%',
+				}}
+			>
 				{(title || subtitle || icon) && (
 					<Box
 						sx={{

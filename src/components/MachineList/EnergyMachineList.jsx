@@ -633,7 +633,9 @@ const EnergyMachineList = () => {
 												today={mc?.energy?.today || 0}
 												mtd={mc?.energy?.mtd || 0}
 												slaveId={mc?.slave_id}
-												trendUrl={API_URLS.EMS_MACHINE_LIST_ACTIVE_POWER(mc?.slave_id)}
+												trendUrl={API_URLS.EMS_MACHINE_LIST_ACTIVE_POWER(
+													mc?.slave_id
+												)}
 												onOpenTrend={() => handleOpenModal(mc)}
 											/>
 										</Grid>

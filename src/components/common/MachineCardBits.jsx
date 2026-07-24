@@ -8,7 +8,14 @@ import SensorsIcon from '@mui/icons-material/Sensors';
 import SpeedIcon from '@mui/icons-material/Speed';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
-import { Avatar, Box, Divider, Stack, Tooltip, Typography } from '@mui/material';
+import {
+	Avatar,
+	Box,
+	Divider,
+	Stack,
+	Tooltip,
+	Typography,
+} from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 import { getTemperatureScalePercent } from '../../helpers/temperatureStatus';
@@ -112,10 +119,20 @@ export const MachineAvatar = ({ app }) => {
 				flexShrink: 0,
 				background: (t) =>
 					accent
-						? `linear-gradient(135deg, ${alpha(accent, t.palette.mode === 'dark' ? 0.32 : 0.16)} 0%, ${alpha(accent, t.palette.mode === 'dark' ? 0.14 : 0.06)} 100%)`
-						: alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.25 : 0.1),
+						? `linear-gradient(135deg, ${alpha(
+								accent,
+								t.palette.mode === 'dark' ? 0.32 : 0.16
+						  )} 0%, ${alpha(
+								accent,
+								t.palette.mode === 'dark' ? 0.14 : 0.06
+						  )} 100%)`
+						: alpha(
+								t.palette.primary.main,
+								t.palette.mode === 'dark' ? 0.25 : 0.1
+						  ),
 				color: accent || 'primary.main',
-				boxShadow: (t) => `0 0 0 1px ${alpha(accent || t.palette.primary.main, 0.22)}`,
+				boxShadow: (t) =>
+					`0 0 0 1px ${alpha(accent || t.palette.primary.main, 0.22)}`,
 			}}
 		>
 			<Icon fontSize="large" />
@@ -140,11 +157,21 @@ export const AnimatedMachineAvatar = ({ app, isOnline = true }) => {
 				flexShrink: 0,
 				background: (t) =>
 					accent
-						? `linear-gradient(135deg, ${alpha(accent, t.palette.mode === 'dark' ? 0.34 : 0.18)} 0%, ${alpha(accent, t.palette.mode === 'dark' ? 0.14 : 0.06)} 100%)`
-						: alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.25 : 0.1),
+						? `linear-gradient(135deg, ${alpha(
+								accent,
+								t.palette.mode === 'dark' ? 0.34 : 0.18
+						  )} 0%, ${alpha(
+								accent,
+								t.palette.mode === 'dark' ? 0.14 : 0.06
+						  )} 100%)`
+						: alpha(
+								t.palette.primary.main,
+								t.palette.mode === 'dark' ? 0.25 : 0.1
+						  ),
 				color: accent || 'primary.main',
 				opacity: isOnline ? 1 : 0.55,
-				boxShadow: (t) => `0 0 0 1px ${alpha(accent || t.palette.primary.main, 0.24)}`,
+				boxShadow: (t) =>
+					`0 0 0 1px ${alpha(accent || t.palette.primary.main, 0.24)}`,
 			}}
 		>
 			<Icon fontSize="large" />
@@ -167,7 +194,11 @@ export const MachineMetricPanel = ({ rows = [] }) => (
 			width: '100%',
 		}}
 	>
-		<Stack divider={<Divider sx={{ my: 0.75, borderColor: 'surface.mutedBorder' }} />}>
+		<Stack
+			divider={
+				<Divider sx={{ my: 0.75, borderColor: 'surface.mutedBorder' }} />
+			}
+		>
 			{rows.map((row) => (
 				<Stack
 					key={row.label}
@@ -221,7 +252,10 @@ export const MachineRatioDonut = ({ percent = 0, color, label, caption }) => {
 					flexShrink: 0,
 					borderRadius: '50%',
 					background: (t) =>
-						`conic-gradient(${color} ${clamped * 3.6}deg, ${alpha(color, t.palette.mode === 'dark' ? 0.18 : 0.12)} 0deg)`,
+						`conic-gradient(${color} ${clamped * 3.6}deg, ${alpha(
+							color,
+							t.palette.mode === 'dark' ? 0.18 : 0.12
+						)} 0deg)`,
 				}}
 			>
 				<Box
@@ -239,15 +273,27 @@ export const MachineRatioDonut = ({ percent = 0, color, label, caption }) => {
 						justifyContent: 'center',
 					}}
 				>
-					<Typography sx={{ fontSize: '11px', fontWeight: 800, color: 'text.primary' }}>
+					<Typography
+						sx={{ fontSize: '11px', fontWeight: 800, color: 'text.primary' }}
+					>
 						{Math.round(clamped)}%
 					</Typography>
 				</Box>
 			</Box>
 			<Box minWidth={0} flex={1}>
-				<ResponsiveTextWrapper value={label} fontSize="12.5px" color="text.secondary" fontWeight={500} />
+				<ResponsiveTextWrapper
+					value={label}
+					fontSize="12.5px"
+					color="text.secondary"
+					fontWeight={500}
+				/>
 				{caption && (
-					<ResponsiveTextWrapper value={caption} fontSize="12px" color="text.primary" fontWeight={700} />
+					<ResponsiveTextWrapper
+						value={caption}
+						fontSize="12px"
+						color="text.primary"
+						fontWeight={700}
+					/>
 				)}
 			</Box>
 		</Stack>
@@ -261,7 +307,11 @@ export const MachineRatioDonut = ({ percent = 0, color, label, caption }) => {
  * proportion. Pure CSS, no library, no animation, no API call: it just
  * places the reading's own value on a fixed cold–hot band.
  */
-export const MachineTemperatureGauge = ({ value, statusColor, statusLabel }) => (
+export const MachineTemperatureGauge = ({
+	value,
+	statusColor,
+	statusLabel,
+}) => (
 	<Tooltip arrow placement="top" title={statusLabel || ''}>
 		<Box
 			sx={{

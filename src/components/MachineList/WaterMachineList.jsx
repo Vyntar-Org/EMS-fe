@@ -391,7 +391,9 @@ const WaterMachineList = () => {
 											metrics={[
 												{
 													label: 'Inlet Flowrate',
-													value: `${Number(mc?.rate_of_flow ?? 0).toFixed(2)} m³/hr`,
+													value: `${Number(mc?.rate_of_flow ?? 0).toFixed(
+														2
+													)} m³/hr`,
 												},
 												{
 													label: 'Inlet Totalizer',
