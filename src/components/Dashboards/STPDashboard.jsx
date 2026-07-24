@@ -4,7 +4,7 @@ import ReactApexChart from 'react-apexcharts';
 
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { CHART_COLORS, getChartOptions } from '../../helpers/chartConfig';
+import { getChartOptions, getCategoricalColors } from '../../helpers/chartConfig';
 import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
@@ -225,6 +225,7 @@ const STPDashboard = () => {
 												<ReactApexChart
 													options={getChartOptions('radialBar', [], {
 														labels: [item.label],
+														colors: [getCategoricalColors(5)[ind]],
 													})}
 													series={[summaryData?.[item.key]?.value || 0]}
 													type="radialBar"
@@ -265,17 +266,15 @@ const STPDashboard = () => {
 				height={{ md: 'calc(100% - 350px)' }}
 			>
 				<Grid item xs={12} md={6} height={{ xs: 350, md: '100%' }}>
-					<CustomCard title="Historical Trends">
+					<CustomCard
+						title="Historical Trends"
+						accentColor={getCategoricalColors(1)[0]}
+					>
 						{historyTrends ? (
 							<Box height="100%" width="100%" overflow="hidden">
 								<ReactApexChart
 									options={getChartOptions('line', historyTrends?.categories, {
-										colors: [
-											CHART_COLORS.primary,
-											CHART_COLORS.success,
-											CHART_COLORS.warning,
-											CHART_COLORS.danger,
-										],
+										colors: getCategoricalColors(4),
 										xLabel: '',
 										yLabel: '',
 									})}
@@ -291,17 +290,15 @@ const STPDashboard = () => {
 					</CustomCard>
 				</Grid>
 				<Grid item xs={12} md={6} height={{ xs: 350, md: '100%' }}>
-					<CustomCard title="water comparison">
+					<CustomCard
+						title="water comparison"
+						accentColor={getCategoricalColors(3)[2]}
+					>
 						{waterComparison ? (
 							<Box height="100%" width="100%" overflow="hidden">
 								<ReactApexChart
 									options={getChartOptions('bar', waterComparison?.categories, {
-										colors: [
-											CHART_COLORS.primary,
-											CHART_COLORS.success,
-											CHART_COLORS.warning,
-											CHART_COLORS.danger,
-										],
+										colors: getCategoricalColors(4),
 										yLabel: 'KL',
 									})}
 									series={waterComparison?.series || []}

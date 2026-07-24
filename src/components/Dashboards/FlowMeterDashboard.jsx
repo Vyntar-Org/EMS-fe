@@ -4,7 +4,7 @@ import ReactApexChart from 'react-apexcharts';
 
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { CHART_COLORS, getChartOptions } from '../../helpers/chartConfig';
+import { getChartOptions, getCategoricalColors } from '../../helpers/chartConfig';
 import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
@@ -206,7 +206,10 @@ const FlowMeterDashboard = () => {
 							mt={{ xs: 1, md: 0 }}
 							height={{ xs: 350, md: '70%' }}
 						>
-							<CustomCard title="water comparison">
+							<CustomCard
+								title="water comparison"
+								accentColor={getCategoricalColors(1)[0]}
+							>
 								{waterComparison ? (
 									<Box height="100%" width="100%" overflow="hidden">
 										<ReactApexChart
@@ -214,12 +217,7 @@ const FlowMeterDashboard = () => {
 												'bar',
 												waterComparison?.categories,
 												{
-													colors: [
-														CHART_COLORS.primary,
-														CHART_COLORS.success,
-														CHART_COLORS.warning,
-														CHART_COLORS.danger,
-													],
+													colors: getCategoricalColors(4),
 													yLabel: 'KL',
 												}
 											)}

@@ -729,6 +729,19 @@ const ModalContentForTrend = ({
 
 						const { tabDesc, tab: newTab } =
 							TREND_TAB_OPTIONS?.find((t) => t.tab === val) || {};
+
+						if (newTab === 'KEY_PARAMETERS') {
+							// Default to the first real key parameter (skip the
+							// "None" placeholder) instead of leaving the chart
+							// empty until the user manually picks one.
+							const defaultKeyParam = KEY_PARAMETER_OPTIONS.find(
+								(k) => k.value
+							);
+							fetchTrendModalChartData(newTab, defaultKeyParam?.value);
+							handleTabChange(newTab, defaultKeyParam?.desc, defaultKeyParam?.value);
+							return;
+						}
+
 						handleTabChange(newTab, tabDesc);
 					}}
 					variant="scrollable"

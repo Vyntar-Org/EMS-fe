@@ -16,7 +16,12 @@ import { CustomAutocomplete } from '../../common/CustomAutocomplete';
 import { CustomInput } from '../../common/CustomInput';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 import NoDataFound from '../../common/errors/NoDataFound';
-import { getChartOptions, getChartSeries } from '../../../helpers/chartConfig';
+import {
+	CHART_COLORS,
+	DEFAULT_MAX_POINTS,
+	getChartOptions,
+	getChartSeries,
+} from '../../../helpers/chartConfig';
 
 const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
 	const { slavesData } = useCommonData();
@@ -66,6 +71,7 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
 			title={`Monthly Water Consumption ${
 				slavesDisplayName ? `- ${slavesDisplayName}` : ''
 			}`}
+			accentColor={CHART_COLORS.waterUsage}
 			icon={
 				<ToggleButtonGroup
 					value={mode}
@@ -111,7 +117,12 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
 							options={getChartOptions(
 								mode === 1 ? 'bar' : 'line',
 								machineConsumption,
-								{ yLabel: 'Liters', xLabel: 'Day' }
+								{
+									yLabel: 'Liters',
+									xLabel: 'Day',
+									colors: [CHART_COLORS.waterUsage, CHART_COLORS.secondary],
+									categoryOpts: { maxPoints: DEFAULT_MAX_POINTS },
+								}
 							)}
 							series={getChartSeries(machineConsumption, {
 								actual: 'consumption',

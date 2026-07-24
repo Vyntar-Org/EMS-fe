@@ -20,6 +20,7 @@ import {
 	TableRow,
 	Tooltip,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import Papa from 'papaparse';
 import { useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
@@ -30,6 +31,10 @@ import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { formatTimestamp } from '../../helpers/common';
+import {
+	getTemperatureScalePercent,
+	getTemperatureStatus,
+} from '../../helpers/temperatureStatus';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import CustomCard from '../common/CustomCard';
 import { CustomSelect } from '../common/CustomSelect';
@@ -121,6 +126,7 @@ const TemperatureMetricBlock = ({
 	handleOpenModal,
 }) => {
 	const isOnline = status?.toLowerCase() === 'online';
+	const tempStatus = getTemperatureStatus(temperature);
 
 	return (
 		<Box
@@ -128,6 +134,18 @@ const TemperatureMetricBlock = ({
 				p: 1,
 				...machineCardSx(isOnline),
 				borderRadius: '16px',
+				// Tint the whole card by the temperature band whenever a reading
+				// is available — independent of online/offline status, since the
+				// color is reporting the last known temperature, not connectivity.
+				...(tempStatus && {
+					background: (t) =>
+						`linear-gradient(155deg, ${alpha(
+							tempStatus.color,
+							t.palette.mode === 'dark' ? 0.2 : 0.1
+						)} 0%, ${t.palette.background.paper} 55%)`,
+					borderColor: (t) =>
+						alpha(tempStatus.color, t.palette.mode === 'dark' ? 0.38 : 0.22),
+				}),
 			}}
 		>
 			<Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -219,7 +237,8 @@ const TemperatureMetricBlock = ({
 								name: 'Temperature',
 								value: `${Number(temperature ?? 0).toFixed(2)} °C`,
 								Icon: Thermostat,
-								color: 'error.main',
+								color: tempStatus?.color || 'error.main',
+								valueColor: tempStatus?.color,
 							},
 							{
 								name: 'Humidity',
@@ -235,8 +254,22 @@ const TemperatureMetricBlock = ({
 							},
 						].map((row) => {
 							const RowIcon = row.Icon;
-							return (
-								<TableRow key={row.name}>
+							const isTemperatureRow = row.name === 'Temperature';
+							const rowContent = (
+								<TableRow
+									key={row.name}
+									sx={
+										isTemperatureRow && tempStatus
+											? {
+													bgcolor: (t) =>
+														alpha(
+															tempStatus.color,
+															t.palette.mode === 'dark' ? 0.16 : 0.09
+														),
+											  }
+											: undefined
+									}
+								>
 									<TableCell
 										sx={{ border: 0, py: 0.5, width: { xs: '50%', lg: '60%' } }}
 									>
@@ -258,14 +291,70 @@ const TemperatureMetricBlock = ({
 									>
 										<ResponsiveTextWrapper
 											fontSize="14px"
-											color="text.primary"
-											fontWeight={500}
+											color={row.valueColor || 'text.primary'}
+											fontWeight={row.valueColor ? 700 : 500}
 											value={row.value}
 										/>
 									</TableCell>
 								</TableRow>
 							);
+
+							if (!isTemperatureRow) {
+								return rowContent;
+							}
+
+							return (
+								<Tooltip
+									key={row.name}
+									arrow
+									placement="top"
+									title={
+										tempStatus
+											? `${tempStatus.label} · ${tempStatus.range}`
+											: 'No data'
+									}
+								>
+									{rowContent}
+								</Tooltip>
+							);
 						})}
+						{tempStatus && (
+							<TableRow>
+								<TableCell colSpan={2} sx={{ border: 0, pt: 0, pb: 1 }}>
+									<Tooltip
+										arrow
+										placement="top"
+										title={`${tempStatus.label} · ${tempStatus.range}`}
+									>
+										<Box
+											sx={{
+												position: 'relative',
+												height: 6,
+												borderRadius: 3,
+												background:
+													'linear-gradient(to right, #2563EB 0%, #16A34A 25%, #E3B13E 50%, #EA580C 75%, #DC2626 100%)',
+											}}
+										>
+											<Box
+												sx={{
+													position: 'absolute',
+													top: '50%',
+													left: `${getTemperatureScalePercent(temperature)}%`,
+													transform: 'translate(-50%, -50%)',
+													width: 12,
+													height: 12,
+													borderRadius: '50%',
+													bgcolor: '#fff',
+													border: '2px solid',
+													borderColor: tempStatus.color,
+													boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+												}}
+											/>
+										</Box>
+									</Tooltip>
+								</TableCell>
+							</TableRow>
+						)}
 					</TableBody>
 				</Table>
 			</Box>

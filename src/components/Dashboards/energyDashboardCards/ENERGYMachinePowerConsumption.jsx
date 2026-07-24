@@ -1,5 +1,9 @@
 import { alpha } from '@mui/material/styles';
-import { CHART_COLORS } from '../../../helpers/chartConfig';
+import {
+	CHART_COLORS,
+	buildPremiumTooltip,
+	downsample,
+} from '../../../helpers/chartConfig';
 import React, { useEffect, useMemo, useState } from 'react';
 import CustomCard from '../../common/CustomCard';
 import { useCommonData } from '../../../contexts/CommonDataContext';
@@ -65,6 +69,13 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 		fetchMachineConsumption();
 	}, [slavesId]);
 
+	// Downsample once so the x-axis categories and the bar/line series stay
+	// aligned, and a long history doesn't crowd a card-sized chart.
+	const chartData = useMemo(
+		() => downsample(Array.isArray(machineConsumption) ? machineConsumption : []),
+		[machineConsumption]
+	);
+
 	const options1 = {
 		chart: {
 			type: 'bar',
@@ -80,6 +91,8 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 					reset: false,
 				},
 			},
+			redrawOnParentResize: true,
+			redrawOnWindowResize: true,
 		},
 		plotOptions: {
 			bar: {
@@ -88,26 +101,15 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 				dataLabels: { position: 'top' },
 			},
 		},
-		dataLabels: {
-			enabled: true,
-			formatter: (val) => val,
-			offsetY: -20,
-			style: {
-				fontSize: '12px',
-				colors: [CHART_COLORS.navy],
-				fontWeight: 'bold',
-			},
-		},
+		dataLabels: { enabled: false },
 		xaxis: {
-			categories: Array.isArray(machineConsumption)
-				? machineConsumption?.map((item) => {
-						const d = new Date(item.date);
-						return d.toLocaleDateString('en-US', {
-							month: 'short',
-							day: '2-digit',
-						});
-				  })
-				: [],
+			categories: chartData.map((item) => {
+				const d = new Date(item.date);
+				return d.toLocaleDateString('en-US', {
+					month: 'short',
+					day: '2-digit',
+				});
+			}),
 			position: 'bottom',
 			axisBorder: { show: false },
 			axisTicks: { show: false },
@@ -124,13 +126,13 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 			},
 		},
 		tooltip: {
-			x: { show: true },
-			y: {
-				formatter: (val) => `${val} kWh`,
-			},
+			shared: true,
+			intersect: false,
+			fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
+			custom: buildPremiumTooltip({ unit: 'kWh' }),
 		},
 		fill: {
-			colors: [CHART_COLORS.navy],
+			colors: [CHART_COLORS.machinePower],
 		},
 		grid: {
 			show: false,
@@ -140,9 +142,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	const series1 = [
 		{
 			name: '(kWh)',
-			data: Array.isArray(machineConsumption)
-				? machineConsumption?.map((item) => item.value)
-				: [],
+			data: chartData.map((item) => item.value),
 		},
 	];
 
@@ -155,14 +155,15 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 		stroke: {
 			curve: 'smooth',
 			width: 3,
-			colors: [CHART_COLORS.navy],
+			colors: [CHART_COLORS.machinePower],
 		},
 		plotOptions: {
 			bar: { enabled: false },
 		},
-		dataLabels: {
-			...options1.dataLabels,
-			formatter: (val) => Math.round(val),
+		markers: {
+			size: 0,
+			strokeWidth: 0,
+			hover: { size: 6 },
 		},
 	};
 
@@ -171,6 +172,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 			title={
 				mode === 2 ? `${slavesDisplayName} Energy` : 'Machine Power Consumption'
 			}
+			accentColor={CHART_COLORS.machinePower}
 			icon={
 				<ToggleButtonGroup
 					value={mode}

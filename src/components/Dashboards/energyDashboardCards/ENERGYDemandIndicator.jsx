@@ -1,4 +1,8 @@
-import { CHART_COLORS } from '../../../helpers/chartConfig';
+import {
+	CHART_COLORS,
+	buildPremiumTooltip,
+	downsample,
+} from '../../../helpers/chartConfig';
 import React, { useEffect, useMemo, useState } from 'react';
 import CustomCard from '../../common/CustomCard';
 import { api } from '../../../helpers/api';
@@ -38,10 +42,31 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 		fetchDemandIndicator();
 	}, [slavesId]);
 
-	const seriesData = demandIndicator?.data?.map((item) => ({
-		x: new Date(item.timestamp).getTime(),
-		y: item.value,
-	}));
+	const seriesData = useMemo(() => {
+		if (!demandIndicator?.data) return [];
+
+		const points = demandIndicator.data
+			.map((item) => ({
+				x: new Date(item.timestamp).getTime(),
+				y: item.value,
+			}))
+			.filter(
+				(point) =>
+					!Number.isNaN(point.x) && point.y !== null && point.y !== undefined
+			)
+			.sort((a, b) => a.x - b.x);
+
+		// Keep the trend readable on a card-sized chart instead of plotting
+		// every raw reading.
+		return downsample(points);
+	}, [demandIndicator]);
+
+	const yAxisMax = useMemo(() => {
+		if (!seriesData.length) return 14;
+
+		const maxValue = Math.max(...seriesData.map((point) => point.y));
+		return maxValue <= 0 ? 14 : Math.ceil(maxValue * 1.2);
+	}, [seriesData]);
 
 	const options = {
 		chart: {
@@ -59,18 +84,20 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 				},
 			},
 			zoom: { enabled: false },
+			redrawOnParentResize: true,
+			redrawOnWindowResize: true,
 		},
 		dataLabels: {
 			enabled: false,
 		},
+		colors: [CHART_COLORS.demand],
 		stroke: {
 			curve: 'smooth',
 			width: 3,
-			colors: [CHART_COLORS.navy],
+			colors: [CHART_COLORS.demand],
 		},
 		markers: {
-			size: 5,
-			colors: ['#C5D05D'],
+			size: 0,
 			strokeColors: '#fff',
 			strokeWidth: 2,
 			hover: { size: 7 },
@@ -88,6 +115,7 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 			type: 'datetime',
 			labels: {
 				format: 'HH:mm',
+				datetimeUTC: false,
 				style: { colors: '#9e9e9e' },
 			},
 			axisBorder: { show: false },
@@ -95,32 +123,17 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 		},
 		yaxis: {
 			min: 0,
-			max: 14,
+			max: yAxisMax,
 			tickAmount: 4,
 			labels: {
 				style: { colors: '#9e9e9e' },
 			},
 		},
 		tooltip: {
-			custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-				const val = series[seriesIndex][dataPointIndex];
-				const time = new Date(
-					w.globals.seriesX[seriesIndex][dataPointIndex]
-				).toLocaleTimeString([], {
-					hour: '2-digit',
-					minute: '2-digit',
-					hour12: false,
-				});
-				return `
-        <div style="padding: 10px; border-radius: 8px; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);">
-          <div style="font-weight: bold; margin-bottom: 5px;">${time}</div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="height: 10px; width: 10px; border-radius: 50%; background: #2E4355;"></span>
-            <span>Peak Demand: <b>${val} kW</b></span>
-          </div>
-        </div>
-      `;
-			},
+			shared: true,
+			intersect: false,
+			fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
+			custom: buildPremiumTooltip({ unit: 'kW', titleFormat: 'HH:mm' }),
 		},
 		grid: { show: false },
 	};
@@ -133,7 +146,10 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 	];
 
 	return (
-		<CustomCard title={`Demand Indicator ${slavesDisplayName}`}>
+		<CustomCard
+			title={`Demand Indicator ${slavesDisplayName}`}
+			accentColor={CHART_COLORS.demand}
+		>
 			{demandIndicator && demandIndicator?.data?.length ? (
 				<Box height="100%" width="100%" overflow="hidden">
 					<ReactApexChart

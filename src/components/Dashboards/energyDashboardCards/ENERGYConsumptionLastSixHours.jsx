@@ -1,4 +1,8 @@
-import { CHART_COLORS } from '../../../helpers/chartConfig';
+import {
+	CHART_COLORS,
+	buildPremiumTooltip,
+	downsample,
+} from '../../../helpers/chartConfig';
 import React, { useEffect, useState } from 'react';
 import CustomCard from '../../common/CustomCard';
 import { API_URLS } from '../../../helpers/apiUrls';
@@ -27,11 +31,14 @@ const ENERGYConsumptionLastSixHours = () => {
 		fetchConsumptionData();
 	}, []);
 
+	// Safety cap — the API is expected to return one point per hour, but
+	// guard against a larger payload crowding a card-sized chart.
+	const hourlyData = downsample(consumption?.data || []);
+
 	const series = [
 		{
 			name: '(kWh)',
-			data:
-				consumption?.data?.map((item) => Math.round(item.consumption)) || [],
+			data: hourlyData.map((item) => Math.round(item.consumption)),
 		},
 	];
 
@@ -51,11 +58,13 @@ const ENERGYConsumptionLastSixHours = () => {
 				},
 			},
 			zoom: { enabled: false },
+			redrawOnParentResize: true,
+			redrawOnWindowResize: true,
 		},
 		stroke: {
 			curve: 'smooth',
 			width: 3,
-			colors: [CHART_COLORS.navy],
+			colors: [CHART_COLORS.consumption6h],
 		},
 		fill: {
 			type: 'gradient',
@@ -66,20 +75,17 @@ const ENERGYConsumptionLastSixHours = () => {
 				stops: [0, 90, 100],
 			},
 		},
-		dataLabels: {
-			enabled: true,
-			offsetY: -10,
-			style: {
-				fontSize: '12px',
-				colors: [CHART_COLORS.navy],
-			},
+		dataLabels: { enabled: false },
+		markers: {
+			size: 0,
+			strokeWidth: 0,
+			hover: { size: 6 },
 		},
 		xaxis: {
-			categories:
-				consumption?.data?.map((item) => {
-					const date = new Date(item.hour);
-					return date.getHours().toString().padStart(2, '0') + '.00';
-				}) || [],
+			categories: hourlyData.map((item) => {
+				const date = new Date(item.hour);
+				return date.getHours().toString().padStart(2, '0') + '.00';
+			}),
 			axisBorder: { show: false },
 			axisTicks: { show: false },
 		},
@@ -89,19 +95,22 @@ const ENERGYConsumptionLastSixHours = () => {
 			},
 		},
 		tooltip: {
-			x: { show: true },
-			y: {
-				formatter: (val) => `${val} kWh`,
-			},
+			shared: true,
+			intersect: false,
+			fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
+			custom: buildPremiumTooltip({ unit: 'kWh' }),
 		},
-		colors: [CHART_COLORS.navy],
+		colors: [CHART_COLORS.consumption6h],
 		grid: {
 			show: false,
 		},
 	};
 
 	return (
-		<CustomCard title="Energy Consumption (Last 6 Hours)">
+		<CustomCard
+			title="Energy Consumption (Last 6 Hours)"
+			accentColor={CHART_COLORS.consumption6h}
+		>
 			{consumption && consumption?.data?.length ? (
 				<Box height="100%" width="100%" overflow="hidden">
 					<ReactApexChart

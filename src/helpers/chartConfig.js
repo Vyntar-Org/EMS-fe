@@ -17,6 +17,22 @@ const LIGHT_CHART_COLORS = {
 	orange: '#FD7E14',
 	teal: '#20C997',
 	navy: '#12233E',
+	// Validated categorical palette (colorblind-safe adjacent ordering) —
+	// used for per-card accents and multi-series charts.
+	categorical1: '#2a78d6', // blue
+	categorical2: '#eb6834', // orange
+	categorical3: '#1baf7a', // aqua
+	categorical4: '#eda100', // yellow
+	categorical5: '#e87ba4', // magenta
+	categorical6: '#008300', // green
+	categorical7: '#4a3aa7', // violet
+	categorical8: '#e34948', // red
+	// Per-card semantic accents, aliased onto the categorical slots
+	demand: '#2a78d6',
+	consumption6h: '#eb6834',
+	machinePower: '#1baf7a',
+	waterUsage: '#2a78d6',
+	fuelUsage: '#eda100',
 };
 
 const DARK_CHART_COLORS = {
@@ -31,6 +47,19 @@ const DARK_CHART_COLORS = {
 	orange: '#FB923C',
 	teal: '#2DD4BF',
 	navy: '#60A5FA',
+	categorical1: '#3987e5',
+	categorical2: '#d95926',
+	categorical3: '#199e70',
+	categorical4: '#c98500',
+	categorical5: '#d55181',
+	categorical6: '#008300',
+	categorical7: '#9085e9',
+	categorical8: '#e66767',
+	demand: '#3987e5',
+	consumption6h: '#d95926',
+	machinePower: '#199e70',
+	waterUsage: '#3987e5',
+	fuelUsage: '#c98500',
 };
 
 // Kept in sync with the app theme by ThemedApp (src/main.jsx).
@@ -52,9 +81,22 @@ Object.keys(LIGHT_CHART_COLORS).forEach((key) => {
 	});
 });
 
+// Ordered categorical slots for multi-series charts — order is the
+// colorblind-safety mechanism, so callers should slice from the front
+// rather than pick slots out of order.
+export const getCategoricalColors = (count = 8) => {
+	const colors = activeColors();
+	return Array.from({ length: count }, (_, i) => colors[`categorical${i + 1}`]);
+};
+
 const LARGE_DATA_THRESHOLD = 500;
 
-const downsample = (data, maxPoints = 100) => {
+// Card-sized charts read better with a handful of points than with every
+// raw sample — dense axes overflow/crowd a small card. Widgets that need a
+// different cap pass their own maxPoints.
+export const DEFAULT_MAX_POINTS = 20;
+
+export const downsample = (data, maxPoints = DEFAULT_MAX_POINTS) => {
 	if (!Array.isArray(data) || data.length <= maxPoints) {
 		return data;
 	}
@@ -89,13 +131,18 @@ const autoFormat = (raw) => {
 };
 
 export const getChartCategories = (data, opts = {}) => {
-	const { key, format = 'auto', customFormat } = opts;
+	const { key, format = 'auto', customFormat, maxPoints } = opts;
 
 	if (!Array.isArray(data)) {
 		return [];
 	}
 
-	return data.map((item) => {
+	// Only downsample when a cap is explicitly requested — callers that
+	// build the series independently (not via getChartSeries) rely on
+	// categories matching their data 1:1 by default.
+	const sourceData = maxPoints ? downsample(data, maxPoints) : data;
+
+	return sourceData.map((item) => {
 		const raw = key ? item?.[key] : item;
 
 		if (raw === null || raw === undefined) {
@@ -158,6 +205,101 @@ const commonYAxis = (yLabel = 'Liters') => ({
 	},
 });
 
+// Chart chrome/ink per theme mode — mirrors the app's card surfaces so the
+// tooltip reads as part of the same design system in both modes.
+const TOOLTIP_INK = {
+	light: {
+		surface: '#fcfcfb',
+		primary: '#0b0b0b',
+		secondary: '#52514e',
+		border: 'rgba(11,11,11,0.10)',
+	},
+	dark: {
+		surface: '#242422',
+		primary: '#ffffff',
+		secondary: '#c3c2b7',
+		border: 'rgba(255,255,255,0.12)',
+	},
+};
+
+/**
+ * Builds a themed, premium HTML tooltip for bar/line/area charts (shared
+ * across series at a given point). Avoids ApexCharts' plain default box.
+ * @param {Object} opts - { unit, titleFormat }
+ */
+export const buildPremiumTooltip = ({ unit = '', titleFormat } = {}) =>
+	function ({ series, seriesIndex, dataPointIndex, w }) {
+		const ink = TOOLTIP_INK[chartThemeMode] || TOOLTIP_INK.light;
+		const isDatetime = w.config.xaxis?.type === 'datetime';
+
+		let title = '';
+		if (isDatetime) {
+			const x = w.globals.seriesX?.[seriesIndex]?.[dataPointIndex];
+			if (x !== null && x !== undefined) {
+				title = dayjs(x).format(titleFormat || 'MMM D, h:mm A');
+			}
+		} else {
+			title = w.globals.labels?.[dataPointIndex] ?? '';
+		}
+
+		const rows = (w.globals.seriesNames || [])
+			.map((name, i) => {
+				const raw = series?.[i]?.[dataPointIndex];
+				if (raw === undefined || raw === null) {
+					return '';
+				}
+				const color = w.globals.colors?.[i] || w.config.colors?.[i] || '#2a78d6';
+				const emphasize = i === seriesIndex ? 'font-weight:700;' : '';
+				return `
+					<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:3px 0;${emphasize}">
+						<span style="display:flex;align-items:center;gap:6px;">
+							<span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></span>
+							<span style="font-size:12px;color:${ink.secondary};">${name}</span>
+						</span>
+						<span style="font-size:12px;font-weight:700;color:${ink.primary};white-space:nowrap;">${raw}${
+					unit ? ` ${unit}` : ''
+				}</span>
+					</div>`;
+			})
+			.join('');
+
+		return `
+			<div style="background:${ink.surface};border:1px solid ${
+			ink.border
+		};border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.22);min-width:130px;">
+				${
+					title
+						? `<div style="font-size:11px;font-weight:700;color:${ink.secondary};margin-bottom:6px;">${title}</div>`
+						: ''
+				}
+				${rows}
+			</div>`;
+	};
+
+/**
+ * Themed custom tooltip for donut/pie charts — one slice at a time.
+ */
+export const buildDonutTooltip = ({ unit = '' } = {}) =>
+	function ({ series, seriesIndex, w }) {
+		const ink = TOOLTIP_INK[chartThemeMode] || TOOLTIP_INK.light;
+		const name = w.globals.labels?.[seriesIndex] ?? '';
+		const value = series?.[seriesIndex];
+		const color = w.globals.colors?.[seriesIndex] || '#2a78d6';
+
+		return `
+			<div style="background:${ink.surface};border:1px solid ${
+			ink.border
+		};border-radius:10px;padding:8px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.22);">
+				<div style="display:flex;align-items:center;gap:8px;">
+					<span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></span>
+					<span style="font-size:12px;color:${ink.secondary};">${name}</span>
+					<span style="font-size:12px;font-weight:700;color:${ink.primary};">${value}${
+			unit ? ` ${unit}` : ''
+		}</span>
+				</div>
+			</div>`;
+	};
+
 const commonLegend = {
 	show: true,
 	position: 'top',
@@ -167,11 +309,15 @@ const commonLegend = {
 	itemMargin: { horizontal: 10 },
 };
 
+// Pinned to a fixed corner instead of following the cursor — a
+// cursor-tracked tooltip near a card's edge gets clipped by the card's own
+// rounded-corner overflow:hidden. Fixed positioning keeps it safely inside
+// the chart's own bounds at all times.
 const commonTooltip = (yLabel = 'Liters') => ({
 	shared: true,
 	intersect: false,
-	followCursor: true,
-	y: { formatter: (val) => `${val} ${yLabel}` },
+	fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
+	custom: buildPremiumTooltip({ unit: yLabel }),
 });
 
 const commonGrid = {
@@ -288,7 +434,11 @@ const areaOptions = (data, isLarge, yLabel, xLabel, colors, categoryOpts) => ({
 		width: [2, 2],
 		dashArray: [0, 6],
 	},
-	markers: { size: isLarge ? 0 : 4, strokeWidth: 0 },
+	markers: {
+		size: 0,
+		strokeWidth: 0,
+		hover: { size: isLarge ? 4 : 6 },
+	},
 	dataLabels: { enabled: false },
 	xaxis: commonXAxis(data, isLarge, xLabel, categoryOpts),
 	yaxis: commonYAxis(yLabel),
@@ -316,10 +466,7 @@ const donutOptions = (labels = [], yLabel = '', colors) => ({
 	},
 	colors,
 	labels,
-	dataLabels: {
-		enabled: true,
-		formatter: (val) => `${Math.round(val)}%`,
-	},
+	dataLabels: { enabled: false },
 	plotOptions: {
 		pie: {
 			donut: {
@@ -337,7 +484,8 @@ const donutOptions = (labels = [], yLabel = '', colors) => ({
 	},
 	legend: { ...commonLegend, position: 'bottom' },
 	tooltip: {
-		y: { formatter: (val) => `${val} ${yLabel}` },
+		fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
+		custom: buildDonutTooltip({ unit: yLabel }),
 	},
 });
 
@@ -445,7 +593,11 @@ export const getChartOptions = (type, data, opts = {}) => {
  * @param {number} maxPoints  - downsample limit for large data
  * @author Venkadesan
  */
-export const getChartSeries = (data, seriesMap = {}, maxPoints = 100) => {
+export const getChartSeries = (
+	data,
+	seriesMap = {},
+	maxPoints = DEFAULT_MAX_POINTS
+) => {
 	const {
 		actual = 'consumption',
 		target = 'target',

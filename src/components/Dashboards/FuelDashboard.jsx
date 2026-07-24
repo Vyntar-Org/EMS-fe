@@ -15,6 +15,7 @@ import { BarChart, SsidChart } from '@mui/icons-material';
 import ReactApexChart from 'react-apexcharts';
 import {
 	CHART_COLORS,
+	DEFAULT_MAX_POINTS,
 	getChartOptions,
 	getChartSeries,
 } from '../../helpers/chartConfig';
@@ -217,6 +218,7 @@ const FuelDashboard = () => {
 						title={`Monthly Fuel Consumption ${
 							slavesDisplayName ? `- ${slavesDisplayName}` : ''
 						}`}
+						accentColor={CHART_COLORS.fuelUsage}
 						icon={
 							<ToggleButtonGroup
 								value={mode}
@@ -248,7 +250,12 @@ const FuelDashboard = () => {
 									options={getChartOptions(
 										mode === 1 ? 'bar' : 'line',
 										fuelConsumption,
-										{ yLabel: 'Liters', xLabel: 'Day' }
+										{
+											yLabel: 'Liters',
+											xLabel: 'Day',
+											colors: [CHART_COLORS.fuelUsage, CHART_COLORS.secondary],
+											categoryOpts: { maxPoints: DEFAULT_MAX_POINTS },
+										}
 									)}
 									series={getChartSeries(fuelConsumption, {
 										actual: 'consumption',
