@@ -1,27 +1,5 @@
-import {
-	DownloadForOffline,
-	Insights,
-	LocalGasStation,
-	Opacity,
-	Speed,
-} from '@mui/icons-material';
-import {
-	Box,
-	Button,
-	Chip,
-	Divider,
-	Grid,
-	IconButton,
-	LinearProgress,
-	Stack,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
-	Tooltip,
-	Typography,
-} from '@mui/material';
+import { DownloadForOffline } from '@mui/icons-material';
+import { Box, Grid, IconButton, Stack, Tooltip } from '@mui/material';
 import Papa from 'papaparse';
 import { useEffect, useState, useMemo } from 'react';
 import ReactApexChart from 'react-apexcharts';
@@ -32,18 +10,13 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { formatTimestamp } from '../../helpers/common';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
-import CustomCard from '../common/CustomCard';
 import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 import PremiumModal from '../common/PremiumModal';
-import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
-import {
-	MachineAvatar,
-	machineCardSx,
-	metricIconSx,
-} from '../common/MachineCardBits';
 import TemperatureMachineListSkeleton from '../skeletonLoaders/TemperatureMachineListSkeleton';
+
+import PremiumFuelMachineCard from './cards/PremiumFuelMachineCard';
 
 const handleDownload = (filteredMachines, selectedApp) => {
 	const headers = [
@@ -284,304 +257,6 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 	);
 };
 
-const FuelLevelCard = ({
-	currentLiters = 780,
-	totalPercentage = 91.91,
-	isOnline,
-}) => {
-	return (
-		<Box
-			sx={{
-				width: '100%',
-				borderRadius: 1,
-				display: 'flex',
-				flexDirection: 'column',
-				mb: 1,
-			}}
-		>
-			<Box
-				sx={{
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'space-between',
-				}}
-			>
-				<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-					<LocalGasStation sx={{ color: 'text.primary', fontSize: '1.4rem' }} />
-					<Typography
-						variant="subtitle1"
-						sx={{
-							fontWeight: 700,
-							color: 'text.primary',
-							fontFamily: 'Inter, sans-serif',
-						}}
-					>
-						Fuel Level
-					</Typography>
-				</Box>
-				<Typography
-					variant="h6"
-					sx={{
-						fontWeight: 800,
-						color: 'text.primary',
-						fontFamily: 'Inter, sans-serif',
-					}}
-				>
-					{totalPercentage}%
-				</Typography>
-			</Box>
-
-			<Box sx={{ width: '100%', my: 0.5 }}>
-				<LinearProgress
-					variant="determinate"
-					value={totalPercentage}
-					sx={{
-						height: 12,
-						borderRadius: 6,
-						backgroundColor: 'action.hover',
-						'& .MuiLinearProgress-bar': {
-							borderRadius: 6,
-							background: `linear-gradient(90deg, ${
-								isOnline ? '#5a7c60bb' : '#f78d8d'
-							} 0%, ${isOnline ? '#2E7D3D' : '#eb6d6d'} 100%)`,
-						},
-					}}
-				/>
-			</Box>
-
-			<Box
-				sx={{
-					display: 'flex',
-					justifyContent: 'space-between',
-					alignItems: 'flex-start',
-				}}
-			>
-				<Box sx={{ display: 'flex', flexDirection: 'column' }}>
-					<Typography
-						variant="caption"
-						sx={{ color: 'text.secondary', fontWeight: 600 }}
-					>
-						0%
-					</Typography>
-					<Typography
-						variant="body2"
-						sx={{
-							fontWeight: 700,
-							color: 'text.primary',
-							mt: 0.5,
-						}}
-					>
-						{currentLiters} Ltrs
-					</Typography>
-				</Box>
-				<Typography
-					variant="caption"
-					sx={{ color: 'text.secondary', fontWeight: 600 }}
-				>
-					100%
-				</Typography>
-			</Box>
-		</Box>
-	);
-};
-
-const MetricBlock = ({
-	label,
-	status,
-	consumption,
-	rateOfFlow,
-	latestTimestamp,
-	totalizer,
-	handleOpenModal,
-}) => {
-	const isOnline = status?.toLowerCase() === 'online';
-
-	return (
-		<Box
-			sx={{
-				p: 1,
-				...machineCardSx(isOnline),
-				borderRadius: '16px',
-			}}
-		>
-			<Stack direction="row" justifyContent="space-between" alignItems="center">
-				<Stack
-					direction="row"
-					alignItems="center"
-					gap={1}
-					width="calc(100% - 65px)"
-					minWidth={0}
-				>
-					<MachineAvatar app="FUEL" />
-					<Box minWidth={0} flex={1}>
-						<ResponsiveTextWrapper
-							value={label}
-							variant="h6"
-							fontWeight="bold"
-							color="text.primary"
-						/>
-					</Box>
-				</Stack>
-
-				<Chip
-					label={status?.toUpperCase()}
-					size="small"
-					variant="outlined"
-					sx={{
-						fontWeight: 'bold',
-						color: isOnline ? 'success.main' : 'error.main',
-						borderColor: isOnline ? 'success.main' : 'error.main',
-					}}
-				/>
-			</Stack>
-
-			{(totalizer || formatTimestamp(latestTimestamp)) && (
-				<Stack
-					direction="row"
-					justifyContent="space-between"
-					alignItems="center"
-					mb={1}
-					gap={1}
-				>
-					<Box width="65%">
-						<ResponsiveTextWrapper
-							value={formatTimestamp(latestTimestamp)}
-							color="text.secondary"
-							fontWeight={500}
-							fontSize="14px"
-						/>
-					</Box>
-
-					<Box width="35%" textAlign="end">
-						<ResponsiveTextWrapper
-							value={`${totalizer?.toFixed(1)} m³`}
-							variant="subtitle1"
-							fontWeight={500}
-						/>
-					</Box>
-				</Stack>
-			)}
-
-			<FuelLevelCard isOnline={isOnline} />
-			<Box
-				sx={{
-					bgcolor: 'surface.muted',
-					border: '1px solid',
-					borderColor: 'surface.mutedBorder',
-					borderRadius: 2,
-					mb: 1,
-					width: '100%',
-				}}
-			>
-				<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
-					<TableHead>
-						<TableRow>
-							<TableCell
-								sx={{
-									fontWeight: 'bold',
-									border: 0,
-									width: { xs: '50%', lg: '60%' },
-								}}
-							>
-								<ResponsiveTextWrapper
-									fontSize="16px"
-									fontWeight="bold"
-									value="Parameter"
-								/>
-							</TableCell>
-							<TableCell
-								align="right"
-								sx={{
-									fontWeight: 'bold',
-									border: 0,
-									width: { xs: '50%', lg: '40%' },
-								}}
-							>
-								<ResponsiveTextWrapper
-									fontSize="16px"
-									fontWeight="bold"
-									value="Value"
-								/>
-							</TableCell>
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						{[
-							{
-								name: 'Consumption',
-								value: `${Number(consumption ?? 0).toFixed(2)} KLD`,
-								Icon: Opacity,
-							},
-							{
-								name: 'Rate of Flow',
-								value: `${Number(rateOfFlow ?? 0).toFixed(2)} m³/h`,
-								Icon: Speed,
-							},
-						].map((row) => {
-							const RowIcon = row.Icon;
-
-							return (
-								<TableRow key={row.name}>
-									<TableCell
-										sx={{ border: 0, py: 0.5, width: { xs: '50%', lg: '60%' } }}
-									>
-										<Box sx={{ display: 'flex', alignItems: 'center' }}>
-											<RowIcon sx={metricIconSx('primary.main')} />
-											<Box width="calc(100% - 14px - 8px)">
-												<ResponsiveTextWrapper
-													fontSize="14px"
-													color="text.primary"
-													fontWeight={500}
-													value={row.name}
-												/>
-											</Box>
-										</Box>
-									</TableCell>
-									<TableCell
-										align="right"
-										sx={{ border: 0, py: 0.5, width: { xs: '50%', lg: '40%' } }}
-									>
-										<ResponsiveTextWrapper
-											fontSize="14px"
-											color="text.primary"
-											fontWeight={500}
-											value={row.value}
-										/>
-									</TableCell>
-								</TableRow>
-							);
-						})}
-					</TableBody>
-				</Table>
-			</Box>
-
-			<Divider sx={{ mb: 0.5 }} />
-
-			<Stack
-				direction="row"
-				alignItems="center"
-				justifyContent="flex-end"
-				gap={1}
-				mt={0.5}
-			>
-				<Button
-					onClick={handleOpenModal}
-					size="small"
-					startIcon={<Insights />}
-					disableElevation
-					variant="contained"
-					sx={{
-						fontWeight: 'bold',
-						borderRadius: '16px',
-					}}
-				>
-					TREND
-				</Button>
-			</Stack>
-		</Box>
-	);
-};
-
 const FuelMachineList = () => {
 	const { slavesData, parametersData } = useCommonData();
 	const { selectedApp } = useApplications();
@@ -743,18 +418,21 @@ const FuelMachineList = () => {
 										lg={3}
 										key={`water-machine-${ind + 1}`}
 									>
-										<CustomCard childrenOtherProps={{ height: '100%' }}>
-											<MetricBlock
-												label={mc?.slave_name || ''}
-												status={mc?.status}
-												consumption={mc?.consumption}
-												rateOfFlow={mc?.rate_of_flow}
-												latestTimestamp={mc?.latest_ts}
-												totalizer={mc?.totalizer}
-												mtd={mc?.mtd}
-												handleOpenModal={() => handleOpenModal(mc)}
-											/>
-										</CustomCard>
+										<PremiumFuelMachineCard
+											title={mc?.slave_name || ''}
+											status={mc?.status}
+											lastUpdated={mc?.latest_ts}
+											consumption={mc?.consumption}
+											rateOfFlow={mc?.rate_of_flow}
+											totalizer={mc?.totalizer}
+											mtd={mc?.mtd}
+											slaveId={mc?.slave_id}
+											trendUrl={API_URLS.FUEL_MACHINE_LIST_TREND(
+												mc?.slave_id,
+												parametersData?.[0]?.value
+											)}
+											onOpenTrend={() => handleOpenModal(mc)}
+										/>
 									</Grid>
 								))}
 							</Grid>

@@ -8,8 +8,12 @@ import SensorsIcon from '@mui/icons-material/Sensors';
 import SpeedIcon from '@mui/icons-material/Speed';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
-import { Avatar, Box, Stack, Typography } from '@mui/material';
+import { Avatar, Box, Divider, Stack, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+
+import { getTemperatureScalePercent } from '../../helpers/temperatureStatus';
+
+import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 
 export const APP_ICONS = {
 	ENERGY: BoltIcon,
@@ -21,6 +25,21 @@ export const APP_ICONS = {
 	'FIRE-SAFETY': LocalFireDepartmentIcon,
 	FLOWMETER: SpeedIcon,
 	COMPRESSOR: CompressIcon,
+};
+
+// Each app's identity color — drives the icon chip, card wash/border and
+// sparkline tint everywhere, so the machine-list grid reads as a colorful
+// set of distinct apps rather than one repeated template.
+export const APP_ACCENT_COLOR = {
+	ENERGY: '#E3B13E',
+	WATER: '#2E90E5',
+	FUEL: '#EA580C',
+	SOLAR: '#F5A524',
+	STP: '#0891B2',
+	TEMPERATURE: '#DC2626',
+	'FIRE-SAFETY': '#DC2626',
+	FLOWMETER: '#7C3AED',
+	COMPRESSOR: '#16A34A',
 };
 
 /**
@@ -78,27 +97,200 @@ export const metricIconSx = (color) => ({
 });
 
 /**
- * Circular soft-primary avatar shown at the top-left of every machine card
- * (BMS reference design). Pick the icon via the `app` code.
+ * Circular avatar shown at the top-left of every machine card, tinted with
+ * the app's own accent color (falls back to primary for unmapped apps).
+ * Pick the icon via the `app` code.
  */
 export const MachineAvatar = ({ app }) => {
 	const Icon = APP_ICONS[app] || SensorsIcon;
+	const accent = APP_ACCENT_COLOR[app];
 	return (
 		<Avatar
 			sx={{
 				width: 60,
 				height: 60,
 				flexShrink: 0,
-				bgcolor: (t) =>
-					alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.25 : 0.1),
-				color: 'primary.main',
-				boxShadow: (t) => `0 0 0 1px ${alpha(t.palette.primary.main, 0.18)}`,
+				background: (t) =>
+					accent
+						? `linear-gradient(135deg, ${alpha(accent, t.palette.mode === 'dark' ? 0.32 : 0.16)} 0%, ${alpha(accent, t.palette.mode === 'dark' ? 0.14 : 0.06)} 100%)`
+						: alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.25 : 0.1),
+				color: accent || 'primary.main',
+				boxShadow: (t) => `0 0 0 1px ${alpha(accent || t.palette.primary.main, 0.22)}`,
 			}}
 		>
 			<Icon fontSize="large" />
 		</Avatar>
 	);
 };
+
+/**
+ * Same footprint as `MachineAvatar`, colored by the app's accent, dimmed
+ * when the device is offline. No motion — kept static for performance
+ * across large machine-list grids.
+ */
+export const AnimatedMachineAvatar = ({ app, isOnline = true }) => {
+	const Icon = APP_ICONS[app] || SensorsIcon;
+	const accent = APP_ACCENT_COLOR[app];
+
+	return (
+		<Avatar
+			sx={{
+				width: 60,
+				height: 60,
+				flexShrink: 0,
+				background: (t) =>
+					accent
+						? `linear-gradient(135deg, ${alpha(accent, t.palette.mode === 'dark' ? 0.34 : 0.18)} 0%, ${alpha(accent, t.palette.mode === 'dark' ? 0.14 : 0.06)} 100%)`
+						: alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.25 : 0.1),
+				color: accent || 'primary.main',
+				opacity: isOnline ? 1 : 0.55,
+				boxShadow: (t) => `0 0 0 1px ${alpha(accent || t.palette.primary.main, 0.24)}`,
+			}}
+		>
+			<Icon fontSize="large" />
+		</Avatar>
+	);
+};
+
+/**
+ * Soft rounded label/value list used inside the premium machine cards, e.g.
+ * `[{ label: 'Inlet Flowrate', value: '1.37 m³/hr' }, ...]`.
+ */
+export const MachineMetricPanel = ({ rows = [] }) => (
+	<Box
+		sx={{
+			bgcolor: 'surface.muted',
+			border: '1px solid',
+			borderColor: 'surface.mutedBorder',
+			borderRadius: '14px',
+			p: 1.25,
+			width: '100%',
+		}}
+	>
+		<Stack divider={<Divider sx={{ my: 0.75, borderColor: 'surface.mutedBorder' }} />}>
+			{rows.map((row) => (
+				<Stack
+					key={row.label}
+					direction="row"
+					justifyContent="space-between"
+					alignItems="center"
+					width="100%"
+					gap={1}
+				>
+					<Box minWidth={0} flex={1}>
+						<ResponsiveTextWrapper
+							value={row.label}
+							fontSize="13.5px"
+							color="text.secondary"
+							fontWeight={500}
+						/>
+					</Box>
+					<Box flexShrink={0} maxWidth="55%" minWidth={0}>
+						<ResponsiveTextWrapper
+							value={row.value}
+							fontSize="14.5px"
+							color="text.primary"
+							fontWeight={700}
+							sx={{ textAlign: 'right' }}
+						/>
+					</Box>
+				</Stack>
+			))}
+		</Stack>
+	</Box>
+);
+
+/**
+ * Small "donut" analytics visual built purely from CSS (`conic-gradient`) —
+ * no charting library instance per card, no API call, no animation. Reuses
+ * data the card already has (e.g. Today vs MTD, fuel level %) to give each
+ * card a glanceable proportion read-out instead of raw numbers. Fully
+ * responsive: fixed intrinsic size that sits inside a flex row with the
+ * label side allowed to shrink/truncate via `minWidth: 0`.
+ */
+export const MachineRatioDonut = ({ percent = 0, color, label, caption }) => {
+	const clamped = Math.max(0, Math.min(100, Number(percent) || 0));
+
+	return (
+		<Stack direction="row" alignItems="center" gap={1.25} width="100%">
+			<Box
+				sx={{
+					position: 'relative',
+					width: 56,
+					height: 56,
+					flexShrink: 0,
+					borderRadius: '50%',
+					background: (t) =>
+						`conic-gradient(${color} ${clamped * 3.6}deg, ${alpha(color, t.palette.mode === 'dark' ? 0.18 : 0.12)} 0deg)`,
+				}}
+			>
+				<Box
+					sx={{
+						position: 'absolute',
+						top: '50%',
+						left: '50%',
+						transform: 'translate(-50%, -50%)',
+						width: 40,
+						height: 40,
+						borderRadius: '50%',
+						bgcolor: 'background.paper',
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+					}}
+				>
+					<Typography sx={{ fontSize: '11px', fontWeight: 800, color: 'text.primary' }}>
+						{Math.round(clamped)}%
+					</Typography>
+				</Box>
+			</Box>
+			<Box minWidth={0} flex={1}>
+				<ResponsiveTextWrapper value={label} fontSize="12.5px" color="text.secondary" fontWeight={500} />
+				{caption && (
+					<ResponsiveTextWrapper value={caption} fontSize="12px" color="text.primary" fontWeight={700} />
+				)}
+			</Box>
+		</Stack>
+	);
+};
+
+/**
+ * Cold→hot gradient scale gauge — a different "small chart" shape from
+ * `MachineRatioDonut`, used by apps whose most meaningful reading is a
+ * banded temperature (Temperature, Fire Safety, Solar) rather than a
+ * proportion. Pure CSS, no library, no animation, no API call: it just
+ * places the reading's own value on a fixed cold–hot band.
+ */
+export const MachineTemperatureGauge = ({ value, statusColor, statusLabel }) => (
+	<Tooltip arrow placement="top" title={statusLabel || ''}>
+		<Box
+			sx={{
+				position: 'relative',
+				height: 6,
+				borderRadius: 3,
+				width: '100%',
+				background:
+					'linear-gradient(to right, #2563EB 0%, #16A34A 25%, #E3B13E 50%, #EA580C 75%, #DC2626 100%)',
+			}}
+		>
+			<Box
+				sx={{
+					position: 'absolute',
+					top: '50%',
+					left: `${getTemperatureScalePercent(value)}%`,
+					transform: 'translate(-50%, -50%)',
+					width: 12,
+					height: 12,
+					borderRadius: '50%',
+					bgcolor: '#fff',
+					border: '2px solid',
+					borderColor: statusColor || 'primary.main',
+					boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+				}}
+			/>
+		</Box>
+	</Tooltip>
+);
 
 /**
  * "● Healthy / ● Offline" status badge for the machine card footer.

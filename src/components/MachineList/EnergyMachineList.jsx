@@ -1,18 +1,10 @@
-import { DownloadForOffline, Insights } from '@mui/icons-material';
+import { DownloadForOffline } from '@mui/icons-material';
 import {
 	Box,
-	Button,
-	Chip,
-	Divider,
 	Grid,
 	IconButton,
 	Stack,
 	Tab,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
 	Tabs,
 	Tooltip,
 } from '@mui/material';
@@ -30,14 +22,13 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { formatTimestamp } from '../../helpers/common';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
-import CustomCard from '../common/CustomCard';
 import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 import PremiumModal from '../common/PremiumModal';
-import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
-import { MachineAvatar, machineCardSx } from '../common/MachineCardBits';
 import EnergyMachineListSkeleton from '../skeletonLoaders/EnergyMachineListSkeleton';
+
+import PremiumEnergyMachineCard from './cards/PremiumEnergyMachineCard';
 
 const MachineListHeader = ({
 	slaveOptions,
@@ -94,303 +85,6 @@ const MachineListHeader = ({
 					</span>
 				</Tooltip>
 			</Stack>
-		</Box>
-	);
-};
-
-const MetricBlock = ({
-	label,
-	status,
-	total,
-	phase_r_v,
-	phase_r_a,
-	phase_y_v,
-	phase_y_a,
-	phase_b_v,
-	phase_b_a,
-	active_power,
-	power_factory,
-	frequency,
-	today,
-	mtd,
-	last_ts,
-	handleOpenModal,
-}) => {
-	const isOnline = status?.toLowerCase() === 'online';
-
-	return (
-		<Box
-			sx={{
-				p: 1,
-				...machineCardSx(isOnline),
-				borderRadius: '16px',
-			}}
-		>
-			<Stack direction="row" justifyContent="space-between" alignItems="center">
-				<Stack
-					direction="row"
-					alignItems="center"
-					gap={1}
-					width="calc(100% - 65px)"
-					minWidth={0}
-				>
-					<MachineAvatar app="ENERGY" />
-					<Box minWidth={0} flex={1}>
-						<ResponsiveTextWrapper
-							value={label}
-							variant="h6"
-							fontWeight="bold"
-							color="text.primary"
-						/>
-					</Box>
-				</Stack>
-
-				<Chip
-					label={status?.toUpperCase()}
-					size="small"
-					variant="outlined"
-					sx={{
-						fontWeight: 'bold',
-						color: isOnline ? 'success.main' : 'error.main',
-						borderColor: isOnline ? 'success.main' : 'error.main',
-					}}
-				/>
-			</Stack>
-
-			{(total || formatTimestamp(last_ts)) && (
-				<Stack
-					direction="row"
-					justifyContent="space-between"
-					alignItems="center"
-					mb={1}
-					gap={1}
-				>
-					<Box width="65%">
-						<ResponsiveTextWrapper
-							value={formatTimestamp(last_ts)}
-							color="text.secondary"
-							fontWeight={500}
-							fontSize="14px"
-						/>
-					</Box>
-
-					<Box width="35%" textAlign="end">
-						<ResponsiveTextWrapper
-							value={`${total?.toFixed(1)} kWh`}
-							variant="subtitle1"
-							fontWeight={500}
-						/>
-					</Box>
-				</Stack>
-			)}
-
-			<Box
-				sx={{
-					bgcolor: 'surface.muted',
-					border: '1px solid',
-					borderColor: 'surface.mutedBorder',
-					borderRadius: 2,
-					mb: 1,
-					width: '100%',
-				}}
-			>
-				<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
-					<TableHead>
-						<TableRow>
-							<TableCell sx={{ fontWeight: 'bold', border: 0, width: '40%' }}>
-								<ResponsiveTextWrapper
-									fontSize="16px"
-									fontWeight="bold"
-									value="Phase"
-								/>
-							</TableCell>
-							<TableCell
-								align="right"
-								sx={{ fontWeight: 'bold', border: 0, width: '30%' }}
-							>
-								<ResponsiveTextWrapper
-									fontSize="16px"
-									fontWeight="bold"
-									value="V"
-								/>
-							</TableCell>
-							<TableCell
-								align="right"
-								sx={{ fontWeight: 'bold', border: 0, width: '30%' }}
-							>
-								<ResponsiveTextWrapper
-									fontSize="16px"
-									variant="caption"
-									fontWeight="bold"
-									value="A"
-								/>
-							</TableCell>
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						{[
-							{ name: 'Phase R', v: phase_r_v, a: phase_r_a, color: '#d32f2f' },
-							{ name: 'Phase Y', v: phase_y_v, a: phase_y_a, color: '#fbc02d' },
-							{ name: 'Phase B', v: phase_b_v, a: phase_b_a, color: '#1976d2' },
-						].map((row) => (
-							<TableRow key={row.name}>
-								<TableCell sx={{ border: 0, py: 0.5, width: '40%' }}>
-									<Box
-										sx={{
-											display: 'flex',
-											alignItems: 'center',
-										}}
-									>
-										<Box
-											sx={{
-												width: '10px',
-												height: 10,
-												borderRadius: '50%',
-												bgcolor: row.color,
-												mr: 1,
-											}}
-										/>
-
-										<Box width="calc(100% - 10px)">
-											<ResponsiveTextWrapper
-												fontSize="14px"
-												color="text.primary"
-												fontWeight={500}
-												value={row.name}
-											/>
-										</Box>
-									</Box>
-								</TableCell>
-								<TableCell
-									align="right"
-									sx={{ border: 0, py: 0.5, width: '30%' }}
-								>
-									<ResponsiveTextWrapper
-										fontSize="14px"
-										color="text.primary"
-										fontWeight={500}
-										value={row.v?.toFixed(2)}
-									/>
-								</TableCell>
-								<TableCell
-									align="right"
-									sx={{ border: 0, py: 0.5, width: '30%' }}
-								>
-									<ResponsiveTextWrapper
-										fontSize="14px"
-										color="text.primary"
-										fontWeight={500}
-										value={row.a?.toFixed(1)}
-									/>
-								</TableCell>
-							</TableRow>
-						))}
-					</TableBody>
-				</Table>
-			</Box>
-
-			<Grid container spacing={1} sx={{ mb: 1 }}>
-				<Grid item xs={4}>
-					<ResponsiveTextWrapper
-						value="Active power"
-						variant="caption"
-						color="text.secondary"
-					/>
-
-					<ResponsiveTextWrapper
-						value={`${active_power} kw`}
-						variant="body1"
-						fontWeight="bold"
-					/>
-				</Grid>
-				<Grid item xs={4}>
-					<ResponsiveTextWrapper
-						value="Power factor"
-						variant="caption"
-						color="text.secondary"
-					/>
-
-					<ResponsiveTextWrapper
-						value={`${power_factory} PF`}
-						variant="body1"
-						fontWeight="bold"
-					/>
-				</Grid>
-				<Grid item xs={4}>
-					<ResponsiveTextWrapper
-						value="Frequency"
-						variant="caption"
-						color="text.secondary"
-					/>
-
-					<ResponsiveTextWrapper
-						value={`${frequency} Hz`}
-						variant="body1"
-						fontWeight="bold"
-					/>
-				</Grid>
-			</Grid>
-
-			<Divider sx={{ mb: 0.5 }} />
-
-			<Grid
-				container
-				spacing={1}
-				justifyContent="space-between"
-				alignItems="end"
-			>
-				<Grid item xs={4}>
-					<ResponsiveTextWrapper
-						value="Today"
-						variant="caption"
-						color="text.secondary"
-					/>
-
-					<ResponsiveTextWrapper
-						value={`${today} kWh`}
-						variant="body1"
-						fontWeight="bold"
-					/>
-				</Grid>
-
-				<Grid item xs={4}>
-					<ResponsiveTextWrapper
-						value="MTD"
-						variant="caption"
-						color="text.secondary"
-					/>
-
-					<ResponsiveTextWrapper
-						value={`${mtd} kWh`}
-						variant="body1"
-						fontWeight="bold"
-					/>
-				</Grid>
-
-				<Grid item xs={4}>
-					<Stack
-						direction="row"
-						alignItems="center"
-						justifyContent="flex-end"
-						gap={1}
-						mt={0.5}
-					>
-						<Button
-							onClick={handleOpenModal}
-							size="small"
-							startIcon={<Insights />}
-							disableElevation
-							variant="contained"
-							sx={{
-								fontWeight: 'bold',
-								borderRadius: '16px',
-							}}
-						>
-							TREND
-						</Button>
-					</Stack>
-				</Grid>
-			</Grid>
 		</Box>
 	);
 };
@@ -922,27 +616,26 @@ const EnergyMachineList = () => {
 											md={4}
 											key={`machine-card-${mc.slave_id}-${mc.name}`}
 										>
-											<CustomCard childrenOtherProps={{ height: '100%' }}>
-												<MetricBlock
-													label={mc?.name || ''}
-													status={mc?.status}
-													total={mc?.latest?.acte_im || 0}
-													phase_r_v={mc?.latest?.rv || 0}
-													phase_r_a={mc?.latest?.ir || 0}
-													phase_y_v={mc?.latest?.yv || 0}
-													phase_y_a={mc?.latest?.iy || 0}
-													phase_b_v={mc?.latest?.bv || 0}
-													phase_b_a={mc?.latest?.ib || 0}
-													active_power={mc?.latest?.actpr_t || 0}
-													power_factory={mc?.latest?.pf_t || 0}
-													frequency={mc?.latest?.fq || 0}
-													today={mc?.energy?.today || 0}
-													mtd={mc?.energy?.mtd || 0}
-													slave_id={mc?.slave_id}
-													last_ts={mc?.latest?.last_ts || 0}
-													handleOpenModal={() => handleOpenModal(mc)}
-												/>
-											</CustomCard>
+											<PremiumEnergyMachineCard
+												title={mc?.name || ''}
+												status={mc?.status}
+												lastUpdated={mc?.latest?.last_ts || 0}
+												total={mc?.latest?.acte_im || 0}
+												phaseRV={mc?.latest?.rv || 0}
+												phaseRA={mc?.latest?.ir || 0}
+												phaseYV={mc?.latest?.yv || 0}
+												phaseYA={mc?.latest?.iy || 0}
+												phaseBV={mc?.latest?.bv || 0}
+												phaseBA={mc?.latest?.ib || 0}
+												activePower={mc?.latest?.actpr_t || 0}
+												powerFactor={mc?.latest?.pf_t || 0}
+												frequency={mc?.latest?.fq || 0}
+												today={mc?.energy?.today || 0}
+												mtd={mc?.energy?.mtd || 0}
+												slaveId={mc?.slave_id}
+												trendUrl={API_URLS.EMS_MACHINE_LIST_ACTIVE_POWER(mc?.slave_id)}
+												onOpenTrend={() => handleOpenModal(mc)}
+											/>
 										</Grid>
 									);
 								})}

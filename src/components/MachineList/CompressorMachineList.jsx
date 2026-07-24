@@ -1,9 +1,7 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { DownloadForOffline, BarChart, TableChart } from '@mui/icons-material';
 import {
 	Box,
 	Button,
-	Chip,
-	Divider,
 	Grid,
 	IconButton,
 	Stack,
@@ -19,35 +17,29 @@ import {
 	TableContainer,
 	CircularProgress,
 } from '@mui/material';
-import { CustomAutocomplete } from '../common/CustomAutocomplete';
-import {
-	DownloadForOffline,
-	Insights,
-	BarChart,
-	TableChart,
-} from '@mui/icons-material';
-import NoDataFound from '../common/errors/NoDataFound';
-import CustomCard from '../common/CustomCard';
-import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
-import { MachineAvatar, machineCardSx } from '../common/MachineCardBits';
-import PremiumModal from '../common/PremiumModal';
-import { Loading } from '../common/Loading';
-import ReactApexChart from 'react-apexcharts';
 import Papa from 'papaparse';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import ReactApexChart from 'react-apexcharts';
 
-import { useCommonData } from '../../contexts/CommonDataContext';
 import { useApplications } from '../../contexts/ApplicationContext';
-import { API_URLS } from '../../helpers/apiUrls';
+import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
+import { API_URLS } from '../../helpers/apiUrls';
 import { formatTimestamp } from '../../helpers/common';
+import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import NoDataFound from '../common/errors/NoDataFound';
+import { Loading } from '../common/Loading';
+import PremiumModal from '../common/PremiumModal';
+
+import PremiumCompressorMachineCard from './cards/PremiumCompressorMachineCard';
 
 // --- Helper Functions ---
 
 const parseDowntimeDate = (dateStr) => {
-	if (!dateStr) return null;
+	if (!dateStr) {return null;}
 	// Handle "DD-MM-YYYY HH:mm" format
 	const parts = dateStr.match(/(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})/);
-	if (!parts) return null;
+	if (!parts) {return null;}
 	return new Date(
 		parseInt(parts[3]),
 		parseInt(parts[2]) - 1,
@@ -58,9 +50,9 @@ const parseDowntimeDate = (dateStr) => {
 };
 
 const parseFlexibleDate = (dateStr) => {
-	if (!dateStr) return null;
+	if (!dateStr) {return null;}
 	const nativeTs = new Date(dateStr).getTime();
-	if (!isNaN(nativeTs) && nativeTs > 0) return nativeTs;
+	if (!isNaN(nativeTs) && nativeTs > 0) {return nativeTs;}
 	return parseDowntimeDate(dateStr);
 };
 
@@ -157,359 +149,6 @@ const MachineListHeader = ({
 		</Stack>
 	</Box>
 );
-
-const CompressorMetricBlock = ({
-	machine,
-	handleOpenModal,
-	onStoppageClick,
-}) => {
-	const latest = machine?.latest || {};
-	const rawStatus =
-		machine?.current_status?.status ||
-		machine?.status ||
-		latest?.status ||
-		'Unknown';
-	const status = String(rawStatus);
-	const isOnline = status?.toLowerCase() === 'online';
-
-	const lastUpdated =
-		machine?.current_status?.last_updated ||
-		latest?.last_ts ||
-		machine?.last_updated ||
-		machine?.last_ts;
-
-	const statusFrom =
-		machine?.current_status?.since_display ||
-		machine?.current_status?.status_from ||
-		latest?.status_from ||
-		latest?.status_since ||
-		latest?.from ||
-		machine?.status_from ||
-		'';
-
-	const name =
-		machine?.name ||
-		machine?.slave_name ||
-		machine?.device_uid ||
-		machine?.compressor_no ||
-		'Unnamed Device';
-
-	const lastStoppageStart =
-		machine?.last_stoppage?.start_time ||
-		machine?.last_stoppage?.start ||
-		latest?.stop_start ||
-		latest?.last_stop_start;
-
-	const lastStoppageEnd =
-		machine?.last_stoppage?.end_time ||
-		machine?.last_stoppage?.end ||
-		latest?.stop_end ||
-		latest?.last_stop_end;
-
-	const lastStoppageDuration =
-		machine?.last_stoppage?.duration ||
-		latest?.stop_duration ||
-		latest?.last_stop_duration ||
-		machine?.last_stoppage?.duration_display ||
-		'N/A';
-
-	const previous8Count =
-		machine?.history_8h?.count ??
-		machine?.previous_8hrs_stoppages ??
-		machine?.stoppages_previous_8hrs ??
-		machine?.stoppages_8hrs ??
-		0;
-
-	const previous24Count =
-		machine?.history_24h?.count ??
-		machine?.previous_24hrs_stoppages ??
-		machine?.stoppages_previous_24hrs ??
-		machine?.stoppages_24hrs ??
-		0;
-
-	const previous8Duration =
-		machine?.history_8h?.total_duration ??
-		machine?.previous_8hrs_duration ??
-		machine?.stoppage_duration_previous_8hrs ??
-		machine?.stoppage_duration_8hrs ??
-		'N/A';
-
-	const previous24Duration =
-		machine?.history_24h?.total_duration ??
-		machine?.previous_24hrs_duration ??
-		machine?.stoppage_duration_previous_24hrs ??
-		machine?.stoppage_duration_24hrs ??
-		'N/A';
-
-	return (
-		<Box
-			sx={{
-				p: 1,
-				...machineCardSx(isOnline),
-				borderRadius: '16px',
-				minHeight: 340,
-			}}
-		>
-			<Stack
-				direction="row"
-				justifyContent="space-between"
-				alignItems="center"
-				spacing={1}
-				sx={{ mb: 1 }}
-			>
-				<Stack
-					direction="row"
-					alignItems="center"
-					gap={1}
-					sx={{ flex: 1, minWidth: 0 }}
-				>
-					<MachineAvatar app="COMPRESSOR" />
-					<Box sx={{ flex: 1, minWidth: 0 }}>
-						<ResponsiveTextWrapper
-							value={name}
-							variant="h6"
-							fontWeight="bold"
-							color="text.primary"
-						/>
-					</Box>
-				</Stack>
-
-				<Chip
-					label={status?.toUpperCase()}
-					size="small"
-					variant="outlined"
-					sx={{
-						fontWeight: 'bold',
-						color: isOnline ? 'success.main' : 'error.main',
-						borderColor: isOnline ? 'success.main' : 'error.main',
-					}}
-				/>
-			</Stack>
-
-			<Stack
-				direction="row"
-				justifyContent="space-between"
-				alignItems="center"
-				mb={1}
-				gap={1}
-			>
-				<Box width="100%">
-					<ResponsiveTextWrapper
-						value={formatTimestamp(lastUpdated)}
-						color="text.secondary"
-						fontWeight={500}
-						fontSize="14px"
-					/>
-				</Box>
-			</Stack>
-
-			<Divider sx={{ mb: 1 }} />
-
-			<Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-				<ResponsiveTextWrapper
-					value="Current Status:"
-					fontWeight="bold"
-					color="text.primary"
-					fontSize="14px"
-				/>
-				<Box
-					sx={{
-						bgcolor: isOnline ? 'rgba(76,175,80,0.12)' : 'rgba(244,67,54,0.12)',
-						borderRadius: '999px',
-						px: 2,
-						py: 0.5,
-					}}
-				>
-					<ResponsiveTextWrapper
-						value={status?.toUpperCase()}
-						color={isOnline ? 'success.main' : 'error.main'}
-						fontWeight="bold"
-						fontSize="12px"
-					/>
-				</Box>
-				{statusFrom ? (
-					<ResponsiveTextWrapper
-						value={`from ${statusFrom}`}
-						color="text.secondary"
-						fontSize="12px"
-						fontWeight="bold"
-						align="center"
-					/>
-				) : null}
-			</Stack>
-
-			<Box sx={{ mb: 1 }}>
-				<ResponsiveTextWrapper
-					value="Last Stoppage"
-					fontWeight="bold"
-					fontSize="14px"
-				/>
-				<Table size="small" sx={{ mt: 1, width: '100%', tableLayout: 'fixed' }}>
-					<TableHead>
-						<TableRow>
-							<TableCell
-								sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '13px' }}
-							>
-								Start Time
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '13px' }}
-							>
-								End Time
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '13px' }}
-							>
-								Duration
-							</TableCell>
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						<TableRow>
-							<TableCell sx={{ border: 0, p: 0.5, fontSize: '12px' }}>
-								{lastStoppageStart || '-'}
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ border: 0, p: 0.5, fontSize: '12px' }}
-							>
-								{lastStoppageEnd || '-'}
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ border: 0, p: 0.5, fontSize: '12px' }}
-							>
-								{lastStoppageDuration || '-'}
-							</TableCell>
-						</TableRow>
-					</TableBody>
-				</Table>
-			</Box>
-
-			<Box sx={{ mb: 1 }}>
-				<Table size="small" sx={{ mt: 1, width: '100%', tableLayout: 'fixed' }}>
-					<TableHead>
-						<TableRow>
-							<TableCell
-								align=""
-								sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '13px' }}
-							>
-								Stoppages History
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '13px' }}
-							>
-								Previous 8hrs
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '13px' }}
-							>
-								Previous 24hrs
-							</TableCell>
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						<TableRow>
-							<TableCell
-								sx={{ border: 0, p: 0.5, fontSize: '12px', fontWeight: 'bold' }}
-							>
-								No. of Stoppages
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ border: 0, p: 0.5, fontSize: '12px', fontWeight: 'bold' }}
-							>
-								<Box
-									component="span"
-									onClick={() =>
-										previous8Count > 0 && onStoppageClick(machine, 8)
-									}
-									sx={{
-										cursor: previous8Count > 0 ? 'pointer' : 'default',
-										color: previous8Count > 0 ? '#2F6FB0' : 'inherit',
-										fontWeight: 600,
-										'&:hover':
-											previous8Count > 0 ? { textDecoration: 'underline' } : {},
-									}}
-								>
-									{previous8Count}
-								</Box>
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ border: 0, p: 0.5, fontSize: '12px', fontWeight: 'bold' }}
-							>
-								<Box
-									component="span"
-									onClick={() =>
-										previous24Count > 0 && onStoppageClick(machine, 24)
-									}
-									sx={{
-										cursor: previous24Count > 0 ? 'pointer' : 'default',
-										color: previous24Count > 0 ? '#2F6FB0' : 'inherit',
-										fontWeight: 600,
-										'&:hover':
-											previous24Count > 0
-												? { textDecoration: 'underline' }
-												: {},
-									}}
-								>
-									{previous24Count}
-								</Box>
-							</TableCell>
-						</TableRow>
-						<TableRow>
-							<TableCell
-								sx={{ border: 0, p: 0.5, fontSize: '12px', fontWeight: 'bold' }}
-							>
-								Stoppage Duration
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ border: 0, p: 0.5, fontSize: '12px' }}
-							>
-								{previous8Duration}
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ border: 0, p: 0.5, fontSize: '12px' }}
-							>
-								{previous24Duration}
-							</TableCell>
-						</TableRow>
-					</TableBody>
-				</Table>
-			</Box>
-
-			<Stack
-				direction="row"
-				alignItems="center"
-				justifyContent="flex-end"
-				gap={1}
-				mt={0.5}
-			>
-				<Button
-					onClick={() => handleOpenModal(machine)}
-					size="small"
-					startIcon={<Insights />}
-					disableElevation
-					variant="contained"
-					sx={{
-						fontWeight: 'bold',
-						borderRadius: '16px',
-						mt: 1,
-					}}
-				>
-					TREND
-				</Button>
-			</Stack>
-		</Box>
-	);
-};
 
 const handleDownload = (filteredMachines, selectedApp) => {
 	const headers = [
@@ -694,11 +333,11 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 
 	// Chart Series Logic - Mirroring Code 1 Logic
 	const chartSeries = useMemo(() => {
-		if (!windowRange?.from || !windowRange?.to) return [];
+		if (!windowRange?.from || !windowRange?.to) {return [];}
 
 		const fromTs = parseFlexibleDate(windowRange.from);
 		const toTs = parseFlexibleDate(windowRange.to);
-		if (fromTs == null || toTs == null) return [];
+		if (fromTs == null || toTs == null) {return [];}
 
 		const sorted = [...stoppages]
 			.map((p, idx) => ({
@@ -710,7 +349,7 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 			.filter((p) => p.startTs != null && !isNaN(p.startTs))
 			.sort((a, b) => a.startTs - b.startTs);
 
-		if (sorted.length === 0) return [];
+		if (sorted.length === 0) {return [];}
 
 		const points = [];
 
@@ -797,8 +436,8 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 				labels: {
 					style: { colors: '#6B7280', fontSize: '11px' },
 					formatter: function (val) {
-						if (val >= 0.9) return 'Online';
-						if (val <= 0.1) return 'Offline';
+						if (val >= 0.9) {return 'Online';}
+						if (val <= 0.1) {return 'Offline';}
 						return '';
 					},
 				},
@@ -810,7 +449,7 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 				custom: function ({ seriesIndex, dataPointIndex, w }) {
 					const dataPoint =
 						w.globals.initialSeries[seriesIndex]?.data[dataPointIndex];
-					if (!dataPoint) return '';
+					if (!dataPoint) {return '';}
 
 					const date = new Date(dataPoint.x);
 					const formattedDate = date.toLocaleString();
@@ -1095,7 +734,7 @@ const ModalContentForTrend = ({
 
 	// ─── FIXED: Handle both numeric (1/0) and string ("online"/"offline") status values ───
 	const chartSeries = useMemo(() => {
-		if (!chartData.length) return [];
+		if (!chartData.length) {return [];}
 
 		if (isStatusTrend) {
 			const data = [];
@@ -1220,8 +859,8 @@ const ModalContentForTrend = ({
 					labels: {
 						style: { colors: '#6B7280', fontSize: '11px' },
 						formatter: function (val) {
-							if (val >= 0.9) return 'Online';
-							if (val <= 0.1) return 'Offline';
+							if (val >= 0.9) {return 'Online';}
+							if (val <= 0.1) {return 'Offline';}
 							return '';
 						},
 					},
@@ -1255,7 +894,7 @@ const ModalContentForTrend = ({
 			const chartCategories = chartData.map((item) => {
 				const timestamp =
 					item.start || item.timestamp || item.time || item.date;
-				if (!timestamp) return '';
+				if (!timestamp) {return '';}
 				return new Date(timestamp).toLocaleTimeString('en-US', {
 					hour: '2-digit',
 					minute: '2-digit',
@@ -1414,25 +1053,115 @@ const CompressorMachineList = () => {
 							<Loading />
 						) : filteredMachines?.length ? (
 							<Grid container rowGap={1} columnSpacing={1}>
-								{filteredMachines.map((machine) => (
-									<Grid
-										item
-										xs={12}
-										sm={6}
-										md={4}
-										key={`compressor-machine-${
-											machine?.slave_id || machine?.id
-										}`}
-									>
-										<CustomCard childrenOtherProps={{ height: '100%' }}>
-											<CompressorMetricBlock
-												machine={machine}
-												handleOpenModal={handleOpenModal}
-												onStoppageClick={handleStoppageClick}
+								{filteredMachines.map((machine) => {
+									const latest = machine?.latest || {};
+									const rawStatus =
+										machine?.current_status?.status ||
+										machine?.status ||
+										latest?.status ||
+										'Unknown';
+									const status = String(rawStatus);
+
+									const lastUpdated =
+										machine?.current_status?.last_updated ||
+										latest?.last_ts ||
+										machine?.last_updated ||
+										machine?.last_ts;
+
+									const statusFrom =
+										machine?.current_status?.since_display ||
+										machine?.current_status?.status_from ||
+										latest?.status_from ||
+										latest?.status_since ||
+										latest?.from ||
+										machine?.status_from ||
+										'';
+
+									const name =
+										machine?.name ||
+										machine?.slave_name ||
+										machine?.device_uid ||
+										machine?.compressor_no ||
+										'Unnamed Device';
+
+									const lastStoppageStart =
+										machine?.last_stoppage?.start_time ||
+										machine?.last_stoppage?.start ||
+										latest?.stop_start ||
+										latest?.last_stop_start;
+
+									const lastStoppageEnd =
+										machine?.last_stoppage?.end_time ||
+										machine?.last_stoppage?.end ||
+										latest?.stop_end ||
+										latest?.last_stop_end;
+
+									const lastStoppageDuration =
+										machine?.last_stoppage?.duration ||
+										latest?.stop_duration ||
+										latest?.last_stop_duration ||
+										machine?.last_stoppage?.duration_display ||
+										'N/A';
+
+									const previous8Count =
+										machine?.history_8h?.count ??
+										machine?.previous_8hrs_stoppages ??
+										machine?.stoppages_previous_8hrs ??
+										machine?.stoppages_8hrs ??
+										0;
+
+									const previous24Count =
+										machine?.history_24h?.count ??
+										machine?.previous_24hrs_stoppages ??
+										machine?.stoppages_previous_24hrs ??
+										machine?.stoppages_24hrs ??
+										0;
+
+									const previous8Duration =
+										machine?.history_8h?.total_duration ??
+										machine?.previous_8hrs_duration ??
+										machine?.stoppage_duration_previous_8hrs ??
+										machine?.stoppage_duration_8hrs ??
+										'N/A';
+
+									const previous24Duration =
+										machine?.history_24h?.total_duration ??
+										machine?.previous_24hrs_duration ??
+										machine?.stoppage_duration_previous_24hrs ??
+										machine?.stoppage_duration_24hrs ??
+										'N/A';
+
+									return (
+										<Grid
+											item
+											xs={12}
+											sm={6}
+											md={4}
+											lg={3}
+											key={`compressor-machine-${
+												machine?.slave_id || machine?.id
+											}`}
+										>
+											<PremiumCompressorMachineCard
+												title={name}
+												status={status}
+												lastUpdated={lastUpdated}
+												statusFrom={statusFrom}
+												lastStoppageStart={lastStoppageStart}
+												lastStoppageEnd={lastStoppageEnd}
+												lastStoppageDuration={lastStoppageDuration}
+												previous8Count={previous8Count}
+												previous24Count={previous24Count}
+												previous8Duration={previous8Duration}
+												previous24Duration={previous24Duration}
+												onStoppageClick={(hours) =>
+													handleStoppageClick(machine, hours)
+												}
+												onOpenTrend={() => handleOpenModal(machine)}
 											/>
-										</CustomCard>
-									</Grid>
-								))}
+										</Grid>
+									);
+								})}
 							</Grid>
 						) : (
 							<NoDataFound message="No machine readings received yet — data appears once the device reports" />
@@ -1453,7 +1182,7 @@ const CompressorMachineList = () => {
 				confirmText={null}
 				cancelText={null}
 			>
-				{Boolean(modalDetails?.isOpen) ? (
+				{modalDetails?.isOpen ? (
 					<ModalContentForTrend
 						handleTabChange={handleTabChange}
 						tab={modalDetails?.tab}

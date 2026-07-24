@@ -1,26 +1,5 @@
-import {
-	BatteryStd,
-	DownloadForOffline,
-	Insights,
-	Thermostat,
-	WaterDrop,
-} from '@mui/icons-material';
-import {
-	Box,
-	Button,
-	Chip,
-	Divider,
-	Grid,
-	IconButton,
-	Stack,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
-	Tooltip,
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { DownloadForOffline } from '@mui/icons-material';
+import { Box, Grid, IconButton, Stack, Tooltip } from '@mui/material';
 import Papa from 'papaparse';
 import { useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
@@ -31,23 +10,14 @@ import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { formatTimestamp } from '../../helpers/common';
-import {
-	getTemperatureScalePercent,
-	getTemperatureStatus,
-} from '../../helpers/temperatureStatus';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
-import CustomCard from '../common/CustomCard';
 import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 import PremiumModal from '../common/PremiumModal';
-import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
-import {
-	MachineAvatar,
-	machineCardSx,
-	metricIconSx,
-} from '../common/MachineCardBits';
 import TemperatureMachineListSkeleton from '../skeletonLoaders/TemperatureMachineListSkeleton';
+
+import PremiumTemperatureMachineCard from './cards/PremiumTemperatureMachineCard';
 
 const getMachineSlaveId = (machine) => machine?.slave_id ?? machine?.id;
 
@@ -111,276 +81,6 @@ const MachineListHeader = ({
 						</IconButton>
 					</span>
 				</Tooltip>
-			</Stack>
-		</Box>
-	);
-};
-
-const TemperatureMetricBlock = ({
-	label,
-	status,
-	temperature,
-	humidity,
-	battery,
-	lastUpdated,
-	handleOpenModal,
-}) => {
-	const isOnline = status?.toLowerCase() === 'online';
-	const tempStatus = getTemperatureStatus(temperature);
-
-	return (
-		<Box
-			sx={{
-				p: 1,
-				...machineCardSx(isOnline),
-				borderRadius: '16px',
-				// Tint the whole card by the temperature band whenever a reading
-				// is available — independent of online/offline status, since the
-				// color is reporting the last known temperature, not connectivity.
-				...(tempStatus && {
-					background: (t) =>
-						`linear-gradient(155deg, ${alpha(
-							tempStatus.color,
-							t.palette.mode === 'dark' ? 0.2 : 0.1
-						)} 0%, ${t.palette.background.paper} 55%)`,
-					borderColor: (t) =>
-						alpha(tempStatus.color, t.palette.mode === 'dark' ? 0.38 : 0.22),
-				}),
-			}}
-		>
-			<Stack direction="row" justifyContent="space-between" alignItems="center">
-				<Stack
-					direction="row"
-					alignItems="center"
-					gap={1}
-					width="calc(100% - 65px)"
-					minWidth={0}
-				>
-					<MachineAvatar app="TEMPERATURE" />
-					<Box minWidth={0} flex={1}>
-						<ResponsiveTextWrapper
-							value={label}
-							variant="h6"
-							fontWeight="bold"
-							color="text.primary"
-						/>
-					</Box>
-				</Stack>
-
-				<Chip
-					label={status?.toUpperCase()}
-					size="small"
-					variant="outlined"
-					sx={{
-						fontWeight: 'bold',
-						color: isOnline ? 'success.main' : 'error.main',
-						borderColor: isOnline ? 'success.main' : 'error.main',
-					}}
-				/>
-			</Stack>
-
-			{lastUpdated && (
-				<ResponsiveTextWrapper
-					value={formatTimestamp(lastUpdated)}
-					color="text.secondary"
-					fontWeight={500}
-					fontSize="14px"
-					sx={{ mb: 1, display: 'block' }}
-				/>
-			)}
-
-			<Box
-				sx={{
-					bgcolor: 'surface.muted',
-					border: '1px solid',
-					borderColor: 'surface.mutedBorder',
-					borderRadius: 2,
-					mb: 1,
-					width: '100%',
-				}}
-			>
-				<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
-					<TableHead>
-						<TableRow>
-							<TableCell
-								sx={{
-									fontWeight: 'bold',
-									border: 0,
-									width: { xs: '50%', lg: '60%' },
-								}}
-							>
-								<ResponsiveTextWrapper
-									fontSize="16px"
-									fontWeight="bold"
-									value="Parameter"
-								/>
-							</TableCell>
-							<TableCell
-								align="right"
-								sx={{
-									fontWeight: 'bold',
-									border: 0,
-									width: { xs: '50%', lg: '40%' },
-								}}
-							>
-								<ResponsiveTextWrapper
-									fontSize="16px"
-									fontWeight="bold"
-									value="Value"
-								/>
-							</TableCell>
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						{[
-							{
-								name: 'Temperature',
-								value: `${Number(temperature ?? 0).toFixed(2)} °C`,
-								Icon: Thermostat,
-								color: tempStatus?.color || 'error.main',
-								valueColor: tempStatus?.color,
-							},
-							{
-								name: 'Humidity',
-								value: `${Number(humidity ?? 0).toFixed(1)} %`,
-								Icon: WaterDrop,
-								color: 'primary.main',
-							},
-							{
-								name: 'Battery',
-								value: `${Number(battery ?? 0).toFixed(2)} V`,
-								Icon: BatteryStd,
-								color: '#2e7d32',
-							},
-						].map((row) => {
-							const RowIcon = row.Icon;
-							const isTemperatureRow = row.name === 'Temperature';
-							const rowContent = (
-								<TableRow
-									key={row.name}
-									sx={
-										isTemperatureRow && tempStatus
-											? {
-													bgcolor: (t) =>
-														alpha(
-															tempStatus.color,
-															t.palette.mode === 'dark' ? 0.16 : 0.09
-														),
-											  }
-											: undefined
-									}
-								>
-									<TableCell
-										sx={{ border: 0, py: 0.5, width: { xs: '50%', lg: '60%' } }}
-									>
-										<Box sx={{ display: 'flex', alignItems: 'center' }}>
-											<RowIcon sx={metricIconSx(row.color)} />
-											<Box width="calc(100% - 14px - 8px)">
-												<ResponsiveTextWrapper
-													fontSize="14px"
-													color="text.primary"
-													fontWeight={500}
-													value={row.name}
-												/>
-											</Box>
-										</Box>
-									</TableCell>
-									<TableCell
-										align="right"
-										sx={{ border: 0, py: 0.5, width: { xs: '50%', lg: '40%' } }}
-									>
-										<ResponsiveTextWrapper
-											fontSize="14px"
-											color={row.valueColor || 'text.primary'}
-											fontWeight={row.valueColor ? 700 : 500}
-											value={row.value}
-										/>
-									</TableCell>
-								</TableRow>
-							);
-
-							if (!isTemperatureRow) {
-								return rowContent;
-							}
-
-							return (
-								<Tooltip
-									key={row.name}
-									arrow
-									placement="top"
-									title={
-										tempStatus
-											? `${tempStatus.label} · ${tempStatus.range}`
-											: 'No data'
-									}
-								>
-									{rowContent}
-								</Tooltip>
-							);
-						})}
-						{tempStatus && (
-							<TableRow>
-								<TableCell colSpan={2} sx={{ border: 0, pt: 0, pb: 1 }}>
-									<Tooltip
-										arrow
-										placement="top"
-										title={`${tempStatus.label} · ${tempStatus.range}`}
-									>
-										<Box
-											sx={{
-												position: 'relative',
-												height: 6,
-												borderRadius: 3,
-												background:
-													'linear-gradient(to right, #2563EB 0%, #16A34A 25%, #E3B13E 50%, #EA580C 75%, #DC2626 100%)',
-											}}
-										>
-											<Box
-												sx={{
-													position: 'absolute',
-													top: '50%',
-													left: `${getTemperatureScalePercent(temperature)}%`,
-													transform: 'translate(-50%, -50%)',
-													width: 12,
-													height: 12,
-													borderRadius: '50%',
-													bgcolor: '#fff',
-													border: '2px solid',
-													borderColor: tempStatus.color,
-													boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
-												}}
-											/>
-										</Box>
-									</Tooltip>
-								</TableCell>
-							</TableRow>
-						)}
-					</TableBody>
-				</Table>
-			</Box>
-
-			<Divider sx={{ mb: 0.5 }} />
-
-			<Stack
-				direction="row"
-				alignItems="center"
-				justifyContent="flex-end"
-				gap={1}
-				mt={0.5}
-			>
-				<Button
-					onClick={handleOpenModal}
-					size="small"
-					startIcon={<Insights />}
-					disableElevation
-					variant="contained"
-					sx={{
-						fontWeight: 'bold',
-						borderRadius: '16px',
-					}}
-				>
-					TREND
-				</Button>
 			</Stack>
 		</Box>
 	);
@@ -728,19 +428,20 @@ const TemperatureMachineList = () => {
 										lg={3}
 										key={`temperature-machine-${mc.id}`}
 									>
-										<CustomCard childrenOtherProps={{ height: '100%' }}>
-											<TemperatureMetricBlock
-												label={mc?.name || ''}
-												status={mc?.status}
-												temperature={mc?.temperature}
-												humidity={mc?.humidity}
-												battery={mc?.battery}
-												deviceUid={mc?.device_uid}
-												slaveIndex={mc?.slave_index}
-												lastUpdated={mc?.last_updated}
-												handleOpenModal={() => handleOpenModal(mc)}
-											/>
-										</CustomCard>
+										<PremiumTemperatureMachineCard
+											title={mc?.name || ''}
+											status={mc?.status}
+											temperature={mc?.temperature}
+											humidity={mc?.humidity}
+											battery={mc?.battery}
+											lastUpdated={mc?.last_updated}
+											slaveId={getMachineSlaveId(mc)}
+											trendUrl={API_URLS.TEMPERATURE_MACHINE_LIST_TREND(
+												getMachineSlaveId(mc),
+												TEMPERATURE_TREND_TAB_OPTIONS[0].tab
+											)}
+											onOpenTrend={() => handleOpenModal(mc)}
+										/>
 									</Grid>
 								))}
 							</Grid>

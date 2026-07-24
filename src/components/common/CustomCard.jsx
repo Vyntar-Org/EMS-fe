@@ -1,4 +1,3 @@
-import React from 'react';
 import {
 	Card,
 	CardContent,
@@ -7,6 +6,8 @@ import {
 	alpha,
 	styled,
 } from '@mui/material';
+import React from 'react';
+
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 
 // Curated KPI accent palette — vivid enough to color the wash and icon
@@ -105,13 +106,14 @@ const CustomCard = ({
 	accentColor,
 	titleIcon,
 	childrenOtherProps = {},
+	disableContentPadding = false,
 	...props
 }) => {
 	const accent = accentColor || accentFromTitle(title);
 
 	return (
 		<StyledCard accentcolor={accent} {...props}>
-			<CardContent sx={{ p: '8px !important', height: '100%' }}>
+			<CardContent sx={{ p: disableContentPadding ? '0px !important' : '8px !important', height: '100%' }}>
 				{(title || subtitle || icon) && (
 					<Box
 						sx={{

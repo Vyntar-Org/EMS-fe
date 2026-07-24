@@ -1,24 +1,5 @@
-import {
-	DownloadForOffline,
-	Insights,
-	Thermostat,
-	WaterDrop,
-} from '@mui/icons-material';
-import {
-	Box,
-	Button,
-	Chip,
-	Divider,
-	Grid,
-	IconButton,
-	Stack,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
-	Tooltip,
-} from '@mui/material';
+import { DownloadForOffline } from '@mui/icons-material';
+import { Box, Grid, IconButton, Stack, Tooltip } from '@mui/material';
 import Papa from 'papaparse';
 import { useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
@@ -30,18 +11,13 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { formatTimestamp } from '../../helpers/common';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
-import CustomCard from '../common/CustomCard';
 import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 import PremiumModal from '../common/PremiumModal';
-import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
-import {
-	MachineAvatar,
-	machineCardSx,
-	metricIconSx,
-} from '../common/MachineCardBits';
 import FireSafetyMachineListSkeleton from '../skeletonLoaders/FireSafetyMachineListSkeleton';
+
+import PremiumFireSafetyMachineCard from './cards/PremiumFireSafetyMachineCard';
 
 const getMachineSlaveId = (machine) => machine?.slave_id ?? machine?.id;
 
@@ -105,159 +81,6 @@ const MachineListHeader = ({
 						</IconButton>
 					</span>
 				</Tooltip>
-			</Stack>
-		</Box>
-	);
-};
-
-const FireSafetyMetricBlock = ({
-	label,
-	status,
-	water_level,
-	temperature,
-	lastUpdated,
-	handleOpenModal,
-}) => {
-	const isOnline = status?.toLowerCase() === 'online';
-
-	return (
-		<Box
-			sx={{
-				p: 1,
-				...machineCardSx(isOnline),
-				borderRadius: '16px',
-			}}
-		>
-			<Stack direction="row" justifyContent="space-between" alignItems="center">
-				<Stack
-					direction="row"
-					alignItems="center"
-					gap={1}
-					width="calc(100% - 65px)"
-					minWidth={0}
-				>
-					<MachineAvatar app="FIRE-SAFETY" />
-					<Box minWidth={0} flex={1}>
-						<ResponsiveTextWrapper
-							value={label}
-							variant="h6"
-							fontWeight="bold"
-							color="text.primary"
-						/>
-					</Box>
-				</Stack>
-
-				<Chip
-					label={status?.toUpperCase()}
-					size="small"
-					variant="outlined"
-					sx={{
-						fontWeight: 'bold',
-						color: isOnline ? 'success.main' : 'error.main',
-						borderColor: isOnline ? 'success.main' : 'error.main',
-					}}
-				/>
-			</Stack>
-
-			{lastUpdated && (
-				<ResponsiveTextWrapper
-					value={formatTimestamp(lastUpdated)}
-					color="text.secondary"
-					fontWeight={500}
-					fontSize="14px"
-					sx={{ mb: 1, display: 'block' }}
-				/>
-			)}
-
-			<Box
-				sx={{
-					bgcolor: 'surface.muted',
-					border: '1px solid',
-					borderColor: 'surface.mutedBorder',
-					borderRadius: 2,
-					mb: 1,
-					width: '100%',
-				}}
-			>
-				<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
-					<TableHead>
-						<TableRow>
-							<TableCell sx={{ fontWeight: 'bold', border: 0 }}>
-								Parameter
-							</TableCell>
-							<TableCell align="right" sx={{ fontWeight: 'bold', border: 0 }}>
-								Value
-							</TableCell>
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						{[
-							{
-								name: 'Temperature',
-								value: `${Number(temperature ?? 0).toFixed(2)} °C`,
-								Icon: Thermostat,
-								color: 'error.main',
-							},
-							{
-								name: 'Water Level',
-								value: `${Number(water_level ?? 0).toFixed(2)} m`,
-								Icon: WaterDrop,
-								color: 'primary.main',
-							},
-						].map((row) => {
-							const RowIcon = row.Icon;
-							return (
-								<TableRow key={row.name}>
-									<TableCell sx={{ border: 0, py: 0.5 }}>
-										<Box sx={{ display: 'flex', alignItems: 'center' }}>
-											<RowIcon sx={metricIconSx(row.color)} />
-											<Box width="calc(100% - 14px - 8px)">
-												<ResponsiveTextWrapper
-													fontSize="14px"
-													color="text.primary"
-													fontWeight={500}
-													value={row.name}
-												/>
-											</Box>
-										</Box>
-									</TableCell>
-									<TableCell align="right" sx={{ border: 0, py: 0.5 }}>
-										<ResponsiveTextWrapper
-											fontSize="14px"
-											color="text.primary"
-											fontWeight={500}
-											value={row.value}
-										/>
-									</TableCell>
-								</TableRow>
-							);
-						})}
-					</TableBody>
-				</Table>
-			</Box>
-
-			<Divider sx={{ mb: 0.5 }} />
-
-			<Stack
-				direction="row"
-				alignItems="center"
-				justifyContent="flex-end"
-				gap={1}
-				mt={0.5}
-			>
-				<Button
-					onClick={handleOpenModal}
-					size="small"
-					startIcon={<Insights />}
-					disableElevation
-					variant="contained"
-					sx={{
-						fontWeight: 'bold',
-						borderRadius: '16px',
-					}}
-				>
-					TREND
-				</Button>
 			</Stack>
 		</Box>
 	);
@@ -583,18 +406,19 @@ const FireSafetyMachineList = () => {
 										lg={3}
 										key={`firesafety-machine-${mc.id || mc.slave_id}`}
 									>
-										<CustomCard childrenOtherProps={{ height: '100%' }}>
-											<FireSafetyMetricBlock
-												label={mc?.name || ''}
-												status={mc?.status}
-												temperature={mc?.temperature}
-												water_level={mc?.water_level}
-												deviceUid={mc?.device_uid}
-												slaveIndex={mc?.slave_index}
-												lastUpdated={mc?.last_updated}
-												handleOpenModal={() => handleOpenModal(mc)}
-											/>
-										</CustomCard>
+										<PremiumFireSafetyMachineCard
+											title={mc?.name || ''}
+											status={mc?.status}
+											temperature={mc?.temperature}
+											waterLevel={mc?.water_level}
+											lastUpdated={mc?.last_updated}
+											slaveId={getMachineSlaveId(mc)}
+											trendUrl={API_URLS.FIRE_SAFETY_MACHINE_LIST_TREND(
+												getMachineSlaveId(mc),
+												FIRE_SAFETY_TREND_TAB_OPTIONS[0].tab
+											)}
+											onOpenTrend={() => handleOpenModal(mc)}
+										/>
 									</Grid>
 								))}
 							</Grid>

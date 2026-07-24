@@ -1,20 +1,21 @@
-import React, { memo, useMemo, useState } from 'react';
-import { useCommonData } from '../../contexts/CommonDataContext';
-import { Box, Button, Grid, Typography } from '@mui/material';
-import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { RestartAlt, Search } from '@mui/icons-material';
+import { Box, Button, Checkbox, FormControlLabel, Grid, Typography } from '@mui/material';
+import dayjs from 'dayjs';
+import React, { memo, useMemo, useState } from 'react';
+import ReactApexChart from 'react-apexcharts';
+
 import { UNIQUE_PASTEL_BGS } from '../../constants/energyAnalytics';
 import { TEMPERATURE_LOG_COLUMN_MAPPING } from '../../constants/temperatureLogs';
-import { CustomDatePicker } from '../common/CustomDatePicker';
+import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import dayjs from 'dayjs';
-import NoDataFound from '../common/errors/NoDataFound';
-import ReactApexChart from 'react-apexcharts';
 import {
 	basePickerStyles,
 	downAnalyticsSampleData,
 } from '../../helpers/common';
+import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import { CustomDatePicker } from '../common/CustomDatePicker';
+import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
@@ -58,7 +59,14 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
 	return { series, categories };
 };
 
-const GlobalFiltersRow = ({ dateTime, onDateChange, addNewComparisonRow }) => (
+const GlobalFiltersRow = ({
+	dateTime,
+	onDateChange,
+	addNewComparisonRow,
+	mergeCompare,
+	onMergeChange,
+	showMergeOption,
+}) => (
 	<Box
 		sx={{
 			pb: 2,
@@ -83,21 +91,36 @@ const GlobalFiltersRow = ({ dateTime, onDateChange, addNewComparisonRow }) => (
 				/>
 			</Grid>
 
-			<Grid item xs={12} sm="auto" ml="auto">
-				<Button
-					fullWidth
-					size="large"
-					disableElevation
-					sx={{
-						fontWeight: 'bold',
-						borderRadius: '16px',
-					}}
-					variant="contained"
-					color="secondary"
-					onClick={addNewComparisonRow}
-				>
-					+ Add Device To Compare
-				</Button>
+			<Grid item xs={12} sm="auto" ml="auto" display="flex" alignItems="center" gap={1.5}>
+				{showMergeOption && (
+					<FormControlLabel
+						control={
+							<Checkbox
+								checked={mergeCompare}
+								onChange={(e) => onMergeChange(e.target.checked)}
+								size="small"
+							/>
+						}
+						label="Merge all compare"
+						sx={{ whiteSpace: 'nowrap', mr: 0 }}
+					/>
+				)}
+				{!mergeCompare && (
+					<Button
+						fullWidth
+						size="large"
+						disableElevation
+						sx={{
+							fontWeight: 'bold',
+							borderRadius: '16px',
+						}}
+						variant="contained"
+						color="secondary"
+						onClick={addNewComparisonRow}
+					>
+						+ Add Device To Compare
+					</Button>
+				)}
 			</Grid>
 		</Grid>
 	</Box>
@@ -200,6 +223,7 @@ const TemperatureAnalytics = () => {
 	const [selectedParamsMap, setSelectedParamsMap] = useState({});
 	const [loadingMap, setLoadingMap] = useState({});
 	const [rowIds, setRowIds] = useState([1]);
+	const [mergeCompare, setMergeCompare] = useState(false);
 
 	const handleFieldChange = (id, key, value) => {
 		setPayloads((prev) => ({ ...prev, [id]: { ...prev[id], [key]: value } }));
@@ -207,7 +231,7 @@ const TemperatureAnalytics = () => {
 
 	const handleSearch = async (id) => {
 		const currentPayload = payloads[id];
-		if (!currentPayload?.slave_id) return;
+		if (!currentPayload?.slave_id) {return;}
 
 		setLoadingMap((prev) => ({ ...prev, [id]: true }));
 		try {
@@ -301,6 +325,9 @@ const TemperatureAnalytics = () => {
 				dateTime={globalDateTime}
 				onDateChange={(val) => setGlobalDateTime(val)}
 				addNewComparisonRow={addNewComparisonRow}
+				mergeCompare={mergeCompare}
+				onMergeChange={setMergeCompare}
+				showMergeOption={rowIds.length > 1}
 			/>
 
 			<Box
@@ -311,31 +338,46 @@ const TemperatureAnalytics = () => {
 				flexDirection="column"
 				gap={1}
 			>
-				{rowIds.map((id, index) => {
-					const rawAnalytics = analyticsDataMap[id];
-					const currentSelectedParams = selectedParamsMap[id];
-					const isLoading = loadingMap[id];
+				{(() => {
+					const rowsComputed = rowIds.map((id, index) => {
+						const rawAnalytics = analyticsDataMap[id];
+						const currentSelectedParams = selectedParamsMap[id];
+						const isLoading = loadingMap[id];
 
-					const activeKeys =
-						currentSelectedParams
-							?.map((param) => param.value)
-							.filter(Boolean) || [];
+						const activeKeys =
+							currentSelectedParams
+								?.map((param) => param.value)
+								.filter(Boolean) || [];
 
-					const processedData = getProcessedChartData(rawAnalytics, activeKeys);
+						const processedData = getProcessedChartData(rawAnalytics, activeKeys);
 
-					const selectedDeviceIdsInOtherRows = Object.keys(payloads)
-						.filter((rowId) => Number(rowId) !== id)
-						.map((rowId) => payloads[rowId]?.slave_id?.value)
-						.filter(Boolean);
+						const selectedDeviceIdsInOtherRows = Object.keys(payloads)
+							.filter((rowId) => Number(rowId) !== id)
+							.map((rowId) => payloads[rowId]?.slave_id?.value)
+							.filter(Boolean);
 
-					const filteredSlaveOptions = slaveOptions.filter(
-						(option) => !selectedDeviceIdsInOtherRows.includes(option.value)
-					);
+						const filteredSlaveOptions = slaveOptions.filter(
+							(option) => !selectedDeviceIdsInOtherRows.includes(option.value)
+						);
 
-					const uniqueBgColor =
-						UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
+						const uniqueBgColor =
+							UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
 
-					const performanceChartOptions = {
+						const deviceLabel =
+							payloads[id]?.slave_id?.label || `Device Segment ${id}`;
+
+						return {
+							id,
+							rawAnalytics,
+							isLoading,
+							processedData,
+							filteredSlaveOptions,
+							uniqueBgColor,
+							deviceLabel,
+						};
+					});
+
+					const buildChartOptions = (categories) => ({
 						chart: {
 							type: 'line',
 							zoom: { enabled: false },
@@ -359,7 +401,7 @@ const TemperatureAnalytics = () => {
 						markers: { size: 0, hover: { sizeOffset: 4 } },
 						stroke: { curve: 'straight', width: 1.5 },
 						xaxis: {
-							categories: processedData.categories,
+							categories,
 							labels: { rotate: -45, style: { fontSize: '10px' } },
 							tooltip: { enabled: false },
 						},
@@ -376,32 +418,89 @@ const TemperatureAnalytics = () => {
 							hover: { filter: { type: 'none' } },
 							active: { filter: { type: 'none' } },
 						},
-					};
+					});
 
-					const deviceLabel =
-						payloads[id]?.slave_id?.label || `Device Segment ${id}`;
+					if (mergeCompare) {
+						const rowsWithData = rowsComputed.filter(
+							(row) => row.processedData.series.length
+						);
+						const mergedCategories =
+							rowsWithData[0]?.processedData.categories || [];
+						const mergedSeries = rowsWithData.flatMap((row) =>
+							row.processedData.series.map((series) => ({
+								...series,
+								name: `${row.deviceLabel} - ${series.name}`,
+							}))
+						);
+						const isAnyLoading = rowsComputed.some((row) => row.isLoading);
 
-					return (
+						return (
+							<Box
+								sx={{
+									p: 1,
+									borderRadius: 3,
+									bgcolor: 'surface.muted',
+									boxShadow: '0px 4px 12px rgba(0,0,0,0.02)',
+								}}
+							>
+								<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+									Merged Comparison
+								</Typography>
+
+								{rowsComputed.map((row) => (
+									<DeviceFilterRow
+										key={row.id}
+										comparisonId={row.id}
+										slaveOptions={row.filteredSlaveOptions}
+										payload={payloads[row.id]}
+										handleFieldChange={handleFieldChange}
+										handleSearch={handleSearch}
+										handleReset={handleReset}
+										showCancel={rowIds.length > 1}
+										parameterOptions={parametersData}
+									/>
+								))}
+
+								<Box sx={{ height: { xs: 500, sm: 380 } }}>
+									{isAnyLoading ? (
+										<Loading />
+									) : !mergedSeries.length ? (
+										<NoDataFound message="Select devices and parameters, then click Analyze to view the merged comparison" />
+									) : (
+										<ReactApexChart
+											options={buildChartOptions(mergedCategories)}
+											series={mergedSeries}
+											type="line"
+											height="100%"
+											width="100%"
+										/>
+									)}
+								</Box>
+							</Box>
+						);
+					}
+
+					return rowsComputed.map((row) => (
 						<Box
-							key={id}
+							key={row.id}
 							sx={{
 								p: 1,
 								borderRadius: 3,
-								bgcolor: uniqueBgColor,
+								bgcolor: row.uniqueBgColor,
 								transition: 'background-color 0.3s ease',
 								boxShadow: '0px 4px 12px rgba(0,0,0,0.02)',
 							}}
 						>
 							<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-								{deviceLabel} Analysis{' '}
-								{rawAnalytics?.data?.length > 1200 &&
-									`(Downsampled from ${rawAnalytics.data.length} points)`}
+								{row.deviceLabel} Analysis{' '}
+								{row.rawAnalytics?.data?.length > 1200 &&
+									`(Downsampled from ${row.rawAnalytics.data.length} points)`}
 							</Typography>
 
 							<DeviceFilterRow
-								comparisonId={id}
-								slaveOptions={filteredSlaveOptions}
-								payload={payloads[id]}
+								comparisonId={row.id}
+								slaveOptions={row.filteredSlaveOptions}
+								payload={payloads[row.id]}
 								handleFieldChange={handleFieldChange}
 								handleSearch={handleSearch}
 								handleReset={handleReset}
@@ -410,14 +509,14 @@ const TemperatureAnalytics = () => {
 							/>
 
 							<Box sx={{ height: { xs: 500, sm: 380 } }}>
-								{isLoading ? (
+								{row.isLoading ? (
 									<Loading />
-								) : !processedData.series.length ? (
+								) : !row.processedData.series.length ? (
 									<NoDataFound message="Select a device and parameters, then click Analyze to view insights" />
 								) : (
 									<ReactApexChart
-										options={performanceChartOptions}
-										series={processedData.series}
+										options={buildChartOptions(row.processedData.categories)}
+										series={row.processedData.series}
 										type="line"
 										height="100%"
 										width="100%"
@@ -425,8 +524,8 @@ const TemperatureAnalytics = () => {
 								)}
 							</Box>
 						</Box>
-					);
-				})}
+					));
+				})()}
 			</Box>
 		</Box>
 	);

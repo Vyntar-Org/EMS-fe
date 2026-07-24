@@ -1,24 +1,5 @@
-import {
-	DownloadForOffline,
-	Insights,
-	Opacity,
-	Speed,
-} from '@mui/icons-material';
-import {
-	Box,
-	Button,
-	Chip,
-	Divider,
-	Grid,
-	IconButton,
-	Stack,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
-	Tooltip,
-} from '@mui/material';
+import { DownloadForOffline } from '@mui/icons-material';
+import { Box, Grid, IconButton, Stack, Tooltip } from '@mui/material';
 import Papa from 'papaparse';
 import { useEffect, useState, useMemo } from 'react';
 import ReactApexChart from 'react-apexcharts';
@@ -29,17 +10,12 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { formatTimestamp } from '../../helpers/common';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
-import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 import PremiumModal from '../common/PremiumModal';
-import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
-import {
-	MachineAvatar,
-	machineCardSx,
-	metricIconSx,
-} from '../common/MachineCardBits';
 import TemperatureMachineListSkeleton from '../skeletonLoaders/TemperatureMachineListSkeleton';
+
+import PremiumWaterMachineCard from './cards/PremiumWaterMachineCard';
 
 const handleDownload = (filteredMachines, selectedApp) => {
 	const headers = [
@@ -257,202 +233,6 @@ const ModalContentForTrend = ({ slaveId, slaveName }) => {
 	);
 };
 
-const TemperatureMetricBlock = ({
-	label,
-	status,
-	consumption,
-	rateOfFlow,
-	latestTimestamp,
-	totalizer,
-	handleOpenModal,
-}) => {
-	const isOnline = status?.toLowerCase() === 'online';
-
-	return (
-		<Box
-			sx={{
-				p: 1,
-				...machineCardSx(isOnline),
-				borderRadius: '16px',
-			}}
-		>
-			<Stack direction="row" justifyContent="space-between" alignItems="center">
-				<Stack
-					direction="row"
-					alignItems="center"
-					gap={1}
-					width="calc(100% - 65px)"
-					minWidth={0}
-				>
-					<MachineAvatar app="WATER" />
-					<Box minWidth={0} flex={1}>
-						<ResponsiveTextWrapper
-							value={label}
-							variant="h6"
-							fontWeight="bold"
-							color="text.primary"
-						/>
-					</Box>
-				</Stack>
-
-				<Chip
-					label={status?.toUpperCase()}
-					size="small"
-					variant="outlined"
-					sx={{
-						fontWeight: 'bold',
-						color: isOnline ? 'success.main' : 'error.main',
-						borderColor: isOnline ? 'success.main' : 'error.main',
-					}}
-				/>
-			</Stack>
-
-			{(totalizer || formatTimestamp(latestTimestamp)) && (
-				<Stack
-					direction="row"
-					justifyContent="space-between"
-					alignItems="center"
-					mb={1}
-					gap={1}
-				>
-					<Box width="65%">
-						<ResponsiveTextWrapper
-							value={formatTimestamp(latestTimestamp)}
-							color="text.secondary"
-							fontWeight={500}
-							fontSize="14px"
-						/>
-					</Box>
-
-					<Box width="35%" textAlign="end">
-						<ResponsiveTextWrapper
-							value={`${totalizer?.toFixed(1)} m³`}
-							variant="subtitle1"
-							fontWeight={500}
-						/>
-					</Box>
-				</Stack>
-			)}
-
-			<Box
-				sx={{
-					bgcolor: 'surface.muted',
-					border: '1px solid',
-					borderColor: 'surface.mutedBorder',
-					borderRadius: 2,
-					mb: 1,
-					width: '100%',
-				}}
-			>
-				<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
-					<TableHead>
-						<TableRow>
-							<TableCell
-								sx={{
-									fontWeight: 'bold',
-									border: 0,
-									width: { xs: '50%', lg: '60%' },
-								}}
-							>
-								<ResponsiveTextWrapper
-									fontSize="16px"
-									fontWeight="bold"
-									value="Parameter"
-								/>
-							</TableCell>
-							<TableCell
-								align="right"
-								sx={{
-									fontWeight: 'bold',
-									border: 0,
-									width: { xs: '50%', lg: '40%' },
-								}}
-							>
-								<ResponsiveTextWrapper
-									fontSize="16px"
-									fontWeight="bold"
-									value="Value"
-								/>
-							</TableCell>
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						{[
-							{
-								name: 'Consumption',
-								value: `${Number(consumption ?? 0).toFixed(2)} KLD`,
-								Icon: Opacity,
-							},
-							{
-								name: 'Rate of Flow',
-								value: `${Number(rateOfFlow ?? 0).toFixed(2)} m³/h`,
-								Icon: Speed,
-							},
-						].map((row) => {
-							const RowIcon = row.Icon;
-
-							return (
-								<TableRow key={row.name}>
-									<TableCell
-										sx={{ border: 0, py: 0.5, width: { xs: '50%', lg: '60%' } }}
-									>
-										<Box sx={{ display: 'flex', alignItems: 'center' }}>
-											<RowIcon sx={metricIconSx('primary.main')} />
-											<Box width="calc(100% - 14px - 8px)">
-												<ResponsiveTextWrapper
-													fontSize="14px"
-													color="text.primary"
-													fontWeight={500}
-													value={row.name}
-												/>
-											</Box>
-										</Box>
-									</TableCell>
-									<TableCell
-										align="right"
-										sx={{ border: 0, py: 0.5, width: { xs: '50%', lg: '40%' } }}
-									>
-										<ResponsiveTextWrapper
-											fontSize="14px"
-											color="text.primary"
-											fontWeight={500}
-											value={row.value}
-										/>
-									</TableCell>
-								</TableRow>
-							);
-						})}
-					</TableBody>
-				</Table>
-			</Box>
-
-			<Divider sx={{ mb: 0.5 }} />
-
-			<Stack
-				direction="row"
-				alignItems="center"
-				justifyContent="flex-end"
-				gap={1}
-				mt={0.5}
-			>
-				<Button
-					onClick={handleOpenModal}
-					size="small"
-					startIcon={<Insights />}
-					disableElevation
-					variant="contained"
-					sx={{
-						fontWeight: 'bold',
-						borderRadius: '16px',
-					}}
-				>
-					TREND
-				</Button>
-			</Stack>
-		</Box>
-	);
-};
-
 const WaterMachineList = () => {
 	const { slavesData } = useCommonData();
 	const { selectedApp } = useApplications();
@@ -604,18 +384,28 @@ const WaterMachineList = () => {
 										lg={3}
 										key={`water-machine-${ind + 1}`}
 									>
-										<CustomCard childrenOtherProps={{ height: '100%' }}>
-											<TemperatureMetricBlock
-												label={mc?.slave_name || ''}
-												status={mc?.status}
-												consumption={mc?.consumption}
-												rateOfFlow={mc?.rate_of_flow}
-												latestTimestamp={mc?.latest_ts}
-												totalizer={mc?.totalizer}
-												mtd={mc?.mtd}
-												handleOpenModal={() => handleOpenModal(mc)}
-											/>
-										</CustomCard>
+										<PremiumWaterMachineCard
+											title={mc?.slave_name || ''}
+											status={mc?.status}
+											lastUpdated={mc?.latest_ts}
+											metrics={[
+												{
+													label: 'Inlet Flowrate',
+													value: `${Number(mc?.rate_of_flow ?? 0).toFixed(2)} m³/hr`,
+												},
+												{
+													label: 'Inlet Totalizer',
+													value: `${Number(mc?.totalizer ?? 0).toFixed(2)} m³`,
+												},
+											]}
+											today={`${Number(mc?.consumption ?? 0).toFixed(2)} KLD`}
+											mtd={`${Number(mc?.mtd ?? 0).toFixed(2)} KLD`}
+											consumption={mc?.consumption}
+											mtdValue={mc?.mtd}
+											slaveId={mc?.slave_id}
+											trendUrl={API_URLS.WATER_MACHINE_LIST_TREND(mc?.slave_id)}
+											onOpenTrend={() => handleOpenModal(mc)}
+										/>
 									</Grid>
 								))}
 							</Grid>

@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
-import { useCommonData } from '../../contexts/CommonDataContext';
-import { Box, Button, Grid, Typography } from '@mui/material';
-import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { RestartAlt, Search } from '@mui/icons-material';
+import { Box, Button, Checkbox, FormControlLabel, Grid, Typography } from '@mui/material';
+import dayjs from 'dayjs';
+import React, { useState } from 'react';
+import ReactApexChart from 'react-apexcharts';
+
 import {
 	KEY_PARAMETER_OPTIONS_MAPPING,
 	UNIQUE_PASTEL_BGS,
 } from '../../constants/energyAnalytics';
-import { CustomDatePicker } from '../common/CustomDatePicker';
+import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import dayjs from 'dayjs';
-import NoDataFound from '../common/errors/NoDataFound';
-import ReactApexChart from 'react-apexcharts';
 import { basePickerStyles } from '../../helpers/common';
+import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import { CustomDatePicker } from '../common/CustomDatePicker';
+import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 
 // Constants defined based on the reference code
@@ -33,7 +34,7 @@ const CHART_COLORS = [
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 
 // Updated processing logic to return [timestamp, value] pairs for datetime axis
-const getProcessedChartData = (rawAnalytics, activeKeys) => {
+const getProcessedChartData = (rawAnalytics, activeKeys, namePrefix = '') => {
 	if (!rawAnalytics?.data || rawAnalytics.data.length === 0) {
 		return { series: [] };
 	}
@@ -61,10 +62,11 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
 	};
 
 	const series = activeKeys.map((key) => {
+		const baseName =
+			KEY_PARAMETER_OPTIONS_MAPPING[key] ||
+			key.replace(/_/g, ' ').toUpperCase();
 		return {
-			name:
-				KEY_PARAMETER_OPTIONS_MAPPING[key] ||
-				key.replace(/_/g, ' ').toUpperCase(),
+			name: namePrefix ? `${namePrefix} - ${baseName}` : baseName,
 			data: processRawData(rawData, key),
 		};
 	});
@@ -72,7 +74,14 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
 	return { series };
 };
 
-const GlobalFiltersRow = ({ dateTime, onDateChange, addNewComparisonRow }) => (
+const GlobalFiltersRow = ({
+	dateTime,
+	onDateChange,
+	addNewComparisonRow,
+	mergeCompare,
+	onMergeChange,
+	showMergeOption,
+}) => (
 	<Box
 		sx={{
 			pb: 2,
@@ -97,21 +106,36 @@ const GlobalFiltersRow = ({ dateTime, onDateChange, addNewComparisonRow }) => (
 				/>
 			</Grid>
 
-			<Grid item xs={12} sm="auto" ml="auto">
-				<Button
-					fullWidth
-					size="large"
-					disableElevation
-					sx={{
-						fontWeight: 'bold',
-						borderRadius: '16px',
-					}}
-					variant="contained"
-					color="secondary"
-					onClick={addNewComparisonRow}
-				>
-					+ Add Device To Compare
-				</Button>
+			<Grid item xs={12} sm="auto" ml="auto" display="flex" alignItems="center" gap={1.5}>
+				{showMergeOption && (
+					<FormControlLabel
+						control={
+							<Checkbox
+								checked={mergeCompare}
+								onChange={(e) => onMergeChange(e.target.checked)}
+								size="small"
+							/>
+						}
+						label="Merge all compare"
+						sx={{ whiteSpace: 'nowrap', mr: 0 }}
+					/>
+				)}
+				{!mergeCompare && (
+					<Button
+						fullWidth
+						size="large"
+						disableElevation
+						sx={{
+							fontWeight: 'bold',
+							borderRadius: '16px',
+						}}
+						variant="contained"
+						color="secondary"
+						onClick={addNewComparisonRow}
+					>
+						+ Add Device To Compare
+					</Button>
+				)}
 			</Grid>
 		</Grid>
 	</Box>
@@ -214,6 +238,7 @@ const CompressorAnalytics = () => {
 	const [selectedParamsMap, setSelectedParamsMap] = useState({});
 	const [loadingMap, setLoadingMap] = useState({});
 	const [rowIds, setRowIds] = useState([1]);
+	const [mergeCompare, setMergeCompare] = useState(false);
 
 	const handleFieldChange = (id, key, value) => {
 		setPayloads((prev) => ({ ...prev, [id]: { ...prev[id], [key]: value } }));
@@ -221,7 +246,7 @@ const CompressorAnalytics = () => {
 
 	const handleSearch = async (id) => {
 		const currentPayload = payloads[id];
-		if (!currentPayload?.slave_id) return;
+		if (!currentPayload?.slave_id) {return;}
 
 		setLoadingMap((prev) => ({ ...prev, [id]: true }));
 		try {
@@ -315,6 +340,9 @@ const CompressorAnalytics = () => {
 				dateTime={globalDateTime}
 				onDateChange={(val) => setGlobalDateTime(val)}
 				addNewComparisonRow={addNewComparisonRow}
+				mergeCompare={mergeCompare}
+				onMergeChange={setMergeCompare}
+				showMergeOption={rowIds.length > 1}
 			/>
 
 			<Box
@@ -325,33 +353,8 @@ const CompressorAnalytics = () => {
 				flexDirection="column"
 				gap={1}
 			>
-				{rowIds.map((id, index) => {
-					const rawAnalytics = analyticsDataMap[id];
-					const currentSelectedParams = selectedParamsMap[id];
-					const isLoading = loadingMap[id];
-
-					const activeKeys =
-						currentSelectedParams?.flatMap((param) =>
-							param.value ? param.value.split(',') : []
-						) || [];
-
-					const processedData = getProcessedChartData(rawAnalytics, activeKeys);
-
-					const selectedDeviceIdsInOtherRows = Object.keys(payloads)
-						.filter((rowId) => Number(rowId) !== id)
-						.map((rowId) => payloads[rowId]?.slave_id?.value)
-						.filter(Boolean);
-
-					const filteredSlaveOptions = slaveOptions.filter(
-						(option) => !selectedDeviceIdsInOtherRows.includes(option.value)
-					);
-
-					const uniqueBgColor =
-						UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
-
-					const isMultiSeries = processedData.series.length > 1;
-
-					const performanceChartOptions = {
+				{(() => {
+					const buildChartOptions = (isMultiSeries) => ({
 						chart: {
 							type: 'area',
 							height: 420,
@@ -401,8 +404,8 @@ const CompressorAnalytics = () => {
 							labels: {
 								style: { colors: '#6B7280', fontSize: '12px' },
 								formatter: function (val) {
-									if (val >= 0.9) return 'Online';
-									if (val <= 0.1) return 'Offline';
+									if (val >= 0.9) {return 'Online';}
+									if (val <= 0.1) {return 'Offline';}
 									return '';
 								},
 							},
@@ -427,17 +430,17 @@ const CompressorAnalytics = () => {
 									return `
                     <div style="display: flex; align-items: center; margin-top: 4px;">
                       <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor}; margin-right: 8px;"></span>
-                      <span style="flex: 1; color: #333; font-size: 12px;">${deviceLabel}:</span>
+                      <span style="flex: 1; color: #333; font-size: 12px;">${name}:</span>
                       <span style="font-weight: bold; color: ${statusColor}; margin-left: 5px; font-size: 12px;">${statusText}</span>
                     </div>
                   `;
 								};
 
 								if (isMultiSeries) {
-									allSeries.forEach((s, i) => {
+									allSeries.forEach((s) => {
 										const point = s.data[dataPointIndex];
 										if (point) {
-											if (!timestamp) timestamp = point[0];
+											if (!timestamp) {timestamp = point[0];}
 											tooltipHtml += getStatusRow(s.name, point[1]);
 										}
 									});
@@ -473,30 +476,126 @@ const CompressorAnalytics = () => {
 							size: 0,
 							hover: { size: 5 },
 						},
-					};
+					});
 
-					const deviceLabel =
-						payloads[id]?.slave_id?.label || `Device Segment ${id}`;
+					const rowsComputed = rowIds.map((id, index) => {
+						const rawAnalytics = analyticsDataMap[id];
+						const currentSelectedParams = selectedParamsMap[id];
+						const isLoading = loadingMap[id];
 
-					return (
+						const activeKeys =
+							currentSelectedParams?.flatMap((param) =>
+								param.value ? param.value.split(',') : []
+							) || [];
+
+						const deviceLabel =
+							payloads[id]?.slave_id?.label || `Device Segment ${id}`;
+
+						const processedData = getProcessedChartData(rawAnalytics, activeKeys);
+
+						const selectedDeviceIdsInOtherRows = Object.keys(payloads)
+							.filter((rowId) => Number(rowId) !== id)
+							.map((rowId) => payloads[rowId]?.slave_id?.value)
+							.filter(Boolean);
+
+						const filteredSlaveOptions = slaveOptions.filter(
+							(option) => !selectedDeviceIdsInOtherRows.includes(option.value)
+						);
+
+						const uniqueBgColor =
+							UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
+
+						return {
+							id,
+							rawAnalytics,
+							isLoading,
+							activeKeys,
+							processedData,
+							filteredSlaveOptions,
+							uniqueBgColor,
+							deviceLabel,
+						};
+					});
+
+					if (mergeCompare) {
+						const rowsWithData = rowsComputed.filter(
+							(row) => row.processedData.series.length
+						);
+						const mergedSeries = rowsWithData.flatMap(
+							(row) =>
+								getProcessedChartData(
+									row.rawAnalytics,
+									row.activeKeys,
+									row.deviceLabel
+								).series
+						);
+						const isAnyLoading = rowsComputed.some((row) => row.isLoading);
+
+						return (
+							<Box
+								sx={{
+									p: 1,
+									borderRadius: 3,
+									bgcolor: 'surface.muted',
+									boxShadow: '0px 4px 12px rgba(0,0,0,0.02)',
+								}}
+							>
+								<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+									Merged Comparison
+								</Typography>
+
+								{rowsComputed.map((row) => (
+									<DeviceFilterRow
+										key={row.id}
+										comparisonId={row.id}
+										slaveOptions={row.filteredSlaveOptions}
+										payload={payloads[row.id]}
+										handleFieldChange={handleFieldChange}
+										handleSearch={handleSearch}
+										handleReset={handleReset}
+										showCancel={rowIds.length > 1}
+										parameterOptions={PARAMETER_OPTIONS}
+									/>
+								))}
+
+								<Box sx={{ height: { xs: 500, sm: 380 } }}>
+									{isAnyLoading ? (
+										<Loading />
+									) : !mergedSeries.length ? (
+										<NoDataFound message="Select devices and parameters, then click Analyze to view the merged comparison" />
+									) : (
+										<ReactApexChart
+											options={buildChartOptions(mergedSeries.length > 1)}
+											series={mergedSeries}
+											type="area"
+											height="100%"
+											width="100%"
+										/>
+									)}
+								</Box>
+							</Box>
+						);
+					}
+
+					return rowsComputed.map((row) => (
 						<Box
-							key={id}
+							key={row.id}
 							sx={{
 								p: 1,
 								borderRadius: 3,
-								bgcolor: uniqueBgColor,
+								bgcolor: row.uniqueBgColor,
 								transition: 'background-color 0.3s ease',
 								boxShadow: '0px 4px 12px rgba(0,0,0,0.02)',
 							}}
 						>
 							<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-								{deviceLabel} Status Analysis
+								{row.deviceLabel} Status Analysis
 							</Typography>
 
 							<DeviceFilterRow
-								comparisonId={id}
-								slaveOptions={filteredSlaveOptions}
-								payload={payloads[id]}
+								comparisonId={row.id}
+								slaveOptions={row.filteredSlaveOptions}
+								payload={payloads[row.id]}
 								handleFieldChange={handleFieldChange}
 								handleSearch={handleSearch}
 								handleReset={handleReset}
@@ -505,14 +604,14 @@ const CompressorAnalytics = () => {
 							/>
 
 							<Box sx={{ height: { xs: 500, sm: 380 } }}>
-								{isLoading ? (
+								{row.isLoading ? (
 									<Loading />
-								) : !processedData.series.length ? (
+								) : !row.processedData.series.length ? (
 									<NoDataFound message="Select a device and parameters, then click Analyze to view insights" />
 								) : (
 									<ReactApexChart
-										options={performanceChartOptions}
-										series={processedData.series}
+										options={buildChartOptions(row.processedData.series.length > 1)}
+										series={row.processedData.series}
 										type="area"
 										height="100%"
 										width="100%"
@@ -520,8 +619,8 @@ const CompressorAnalytics = () => {
 								)}
 							</Box>
 						</Box>
-					);
-				})}
+					));
+				})()}
 			</Box>
 		</Box>
 	);

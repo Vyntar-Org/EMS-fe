@@ -1,25 +1,5 @@
-import {
-	Speed,
-	DownloadForOffline,
-	Insights,
-	Opacity,
-	Thermostat,
-} from '@mui/icons-material';
-import {
-	Box,
-	Button,
-	Chip,
-	Divider,
-	Grid,
-	IconButton,
-	Stack,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
-	Tooltip,
-} from '@mui/material';
+import { DownloadForOffline } from '@mui/icons-material';
+import { Box, Grid, IconButton, Stack, Tooltip } from '@mui/material';
 import Papa from 'papaparse';
 import { useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
@@ -31,18 +11,13 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { formatTimestamp } from '../../helpers/common';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
-import CustomCard from '../common/CustomCard';
 import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 import PremiumModal from '../common/PremiumModal';
-import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
-import {
-	MachineAvatar,
-	machineCardSx,
-	metricIconSx,
-} from '../common/MachineCardBits';
 import SolarMachineListSkeleton from '../skeletonLoaders/SolarMachineListSkeleton';
+
+import PremiumSolarMachineCard from './cards/PremiumSolarMachineCard';
 
 const getMachineSlaveId = (machine) => machine?.slave_id ?? machine?.id;
 
@@ -106,208 +81,6 @@ const MachineListHeader = ({
 						</IconButton>
 					</span>
 				</Tooltip>
-			</Stack>
-		</Box>
-	);
-};
-
-const SolarMetricBlock = ({
-	label,
-	status,
-	inletTemperature,
-	outletTemperature,
-	flowTemperature,
-	instantFlow,
-	pressure,
-	lastUpdated,
-	handleOpenModal,
-}) => {
-	const isOnline = status?.toLowerCase() === 'online';
-
-	const metricRows = [
-		{
-			name: 'Instant Flow',
-			value: `${Number(instantFlow ?? 0).toFixed(3)} m³/hr`,
-			Icon: Opacity,
-			color: '#1976d2',
-		},
-		{
-			name: 'Flow Temperature',
-			value: `${Number(flowTemperature ?? 0).toFixed(2)} °C`,
-			Icon: Thermostat,
-			color: '#1976d2',
-		},
-		{
-			name: 'Pressure',
-			value: `${Number(pressure ?? 0).toFixed(2)}`,
-			Icon: Speed,
-			color: '#2e7d32',
-		},
-		{
-			name: label ? `${label} Inlet Temperature` : 'Inlet Temperature',
-			value: `${Number(inletTemperature ?? 0).toFixed(2)} °C`,
-			Icon: Thermostat,
-			color: '#d32f2f',
-		},
-		{
-			name: label ? `${label} Outlet Temperature` : 'Outlet Temperature',
-			value: `${Number(outletTemperature ?? 0).toFixed(2)} °C`,
-			Icon: Thermostat,
-			color: '#f57c00',
-		},
-	];
-
-	return (
-		<Box
-			sx={{
-				p: 1,
-				...machineCardSx(isOnline),
-				borderRadius: '16px',
-			}}
-		>
-			<Stack direction="row" justifyContent="space-between" alignItems="center">
-				<Stack
-					direction="row"
-					alignItems="center"
-					gap={1}
-					width="calc(100% - 65px)"
-					minWidth={0}
-				>
-					<MachineAvatar app="SOLAR" />
-					<Box minWidth={0} flex={1}>
-						<ResponsiveTextWrapper
-							value={label}
-							variant="h6"
-							fontWeight="bold"
-							color="text.primary"
-						/>
-					</Box>
-				</Stack>
-
-				<Chip
-					label={status?.toUpperCase()}
-					size="small"
-					variant="outlined"
-					sx={{
-						fontWeight: 'bold',
-						color: isOnline ? 'success.main' : 'error.main',
-						borderColor: isOnline ? 'success.main' : 'error.main',
-					}}
-				/>
-			</Stack>
-
-			{lastUpdated && (
-				<ResponsiveTextWrapper
-					value={formatTimestamp(lastUpdated)}
-					color="text.secondary"
-					fontWeight={500}
-					fontSize="14px"
-					sx={{ mb: 1, display: 'block' }}
-				/>
-			)}
-
-			<Box
-				sx={{
-					bgcolor: 'surface.muted',
-					border: '1px solid',
-					borderColor: 'surface.mutedBorder',
-					borderRadius: 2,
-					mb: 1,
-					width: '100%',
-				}}
-			>
-				<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
-					<TableHead>
-						<TableRow>
-							<TableCell
-								sx={{
-									fontWeight: 'bold',
-									border: 0,
-									width: { xs: '50%', lg: '60%' },
-								}}
-							>
-								<ResponsiveTextWrapper
-									fontSize="16px"
-									fontWeight="bold"
-									value="Parameter"
-								/>
-							</TableCell>
-							<TableCell
-								align="right"
-								sx={{
-									fontWeight: 'bold',
-									border: 0,
-									width: { xs: '50%', lg: '40%' },
-								}}
-							>
-								<ResponsiveTextWrapper
-									fontSize="16px"
-									fontWeight="bold"
-									value="Value"
-								/>
-							</TableCell>
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						{metricRows.map((row) => {
-							const RowIcon = row.Icon;
-							return (
-								<TableRow key={row.name}>
-									<TableCell
-										sx={{ border: 0, py: 0.5, width: { xs: '50%', lg: '60%' } }}
-									>
-										<Box sx={{ display: 'flex', alignItems: 'center' }}>
-											<RowIcon sx={metricIconSx(row.color)} />
-											<Box width="calc(100% - 14px - 8px)">
-												<ResponsiveTextWrapper
-													fontSize="14px"
-													color="text.primary"
-													fontWeight={500}
-													value={row.name}
-												/>
-											</Box>
-										</Box>
-									</TableCell>
-									<TableCell
-										align="right"
-										sx={{ border: 0, py: 0.5, width: { xs: '50%', lg: '40%' } }}
-									>
-										<ResponsiveTextWrapper
-											fontSize="14px"
-											color="text.primary"
-											fontWeight={500}
-											value={row.value}
-										/>
-									</TableCell>
-								</TableRow>
-							);
-						})}
-					</TableBody>
-				</Table>
-			</Box>
-
-			<Divider sx={{ mb: 0.5 }} />
-
-			<Stack
-				direction="row"
-				alignItems="center"
-				justifyContent="flex-end"
-				gap={1}
-				mt={0.5}
-			>
-				<Button
-					onClick={handleOpenModal}
-					size="small"
-					startIcon={<Insights />}
-					disableElevation
-					variant="contained"
-					sx={{
-						fontWeight: 'bold',
-						borderRadius: '16px',
-					}}
-				>
-					TREND
-				</Button>
 			</Stack>
 		</Box>
 	);
@@ -658,19 +431,22 @@ const SolarMachineList = () => {
 										md={4}
 										key={`solar-machine-${mc.id}`}
 									>
-										<CustomCard childrenOtherProps={{ height: '100%' }}>
-											<SolarMetricBlock
-												label={mc?.name || ''}
-												status={mc?.status}
-												inletTemperature={mc?.inlet_temperature}
-												outletTemperature={mc?.outlet_temperature}
-												flowTemperature={mc?.flow_temperature}
-												instantFlow={mc?.instant_flow}
-												pressure={mc?.pressure}
-												lastUpdated={mc?.last_updated}
-												handleOpenModal={() => handleOpenModal(mc)}
-											/>
-										</CustomCard>
+										<PremiumSolarMachineCard
+											title={mc?.name || ''}
+											status={mc?.status}
+											inletTemperature={mc?.inlet_temperature}
+											outletTemperature={mc?.outlet_temperature}
+											flowTemperature={mc?.flow_temperature}
+											instantFlow={mc?.instant_flow}
+											pressure={mc?.pressure}
+											lastUpdated={mc?.last_updated}
+											slaveId={getMachineSlaveId(mc)}
+											trendUrl={API_URLS.SOLAR_MACHINE_LIST_TREND(
+												getMachineSlaveId(mc),
+												SOLAR_TREND_TAB_OPTIONS[0].tab
+											)}
+											onOpenTrend={() => handleOpenModal(mc)}
+										/>
 									</Grid>
 								))}
 							</Grid>
