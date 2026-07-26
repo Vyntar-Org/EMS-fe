@@ -4,14 +4,21 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import {
 	Box,
-	Button,
 	Grid,
+	InputAdornment,
 	ToggleButton,
 	ToggleButtonGroup,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
-import { BarChart, SsidChart } from '@mui/icons-material';
+import {
+	BarChart,
+	DeviceHub,
+	LocalGasStation,
+	Search,
+	SsidChart,
+} from '@mui/icons-material';
 import ReactApexChart from 'react-apexcharts';
 import {
 	CHART_COLORS,
@@ -23,6 +30,80 @@ import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomInput } from '../common/CustomInput';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
 import FuelDashboardSkeleton from '../skeletonLoaders/FuelDashboardSkeleton';
+
+const STATION_ACCENT = '#2563EB';
+const DEVICES_ACCENT = '#0891B2';
+const FUEL_ACCENT = CHART_COLORS.fuelUsage;
+
+// Premium, rounded search field — same "surface.muted pill that glows on
+// hover/focus" treatment used by the Water dashboard's device search.
+const searchFieldSx = {
+	'& .MuiOutlinedInput-root': {
+		borderRadius: '12px',
+		backgroundColor: 'surface.muted',
+		transition: '0.2s ease',
+		'&:hover': { backgroundColor: 'background.paper' },
+		'&.Mui-focused': {
+			backgroundColor: 'background.paper',
+			boxShadow: (t) =>
+				`0 0 0 3px ${alpha(
+					DEVICES_ACCENT,
+					t.palette.mode === 'dark' ? 0.3 : 0.16
+				)}`,
+		},
+	},
+};
+
+// One selectable device row: icon chip + name, accent-tinted when selected,
+// matching the Water dashboard's validated device-list pattern.
+const DeviceRow = ({ name, isActive, onClick }) => (
+	<Box
+		onClick={onClick}
+		role="button"
+		sx={{
+			display: 'flex',
+			alignItems: 'center',
+			gap: 1,
+			px: 1.25,
+			py: 1,
+			borderRadius: '12px',
+			cursor: 'pointer',
+			border: '1px solid',
+			borderColor: isActive ? alpha(DEVICES_ACCENT, 0.45) : 'divider',
+			bgcolor: isActive ? alpha(DEVICES_ACCENT, 0.12) : 'background.paper',
+			transition: 'all 0.2s ease',
+			'&:hover': {
+				borderColor: alpha(DEVICES_ACCENT, 0.5),
+				bgcolor: alpha(DEVICES_ACCENT, isActive ? 0.16 : 0.06),
+			},
+		}}
+	>
+		<Box
+			sx={{
+				width: 26,
+				height: 26,
+				borderRadius: '8px',
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'center',
+				flexShrink: 0,
+				bgcolor: alpha(DEVICES_ACCENT, isActive ? 0.28 : 0.14),
+				color: DEVICES_ACCENT,
+				'& svg': { fontSize: 15 },
+			}}
+		>
+			<LocalGasStation />
+		</Box>
+		<Box minWidth={0} flex={1}>
+			<ResponsiveTextWrapper
+				value={name}
+				color={isActive ? 'text.primary' : 'text.secondary'}
+				fontSize="13px"
+				fontWeight={isActive ? 700 : 500}
+			/>
+		</Box>
+	</Box>
+);
 
 const FuelDashboard = () => {
 	const { slavesData } = useCommonData();
@@ -100,14 +181,24 @@ const FuelDashboard = () => {
 	) : (
 		<Box
 			sx={{
-				height: { md: 'calc(100vh - 64px - 8px)' },
+				height: '100%',
+				display: 'flex',
+				flexDirection: 'column',
+				// The page shell (PrivateLayout's `main`) clips overflow at the
+				// viewport edge rather than scrolling the window, so this
+				// dashboard has to manage its own scroll.
+				overflowY: 'auto',
 			}}
 		>
-			<Grid container spacing={1} height="100%">
-				<Grid item xs={12} md={4} height="100%">
-					<Grid container rowGap={1} height="calc(100% - 8px)">
+			<Grid container spacing={1} flex={1} minHeight={0}>
+				<Grid item xs={12} md={4} height={{ md: '100%' }}>
+					<Grid container rowGap={1} height={{ md: '100%' }}>
 						<Grid item xs={12} height={{ xs: 250, md: '40%' }}>
-							<CustomCard title={!overviewData?.fuel_station && 'Fuel Station'}>
+							<CustomCard
+								title="Fuel Station"
+								titleIcon={<LocalGasStation />}
+								accentColor={STATION_ACCENT}
+							>
 								{overviewData?.fuel_station ? (
 									<Grid
 										container
@@ -137,22 +228,31 @@ const FuelDashboard = () => {
 							</CustomCard>
 						</Grid>
 						<Grid item xs={12} height={{ xs: 300, md: '60%' }}>
-							<CustomCard>
+							<CustomCard
+								title="Devices"
+								titleIcon={<DeviceHub />}
+								accentColor={DEVICES_ACCENT}
+								childrenOtherProps={{
+									display: 'flex',
+									flexDirection: 'column',
+									minHeight: 0,
+								}}
+							>
 								<CustomInput
 									onChange={(e) => setSearchDevices(e.target.value)}
 									value={searchDevices || ''}
 									autoComplete="off"
-									placeholder="Search Devices"
+									placeholder="Search devices"
 									size="small"
-									sx={{
-										mt: 1,
-										'& .MuiOutlinedInput-root': {
-											borderRadius: 2,
-										},
-									}}
+									icon={
+										<InputAdornment position="end">
+											<Search sx={{ fontSize: 18, color: 'text.secondary' }} />
+										</InputAdornment>
+									}
+									sx={{ flexShrink: 0, ...searchFieldSx }}
 								/>
 
-								<Box height={{ xs: 'calc(100% - 40px - 8px)' }} overflow="auto">
+								<Box flex={1} minHeight={0} overflow="auto">
 									{filteredSlaves?.length ? (
 										<Grid container rowGap={1} mt={1}>
 											{filteredSlaves.map((s) => {
@@ -163,43 +263,11 @@ const FuelDashboard = () => {
 														xs={12}
 														key={`slaves-option-${s.slave_id}`}
 													>
-														<Button
-															onClick={() => {
-																setSlavesId(s.slave_id);
-															}}
-															disableElevation
-															sx={{
-																justifyContent: 'start',
-																borderRadius: 2,
-																textTransform: 'none',
-																bgcolor: isActive
-																	? 'primary.main'
-																	: 'background.paper',
-																border: '2px solid',
-																borderColor: isActive
-																	? 'primary.main'
-																	: 'divider',
-																':hover': {
-																	bgcolor: isActive
-																		? 'primary.main'
-																		: 'background.paper',
-																},
-															}}
-															variant="contained"
-															fullWidth
-														>
-															<ResponsiveTextWrapper
-																value={s.slave_name}
-																color={
-																	isActive
-																		? 'primary.contrastText'
-																		: 'text.primary'
-																}
-																fontSize="14px"
-																textAlign="start"
-																fontWeight={600}
-															/>
-														</Button>
+														<DeviceRow
+															name={s.slave_name}
+															isActive={isActive}
+															onClick={() => setSlavesId(s.slave_id)}
+														/>
 													</Grid>
 												);
 											})}
@@ -218,7 +286,7 @@ const FuelDashboard = () => {
 						title={`Monthly Fuel Consumption ${
 							slavesDisplayName ? `- ${slavesDisplayName}` : ''
 						}`}
-						accentColor={CHART_COLORS.fuelUsage}
+						accentColor={FUEL_ACCENT}
 						icon={
 							<ToggleButtonGroup
 								value={mode}
@@ -227,10 +295,16 @@ const FuelDashboard = () => {
 								sx={{
 									height: '28px',
 									bgcolor: 'background.paper',
+									border: '1px solid',
+									borderColor: 'divider',
+									'& .MuiToggleButton-root': {
+										border: 'none',
+										color: 'text.secondary',
+									},
 									'& .MuiToggleButton-root.Mui-selected': {
-										bgcolor: 'text.accent',
-										color: 'white',
-										'&:hover': { bgcolor: 'primary.dark' },
+										bgcolor: FUEL_ACCENT,
+										color: '#FFFFFF',
+										'&:hover': { bgcolor: FUEL_ACCENT },
 									},
 								}}
 							>

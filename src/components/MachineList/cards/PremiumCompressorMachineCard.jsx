@@ -8,10 +8,7 @@ import {
 	TableRow,
 } from '@mui/material';
 
-import {
-	MachineRatioDonut,
-	APP_ACCENT_COLOR,
-} from '../../common/MachineCardBits';
+import { APP_ACCENT_COLOR } from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
@@ -92,8 +89,6 @@ const PremiumCompressorMachineCard = ({
 	onOpenTrend,
 }) => {
 	const isOnline = status?.toLowerCase() === 'online';
-	const donutPercent =
-		previous24Count > 0 ? (previous8Count / previous24Count) * 100 : 0;
 
 	return (
 		<PremiumMachineCard
@@ -149,17 +144,6 @@ const PremiumCompressorMachineCard = ({
 					</Box>
 				) : null}
 			</Stack>
-
-			{(previous8Count > 0 || previous24Count > 0) && (
-				<Box mb={1.25} width="100%">
-					<MachineRatioDonut
-						percent={donutPercent}
-						color={APP_ACCENT_COLOR.COMPRESSOR}
-						label="8hr share of 24hr stoppages"
-						caption={`${previous8Count} of ${previous24Count} stops`}
-					/>
-				</Box>
-			)}
 
 			<Box mb={1.25} width="100%">
 				<Box mb={0.5}>

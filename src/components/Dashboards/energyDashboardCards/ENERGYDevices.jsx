@@ -2,68 +2,69 @@ import { OnDeviceTraining } from '@mui/icons-material';
 import React from 'react';
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
-import { Box, Divider, Grid, Typography } from '@mui/material';
+import { Box, Stack } from '@mui/material';
+import { MachineRatioDonut } from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
+// Device status is its own semantic color regardless of app theme — green
+// means reachable, red means not, independent of any per-card accent.
 const ONLINE_COLOR = '#16A34A';
 const OFFLINE_COLOR = '#DC2626';
+const ACCENT = '#2563EB';
+
+const CountChip = ({ label, value, color }) => (
+	<Stack direction="row" alignItems="center" gap={0.5} minWidth={0}>
+		<Box
+			sx={{
+				width: 6,
+				height: 6,
+				borderRadius: '50%',
+				bgcolor: color,
+				flexShrink: 0,
+			}}
+		/>
+		<ResponsiveTextWrapper
+			value={`${value} ${label}`}
+			fontSize="10.5px"
+			fontWeight={700}
+			color={color}
+		/>
+	</Stack>
+);
 
 const ENERGYDevices = ({ data }) => {
-	const MetricBlock = ({ label, value, showDivider }) => (
-		<Grid
-			item
-			xs={6}
-			sx={{
-				display: 'flex',
-				position: 'relative',
-				alignItems: 'center',
-				justifyContent: 'center',
-			}}
-		>
-			<Box sx={{ textAlign: 'center', width: '100%', px: 0.5 }}>
-				<ResponsiveTextWrapper
-					fontSize="16px"
-					variant="caption"
-					fontWeight={700}
-					textTransform="uppercase"
-					value={label}
-					color={label === 'ONLINE' ? ONLINE_COLOR : OFFLINE_COLOR}
-				/>
-
-				<ResponsiveTextWrapper
-					fontSize="26px"
-					color={label === 'ONLINE' ? ONLINE_COLOR : OFFLINE_COLOR}
-					fontWeight={800}
-					mt={1}
-					value={value?.toLocaleString() || 0}
-				/>
-			</Box>
-
-			{showDivider && (
-				<Divider
-					orientation="vertical"
-					sx={{
-						borderStyle: 'dashed',
-						height: '100%',
-						position: 'absolute',
-						right: 0,
-					}}
-				/>
-			)}
-		</Grid>
-	);
+	const online = data?.online || 0;
+	const offline = data?.offline || 0;
+	const total = online + offline;
+	const onlinePercent = total > 0 ? (online / total) * 100 : 0;
 
 	return (
-		<CustomCard titleIcon={<OnDeviceTraining />} title="Devices">
+		<CustomCard
+			titleIcon={<OnDeviceTraining />}
+			title="Devices"
+			accentColor={ACCENT}
+		>
 			{data ? (
-				<Grid
-					container
-					sx={{ height: '100%', width: '100%' }}
-					alignItems="center"
+				<Box
+					sx={{
+						height: '100%',
+						display: 'flex',
+						flexDirection: 'column',
+						justifyContent: 'center',
+						gap: 1,
+					}}
 				>
-					<MetricBlock label="ONLINE" value={data?.online || 0} showDivider />
-					<MetricBlock label="OFFLINE" value={data?.offline || 0} />
-				</Grid>
+					<MachineRatioDonut
+						percent={onlinePercent}
+						color={ONLINE_COLOR}
+						label="Devices online"
+						caption={`${online} of ${total || 0} total`}
+					/>
+					<Stack direction="row" justifyContent="center" gap={1.5}>
+						<CountChip label="Online" value={online} color={ONLINE_COLOR} />
+						<CountChip label="Offline" value={offline} color={OFFLINE_COLOR} />
+					</Stack>
+				</Box>
 			) : (
 				<NoDataFound message="Waiting for live device data — readings appear automatically" />
 			)}

@@ -177,6 +177,13 @@ const LogsFilterHeader = ({
 };
 const WaterLogs = () => {
 	const { slavesData, parametersData } = useCommonData();
+	const filteredParameterOptions = useMemo(
+		() =>
+			(parametersData || []).filter(
+				(option) => option.value !== 'water_consumption'
+			),
+		[parametersData]
+	);
 	const [loading, setLoading] = useState(null);
 	const [logsData, setLogsData] = useState(null);
 	const [payload, setPayload] = useState({
@@ -197,8 +204,13 @@ const WaterLogs = () => {
 		if (!logsData?.length) return [];
 
 		const availableKeys = Object.keys(logsData[0]);
+		// Timestamp is always the anchor column for a log row — pin it first
+		// regardless of whatever order the API happens to return keys in.
+		const orderedKeys = availableKeys.includes('timestamp')
+			? ['timestamp', ...availableKeys.filter((k) => k !== 'timestamp')]
+			: availableKeys;
 
-		const columnDef = availableKeys.map((c) => ({
+		const columnDef = orderedKeys.map((c) => ({
 			accessorKey: c,
 			header: WATER_LOG_COLUMN_MAPPING?.[c],
 			size: c === 'timestamp' ? 150 : 130,
@@ -308,11 +320,11 @@ const WaterLogs = () => {
 		>
 			<LogsFilterHeader
 				slaveOptions={slaveOptions}
-				parameterOptions={parametersData}
-				handleSearch={handleSearch}
-				handleReset={handleReset}
+				parameterOptions={filteredParameterOptions}
 				payload={payload}
 				setPayload={setPayload}
+				handleSearch={handleSearch}
+				handleReset={handleReset}
 			/>
 
 			<Box

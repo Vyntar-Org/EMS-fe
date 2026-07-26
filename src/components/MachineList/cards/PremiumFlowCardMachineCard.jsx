@@ -7,10 +7,6 @@ import {
 	TableRow,
 } from '@mui/material';
 
-import {
-	APP_ACCENT_COLOR,
-	MachineRatioDonut,
-} from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 import StatusChips from '../../common/StatusChips';
@@ -135,17 +131,12 @@ const PremiumFlowCardMachineCard = ({
 	cardType,
 	today,
 	mtd,
-	todayValue,
-	mtdValue,
 	slaveId,
 	trendUrl,
 	onOpenTrend,
 }) => {
 	const isTankCard = cardType === 'TANK_CARD';
 	const isFlowCard = cardType === 'FLOW_CARD';
-	const mtdNum = Number(mtdValue ?? 0);
-	const donutPercent =
-		mtdNum > 0 ? (Number(todayValue ?? 0) / mtdNum) * 100 : 0;
 
 	return (
 		<PremiumMachineCard
@@ -231,16 +222,6 @@ const PremiumFlowCardMachineCard = ({
 					</TableBody>
 				</Table>
 			</Box>
-			{isFlowCard && (
-				<Box mt={1.25}>
-					<MachineRatioDonut
-						percent={donutPercent}
-						color={APP_ACCENT_COLOR[app]}
-						label="Today's share of MTD"
-						caption={today}
-					/>
-				</Box>
-			)}
 		</PremiumMachineCard>
 	);
 };

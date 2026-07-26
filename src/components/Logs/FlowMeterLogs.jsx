@@ -200,8 +200,13 @@ const FlowMeterLogs = () => {
 		}
 
 		const availableKeys = Object.keys(logsData[0]);
+		// Timestamp is always the anchor column for a log row — pin it first
+		// regardless of whatever order the API happens to return keys in.
+		const orderedKeys = availableKeys.includes('timestamp')
+			? ['timestamp', ...availableKeys.filter((k) => k !== 'timestamp')]
+			: availableKeys;
 
-		const columnDef = availableKeys.map((c) => ({
+		const columnDef = orderedKeys.map((c) => ({
 			accessorKey: c,
 			header: FLOWMETER_LOG_COLUMN_MAPPING?.[c],
 			cell: (info) => {

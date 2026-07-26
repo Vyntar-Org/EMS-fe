@@ -14,6 +14,14 @@ export const storage = {
 		return data ? decryptData(data) : null;
 	},
 	removeLocal: (key) => localStorage.removeItem(key),
+	clearAuth: () => {
+		localStorage.removeItem('access_token');
+		localStorage.removeItem('refresh_token');
+		localStorage.removeItem('refresh_expiry');
+		localStorage.removeItem('token_expiry');
+		localStorage.removeItem('user');
+		localStorage.removeItem('permissions');
+	},
 
 	// Session Storage
 	setSession: (key, value) => {

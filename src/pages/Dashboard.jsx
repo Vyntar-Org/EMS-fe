@@ -26,7 +26,7 @@ const Dashboard = () => {
 	const DashboardComponent = DASHBOARD_CONFIG[appCode];
 
 	return (
-		<Box sx={{ flexGrow: 1 }}>
+		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
 			{DashboardComponent ? <DashboardComponent /> : <>Dashboard not found</>}
 		</Box>
 	);

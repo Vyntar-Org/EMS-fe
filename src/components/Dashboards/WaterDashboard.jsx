@@ -71,6 +71,35 @@ const getTrend = (current, previous) => {
 // focus (large, bold, in the card's own color), with a real trend chip and
 // a 2-point sparkline (today vs. yesterday — the only history this
 // endpoint actually returns) rather than a fabricated multi-point graph.
+// Row 1's 5 cards each get a guaranteed 200px on desktop; row 2's 3 cards
+// (sewage/stations) only get ~1/3 of whatever's left after row 1, which can
+// be considerably tighter — so they use the `compact` size tier (a lower
+// ceiling on desktop) instead of scaling all the way up like row 1.
+const SIZE = {
+	comfortable: {
+		icon: { xs: 30, sm: 36, md: 44 },
+		iconRadius: { xs: '9px', md: '13px' },
+		iconGlyph: { xs: 16, sm: 19, md: 24 },
+		label: { xs: '10.5px', md: '12.5px' },
+		value: { xs: '20px', sm: '24px', md: '30px', lg: '34px' },
+		trend: { xs: '10.5px', md: '12.5px' },
+		trendGlyph: { xs: 12, md: 15 },
+		compare: { xs: '9.5px', md: '11.5px' },
+		asOf: { xs: '9px', md: '10.5px' },
+	},
+	compact: {
+		icon: { xs: 26, sm: 30, md: 34 },
+		iconRadius: '9px',
+		iconGlyph: { xs: 14, md: 17 },
+		label: { xs: '10px', md: '11px' },
+		value: { xs: '18px', sm: '20px', md: '23px', lg: '25px' },
+		trend: { xs: '10px', md: '11px' },
+		trendGlyph: { xs: 11, md: 13 },
+		compare: { xs: '9px', md: '10px' },
+		asOf: { xs: '8.5px', md: '9.5px' },
+	},
+};
+
 const WaterKpiCard = ({
 	metricKey,
 	title,
@@ -78,9 +107,11 @@ const WaterKpiCard = ({
 	value,
 	yesterdayVal,
 	asOf,
+	compact = false,
 }) => {
 	const { icon: Icon, color } = CARD_META[metricKey];
 	const trend = hasData ? getTrend(value, yesterdayVal) : null;
+	const s = SIZE[compact ? 'compact' : 'comfortable'];
 
 	return (
 		<CustomCard
@@ -94,17 +125,23 @@ const WaterKpiCard = ({
 						height: '100%',
 						display: 'flex',
 						flexDirection: 'column',
-						justifyContent: 'center',
-						gap: 0.6,
-						px: 0.5,
+						justifyContent: 'space-evenly',
+						gap: { xs: 0.5, md: 1 },
+						px: { xs: 0.75, md: 1 },
+						py: { xs: 0.25, md: 0.5 },
 					}}
 				>
-					<Stack direction="row" alignItems="center" gap={1} minWidth={0}>
+					<Stack
+						direction="row"
+						alignItems="center"
+						gap={{ xs: 0.75, md: 1.25 }}
+						minWidth={0}
+					>
 						<Box
 							sx={{
-								width: 34,
-								height: 34,
-								borderRadius: '10px',
+								width: s.icon,
+								height: s.icon,
+								borderRadius: s.iconRadius,
 								display: 'flex',
 								alignItems: 'center',
 								justifyContent: 'center',
@@ -112,14 +149,14 @@ const WaterKpiCard = ({
 								background: (t) =>
 									`linear-gradient(135deg, ${alpha(
 										color,
-										t.palette.mode === 'dark' ? 0.34 : 0.16
+										t.palette.mode === 'dark' ? 0.36 : 0.18
 									)} 0%, ${alpha(
 										color,
-										t.palette.mode === 'dark' ? 0.14 : 0.06
+										t.palette.mode === 'dark' ? 0.16 : 0.07
 									)} 100%)`,
 								color,
-								boxShadow: `0 0 0 1px ${alpha(color, 0.24)}`,
-								'& svg': { fontSize: 18 },
+								boxShadow: `0 0 0 1px ${alpha(color, 0.26)}`,
+								'& svg': { fontSize: s.iconGlyph },
 							}}
 						>
 							<Icon />
@@ -128,7 +165,7 @@ const WaterKpiCard = ({
 							<ResponsiveTextWrapper
 								color="text.secondary"
 								fontWeight={700}
-								fontSize="11px"
+								fontSize={s.label}
 								value={title}
 								sx={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}
 							/>
@@ -139,22 +176,28 @@ const WaterKpiCard = ({
 					</Stack>
 
 					<Stack direction="row" alignItems="flex-end" gap={1} minWidth={0}>
-						<ResponsiveTextWrapper
-							fontSize="24px"
-							fontWeight={800}
-							value={`${value?.toLocaleString() || 0} KLD`}
-							color={color}
-						/>
+						<Box minWidth={0} flex={1}>
+							<ResponsiveTextWrapper
+								fontSize={s.value}
+								fontWeight={800}
+								value={`${value?.toLocaleString() || 0} KLD`}
+								color={color}
+								sx={{ lineHeight: 1.1 }}
+							/>
+						</Box>
 						{trend && (
 							<Stack
 								direction="row"
 								alignItems="center"
-								gap={0.25}
-								sx={{ pb: '3px' }}
+								gap={0.35}
+								flexShrink={0}
+								sx={{ pb: '4px' }}
 							>
-								<trend.Icon sx={{ fontSize: 13, color: 'text.secondary' }} />
+								<trend.Icon
+									sx={{ fontSize: s.trendGlyph, color: 'text.secondary' }}
+								/>
 								<ResponsiveTextWrapper
-									fontSize="11px"
+									fontSize={s.trend}
 									fontWeight={700}
 									color="text.secondary"
 									value={trend.label}
@@ -167,25 +210,31 @@ const WaterKpiCard = ({
 						direction="row"
 						alignItems="center"
 						justifyContent="space-between"
+						gap={1}
+						minWidth={0}
 					>
 						{yesterdayVal ? (
-							<ResponsiveTextWrapper
-								fontSize="10.5px"
-								color="text.secondary"
-								fontWeight={600}
-								value={`Yesterday ${yesterdayVal?.toLocaleString() || 0} KLD`}
-							/>
+							<Box minWidth={0} flex={1}>
+								<ResponsiveTextWrapper
+									fontSize={{ xs: '9.5px', md: '11.5px' }}
+									color="text.secondary"
+									fontWeight={600}
+									value={`Yesterday ${yesterdayVal?.toLocaleString() || 0} KLD`}
+								/>
+							</Box>
 						) : (
 							<span />
 						)}
 						{asOf && (
-							<ResponsiveTextWrapper
-								fontSize="10px"
-								color="text.secondary"
-								fontWeight={500}
-								value={asOf}
-								sx={{ textAlign: 'right' }}
-							/>
+							<Box minWidth={0} flexShrink={0}>
+								<ResponsiveTextWrapper
+									fontSize={{ xs: '9px', md: '10.5px' }}
+									color="text.secondary"
+									fontWeight={500}
+									value={asOf}
+									sx={{ textAlign: 'right' }}
+								/>
+							</Box>
 						)}
 					</Stack>
 				</Box>
@@ -244,12 +293,18 @@ const WaterDashboard = () => {
 				height: '100%',
 				display: 'flex',
 				flexDirection: 'column',
+				// The page shell (PrivateLayout's `main`) clips overflow at the
+				// viewport edge rather than scrolling the window, so this
+				// dashboard has to manage its own scroll — otherwise content
+				// that's taller than the viewport on small screens is simply
+				// unreachable instead of scrollable.
+				overflowY: 'auto',
 			}}
 		>
 			<Grid
 				container
 				spacing={1}
-				height={{ sm: '350px', md: '200px' }}
+				height={{ xs: 'auto', sm: '350px', md: '200px' }}
 				flexShrink={0}
 			>
 				<Grid item xs={12} sm={4} md={2.4}>
@@ -320,6 +375,7 @@ const WaterDashboard = () => {
 								value={overviewData?.sewage_inlet?.current || 0}
 								yesterdayVal={overviewData?.sewage_inlet?.previous || 0}
 								asOf={asOf}
+								compact
 							/>
 						</Grid>
 						<Grid item xs={12} sm={4} md={12} height={{ xs: 165, md: '33%' }}>
@@ -330,6 +386,7 @@ const WaterDashboard = () => {
 								value={overviewData?.sewage_outlet?.current || 0}
 								yesterdayVal={overviewData?.sewage_outlet?.previous || 0}
 								asOf={asOf}
+								compact
 							/>
 						</Grid>
 						<Grid
@@ -345,6 +402,7 @@ const WaterDashboard = () => {
 								hasData={Boolean(overviewData?.total_stations)}
 								value={overviewData?.total_stations || 0}
 								asOf={asOf}
+								compact
 							/>
 						</Grid>
 					</Grid>

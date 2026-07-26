@@ -1,16 +1,10 @@
-import { Box } from '@mui/material';
-
-import {
-	APP_ACCENT_COLOR,
-	MachineMetricPanel,
-	MachineRatioDonut,
-} from '../../common/MachineCardBits';
+import { MachineMetricPanel } from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 
 /**
- * Dedicated premium card for the Fuel machine list: gas-can icon, a
- * fuel-level analytics donut, Rate of Flow / Totalizer metric panel, Today
- * (consumption) / MTD stats, and the TREND action last.
+ * Dedicated premium card for the Fuel machine list: gas-can icon, Rate of
+ * Flow / Totalizer metric panel, Today (consumption) / MTD stats, and the
+ * TREND action last.
  */
 const PremiumFuelMachineCard = ({
 	title,
@@ -20,8 +14,6 @@ const PremiumFuelMachineCard = ({
 	rateOfFlow,
 	totalizer,
 	mtd,
-	fuelLevelPercent = 91.91,
-	fuelLevelLiters = 780,
 	slaveId,
 	trendUrl,
 	onOpenTrend,
@@ -38,14 +30,6 @@ const PremiumFuelMachineCard = ({
 		trend={slaveId ? { url: trendUrl } : null}
 		onOpenTrend={onOpenTrend}
 	>
-		<Box mb={1.25}>
-			<MachineRatioDonut
-				percent={fuelLevelPercent}
-				color={APP_ACCENT_COLOR.FUEL}
-				label="Fuel Level"
-				caption={`${fuelLevelLiters} Ltrs`}
-			/>
-		</Box>
 		<MachineMetricPanel
 			rows={[
 				{

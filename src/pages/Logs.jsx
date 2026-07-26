@@ -35,7 +35,7 @@ const Logs = () => {
 	const LogsComponent = LOGS_CONFIG[appCode];
 
 	return (
-		<Box sx={{ flexGrow: 1 }}>
+		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
 			{LogsComponent ? <LogsComponent /> : <>Logs not found</>}
 		</Box>
 	);

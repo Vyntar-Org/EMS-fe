@@ -10,3 +10,9 @@ export const FUEL_PARAMETER_OPTIONS = [
 		desc: 'Last 6 hours Temperature data',
 	},
 ];
+
+export const FUEL_LOG_COLUMN_MAPPING = {
+	timestamp: 'Timestamp',
+	consumed: 'Consumed',
+	temperature: 'Temperature',
+};

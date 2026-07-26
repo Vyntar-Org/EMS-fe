@@ -34,7 +34,7 @@ const MachineList = () => {
 	const MachineListComponent = MACHINE_LIST_CONFIG[appCode];
 
 	return (
-		<Box sx={{ flexGrow: 1 }}>
+		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
 			{MachineListComponent ? (
 				<MachineListComponent />
 			) : (

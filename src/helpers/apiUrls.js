@@ -276,13 +276,13 @@ const STP_ANALYTICS = {
 const STP_LOGS = {
 	STP_LOGS_DATA: (
 		slaveId,
-		parameters,
+		// parameters,
 		start_datetime,
 		end_datetime,
 		limit = 50,
 		offset = 0
 	) =>
-		`/applications/stp/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
+		`/applications/stp/logs/?slave_id=${slaveId}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
 const FLOWMETER_DASHBOARD = {

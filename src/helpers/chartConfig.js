@@ -104,6 +104,19 @@ export const downsample = (data, maxPoints = DEFAULT_MAX_POINTS) => {
 	return data.filter((_, i) => i % step === 0);
 };
 
+// Chart values come straight off the API with full floating-point noise
+// (e.g. 10.12545451224) — round to 2 decimals everywhere a value is
+// displayed (tooltip rows, donut/radial labels, axis ticks), and drop a
+// trailing ".00" so whole numbers stay clean.
+const formatChartValue = (val) => {
+	const num = Number(val);
+	if (!Number.isFinite(num)) {
+		return val;
+	}
+	const rounded = Math.round(num * 100) / 100;
+	return rounded % 1 === 0 ? String(rounded) : rounded.toFixed(2);
+};
+
 const resolveValue = (raw) => {
 	if (typeof raw === 'number') {
 		return raw < 1e12 ? raw * 1000 : raw;
@@ -254,7 +267,7 @@ const commonYAxis = (yLabel = 'Liters') => ({
 	axisTicks: { show: false },
 	labels: {
 		style: { colors: '#757575' },
-		formatter: (val) => Math.round(val),
+		formatter: (val) => formatChartValue(val),
 	},
 });
 
@@ -292,7 +305,11 @@ export const buildPremiumTooltip = ({ unit = '', titleFormat } = {}) =>
 				title = dayjs(x).format(titleFormat || 'MMM D, h:mm A');
 			}
 		} else {
-			title = w.globals.labels?.[dataPointIndex] ?? '';
+			// Category axis: the label at this point, formatted the same way
+			// the x-axis ticks are (falls back to the raw label) so the
+			// tooltip title always reads as a real date/category, never blank.
+			const rawLabel = w.globals.labels?.[dataPointIndex];
+			title = rawLabel !== undefined && rawLabel !== null ? rawLabel : '';
 		}
 
 		const rows = (w.globals.seriesNames || [])
@@ -312,7 +329,9 @@ export const buildPremiumTooltip = ({ unit = '', titleFormat } = {}) =>
 						</span>
 						<span style="font-size:12px;font-weight:700;color:${
 							ink.primary
-						};white-space:nowrap;">${raw}${unit ? ` ${unit}` : ''}</span>
+						};white-space:nowrap;">${formatChartValue(raw)}${
+							unit ? ` ${unit}` : ''
+						}</span>
 					</div>`;
 			})
 			.join('');

@@ -8,10 +8,6 @@ import {
 	TableRow,
 } from '@mui/material';
 
-import {
-	APP_ACCENT_COLOR,
-	MachineRatioDonut,
-} from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
@@ -203,12 +199,6 @@ const PremiumEnergyMachineCard = ({
 			<StatCell label="Power factor" value={`${powerFactor} PF`} />
 			<StatCell label="Frequency" value={`${frequency} Hz`} />
 		</Grid>
-		<MachineRatioDonut
-			percent={Number(powerFactor ?? 0) * 100}
-			color={APP_ACCENT_COLOR.ENERGY}
-			label="Power factor efficiency"
-			caption={`${powerFactor} PF`}
-		/>
 	</PremiumMachineCard>
 );
 

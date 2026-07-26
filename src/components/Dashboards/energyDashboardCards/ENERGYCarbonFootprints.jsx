@@ -3,7 +3,13 @@ import React from 'react';
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
 import { Box, Divider, Grid } from '@mui/material';
+import { MiniColumnChart } from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
+
+const ACCENT = '#1BAF7A';
+const MAIN_COLOR = '#2563EB';
+const BACKUP_COLOR = '#EA580C';
+const GREEN_COLOR = ACCENT;
 
 const ENERGYCarbonFootprints = ({ data }) => {
 	const MetricBlock = ({ label, value, showDivider, unit }) => (
@@ -23,22 +29,16 @@ const ENERGYCarbonFootprints = ({ data }) => {
 					color="text.secondary"
 					fontWeight={700}
 					textTransform="uppercase"
+					fontSize={{ xs: '9.5px', md: '11px' }}
 					value={label}
 				/>
 
 				<ResponsiveTextWrapper
-					mt={1}
-					fontSize="14px"
-					color="text.accent"
+					mt={0.5}
+					fontSize={{ xs: '12px', sm: '13px', md: '15px' }}
+					color={ACCENT}
 					fontWeight={800}
-					value={`${value?.toLocaleString() || 0}`}
-				/>
-
-				<ResponsiveTextWrapper
-					color="text.accent"
-					fontWeight={500}
-					value={unit}
-					fontSize="12px"
+					value={`${value?.toLocaleString() || 0} ${unit}`}
 				/>
 			</Box>
 
@@ -57,31 +57,52 @@ const ENERGYCarbonFootprints = ({ data }) => {
 	);
 
 	return (
-		<CustomCard titleIcon={<Co2 />} title="Carbon Footprints">
+		<CustomCard
+			titleIcon={<Co2 />}
+			title="Carbon Footprints"
+			accentColor={ACCENT}
+		>
 			{data ? (
-				<Grid
-					container
-					sx={{ height: '100%', width: '100%' }}
-					alignItems="center"
+				<Box
+					sx={{
+						height: '100%',
+						display: 'flex',
+						flexDirection: 'column',
+						justifyContent: 'space-between',
+						gap: 0.5,
+					}}
 				>
-					<MetricBlock
-						label="Main"
-						value={data?.main || 0}
-						showDivider
-						unit={data?.unit || ''}
+					<Grid container sx={{ width: '100%' }} alignItems="center">
+						<MetricBlock
+							label="Main"
+							value={data?.main || 0}
+							showDivider
+							unit={data?.unit || ''}
+						/>
+						<MetricBlock
+							label="Backup"
+							value={data?.backup || 0}
+							showDivider
+							unit={data?.unit || ''}
+						/>
+						<MetricBlock
+							label="Green"
+							value={data?.green || 0}
+							unit={data?.unit || ''}
+						/>
+					</Grid>
+					<MiniColumnChart
+						bars={[
+							{ label: 'Main', value: data?.main || 0, color: MAIN_COLOR },
+							{
+								label: 'Backup',
+								value: data?.backup || 0,
+								color: BACKUP_COLOR,
+							},
+							{ label: 'Green', value: data?.green || 0, color: GREEN_COLOR },
+						]}
 					/>
-					<MetricBlock
-						label="Backup"
-						value={data?.backup || 0}
-						showDivider
-						unit={data?.unit || ''}
-					/>
-					<MetricBlock
-						label="Green"
-						value={data?.green || 0}
-						unit={data?.unit || ''}
-					/>
-				</Grid>
+				</Box>
 			) : (
 				<NoDataFound message="Waiting for live device data — readings appear automatically" />
 			)}

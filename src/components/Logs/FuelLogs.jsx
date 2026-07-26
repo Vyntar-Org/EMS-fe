@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useCommonData } from '../../contexts/CommonDataContext';
-import { WATER_LOG_COLUMN_MAPPING } from '../../constants/waterLogs';
+import { FUEL_LOG_COLUMN_MAPPING } from '../../constants/fuelLogs';
 import dayjs from 'dayjs';
 import { API_URLS } from '../../helpers/apiUrls';
 import { api } from '../../helpers/api';
@@ -197,10 +197,15 @@ const FuelLogs = () => {
 		if (!logsData?.length) return [];
 
 		const availableKeys = Object.keys(logsData[0]);
+		// Timestamp is always the anchor column for a log row — pin it first
+		// regardless of whatever order the API happens to return keys in.
+		const orderedKeys = availableKeys.includes('timestamp')
+			? ['timestamp', ...availableKeys.filter((k) => k !== 'timestamp')]
+			: availableKeys;
 
-		const columnDef = availableKeys.map((c) => ({
+		const columnDef = orderedKeys.map((c) => ({
 			accessorKey: c,
-			header: WATER_LOG_COLUMN_MAPPING?.[c],
+			header: FUEL_LOG_COLUMN_MAPPING?.[c],
 			size: c === 'timestamp' ? 150 : 130,
 			cell: (info) => {
 				const value = info.getValue();

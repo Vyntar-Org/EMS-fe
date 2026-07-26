@@ -28,7 +28,7 @@ const isRefreshTokenExpired = () => {
 };
 
 const logoutToLogin = () => {
-	storage.clearAll();
+	storage.clearAuth();
 	window.location.href = '/login';
 };
 
@@ -51,7 +51,7 @@ const performTokenRefresh = async () => {
 			},
 			// Backend contract (FastAPI): field is `refresh_token` — sending
 			// `refresh` gets a 422 and used to log the user out on every expiry
-			body: JSON.stringify({ refresh_token: refreshToken }),
+			body: JSON.stringify({ refresh: refreshToken }),
 		});
 
 		if (!response.ok) {

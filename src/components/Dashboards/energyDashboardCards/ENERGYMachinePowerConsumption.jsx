@@ -9,12 +9,11 @@ import CustomCard from '../../common/CustomCard';
 import { useCommonData } from '../../../contexts/CommonDataContext';
 import { api } from '../../../helpers/api';
 import { API_URLS } from '../../../helpers/apiUrls';
-import { BarChart, SsidChart } from '@mui/icons-material';
+import { BarChart, Search, SsidChart, Bolt } from '@mui/icons-material';
 import {
 	Box,
-	Button,
 	Grid,
-	IconButton,
+	InputAdornment,
 	ToggleButton,
 	ToggleButtonGroup,
 } from '@mui/material';
@@ -23,6 +22,75 @@ import { CustomAutocomplete } from '../../common/CustomAutocomplete';
 import { CustomInput } from '../../common/CustomInput';
 import ReactApexChart from 'react-apexcharts';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
+
+const ACCENT = CHART_COLORS.machinePower;
+
+// Premium, rounded search field — same "surface.muted pill that glows on
+// hover/focus" treatment used by the Water dashboard's device search.
+const searchFieldSx = {
+	'& .MuiOutlinedInput-root': {
+		borderRadius: '12px',
+		backgroundColor: 'surface.muted',
+		transition: '0.2s ease',
+		'&:hover': { backgroundColor: 'background.paper' },
+		'&.Mui-focused': {
+			backgroundColor: 'background.paper',
+			boxShadow: (t) =>
+				`0 0 0 3px ${alpha(ACCENT, t.palette.mode === 'dark' ? 0.3 : 0.16)}`,
+		},
+	},
+};
+
+// One selectable device row: icon chip + name, accent-tinted when selected,
+// matching the Water dashboard's validated device-list pattern.
+const DeviceRow = ({ name, isActive, onClick }) => (
+	<Box
+		onClick={onClick}
+		role="button"
+		sx={{
+			display: 'flex',
+			alignItems: 'center',
+			gap: 1,
+			px: 1.25,
+			py: 1,
+			borderRadius: '12px',
+			cursor: 'pointer',
+			border: '1px solid',
+			borderColor: isActive ? alpha(ACCENT, 0.45) : 'divider',
+			bgcolor: isActive ? alpha(ACCENT, 0.12) : 'background.paper',
+			transition: 'all 0.2s ease',
+			'&:hover': {
+				borderColor: alpha(ACCENT, 0.5),
+				bgcolor: alpha(ACCENT, isActive ? 0.16 : 0.06),
+			},
+		}}
+	>
+		<Box
+			sx={{
+				width: 26,
+				height: 26,
+				borderRadius: '8px',
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'center',
+				flexShrink: 0,
+				bgcolor: alpha(ACCENT, isActive ? 0.28 : 0.14),
+				color: ACCENT,
+				'& svg': { fontSize: 15 },
+			}}
+		>
+			<Bolt />
+		</Box>
+		<Box minWidth={0} flex={1}>
+			<ResponsiveTextWrapper
+				value={name}
+				color={isActive ? 'text.primary' : 'text.secondary'}
+				fontSize="13px"
+				fontWeight={isActive ? 700 : 500}
+			/>
+		</Box>
+	</Box>
+);
 
 const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	const { slavesData } = useCommonData();
@@ -173,45 +241,25 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 			title={
 				mode === 2 ? `${slavesDisplayName} Energy` : 'Machine Power Consumption'
 			}
-			accentColor={CHART_COLORS.machinePower}
+			accentColor={ACCENT}
 			icon={
 				<ToggleButtonGroup
 					value={mode}
 					exclusive
 					onChange={(e, newMode) => newMode !== null && setMode(newMode)}
 					sx={{
-						height: '30px',
-						p: '3px',
-						gap: '2px',
-						borderRadius: '10px',
-						bgcolor: (t) =>
-							alpha(
-								t.palette.primary.main,
-								t.palette.mode === 'dark' ? 0.16 : 0.06
-							),
+						height: '28px',
+						bgcolor: 'background.paper',
 						border: '1px solid',
 						borderColor: 'divider',
 						'& .MuiToggleButton-root': {
-							border: 0,
-							borderRadius: '8px !important',
-							px: 1.2,
+							border: 'none',
 							color: 'text.secondary',
-							transition: 'all 0.2s ease',
-							'&:hover': {
-								bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
-								color: 'primary.main',
-							},
-							'&.Mui-selected': {
-								color: 'primary.contrastText',
-								background: (t) =>
-									`linear-gradient(135deg, ${t.palette.primary.main} 0%, ${t.palette.primary.dark} 100%)`,
-								boxShadow: (t) =>
-									`0 2px 8px ${alpha(t.palette.primary.main, 0.35)}`,
-								'&:hover': {
-									background: (t) =>
-										`linear-gradient(135deg, ${t.palette.primary.main} 0%, ${t.palette.primary.dark} 100%)`,
-								},
-							},
+						},
+						'& .MuiToggleButton-root.Mui-selected': {
+							bgcolor: ACCENT,
+							color: '#FFFFFF',
+							'&:hover': { bgcolor: ACCENT },
 						},
 						...(slavesData?.length
 							? { marginRight: { sm: '212px', md: '0', lg: '212px' } }
@@ -268,9 +316,11 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 						width={{ sm: '200px' }}
 						height={{ sm: '100%' }}
 						position={{ sm: 'absolute', md: 'unset', lg: 'absolute' }}
-						// bgcolor="#fff"
 						right={{ sm: 14 }}
 						top={{ sm: 0 }}
+						display="flex"
+						flexDirection="column"
+						minHeight={0}
 					>
 						<CustomAutocomplete
 							options={filteredSlaves?.map((f) => ({
@@ -286,6 +336,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 							sx={{
 								display: { sm: 'none' },
 								mt: 1,
+								flexShrink: 0,
 								'& .MuiOutlinedInput-root': {
 									borderRadius: 2,
 								},
@@ -296,19 +347,27 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 							onChange={(e) => setSearchDevices(e.target.value)}
 							value={searchDevices || ''}
 							autoComplete="off"
-							placeholder="Search Devices"
+							placeholder="Search devices"
 							size="small"
+							icon={
+								<InputAdornment position="end">
+									<Search sx={{ fontSize: 18, color: 'text.secondary' }} />
+								</InputAdornment>
+							}
 							sx={{
 								display: { xs: 'none', sm: 'block' },
 								mt: 1,
-								'& .MuiOutlinedInput-root': {
-									borderRadius: 2,
-								},
+								flexShrink: 0,
+								...searchFieldSx,
 							}}
 						/>
 
+						{/* flex:1 fills whatever space the search field above didn't
+						    use — no need to hardcode its height. Only this list
+						    scrolls, never the field above it. */}
 						<Box
-							height={{ sm: 'calc(100% - 40px - 24px)' }}
+							flex={1}
+							minHeight={0}
 							overflow="auto"
 							display={{ xs: 'none', sm: 'block' }}
 						>
@@ -318,39 +377,11 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 										const isActive = slavesId === s.slave_id;
 										return (
 											<Grid item xs={12} key={`slaves-option-${s.slave_id}`}>
-												<Button
-													onClick={() => {
-														setSlavesId(s.slave_id);
-													}}
-													disableElevation
-													sx={{
-														justifyContent: 'start',
-														borderRadius: 2,
-														textTransform: 'none',
-														bgcolor: isActive
-															? 'primary.main'
-															: 'background.paper',
-														border: '2px solid',
-														borderColor: isActive ? 'primary.main' : 'divider',
-														':hover': {
-															bgcolor: isActive
-																? 'primary.main'
-																: 'background.paper',
-														},
-													}}
-													variant="contained"
-													fullWidth
-												>
-													<ResponsiveTextWrapper
-														value={s.slave_name}
-														color={
-															isActive ? 'primary.contrastText' : 'text.primary'
-														}
-														fontSize="14px"
-														textAlign="start"
-														fontWeight={600}
-													/>
-												</Button>
+												<DeviceRow
+													name={s.slave_name}
+													isActive={isActive}
+													onClick={() => setSlavesId(s.slave_id)}
+												/>
 											</Grid>
 										);
 									})}

@@ -24,7 +24,7 @@ const Reports = () => {
 	const ReportsComponent = REPORTS_CONFIG[appCode];
 
 	return (
-		<Box sx={{ flexGrow: 1 }}>
+		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
 			{ReportsComponent ? <ReportsComponent /> : <>Reports not found</>}
 		</Box>
 	);

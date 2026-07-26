@@ -1,4 +1,5 @@
 import { Box, Divider, Grid } from '@mui/material';
+import { Input, Output } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
@@ -14,54 +15,77 @@ import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
 import SiteLocationMap from '../common/SiteLocationMap';
 import FlowMeterDashboardSkeleton from '../skeletonLoaders/FlowMeterDashboardSkeleton';
 
-const MetricBlock = ({ label, value, subLabel, showDivider }) => (
+// Distinct, topic-matched accents reused deterministically from the same
+// colorblind-safe categorical palette used by the comparison chart below.
+const PALETTE = getCategoricalColors(8);
+const INLET_ACCENT = PALETTE[0];
+const OUTLET_ACCENT = PALETTE[2];
+
+// Compact, premium stat block: tight flexbox column (no accumulating
+// margins between lines, which is what made the old stacked-mt version
+// overflow its available card slot and force an internal scrollbar) with
+// the value as the clear visual focus, matching the KPI-tile hierarchy
+// used on the Water dashboard.
+const MetricBlock = ({ label, value, subLabel, showDivider, accent }) => (
 	<Grid
 		item
 		xs={12}
 		sx={{
+			height: '100%',
 			display: 'flex',
 			position: 'relative',
 			alignItems: 'center',
 			justifyContent: 'center',
-			flexDirection: 'column',
 		}}
 	>
-		{label && (
-			<ResponsiveTextWrapper
-				color="text.primary"
-				fontWeight={700}
-				value={label}
-				align="center"
-				mt={1}
-			/>
-		)}
+		<Box
+			sx={{
+				display: 'flex',
+				flexDirection: 'column',
+				alignItems: 'center',
+				justifyContent: 'center',
+				gap: { xs: 0.25, md: 0.5 },
+				width: '100%',
+				minWidth: 0,
+			}}
+		>
+			{label && (
+				<ResponsiveTextWrapper
+					color="text.secondary"
+					fontWeight={700}
+					fontSize={{ xs: '10.5px', md: '12px' }}
+					value={label}
+					align="center"
+					sx={{ textTransform: 'uppercase', letterSpacing: '0.3px' }}
+				/>
+			)}
 
-		<ResponsiveTextWrapper
-			fontSize="20px"
-			fontWeight={800}
-			mt={1}
-			value={`${value?.toLocaleString() || 0} KL`}
-			align="center"
-			color="text.accent"
-		/>
-
-		{subLabel ? (
 			<ResponsiveTextWrapper
-				fontSize="12px"
-				color="text.secondary"
+				fontSize={{ xs: '16px', sm: '19px', md: '22px' }}
 				fontWeight={800}
-				mt={1}
-				value={subLabel}
+				value={`${value?.toLocaleString() || 0} KL`}
 				align="center"
+				color={accent || 'text.accent'}
+				sx={{ lineHeight: 1.15 }}
 			/>
-		) : null}
+
+			{subLabel ? (
+				<ResponsiveTextWrapper
+					fontSize={{ xs: '9.5px', md: '11px' }}
+					color="text.secondary"
+					fontWeight={600}
+					value={subLabel}
+					align="center"
+				/>
+			) : null}
+		</Box>
 
 		{showDivider && (
 			<Divider
 				orientation="vertical"
 				sx={{
 					borderStyle: 'dashed',
-					height: '100%',
+					height: '70%',
 					position: 'absolute',
 					right: 0,
 				}}
@@ -119,10 +143,16 @@ const FlowMeterDashboard = () => {
 	) : (
 		<Box
 			sx={{
-				height: { md: 'calc(100vh - 64px - 8px)' },
+				height: '100%',
+				display: 'flex',
+				flexDirection: 'column',
+				// The page shell (PrivateLayout's `main`) clips overflow at the
+				// viewport edge rather than scrolling the window, so this
+				// dashboard has to manage its own scroll.
+				overflowY: 'auto',
 			}}
 		>
-			<Grid container spacing={1} height={{ md: '100%' }}>
+			<Grid container spacing={1} flex={1} minHeight={0}>
 				<Grid item xs={12} md={6} height={{ md: '100%' }}>
 					<Grid container height={{ md: '100%' }}>
 						<Grid item xs={12} height={{ md: '30%' }}>
@@ -130,7 +160,9 @@ const FlowMeterDashboard = () => {
 								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
 									<CustomCard
 										sx={{ textAlign: 'center' }}
-										title={summaryData?.inlet_water && 'Inlet Water'}
+										title="Inlet Water"
+										titleIcon={<Input />}
+										accentColor={INLET_ACCENT}
 									>
 										{summaryData?.inlet_water ? (
 											<Grid
@@ -144,6 +176,7 @@ const FlowMeterDashboard = () => {
 														label="Total"
 														value={summaryData?.inlet_water?.value || 0}
 														subLabel="(Waste Water)"
+														accent={INLET_ACCENT}
 														showDivider
 													/>
 												</Grid>
@@ -155,6 +188,7 @@ const FlowMeterDashboard = () => {
 															summaryData?.inlet_water?.previous_value || 0
 														}
 														subLabel="(Waste Water)"
+														accent={INLET_ACCENT}
 													/>
 												</Grid>
 											</Grid>
@@ -167,7 +201,9 @@ const FlowMeterDashboard = () => {
 								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
 									<CustomCard
 										sx={{ textAlign: 'center' }}
-										title={summaryData?.outlet_water && 'Outlet Water'}
+										title="Outlet Water"
+										titleIcon={<Output />}
+										accentColor={OUTLET_ACCENT}
 									>
 										{summaryData?.outlet_water ? (
 											<Grid
@@ -181,6 +217,7 @@ const FlowMeterDashboard = () => {
 														label="Total"
 														value={summaryData?.outlet_water?.value || 0}
 														subLabel="(Out)"
+														accent={OUTLET_ACCENT}
 														showDivider
 													/>
 												</Grid>
@@ -192,6 +229,7 @@ const FlowMeterDashboard = () => {
 															summaryData?.outlet_water?.previous_value || 0
 														}
 														subLabel="(Out)"
+														accent={OUTLET_ACCENT}
 													/>
 												</Grid>
 											</Grid>
@@ -210,8 +248,8 @@ const FlowMeterDashboard = () => {
 							height={{ xs: 350, md: '70%' }}
 						>
 							<CustomCard
-								title="water comparison"
-								accentColor={getCategoricalColors(1)[0]}
+								title="Water Comparison"
+								accentColor={getCategoricalColors(3)[2]}
 							>
 								{waterComparison ? (
 									<Box height="100%" width="100%" overflow="hidden">

@@ -63,7 +63,7 @@ const saveAuthData = ({
 };
 
 const clearAuthData = () => {
-	storage.clearAll();
+	storage.clearAuth();
 };
 
 const fetchCurrentUser = async (accessToken = null) => {

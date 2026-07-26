@@ -1,4 +1,4 @@
-import { RestartAlt, Search } from '@mui/icons-material';
+import { RestartAlt, Search, Timeline } from '@mui/icons-material';
 import {
 	Box,
 	Button,
@@ -7,6 +7,7 @@ import {
 	Grid,
 	Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import dayjs from 'dayjs';
 import { memo, useCallback, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
@@ -20,10 +21,19 @@ import {
 	basePickerStyles,
 	downAnalyticsSampleData,
 } from '../../helpers/common';
+import { getCategoricalColors } from '../../helpers/chartConfig';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
+
+// Same colorblind-safe palette the dashboards use, one accent per
+// comparison row (cycled), so each row's chrome reads as a deliberate
+// identity instead of a random pastel fill.
+const ROW_ACCENTS = getCategoricalColors(6);
+// Distinct from any single row's accent — signals "this combines every row"
+// rather than belonging to one of them.
+const MERGE_ACCENT = getCategoricalColors(7)[6];
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 
@@ -349,24 +359,76 @@ const AnalyticsRow = memo(
 		}, [payloads, id, slaveOptions]);
 
 		const uniqueBgColor = UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
+		const accent = ROW_ACCENTS[index % ROW_ACCENTS.length];
 		const deviceLabel = payload?.slave_id?.label || `Device Segment ${id}`;
 
 		return (
 			<Box
 				sx={{
 					height: '100%',
-					p: 1,
-					borderRadius: 3,
+					display: 'flex',
+					flexDirection: 'column',
+					p: 1.25,
+					borderRadius: '18px',
 					bgcolor: uniqueBgColor,
-					transition: 'background-color 0.3s ease',
-					boxShadow: '0px 4px 12px rgba(0,0,0,0.05)',
+					border: '1px solid',
+					borderColor: (t) =>
+						alpha(accent, t.palette.mode === 'dark' ? 0.32 : 0.22),
+					boxShadow: (t) =>
+						t.palette.mode === 'dark'
+							? `0 2px 6px ${alpha('#000', 0.3)}, 0 10px 26px ${alpha(
+									'#000',
+									0.22
+							  )}`
+							: `0 1px 3px ${alpha('#0F233E', 0.06)}, 0 8px 22px ${alpha(
+									'#0F233E',
+									0.06
+							  )}`,
+					transition: 'box-shadow 0.25s ease, border-color 0.25s ease',
+					'&:hover': {
+						borderColor: alpha(accent, 0.5),
+					},
 				}}
 			>
-				<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-					{deviceLabel} Analysis{' '}
-					{rawAnalytics?.data?.length > 1200 &&
-						`(Downsampled from ${rawAnalytics.data.length} points)`}
-				</Typography>
+				<Box
+					display="flex"
+					alignItems="center"
+					gap={1}
+					mb={1}
+					minWidth={0}
+					flexShrink={0}
+				>
+					<Box
+						sx={{
+							width: 30,
+							height: 30,
+							borderRadius: '9px',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							flexShrink: 0,
+							bgcolor: alpha(accent, 0.16),
+							color: accent,
+							'& svg': { fontSize: 17 },
+						}}
+					>
+						<Timeline />
+					</Box>
+					<Typography
+						variant="subtitle1"
+						sx={{
+							fontWeight: 700,
+							minWidth: 0,
+							overflow: 'hidden',
+							textOverflow: 'ellipsis',
+							whiteSpace: 'nowrap',
+						}}
+					>
+						{deviceLabel} Analysis{' '}
+						{rawAnalytics?.data?.length > 1200 &&
+							`(Downsampled from ${rawAnalytics.data.length} points)`}
+					</Typography>
+				</Box>
 
 				<DeviceFilterRow
 					comparisonId={id}
@@ -379,15 +441,7 @@ const AnalyticsRow = memo(
 					parameterOptions={parametersData}
 				/>
 
-				<Box
-					sx={{
-						height: {
-							xs: 'calc(100% - 167px - 28px - 8px)',
-							sm: 'calc(100% - 167px - 28px - 8px)',
-							md: 'calc(100% - 64px - 28px - 8px)',
-						},
-					}}
-				>
+				<Box flex={1} minHeight={0}>
 					{isLoading ? (
 						<Loading />
 					) : !processedData.series.length ? (
@@ -441,28 +495,63 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 		<Box
 			sx={{
 				height: '100%',
-				p: 1,
-				borderRadius: 3,
+				display: 'flex',
+				flexDirection: 'column',
+				p: 1.25,
+				borderRadius: '18px',
 				bgcolor: 'surface.muted',
-				boxShadow: '0px 4px 12px rgba(0,0,0,0.02)',
+				border: '1px solid',
+				borderColor: (t) =>
+					alpha(MERGE_ACCENT, t.palette.mode === 'dark' ? 0.32 : 0.22),
+				boxShadow: (t) =>
+					t.palette.mode === 'dark'
+						? `0 2px 6px ${alpha('#000', 0.3)}, 0 10px 26px ${alpha(
+								'#000',
+								0.22
+						  )}`
+						: `0 1px 3px ${alpha('#0F233E', 0.06)}, 0 8px 22px ${alpha(
+								'#0F233E',
+								0.06
+						  )}`,
 			}}
 		>
-			<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-				Merged Comparison
-			</Typography>
+			<Box
+				display="flex"
+				alignItems="center"
+				gap={1}
+				mb={0.5}
+				minWidth={0}
+				flexShrink={0}
+			>
+				<Box
+					sx={{
+						width: 30,
+						height: 30,
+						borderRadius: '9px',
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						flexShrink: 0,
+						bgcolor: alpha(MERGE_ACCENT, 0.16),
+						color: MERGE_ACCENT,
+						'& svg': { fontSize: 17 },
+					}}
+				>
+					<Timeline />
+				</Box>
+				<Typography variant="subtitle1" sx={{ fontWeight: 700, minWidth: 0 }}>
+					Merged Comparison
+				</Typography>
+			</Box>
 
-			<Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>
+			<Typography
+				variant="body2"
+				sx={{ color: 'text.secondary', mb: 1.5, flexShrink: 0 }}
+			>
 				{rows.map((row) => row.deviceLabel).join(' merged ')}
 			</Typography>
 
-			<Box
-				sx={{
-					height: {
-						xs: 'calc(100% - 80px)',
-						sm: 'calc(100% - 64px)',
-					},
-				}}
-			>
+			<Box flex={1} minHeight={0}>
 				{isAnyLoading ? (
 					<Loading />
 				) : !mergedSeries.length ? (
@@ -484,6 +573,14 @@ MergedAnalyticsRow.displayName = 'MergedAnalyticsRow';
 
 const WaterAnalytics = () => {
 	const { slavesData, parametersData } = useCommonData();
+	const analyticsParameterOptions = useMemo(
+		() =>
+			(parametersData || []).filter(
+				(option) =>
+					!['timestamp', 'metric_name', 'totalizer'].includes(option.value)
+			),
+		[parametersData]
+	);
 	const [globalDateTime, setGlobalDateTime] = useState(getDefaultDateRange());
 	const [payloads, setPayloads] = useState({ 1: null });
 	const [analyticsDataMap, setAnalyticsDataMap] = useState({});
@@ -595,10 +692,9 @@ const WaterAnalytics = () => {
 	return (
 		<Box
 			sx={{
-				height: {
-					xs: 'calc(100vh - 56px - 16px)',
-					sm: 'calc(100vh - 64px - 16px)',
-				},
+				height: '100%',
+				display: 'flex',
+				flexDirection: 'column',
 			}}
 		>
 			<GlobalFiltersRow
@@ -611,14 +707,8 @@ const WaterAnalytics = () => {
 			/>
 
 			<Box
-				height={{
-					xs: mergeCompare ? 'calc(100% - 111px)' : 'calc(100% - 115px)',
-					sm:
-						!mergeCompare && rowIds?.length !== 1
-							? 'calc(100% - 115px)'
-							: 'calc(100% - 58px)',
-					lg: 'calc(100% - 59px)',
-				}}
+				flex={1}
+				minHeight={0}
 				pt={1}
 				overflow="auto"
 				display="flex"
@@ -648,7 +738,7 @@ const WaterAnalytics = () => {
 							payload={payloads[id]}
 							payloads={payloads}
 							slaveOptions={slaveOptions}
-							parametersData={parametersData}
+							parametersData={analyticsParameterOptions}
 							handleFieldChange={handleFieldChange}
 							handleSearch={handleSearch}
 							handleReset={handleReset}

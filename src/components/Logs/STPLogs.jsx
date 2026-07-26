@@ -21,7 +21,7 @@ const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 
 const LogsFilterHeader = ({
 	slaveOptions,
-	parameterOptions,
+	// parameterOptions,
 	handleSearch,
 	handleReset,
 	payload,
@@ -66,7 +66,7 @@ const LogsFilterHeader = ({
 					/>
 				</Grid>
 
-				<Grid item xs={12} sm md lg={3}>
+				{/* <Grid item xs={12} sm md lg={3}>
 					<CustomAutocomplete
 						multiple
 						options={parameterOptions}
@@ -88,9 +88,9 @@ const LogsFilterHeader = ({
 							},
 						}}
 					/>
-				</Grid>
+				</Grid> */}
 
-				<Grid item xs={12} md={4.5} lg>
+				<Grid item xs={12} md={6} lg>
 					<CustomDatePicker
 						mode="datetimerangepicker"
 						onChange={(val) => handleFieldCh('dateTime', val)}
@@ -181,7 +181,10 @@ const LogsFilterHeader = ({
 	);
 };
 const STPLogs = () => {
-	const { slavesData, parametersData } = useCommonData();
+	const {
+		slavesData,
+		// parametersData
+	} = useCommonData();
 	const [loading, setLoading] = useState(null);
 	const [logsData, setLogsData] = useState(null);
 	const [payload, setPayload] = useState({
@@ -204,8 +207,13 @@ const STPLogs = () => {
 		}
 
 		const availableKeys = Object.keys(logsData[0]);
+		// Timestamp is always the anchor column for a log row — pin it first
+		// regardless of whatever order the API happens to return keys in.
+		const orderedKeys = availableKeys.includes('timestamp')
+			? ['timestamp', ...availableKeys.filter((k) => k !== 'timestamp')]
+			: availableKeys;
 
-		const columnDef = availableKeys.map((c) => ({
+		const columnDef = orderedKeys.map((c) => ({
 			accessorKey: c,
 			header: STP_LOG_COLUMN_MAPPING?.[c],
 			// size: c === 'timestamp' ? 150 : 130,
@@ -238,12 +246,12 @@ const STPLogs = () => {
 		setLoading(true);
 		try {
 			const slaveId = payload.slave_id?.value ?? '';
-			const parameterValues = payload?.parameters
-				? payload.parameters
-						.map((p) => p?.value)
-						.filter(Boolean)
-						.join(',')
-				: '';
+			// const parameterValues = payload?.parameters
+			// 	? payload.parameters
+			// 			.map((p) => p?.value)
+			// 			.filter(Boolean)
+			// 			.join(',')
+			// 	: '';
 
 			const startDateObj = payload?.dateTime?.[0];
 			const endDateObj = payload?.dateTime?.[1];
@@ -256,7 +264,7 @@ const STPLogs = () => {
 
 			const newApiUrl = API_URLS.STP_LOGS_DATA(
 				slaveId,
-				parameterValues,
+				// parameterValues,
 				formattedStart,
 				formattedEnd,
 				paginationDetails.limit,
@@ -321,7 +329,7 @@ const STPLogs = () => {
 		>
 			<LogsFilterHeader
 				slaveOptions={slaveOptions}
-				parameterOptions={parametersData}
+				// parameterOptions={parametersData}
 				handleSearch={handleSearch}
 				handleReset={handleReset}
 				payload={payload}
@@ -330,7 +338,7 @@ const STPLogs = () => {
 
 			<Box
 				height={{
-					xs: 'calc(100% - 216px)',
+					xs: 'calc(100% - 161px)',
 					sm: 'calc(100% - 160px)',
 					md: 'calc(100% - 48px)',
 				}}

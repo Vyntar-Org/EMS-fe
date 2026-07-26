@@ -3,7 +3,10 @@ import React from 'react';
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
 import { Box, Divider, Grid, Typography } from '@mui/material';
+import { MiniGaugeArc } from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
+
+const ACCENT = '#4A3AA7';
 
 const ENERGYLoadBalance = ({ data }) => {
 	const MetricBlock = ({ label, value, cost, unit, showDivider }) => (
@@ -23,16 +26,16 @@ const ENERGYLoadBalance = ({ data }) => {
 					color="text.secondary"
 					fontWeight={700}
 					textTransform="uppercase"
+					fontSize={{ xs: '9.5px', md: '11px' }}
 					value={label}
 				/>
 			</Box>
 
 			<Box sx={{ width: '40%' }} textAlign="end">
 				<ResponsiveTextWrapper
-					fontSize="14px"
-					color="text.accent"
+					fontSize={{ xs: '12px', sm: '13px', md: '15px' }}
+					color={ACCENT}
 					fontWeight={800}
-					mt={1}
 					value={`${value?.toLocaleString() || 0} ${unit && unit}`}
 				/>
 			</Box>
@@ -50,34 +53,47 @@ const ENERGYLoadBalance = ({ data }) => {
 		</Grid>
 	);
 
+	const lbi = Number(data?.lbi) || 0;
+
 	return (
-		<CustomCard titleIcon={<Balance />} title="Load Balance">
+		<CustomCard
+			titleIcon={<Balance />}
+			title="Load Balance"
+			accentColor={ACCENT}
+		>
 			{data ? (
-				<Grid
-					container
-					sx={{ height: '100%', width: '100%' }}
-					alignItems="center"
+				<Box
+					sx={{
+						height: '100%',
+						display: 'flex',
+						flexDirection: 'column',
+						justifyContent: 'space-between',
+					}}
 				>
-					<MetricBlock
-						label="IR"
-						value={data?.ir || 0}
-						showDivider
-						unit={data?.unit || ''}
-					/>
-					<MetricBlock
-						label="IY"
-						value={data?.iy || 0}
-						showDivider
-						unit={data?.unit || ''}
-					/>
-					<MetricBlock
-						label="IB"
-						value={data?.ib || 0}
-						unit={data?.unit || ''}
-						showDivider
-					/>
-					<MetricBlock label="Current LBI %" value={data?.lbi || 0} unit="" />
-				</Grid>
+					<Grid container sx={{ width: '100%' }} alignItems="center">
+						<MetricBlock
+							label="IR"
+							value={data?.ir || 0}
+							showDivider
+							unit={data?.unit || ''}
+						/>
+						<MetricBlock
+							label="IY"
+							value={data?.iy || 0}
+							showDivider
+							unit={data?.unit || ''}
+						/>
+						<MetricBlock
+							label="IB"
+							value={data?.ib || 0}
+							unit={data?.unit || ''}
+							showDivider
+						/>
+					</Grid>
+					<Box px={0.25} pb={0.5}>
+						<MiniGaugeArc percent={lbi} color={ACCENT} label="Current LBI" />
+					</Box>
+				</Box>
 			) : (
 				<NoDataFound message="Waiting for live device data — readings appear automatically" />
 			)}

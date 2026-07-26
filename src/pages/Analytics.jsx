@@ -34,7 +34,7 @@ const Analytics = () => {
 	const AnalyticsComponent = ANALYTICS_CONFIG[appCode];
 
 	return (
-		<Box sx={{ flexGrow: 1 }}>
+		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
 			{AnalyticsComponent ? <AnalyticsComponent /> : <>Analytics not found</>}
 		</Box>
 	);

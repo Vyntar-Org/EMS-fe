@@ -302,18 +302,388 @@ export const MachineRatioDonut = ({ percent = 0, color, label, caption }) => {
 };
 
 /**
- * Small inline trend line — the line-graph counterpart to `MachineRatioDonut`.
- * Same philosophy: pure SVG built from data the card already fetched, no
- * charting library instance, no per-frame animation, so it's cheap to render
- * across a whole machine-list grid. Renders nothing if there isn't enough
- * data to draw a line, so callers can render it unconditionally.
+ * Slim single-value progress bar — the low-height counterpart to
+ * `MachineRatioDonut` for cards too narrow/short to fit a 56px circle.
+ * Pure CSS, no library, no per-frame animation.
  */
-// The raw SVG line+area drawing, shared by `MachineTrendSparkline` (below,
-// which pairs it with a label/caption row for machine-list cards) and
-// `MiniSparkline` (a bare graphic for dashboard KPI tiles that already have
-// their own label elsewhere). Renders nothing if there isn't enough real
-// data to draw a line — callers render it unconditionally rather than
-// fabricating extra points to fill a shape.
+export const MiniProgressBar = ({ percent = 0, color, label, value }) => {
+	const clamped = Math.max(0, Math.min(100, Number(percent) || 0));
+
+	return (
+		<Box width="100%" minWidth={0}>
+			<Stack
+				direction="row"
+				justifyContent="space-between"
+				alignItems="center"
+				gap={0.75}
+				mb={0.4}
+			>
+				<Box minWidth={0} flex={1}>
+					<ResponsiveTextWrapper
+						value={label}
+						fontSize="9.5px"
+						fontWeight={600}
+						color="text.secondary"
+						sx={{ textTransform: 'uppercase', letterSpacing: '0.3px' }}
+					/>
+				</Box>
+				{value !== null && value !== undefined && (
+					<Box flexShrink={0}>
+						<ResponsiveTextWrapper
+							value={value}
+							fontSize="9.5px"
+							fontWeight={700}
+							color={color}
+						/>
+					</Box>
+				)}
+			</Stack>
+			<Box
+				sx={{
+					height: 6,
+					borderRadius: '999px',
+					bgcolor: (t) => alpha(color, t.palette.mode === 'dark' ? 0.2 : 0.13),
+					overflow: 'hidden',
+				}}
+			>
+				<Box
+					sx={{
+						height: '100%',
+						width: `${clamped}%`,
+						borderRadius: '999px',
+						bgcolor: color,
+						transition: 'width 0.4s ease',
+					}}
+				/>
+			</Box>
+		</Box>
+	);
+};
+
+/**
+ * Stacked-segment proportion bar — for a value made up of 2-3 real parts
+ * (e.g. Main/Backup/Green generation mix) where a single-value progress bar
+ * or donut doesn't apply. Segments are sized by each part's real share of
+ * the total; a part with 0 contributes no segment. Pure CSS, no library.
+ */
+export const MiniProportionBar = ({ segments = [] }) => {
+	const total = segments.reduce((sum, s) => sum + (Number(s.value) || 0), 0);
+	const withShare = segments.map((s) => ({
+		...s,
+		share: total > 0 ? (Number(s.value) || 0) / total : 0,
+	}));
+
+	return (
+		<Box width="100%" minWidth={0}>
+			<Stack
+				direction="row"
+				sx={{
+					height: 6,
+					borderRadius: '999px',
+					overflow: 'hidden',
+					bgcolor: (t) => alpha(t.palette.text.secondary, 0.12),
+				}}
+			>
+				{withShare.map((s, i) => (
+					<Box
+						key={s.label || i}
+						sx={{
+							width: `${s.share * 100}%`,
+							bgcolor: s.color,
+							transition: 'width 0.4s ease',
+						}}
+					/>
+				))}
+			</Stack>
+			<Stack direction="row" flexWrap="wrap" gap={1} mt={0.5}>
+				{segments.map((s, i) => (
+					<Stack
+						key={s.label || i}
+						direction="row"
+						alignItems="center"
+						gap={0.4}
+						minWidth={0}
+					>
+						<Box
+							sx={{
+								width: 6,
+								height: 6,
+								borderRadius: '50%',
+								bgcolor: s.color,
+								flexShrink: 0,
+							}}
+						/>
+						<ResponsiveTextWrapper
+							value={s.label}
+							fontSize="9px"
+							fontWeight={600}
+							color="text.secondary"
+						/>
+					</Stack>
+				))}
+			</Stack>
+		</Box>
+	);
+};
+
+/**
+ * Multi-segment donut — the composition counterpart to `MachineRatioDonut`
+ * for a value split across 2-3 real parts (e.g. a generation source mix)
+ * rather than a single percent-of-whole. Same conic-gradient technique,
+ * just with multiple color stops instead of one. Legend sits below rather
+ * than beside so it still fits narrow KPI-tile-width cards.
+ */
+export const MiniMultiDonut = ({ segments = [], size = 46 }) => {
+	const total = segments.reduce((sum, s) => sum + (Number(s.value) || 0), 0);
+
+	let cumulative = 0;
+	const stops = segments
+		.map((s) => {
+			const share = total > 0 ? (Number(s.value) || 0) / total : 0;
+			const start = cumulative * 3.6;
+			cumulative += share * 100;
+			return `${s.color} ${start}deg ${cumulative * 3.6}deg`;
+		})
+		.join(', ');
+
+	return (
+		<Stack direction="row" alignItems="center" gap={1.25} width="100%">
+			<Box
+				sx={{
+					position: 'relative',
+					width: size,
+					height: size,
+					flexShrink: 0,
+					borderRadius: '50%',
+					background: (t) =>
+						total > 0
+							? `conic-gradient(${stops})`
+							: alpha(t.palette.text.secondary, 0.14),
+				}}
+			>
+				<Box
+					sx={{
+						position: 'absolute',
+						top: '50%',
+						left: '50%',
+						transform: 'translate(-50%, -50%)',
+						width: size * 0.62,
+						height: size * 0.62,
+						borderRadius: '50%',
+						bgcolor: 'background.paper',
+					}}
+				/>
+			</Box>
+			<Stack direction="row" flexWrap="wrap" gap={0.75} minWidth={0} flex={1}>
+				{segments.map((s, i) => (
+					<Stack
+						key={s.label || i}
+						direction="row"
+						alignItems="center"
+						gap={0.4}
+						minWidth={0}
+					>
+						<Box
+							sx={{
+								width: 6,
+								height: 6,
+								borderRadius: '50%',
+								bgcolor: s.color,
+								flexShrink: 0,
+							}}
+						/>
+						<ResponsiveTextWrapper
+							value={s.label}
+							fontSize="9px"
+							fontWeight={600}
+							color="text.secondary"
+						/>
+					</Stack>
+				))}
+			</Stack>
+		</Stack>
+	);
+};
+
+/**
+ * Small vertical column chart — for comparing 2-3 real values side by side
+ * (e.g. a Main/Backup/Green split read as discrete amounts rather than a
+ * proportion). Bars are height-scaled to the largest value; pure CSS, no
+ * charting library instance.
+ */
+export const MiniColumnChart = ({ bars = [], height = 38 }) => {
+	const max = Math.max(...bars.map((b) => Number(b.value) || 0), 1);
+
+	return (
+		<Stack
+			direction="row"
+			alignItems="flex-end"
+			justifyContent="space-around"
+			gap={1}
+			sx={{ height, width: '100%' }}
+		>
+			{bars.map((b, i) => (
+				<Stack
+					key={b.label || i}
+					alignItems="center"
+					justifyContent="flex-end"
+					gap={0.4}
+					sx={{ height: '100%', flex: 1, minWidth: 0 }}
+				>
+					<Box
+						sx={{
+							width: '55%',
+							maxWidth: 18,
+							borderRadius: '4px 4px 0 0',
+							bgcolor: b.color,
+							height: `${Math.max(6, ((Number(b.value) || 0) / max) * 100)}%`,
+							transition: 'height 0.4s ease',
+						}}
+					/>
+					<Typography
+						sx={{
+							fontSize: '8.5px',
+							fontWeight: 600,
+							color: 'text.secondary',
+							lineHeight: 1,
+						}}
+					>
+						{b.label}
+					</Typography>
+				</Stack>
+			))}
+		</Stack>
+	);
+};
+
+/**
+ * Today-vs-yesterday comparison bars — two columns instead of one, so a
+ * consumption/cost card reads as "trending up or down" at a glance instead
+ * of just two separate numbers. Neutral gray/accent coloring (not
+ * green/red) since whether a change is "good" depends on domain thresholds
+ * this app doesn't have — same reasoning as the dashboards' trend chips.
+ */
+export const MiniComparisonBars = ({
+	todayValue,
+	yesterdayValue,
+	color,
+	height = 38,
+}) => {
+	const max = Math.max(Number(todayValue) || 0, Number(yesterdayValue) || 0, 1);
+	const pct = (v) => Math.max(6, ((Number(v) || 0) / max) * 100);
+
+	return (
+		<Stack
+			direction="row"
+			alignItems="flex-end"
+			justifyContent="center"
+			gap={2.5}
+			sx={{ height, width: '100%' }}
+		>
+			{[
+				{ label: 'Yesterday', value: yesterdayValue, faded: true },
+				{ label: 'Today', value: todayValue, faded: false },
+			].map((b) => (
+				<Stack
+					key={b.label}
+					alignItems="center"
+					justifyContent="flex-end"
+					gap={0.4}
+					sx={{ height: '100%' }}
+				>
+					<Box
+						sx={{
+							width: 16,
+							borderRadius: '4px 4px 0 0',
+							bgcolor: b.faded ? alpha(color, 0.35) : color,
+							height: `${pct(b.value)}%`,
+							transition: 'height 0.4s ease',
+						}}
+					/>
+					<Typography
+						sx={{
+							fontSize: '8.5px',
+							fontWeight: 600,
+							color: 'text.secondary',
+							lineHeight: 1,
+						}}
+					>
+						{b.label}
+					</Typography>
+				</Stack>
+			))}
+		</Stack>
+	);
+};
+
+/**
+ * Semi-circle arc gauge — the "meter" counterpart to `MachineRatioDonut`,
+ * for a single percent reading where a needle/gauge feel fits better than a
+ * full ring or a bar (e.g. a balance/load-style metric). Pure SVG stroke,
+ * no library.
+ */
+export const MiniGaugeArc = ({ percent = 0, color, label }) => {
+	const clamped = Math.max(0, Math.min(100, Number(percent) || 0));
+	const radius = 26;
+	const cx = 32;
+	const cy = 30;
+	const circumference = Math.PI * radius;
+	const dash = (clamped / 100) * circumference;
+	const arcPath = `M ${cx - radius} ${cy} A ${radius} ${radius} 0 0 1 ${
+		cx + radius
+	} ${cy}`;
+
+	return (
+		<Stack direction="row" alignItems="center" gap={1.25} width="100%">
+			<Box minWidth={0} flex={1}>
+				<ResponsiveTextWrapper
+					value={label}
+					fontSize="12px"
+					fontWeight={600}
+					color="text.secondary"
+				/>
+			</Box>
+			<Box sx={{ position: 'relative', width: 64, height: 32, flexShrink: 0 }}>
+				<svg width="64" height="32" viewBox="0 0 64 32">
+					<path
+						d={arcPath}
+						fill="none"
+						stroke={alpha(color, 0.16)}
+						strokeWidth="6"
+						strokeLinecap="round"
+					/>
+					<path
+						d={arcPath}
+						fill="none"
+						stroke={color}
+						strokeWidth="6"
+						strokeLinecap="round"
+						strokeDasharray={`${dash} ${circumference}`}
+						style={{ transition: 'stroke-dasharray 0.4s ease' }}
+					/>
+				</svg>
+				<Typography
+					sx={{
+						position: 'absolute',
+						bottom: 0,
+						left: '50%',
+						transform: 'translateX(-50%)',
+						fontSize: '11px',
+						fontWeight: 800,
+						color: 'text.primary',
+					}}
+				>
+					{Math.round(clamped)}%
+				</Typography>
+			</Box>
+		</Stack>
+	);
+};
+
+// The raw SVG line+area drawing behind `MiniSparkline` (a bare graphic for
+// dashboard KPI tiles that already have their own label elsewhere). Renders
+// nothing if there isn't enough real data to draw a line — callers render
+// it unconditionally rather than fabricating extra points to fill a shape.
 const SparklineGraphic = ({ data, color, gradientId }) => {
 	const accent = color || 'primary.main';
 	const points = (data || []).filter(
@@ -369,57 +739,11 @@ const SparklineGraphic = ({ data, color, gradientId }) => {
 	);
 };
 
-export const MachineTrendSparkline = ({ data = [], color, label, caption }) => {
-	const gradientId = useId();
-	const accent = color || 'primary.main';
-	const hasEnoughData =
-		(data || []).filter((v) => typeof v === 'number' && !Number.isNaN(v))
-			.length >= 2;
-
-	if (!hasEnoughData) {
-		return null;
-	}
-
-	return (
-		<Stack direction="row" alignItems="center" gap={1.25} width="100%">
-			<Box
-				sx={{
-					position: 'relative',
-					width: 72,
-					height: 36,
-					flexShrink: 0,
-					borderRadius: '10px',
-					overflow: 'hidden',
-					bgcolor: (t) => alpha(accent, t.palette.mode === 'dark' ? 0.1 : 0.05),
-				}}
-			>
-				<SparklineGraphic data={data} color={color} gradientId={gradientId} />
-			</Box>
-			<Box minWidth={0} flex={1}>
-				<ResponsiveTextWrapper
-					value={label}
-					fontSize="12.5px"
-					color="text.secondary"
-					fontWeight={500}
-				/>
-				{caption && (
-					<ResponsiveTextWrapper
-						value={caption}
-						fontSize="12px"
-						color="text.primary"
-						fontWeight={700}
-					/>
-				)}
-			</Box>
-		</Stack>
-	);
-};
-
 /**
  * Bare sparkline graphic with no label/caption — for dashboard KPI tiles
  * that already show their own label/value elsewhere and just need a small
- * trend shape (e.g. tucked in a card's corner). Same underlying drawing as
- * `MachineTrendSparkline`; renders nothing without at least 2 real points.
+ * trend shape (e.g. tucked in a card's corner). Renders nothing without at
+ * least 2 real points.
  */
 export const MiniSparkline = ({
 	data = [],

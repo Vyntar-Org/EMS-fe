@@ -174,8 +174,13 @@ const TemperatureLogs = () => {
 		if (!logsData?.length) return [];
 
 		const availableKeys = Object.keys(logsData[0]);
+		// Timestamp is always the anchor column for a log row — pin it first
+		// regardless of whatever order the API happens to return keys in.
+		const orderedKeys = availableKeys.includes('timestamp')
+			? ['timestamp', ...availableKeys.filter((k) => k !== 'timestamp')]
+			: availableKeys;
 
-		return availableKeys.map((c) => ({
+		return orderedKeys.map((c) => ({
 			accessorKey: c,
 			header: TEMPERATURE_LOG_COLUMN_MAPPING[c] ?? c,
 			cell: (info) => {

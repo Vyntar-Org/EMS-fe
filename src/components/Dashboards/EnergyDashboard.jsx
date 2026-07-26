@@ -57,15 +57,16 @@ const EnergyDashboard = () => {
 	) : (
 		<Box
 			sx={{
-				overflow: 'auto',
-				height: {
-					xs: 'calc(100vh - 56px - 16px)',
-					sm: 'calc(100vh - 64px - 16px)',
-					md: 'calc(100vh - 64px - 8px)',
-				},
+				height: '100%',
+				display: 'flex',
+				flexDirection: 'column',
+				// The page shell (PrivateLayout's `main`) clips overflow at the
+				// viewport edge rather than scrolling the window, so this
+				// dashboard has to manage its own scroll.
+				overflowY: 'auto',
 			}}
 		>
-			<Grid container spacing={1} height={{ md: '200px' }}>
+			<Grid container spacing={1} height={{ md: '200px' }} flexShrink={0}>
 				<Grid item xs={12} sm={4} md={1.7} height={{ md: '100%' }}>
 					<ENERGYDevices data={overviewData?.devices} />
 				</Grid>
@@ -83,12 +84,7 @@ const EnergyDashboard = () => {
 				</Grid>
 			</Grid>
 
-			<Grid
-				container
-				spacing={1}
-				sx={{ mt: 0 }}
-				height={{ md: 'calc(100% - 200px)' }}
-			>
+			<Grid container spacing={1} sx={{ mt: 0 }} flex={1} minHeight={0}>
 				<Grid item xs={12} sm={12} md={5.4} height={{ md: '100%' }}>
 					<Grid container rowGap={1} height={{ md: '100%' }}>
 						<Grid item xs={12} sm={12} height={{ md: '50%' }}>

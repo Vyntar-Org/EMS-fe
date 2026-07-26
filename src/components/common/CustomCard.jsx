@@ -117,6 +117,8 @@ const CustomCard = ({
 				sx={{
 					p: disableContentPadding ? '0px !important' : '8px !important',
 					height: '100%',
+					display: 'flex',
+					flexDirection: 'column',
 				}}
 			>
 				{(title || subtitle || icon) && (
@@ -172,15 +174,22 @@ const CustomCard = ({
 							// 	},
 						}}
 						width="100%"
+						minWidth={0}
+						flexShrink={0}
 					>
 						{title && (
 							<Box
 								sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-								width="100%"
+								minWidth={0}
+								flex={1}
 							>
 								{titleIcon && titleIcon}
 
-								<Box width={titleIcon ? 'calc(100% - 36px - 8px)' : '100%'}>
+								{/* `minWidth: 0` is what actually lets a flex child shrink
+								    below its text's natural width — without it the title can
+								    only overflow or wrap instead of the ellipsis
+								    ResponsiveTextWrapper is meant to show. */}
+								<Box minWidth={0} flex={1}>
 									<ResponsiveTextWrapper
 										value={title}
 										color="text.primary"
@@ -188,37 +197,21 @@ const CustomCard = ({
 										fontWeight={700}
 									/>
 								</Box>
-
-								{/* <Typography
-                  sx={{
-                    fontWeight: 700,
-                    color: "#0A223E",
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {title}
-                </Typography> */}
 							</Box>
 						)}
 						{subtitle && (
 							<Typography
 								variant="caption"
-								sx={{ color: 'text.secondary', fontWeight: 500 }}
+								sx={{ color: 'text.secondary', fontWeight: 500, flexShrink: 0 }}
 							>
 								{subtitle}
 							</Typography>
 						)}
-						{icon && icon}
+						{icon && <Box flexShrink={0}>{icon}</Box>}
 					</Box>
 				)}
 
-				<Box
-					height={`calc(100% - 8px ${titleIcon || icon ? '- 50px' : ''} ${
-						title && !titleIcon && !icon ? '- 24px' : ''
-					} ${subtitle ? '- 20px' : ''})`}
-					overflow="auto"
-					{...childrenOtherProps}
-				>
+				<Box flex={1} minHeight={0} overflow="auto" {...childrenOtherProps}>
 					{children}
 				</Box>
 			</CardContent>
