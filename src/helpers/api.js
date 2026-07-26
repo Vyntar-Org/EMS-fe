@@ -132,7 +132,11 @@ const buildBody = (body, options) => {
 
 // Auth endpoints must not trigger the refresh/retry/kick-out cycle — a 401
 // from login is just "wrong credentials" and must surface on the form.
-const AUTH_ENDPOINTS = [API_URLS.LOGIN, API_URLS.REFRESH];
+// Logout is included too: it's a best-effort call the caller already wraps
+// in try/catch, and letting it 401 into `logoutToLogin()`'s hard
+// `window.location.href` redirect used to race with the app's own SPA
+// `navigate('/login')`, showing up as the page reloading twice.
+const AUTH_ENDPOINTS = [API_URLS.LOGIN, API_URLS.REFRESH, API_URLS.LOGOUT];
 
 const executeFetch = (endpoint, options, token) => {
 	const headers = {
@@ -200,6 +204,11 @@ const fetchApi = async (endpoint, options = {}) => {
 
 	return data;
 };
+
+// Exposed so a background timer (see AuthContext) can proactively refresh
+// the access token ~5 minutes before it expires, even while the user is
+// idle and no other API call is in flight to trigger the lazy check above.
+export const ensureFreshAccessToken = () => refreshTokenIfNeeded();
 
 export const api = {
 	get: (endpoint, options) => fetchApi(endpoint, { ...options, method: 'GET' }),

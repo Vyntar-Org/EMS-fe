@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 
 import CompressorAnalytics from '../components/Analytics/CompressorAnalytics';
 import EnergyAnalytics from '../components/Analytics/EnergyAnalytics';
@@ -9,7 +10,7 @@ import SolarAnalytics from '../components/Analytics/SolarAnalytics';
 import STPAnalytics from '../components/Analytics/STPAnalytics';
 import TemperatureAnalytics from '../components/Analytics/TemperatureAnalytics';
 import WaterAnalytics from '../components/Analytics/WaterAnalytics';
-import { useApplications } from '../contexts/ApplicationContext';
+import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const ANALYTICS_CONFIG = {
 	ENERGY: EnergyAnalytics,
@@ -24,8 +25,13 @@ const ANALYTICS_CONFIG = {
 };
 
 const Analytics = () => {
-	const { selectedApp } = useApplications();
-	const AnalyticsComponent = ANALYTICS_CONFIG[selectedApp];
+	// Driven by the URL itself (route is always `/<appCode>/analytics`), not
+	// by ApplicationContext's `selectedApp` — that avoids ever showing the
+	// wrong app's analytics while that context is still resolving, e.g. on
+	// a hard refresh.
+	const location = useLocation();
+	const appCode = getAppCodeFromPath(location.pathname);
+	const AnalyticsComponent = ANALYTICS_CONFIG[appCode];
 
 	return (
 		<Box sx={{ flexGrow: 1 }}>

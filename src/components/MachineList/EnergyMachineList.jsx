@@ -25,6 +25,7 @@ import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
+import { APP_ACCENT_COLOR } from '../common/MachineCardBits';
 import PremiumModal from '../common/PremiumModal';
 import EnergyMachineListSkeleton from '../skeletonLoaders/EnergyMachineListSkeleton';
 
@@ -217,6 +218,15 @@ const ModalContentForTrend = ({
 	const chartOptions = {
 		chart: {
 			type: 'line',
+			// Subtle lift under the line so it reads as a premium chart
+			// rather than a flat plot.
+			dropShadow: {
+				enabled: true,
+				top: 4,
+				left: 0,
+				blur: 4,
+				opacity: 0.12,
+			},
 			toolbar: {
 				show: true,
 				tools: {
@@ -339,7 +349,7 @@ const ModalContentForTrend = ({
 					{
 						name: `${slaveName} Active Power`,
 						data: chartResponse?.data?.map((item) => item.value),
-						color: '#4A90E2',
+						color: APP_ACCENT_COLOR.ENERGY,
 					},
 				];
 			case 'KEY_PARAMETERS':
@@ -614,6 +624,7 @@ const EnergyMachineList = () => {
 											xs={12}
 											sm={6}
 											md={4}
+											lg={3}
 											key={`machine-card-${mc.slave_id}-${mc.name}`}
 										>
 											<PremiumEnergyMachineCard

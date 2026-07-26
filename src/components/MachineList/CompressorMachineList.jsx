@@ -27,6 +27,7 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { formatTimestamp } from '../../helpers/common';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 import PremiumModal from '../common/PremiumModal';
@@ -409,7 +410,6 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 					},
 				},
 				zoom: { enabled: false },
-				background: '#FFFFFF',
 				animations: { enabled: false, dynamicAnimation: { enabled: false } },
 			},
 			stroke: {
@@ -806,7 +806,6 @@ const ModalContentForTrend = ({
 				type: isStatusTrend ? 'area' : 'line',
 				toolbar: { show: !isStatusTrend },
 				zoom: { enabled: !isStatusTrend },
-				background: '#FFFFFF',
 				animations: {
 					enabled: false,
 					dynamicAnimation: {
@@ -958,23 +957,50 @@ const ModalContentForTrend = ({
 
 	return (
 		<Box>
-			<Stack spacing={2} mb={2}>
+			<Box width={{ xs: '100%', sm: 240 }} mb={2}>
+				<CustomSelect
+					label="Parameter"
+					value={tab}
+					size="small"
+					fullWidth
+					options={(trendOptions?.length
+						? trendOptions
+						: DEFAULT_TREND_OPTIONS
+					).map((option) => ({
+						value: option.value,
+						label: option.label,
+					}))}
+					onChange={(e) => handleTabChange(e.target.value)}
+				/>
+			</Box>
+
+			<Box
+				sx={{
+					bgcolor: 'surface.muted',
+					border: '1px solid',
+					borderColor: 'surface.mutedBorder',
+					borderRadius: '14px',
+					p: { xs: 1, sm: 2 },
+					width: '100%',
+					overflow: 'hidden',
+				}}
+			>
 				{chartLoading ? (
-					<Loading />
-				) : chartData.length ? (
-					<Box sx={{ width: '100%', overflow: 'hidden' }}>
-						<ReactApexChart
-							options={chartOptions}
-							series={chartSeries}
-							type={isStatusTrend ? 'area' : 'line'}
-							height={320}
-							width="100%"
-						/>
+					<Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+						<Loading />
 					</Box>
+				) : chartData.length ? (
+					<ReactApexChart
+						options={chartOptions}
+						series={chartSeries}
+						type={isStatusTrend ? 'area' : 'line'}
+						height={320}
+						width="100%"
+					/>
 				) : (
 					<NoDataFound message="No machine readings received yet — data appears once the device reports" />
 				)}
-			</Stack>
+			</Box>
 		</Box>
 	);
 };

@@ -13,6 +13,7 @@ import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
+import { APP_ACCENT_COLOR } from '../common/MachineCardBits';
 import PremiumModal from '../common/PremiumModal';
 import TemperatureMachineListSkeleton from '../skeletonLoaders/TemperatureMachineListSkeleton';
 
@@ -193,6 +194,7 @@ const ModalContentForTrend = ({
 						options={getChartOptions('line', chartResponse.data, {
 							xLabel: '',
 							yLabel: '',
+							colors: [APP_ACCENT_COLOR.STP],
 							categoryOpts: { key: 'timestamp', format: 'time' },
 						})}
 						series={getChartSeries(chartResponse.data, {

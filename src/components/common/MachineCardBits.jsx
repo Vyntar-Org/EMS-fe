@@ -17,6 +17,7 @@ import {
 	Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import { useId } from 'react';
 
 import { getTemperatureScalePercent } from '../../helpers/temperatureStatus';
 
@@ -297,6 +298,141 @@ export const MachineRatioDonut = ({ percent = 0, color, label, caption }) => {
 				)}
 			</Box>
 		</Stack>
+	);
+};
+
+/**
+ * Small inline trend line — the line-graph counterpart to `MachineRatioDonut`.
+ * Same philosophy: pure SVG built from data the card already fetched, no
+ * charting library instance, no per-frame animation, so it's cheap to render
+ * across a whole machine-list grid. Renders nothing if there isn't enough
+ * data to draw a line, so callers can render it unconditionally.
+ */
+// The raw SVG line+area drawing, shared by `MachineTrendSparkline` (below,
+// which pairs it with a label/caption row for machine-list cards) and
+// `MiniSparkline` (a bare graphic for dashboard KPI tiles that already have
+// their own label elsewhere). Renders nothing if there isn't enough real
+// data to draw a line — callers render it unconditionally rather than
+// fabricating extra points to fill a shape.
+const SparklineGraphic = ({ data, color, gradientId }) => {
+	const accent = color || 'primary.main';
+	const points = (data || []).filter(
+		(v) => typeof v === 'number' && !Number.isNaN(v)
+	);
+
+	if (points.length < 2) {
+		return null;
+	}
+
+	const width = 100;
+	const height = 32;
+	const min = Math.min(...points);
+	const max = Math.max(...points);
+	const range = max - min || 1;
+
+	const coords = points.map((v, i) => [
+		(i / (points.length - 1)) * width,
+		height - ((v - min) / range) * height,
+	]);
+
+	const linePath = coords
+		.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`)
+		.join(' ');
+	const areaPath = `${linePath} L${width},${height} L0,${height} Z`;
+	const [lastX, lastY] = coords[coords.length - 1];
+
+	return (
+		<svg
+			viewBox={`0 0 ${width} ${height}`}
+			width="100%"
+			height="100%"
+			preserveAspectRatio="none"
+		>
+			<defs>
+				<linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+					<stop offset="0%" stopColor={accent} stopOpacity="0.4" />
+					<stop offset="100%" stopColor={accent} stopOpacity="0" />
+				</linearGradient>
+			</defs>
+			<path d={areaPath} fill={`url(#${gradientId})`} stroke="none" />
+			<path
+				d={linePath}
+				fill="none"
+				stroke={accent}
+				strokeWidth="2"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				vectorEffect="non-scaling-stroke"
+			/>
+			<circle cx={lastX} cy={lastY} r="2.5" fill={accent} />
+		</svg>
+	);
+};
+
+export const MachineTrendSparkline = ({ data = [], color, label, caption }) => {
+	const gradientId = useId();
+	const accent = color || 'primary.main';
+	const hasEnoughData =
+		(data || []).filter((v) => typeof v === 'number' && !Number.isNaN(v))
+			.length >= 2;
+
+	if (!hasEnoughData) {
+		return null;
+	}
+
+	return (
+		<Stack direction="row" alignItems="center" gap={1.25} width="100%">
+			<Box
+				sx={{
+					position: 'relative',
+					width: 72,
+					height: 36,
+					flexShrink: 0,
+					borderRadius: '10px',
+					overflow: 'hidden',
+					bgcolor: (t) => alpha(accent, t.palette.mode === 'dark' ? 0.1 : 0.05),
+				}}
+			>
+				<SparklineGraphic data={data} color={color} gradientId={gradientId} />
+			</Box>
+			<Box minWidth={0} flex={1}>
+				<ResponsiveTextWrapper
+					value={label}
+					fontSize="12.5px"
+					color="text.secondary"
+					fontWeight={500}
+				/>
+				{caption && (
+					<ResponsiveTextWrapper
+						value={caption}
+						fontSize="12px"
+						color="text.primary"
+						fontWeight={700}
+					/>
+				)}
+			</Box>
+		</Stack>
+	);
+};
+
+/**
+ * Bare sparkline graphic with no label/caption — for dashboard KPI tiles
+ * that already show their own label/value elsewhere and just need a small
+ * trend shape (e.g. tucked in a card's corner). Same underlying drawing as
+ * `MachineTrendSparkline`; renders nothing without at least 2 real points.
+ */
+export const MiniSparkline = ({
+	data = [],
+	color,
+	width = 56,
+	height = 28,
+}) => {
+	const gradientId = useId();
+
+	return (
+		<Box sx={{ width, height, flexShrink: 0 }}>
+			<SparklineGraphic data={data} color={color} gradientId={gradientId} />
+		</Box>
 	);
 };
 

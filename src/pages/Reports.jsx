@@ -1,10 +1,11 @@
 import { Box } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 
 import EnergyReports from '../components/Reports/EnergyReports';
 import FlowMeterReports from '../components/Reports/FlowMeterReports';
 import FuelReports from '../components/Reports/FuelReports';
 import WaterReports from '../components/Reports/WaterReports';
-import { useApplications } from '../contexts/ApplicationContext';
+import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const REPORTS_CONFIG = {
 	ENERGY: EnergyReports,
@@ -14,8 +15,13 @@ const REPORTS_CONFIG = {
 };
 
 const Reports = () => {
-	const { selectedApp } = useApplications();
-	const ReportsComponent = REPORTS_CONFIG[selectedApp];
+	// Driven by the URL itself (route is always `/<appCode>/reports`), not
+	// by ApplicationContext's `selectedApp` — that avoids ever showing the
+	// wrong app's reports while that context is still resolving, e.g. on a
+	// hard refresh.
+	const location = useLocation();
+	const appCode = getAppCodeFromPath(location.pathname);
+	const ReportsComponent = REPORTS_CONFIG[appCode];
 
 	return (
 		<Box sx={{ flexGrow: 1 }}>

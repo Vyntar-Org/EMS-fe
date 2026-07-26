@@ -89,9 +89,9 @@ const StyledCard = styled(Card)(({ theme, accentcolor }) => {
 						'#0F233E',
 						0.08
 				  )}, 0 18px 44px ${alpha(accent, 0.22)}`,
-			// '&::after': {
-			// 	transform: 'scale(1.35)',
-			// },
+			'&::after': {
+				transform: 'scale(1.35)',
+			},
 		},
 		height: '100%',
 	};

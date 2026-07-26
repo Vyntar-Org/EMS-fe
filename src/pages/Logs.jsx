@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 
 import CompressorLogs from '../components/Logs/CompressorLogs';
 import EnergyLogs from '../components/Logs/EnergyLogs';
@@ -9,7 +10,7 @@ import SolarLogs from '../components/Logs/SolarLogs';
 import STPLogs from '../components/Logs/STPLogs';
 import TemperatureLogs from '../components/Logs/TemperatureLogs';
 import WaterLogs from '../components/Logs/WaterLogs';
-import { useApplications } from '../contexts/ApplicationContext';
+import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const LOGS_CONFIG = {
 	ENERGY: EnergyLogs,
@@ -24,8 +25,14 @@ const LOGS_CONFIG = {
 };
 
 const Logs = () => {
-	const { selectedApp } = useApplications();
-	const LogsComponent = LOGS_CONFIG[selectedApp];
+	// Driven by the URL itself (route is always `/<appCode>/logs`), not by
+	// ApplicationContext's `selectedApp` — this is exactly what was causing
+	// a hard refresh to show the wrong app's page: `selectedApp` is async
+	// context state that briefly (or, on some timings, persistently) didn't
+	// match the URL you actually refreshed on. The URL itself can't be wrong.
+	const location = useLocation();
+	const appCode = getAppCodeFromPath(location.pathname);
+	const LogsComponent = LOGS_CONFIG[appCode];
 
 	return (
 		<Box sx={{ flexGrow: 1 }}>

@@ -23,7 +23,7 @@ import {
 	useMediaQuery,
 	useTheme,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, darken } from '@mui/material/styles';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -32,7 +32,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useThemeMode } from '../../contexts/ThemeModeContext';
 import { layoutBackgroundSx } from '../../helpers/layoutImages';
 import { getPagePath } from '../../helpers/pageMapping.jsx';
-import { APP_ICONS } from '../common/MachineCardBits';
+import { APP_ACCENT_COLOR, APP_ICONS } from '../common/MachineCardBits';
 import PremiumModal from '../common/PremiumModal';
 
 const menuItemSx = {
@@ -88,10 +88,14 @@ export const Header = ({
 		setLogoutModalOpen(true);
 	};
 
-	const handleLogoutConfirm = () => {
+	const handleLogoutConfirm = async () => {
 		setLogoutModalOpen(false);
-		logout();
-		navigate('/login');
+		// Wait for auth state to actually clear before navigating — firing
+		// both this navigate() and PrivateLayout's own `!user` redirect back
+		// to back (because `user` went null mid-navigation) is what made
+		// logout look like the page reloading twice.
+		await logout();
+		navigate('/login', { replace: true });
 	};
 
 	const open = Boolean(anchorEl);
@@ -269,20 +273,6 @@ export const Header = ({
 												color: 'primary.main',
 											},
 										},
-										'&.Mui-selected': {
-											color: 'primary.contrastText',
-											background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-											fontWeight: 700,
-											boxShadow: `0 4px 14px ${alpha(
-												theme.palette.primary.main,
-												0.4
-											)}`,
-											borderBottom: '3px solid',
-											borderColor: 'secondary.main',
-											'& .app-tab-icon': {
-												color: 'secondary.main',
-											},
-										},
 									},
 									'& .MuiTabs-indicator': {
 										display: 'none',
@@ -294,8 +284,14 @@ export const Header = ({
 								}}
 							>
 								{applications.map((app) => {
-									const AppIcon =
-										APP_ICONS[app.code?.toUpperCase()] || SensorsIcon;
+									const appCode = app.code?.toUpperCase();
+									const AppIcon = APP_ICONS[appCode] || SensorsIcon;
+									// Each app tab lights up in that app's own identity color
+									// when selected (same palette used on its cards/charts
+									// everywhere else) instead of one generic accent for every
+									// app — makes which app you're currently in unmistakable.
+									const accent =
+										APP_ACCENT_COLOR[appCode] || theme.palette.primary.main;
 									return (
 										<Tab
 											key={app.code}
@@ -312,6 +308,22 @@ export const Header = ({
 												</Box>
 											}
 											value={app.code}
+											sx={{
+												'&.Mui-selected': {
+													color: 'primary.contrastText',
+													background: `linear-gradient(135deg, ${accent} 0%, ${darken(
+														accent,
+														0.2
+													)} 100%)`,
+													fontWeight: 700,
+													boxShadow: `0 4px 14px ${alpha(accent, 0.4)}`,
+													borderBottom: '3px solid',
+													borderColor: 'secondary.main',
+													'& .app-tab-icon': {
+														color: 'secondary.main',
+													},
+												},
+											}}
 										/>
 									);
 								})}

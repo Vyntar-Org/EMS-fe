@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 
 import CompressorMachineList from '../components/MachineList/CompressorMachineList';
 import EnergyMachineList from '../components/MachineList/EnergyMachineList';
@@ -9,7 +10,7 @@ import SolarMachineList from '../components/MachineList/SolarMachineList';
 import STPMachineList from '../components/MachineList/STPMachineList';
 import TemperatureMachineList from '../components/MachineList/TemperatureMachineList';
 import WaterMachineList from '../components/MachineList/WaterMachineList';
-import { useApplications } from '../contexts/ApplicationContext';
+import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const MACHINE_LIST_CONFIG = {
 	ENERGY: EnergyMachineList,
@@ -24,8 +25,13 @@ const MACHINE_LIST_CONFIG = {
 };
 
 const MachineList = () => {
-	const { selectedApp } = useApplications();
-	const MachineListComponent = MACHINE_LIST_CONFIG[selectedApp];
+	// Driven by the URL itself (route is always `/<appCode>/machine_list`),
+	// not by ApplicationContext's `selectedApp` — that avoids ever showing
+	// the wrong app's list while that context is still resolving, e.g. on a
+	// hard refresh.
+	const location = useLocation();
+	const appCode = getAppCodeFromPath(location.pathname);
+	const MachineListComponent = MACHINE_LIST_CONFIG[appCode];
 
 	return (
 		<Box sx={{ flexGrow: 1 }}>

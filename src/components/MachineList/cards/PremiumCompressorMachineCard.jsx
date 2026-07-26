@@ -15,18 +15,51 @@ import {
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
+// Shared "bounded panel" look for the two stoppage tables below — a
+// surface-muted rounded box (same treatment `MachineMetricPanel` and the
+// FlowCard table use elsewhere) so each section reads as one clearly
+// separated, understandable block instead of bare table rows floating on
+// the card background.
+const tablePanelSx = {
+	bgcolor: 'surface.muted',
+	border: '1px solid',
+	borderColor: 'surface.mutedBorder',
+	borderRadius: '14px',
+	width: '100%',
+	overflow: 'hidden',
+};
+
+const headerCellSx = {
+	fontWeight: 'bold',
+	border: 0,
+	p: 0.75,
+	width: '33.34%',
+};
+
+const bodyCellSx = {
+	border: 0,
+	p: 0.75,
+	width: '33.34%',
+};
+
 const StoppageCount = ({ count, onClick }) => (
 	<Box
 		component="span"
 		onClick={() => count > 0 && onClick()}
 		sx={{
+			display: 'inline-flex',
+			maxWidth: '100%',
 			cursor: count > 0 ? 'pointer' : 'default',
-			color: count > 0 ? '#2F6FB0' : 'inherit',
-			fontWeight: 600,
 			'&:hover': count > 0 ? { textDecoration: 'underline' } : {},
 		}}
 	>
-		{count}
+		<ResponsiveTextWrapper
+			value={String(count ?? 0)}
+			fontWeight={700}
+			fontSize="13px"
+			color={count > 0 ? APP_ACCENT_COLOR.COMPRESSOR : 'text.primary'}
+			sx={{ textAlign: 'center' }}
+		/>
 	</Box>
 );
 
@@ -35,7 +68,13 @@ const StoppageCount = ({ count, onClick }) => (
  * status pill, timestamp, a Current Status line, a stoppage-ratio analytics
  * donut (8hr share of 24hr stoppages), the Last Stoppage table, the
  * Stoppages History table (clickable counts open the downtime-history
- * modal), and the TREND action last.
+ * modal), and the TREND action last. Every piece of text — headers,
+ * values, the status line — goes through `ResponsiveTextWrapper` so long
+ * device names, timestamps, or durations truncate cleanly (with a tooltip
+ * for the full value) instead of overflowing or wrapping the card apart at
+ * narrow widths, and every wrapper sits in a `width: 100%` / `minWidth: 0`
+ * container so that truncation is computed off the card's real rendered
+ * width rather than guessed pixel values.
  */
 const PremiumCompressorMachineCard = ({
 	title,
@@ -68,21 +107,28 @@ const PremiumCompressorMachineCard = ({
 				direction="row"
 				spacing={1}
 				alignItems="center"
-				flexWrap="wrap"
+				flexWrap="nowrap"
 				mb={1.25}
+				width="100%"
+				minWidth={0}
+				sx={{ overflow: 'hidden' }}
 			>
-				<ResponsiveTextWrapper
-					value="Current Status:"
-					fontWeight="bold"
-					color="text.primary"
-					fontSize="13px"
-				/>
+				<Box flexShrink={0} minWidth={0}>
+					<ResponsiveTextWrapper
+						value="Current Status:"
+						fontWeight="bold"
+						color="text.primary"
+						fontSize="13px"
+					/>
+				</Box>
 				<Box
+					flexShrink={0}
 					sx={{
 						bgcolor: isOnline ? 'rgba(76,175,80,0.12)' : 'rgba(244,67,54,0.12)',
 						borderRadius: '999px',
 						px: 1.5,
 						py: 0.25,
+						maxWidth: '100%',
 					}}
 				>
 					<ResponsiveTextWrapper
@@ -93,17 +139,19 @@ const PremiumCompressorMachineCard = ({
 					/>
 				</Box>
 				{statusFrom ? (
-					<ResponsiveTextWrapper
-						value={`from ${statusFrom}`}
-						color="text.secondary"
-						fontSize="11px"
-						fontWeight="bold"
-					/>
+					<Box minWidth={0} flex={1}>
+						<ResponsiveTextWrapper
+							value={`from ${statusFrom}`}
+							color="text.secondary"
+							fontSize="11px"
+							fontWeight="bold"
+						/>
+					</Box>
 				) : null}
 			</Stack>
 
 			{(previous8Count > 0 || previous24Count > 0) && (
-				<Box mb={1.25}>
+				<Box mb={1.25} width="100%">
 					<MachineRatioDonut
 						percent={donutPercent}
 						color={APP_ACCENT_COLOR.COMPRESSOR}
@@ -113,128 +161,151 @@ const PremiumCompressorMachineCard = ({
 				</Box>
 			)}
 
-			<Box mb={1.25}>
-				<ResponsiveTextWrapper
-					value="Last Stoppage"
-					fontWeight="bold"
-					fontSize="13px"
-				/>
-				<Table
-					size="small"
-					sx={{ mt: 0.5, width: '100%', tableLayout: 'fixed' }}
-				>
-					<TableHead>
-						<TableRow>
-							<TableCell
-								sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}
-							>
-								Start Time
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}
-							>
-								End Time
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}
-							>
-								Duration
-							</TableCell>
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						<TableRow>
-							<TableCell sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}>
-								{lastStoppageStart || '-'}
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}
-							>
-								{lastStoppageEnd || '-'}
-							</TableCell>
-							<TableCell
-								align="center"
-								sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}
-							>
-								{lastStoppageDuration || '-'}
-							</TableCell>
-						</TableRow>
-					</TableBody>
-				</Table>
+			<Box mb={1.25} width="100%">
+				<Box mb={0.5}>
+					<ResponsiveTextWrapper
+						value="Last Stoppage"
+						fontWeight="bold"
+						fontSize="13px"
+					/>
+				</Box>
+				<Box sx={tablePanelSx}>
+					<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
+						<TableHead>
+							<TableRow>
+								<TableCell sx={headerCellSx}>
+									<ResponsiveTextWrapper value="Start Time" fontSize="12px" />
+								</TableCell>
+								<TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
+									<ResponsiveTextWrapper
+										value="End Time"
+										fontSize="12px"
+										sx={{ textAlign: 'center' }}
+									/>
+								</TableCell>
+								<TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
+									<ResponsiveTextWrapper
+										value="Duration"
+										fontSize="12px"
+										sx={{ textAlign: 'center' }}
+									/>
+								</TableCell>
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							<TableRow>
+								<TableCell sx={bodyCellSx}>
+									<ResponsiveTextWrapper
+										value={lastStoppageStart || '-'}
+										fontSize="11.5px"
+										color="text.primary"
+									/>
+								</TableCell>
+								<TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
+									<ResponsiveTextWrapper
+										value={lastStoppageEnd || '-'}
+										fontSize="11.5px"
+										color="text.primary"
+										sx={{ textAlign: 'center' }}
+									/>
+								</TableCell>
+								<TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
+									<ResponsiveTextWrapper
+										value={lastStoppageDuration || '-'}
+										fontSize="11.5px"
+										color="text.primary"
+										fontWeight={600}
+										sx={{ textAlign: 'center' }}
+									/>
+								</TableCell>
+							</TableRow>
+						</TableBody>
+					</Table>
+				</Box>
 			</Box>
 
-			<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
-				<TableHead>
-					<TableRow>
-						<TableCell
-							sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}
-						>
-							Stoppages History
-						</TableCell>
-						<TableCell
-							align="center"
-							sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}
-						>
-							Previous 8hrs
-						</TableCell>
-						<TableCell
-							align="center"
-							sx={{ fontWeight: 'bold', border: 0, p: 0.5, fontSize: '12px' }}
-						>
-							Previous 24hrs
-						</TableCell>
-					</TableRow>
-				</TableHead>
-				<TableBody>
-					<TableRow>
-						<TableCell
-							sx={{ border: 0, p: 0.5, fontSize: '11.5px', fontWeight: 'bold' }}
-						>
-							No. of Stoppages
-						</TableCell>
-						<TableCell
-							align="center"
-							sx={{ border: 0, p: 0.5, fontSize: '11.5px', fontWeight: 'bold' }}
-						>
-							<StoppageCount
-								count={previous8Count}
-								onClick={() => onStoppageClick(8)}
-							/>
-						</TableCell>
-						<TableCell
-							align="center"
-							sx={{ border: 0, p: 0.5, fontSize: '11.5px', fontWeight: 'bold' }}
-						>
-							<StoppageCount
-								count={previous24Count}
-								onClick={() => onStoppageClick(24)}
-							/>
-						</TableCell>
-					</TableRow>
-					<TableRow>
-						<TableCell
-							sx={{ border: 0, p: 0.5, fontSize: '11.5px', fontWeight: 'bold' }}
-						>
-							Stoppage Duration
-						</TableCell>
-						<TableCell
-							align="center"
-							sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}
-						>
-							{previous8Duration}
-						</TableCell>
-						<TableCell
-							align="center"
-							sx={{ border: 0, p: 0.5, fontSize: '11.5px' }}
-						>
-							{previous24Duration}
-						</TableCell>
-					</TableRow>
-				</TableBody>
-			</Table>
+			<Box width="100%">
+				<Box sx={tablePanelSx}>
+					<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
+						<TableHead>
+							<TableRow>
+								<TableCell sx={headerCellSx}>
+									<ResponsiveTextWrapper
+										value="Stoppages History"
+										fontSize="12px"
+									/>
+								</TableCell>
+								<TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
+									<ResponsiveTextWrapper
+										value="Previous 8hrs"
+										fontSize="12px"
+										sx={{ textAlign: 'center' }}
+									/>
+								</TableCell>
+								<TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
+									<ResponsiveTextWrapper
+										value="Previous 24hrs"
+										fontSize="12px"
+										sx={{ textAlign: 'center' }}
+									/>
+								</TableCell>
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							<TableRow>
+								<TableCell sx={bodyCellSx}>
+									<ResponsiveTextWrapper
+										value="No. of Stoppages"
+										fontSize="11.5px"
+										fontWeight={600}
+									/>
+								</TableCell>
+								<TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
+									<Stack alignItems="center">
+										<StoppageCount
+											count={previous8Count}
+											onClick={() => onStoppageClick(8)}
+										/>
+									</Stack>
+								</TableCell>
+								<TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
+									<Stack alignItems="center">
+										<StoppageCount
+											count={previous24Count}
+											onClick={() => onStoppageClick(24)}
+										/>
+									</Stack>
+								</TableCell>
+							</TableRow>
+							<TableRow>
+								<TableCell sx={bodyCellSx}>
+									<ResponsiveTextWrapper
+										value="Stoppage Duration"
+										fontSize="11.5px"
+										fontWeight={600}
+									/>
+								</TableCell>
+								<TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
+									<ResponsiveTextWrapper
+										value={previous8Duration || '-'}
+										fontSize="11.5px"
+										color="text.primary"
+										sx={{ textAlign: 'center' }}
+									/>
+								</TableCell>
+								<TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
+									<ResponsiveTextWrapper
+										value={previous24Duration || '-'}
+										fontSize="11.5px"
+										color="text.primary"
+										sx={{ textAlign: 'center' }}
+									/>
+								</TableCell>
+							</TableRow>
+						</TableBody>
+					</Table>
+				</Box>
+			</Box>
 		</PremiumMachineCard>
 	);
 };

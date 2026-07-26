@@ -14,6 +14,7 @@ import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
+import { APP_ACCENT_COLOR } from '../common/MachineCardBits';
 import PremiumModal from '../common/PremiumModal';
 import FireSafetyMachineListSkeleton from '../skeletonLoaders/FireSafetyMachineListSkeleton';
 
@@ -170,6 +171,15 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 	const chartOptions = {
 		chart: {
 			type: 'line',
+			// Subtle lift under the line so it reads as a premium chart
+			// rather than a flat plot.
+			dropShadow: {
+				enabled: true,
+				top: 4,
+				left: 0,
+				blur: 4,
+				opacity: 0.12,
+			},
 			toolbar: {
 				show: true,
 				tools: {
@@ -243,7 +253,8 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 
 				w.globals.seriesNames.forEach((name, index) => {
 					const value = series[index][dataPointIndex];
-					const color = w.config.series[index]?.color || '#4A90E2';
+					const color =
+						w.config.series[index]?.color || APP_ACCENT_COLOR['FIRE-SAFETY'];
 					tooltipContent += `
           <div style="display: flex; align-items: center; margin-bottom: 6px; padding: 0 4px;">
             <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; margin-right: 8px;"></span>
@@ -266,7 +277,7 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 		{
 			name: `${slaveName} ${activeTab?.label || ''}`,
 			data: chartResponse?.data?.map((item) => item.value),
-			color: '#4A90E2',
+			color: APP_ACCENT_COLOR['FIRE-SAFETY'],
 		},
 	];
 

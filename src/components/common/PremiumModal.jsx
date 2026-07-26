@@ -10,6 +10,7 @@ import {
 	IconButton,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { useEffect, useState } from 'react';
 
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 
@@ -40,12 +41,28 @@ const PremiumModal = ({
 			: confirmText
 		: confirmText;
 
+	// Callers commonly close a modal by nulling out the same state that
+	// holds its (often chart-heavy) content, e.g.
+	// `{modalDetails?.isOpen ? <ChartModalContent /> : null}`. That unmounts
+	// the chart in the very same render as `open` flipping to false, so the
+	// expensive ApexCharts teardown blocks the close click instead of
+	// happening invisibly after the fade-out. Latching the last content
+	// while `open` was true keeps it mounted through the exit transition;
+	// `onExited` only then lets it go, once the dialog is already gone.
+	const [renderedChildren, setRenderedChildren] = useState(children);
+	useEffect(() => {
+		if (open) {
+			setRenderedChildren(children);
+		}
+	}, [open, children]);
+
 	return (
 		<StyledDialog
 			open={open}
 			onClose={onClose}
 			maxWidth={isLogout ? 'xs' : 'sm'}
 			fullWidth
+			TransitionProps={{ onExited: () => setRenderedChildren(null) }}
 		>
 			<DialogTitle
 				sx={{
@@ -106,8 +123,8 @@ const PremiumModal = ({
 					},
 				}}
 			>
-				{children ? (
-					children
+				{renderedChildren ? (
+					renderedChildren
 				) : (
 					<Box sx={{ textAlign: 'left', py: 0 }}>
 						<Typography
@@ -131,8 +148,8 @@ const PremiumModal = ({
 						justifyContent: 'end',
 						p: 2.5,
 						pt: isLogout ? 1.5 : 1,
-						borderTop: isLogout ? 'none' : '1px solid',
-						borderColor: isLogout ? 'transparent' : 'divider',
+						borderTop: '1px solid',
+						borderColor: 'divider',
 						gap: 1.5,
 					}}
 				>

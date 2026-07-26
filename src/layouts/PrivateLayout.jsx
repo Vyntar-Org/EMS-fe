@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Box, useTheme } from '@mui/material';
 import { Header } from '../components/layout/Header';
@@ -15,6 +15,7 @@ export const PrivateLayout = () => {
 	const [isDesktopOpen, setIsDesktopOpen] = useState(false);
 	const { applications, selectedApp, switchApp } = useApplications();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const theme = useTheme();
 
 	// Warm the cache with every app's layout artwork + shared assets so
@@ -83,7 +84,22 @@ export const PrivateLayout = () => {
 						...layoutBackgroundSx('main', selectedApp, theme.palette.mode),
 					}}
 				>
-					<Outlet />
+					{/* Keyed on the route so it re-triggers on every navigation —
+					    a purely compositor-cost fade (opacity + transform only,
+					    no layout properties), so it can't introduce jank. */}
+					<Box
+						key={location.pathname}
+						sx={{
+							height: '100%',
+							animation: 'pageFadeIn 0.25s ease',
+							'@keyframes pageFadeIn': {
+								from: { opacity: 0, transform: 'translateY(4px)' },
+								to: { opacity: 1, transform: 'translateY(0)' },
+							},
+						}}
+					>
+						<Outlet />
+					</Box>
 				</Box>
 			</Box>
 		</Box>

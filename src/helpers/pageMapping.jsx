@@ -40,3 +40,15 @@ export const getPageCodeFromPath = (path) => {
 	const parts = path.split('/').filter((p) => p);
 	return parts[parts.length - 1]?.toUpperCase() || 'DASHBOARD';
 };
+
+// Get app code from route path — routes are always `/<appCode>/<pageCode>`,
+// so the URL is the single source of truth for which app's content a page
+// wrapper (Dashboard/MachineList/Analytics/Reports) should render. Reading
+// this directly instead of trusting `selectedApp` context state means a
+// hard refresh (or any moment before that context resolves) can never show
+// the wrong app's content, no matter how ApplicationContext's own state
+// settles.
+export const getAppCodeFromPath = (path) => {
+	const parts = path.split('/').filter((p) => p);
+	return parts[0]?.toUpperCase() || null;
+};

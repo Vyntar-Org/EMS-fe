@@ -111,6 +111,19 @@ const resolveValue = (raw) => {
 	return raw;
 };
 
+// Common label fields to look for when a caller passes a `categories` array
+// of row objects instead of primitive values (e.g. forgetting `categoryOpts.key`,
+// or the API returning `{ label, value }` pairs) — without this, `String(raw)`
+// below renders as the literal text "[object Object]" on every x-axis tick.
+const OBJECT_LABEL_KEYS = [
+	'label',
+	'name',
+	'timestamp',
+	'date',
+	'time',
+	'value',
+];
+
 const autoFormat = (raw) => {
 	if (typeof raw === 'string' && /^\d{1,2}:\d{2}$/.test(raw)) {
 		return formatTimeLabel(raw);
@@ -125,6 +138,22 @@ const autoFormat = (raw) => {
 		const d = dayjs(raw);
 		const hasTime = d.hour() !== 0 || d.minute() !== 0;
 		return hasTime ? d.format('MMM D, h:mm A') : d.format('MMM D');
+	}
+
+	if (raw && typeof raw === 'object' && !(raw instanceof Date)) {
+		const labelKey = OBJECT_LABEL_KEYS.find(
+			(k) => raw[k] !== undefined && raw[k] !== null
+		);
+		if (labelKey) {
+			return autoFormat(raw[labelKey]);
+		}
+		if (import.meta.env.DEV) {
+			console.warn(
+				'getChartCategories: category item is an object with no recognizable label field — pass `categoryOpts.key`. Received:',
+				raw
+			);
+		}
+		return '';
 	}
 
 	return String(raw);
@@ -176,21 +205,45 @@ export const getChartCategories = (data, opts = {}) => {
 	});
 };
 
-const commonXAxis = (data, isLarge, xLabel = 'Day', categoryOpts = {}) => ({
-	categories: getChartCategories(data, categoryOpts),
-	title: {
-		text: xLabel,
-		style: { color: '#555', fontWeight: 'bold' },
-	},
-	axisBorder: { show: false },
-	axisTicks: { show: false },
-	labels: {
-		rotate: -45,
-		style: { colors: '#757575', fontSize: '11px' },
-		formatter: isLarge ? (val, i) => (i % 5 === 0 ? val : '') : undefined,
-	},
-	tickAmount: isLarge ? 20 : 20,
-});
+// A rotated label for every single category reads as noise, not signal —
+// card-sized charts especially only have room for a handful of ticks. This
+// caps how many labels actually render (evenly spaced) regardless of how
+// many categories/points the series has, independent of `isLarge` (which
+// only affects animation/shadow cost, not label crowding).
+const MAX_XAXIS_LABELS = 8;
+
+const commonXAxis = (data, _isLarge, xLabel = 'Day', categoryOpts = {}) => {
+	const categories = getChartCategories(data, categoryOpts);
+	const labelStep = Math.max(
+		1,
+		Math.ceil(categories.length / MAX_XAXIS_LABELS)
+	);
+
+	return {
+		categories,
+		title: {
+			text: xLabel,
+			style: { color: '#555', fontWeight: 'bold' },
+		},
+		axisBorder: { show: false },
+		axisTicks: { show: false },
+		labels: {
+			rotate: -45,
+			style: { colors: '#757575', fontSize: '11px' },
+			// ApexCharts' category-axis formatter only reliably passes the
+			// label itself as the first argument — the 2nd/3rd args are
+			// documented for datetime/numeric axes, not category, and were
+			// coming through empty here, blanking every single label. Look
+			// the value's own position up in the closed-over `categories`
+			// array instead of trusting a positional index argument.
+			formatter: (val) => {
+				const idx = categories.indexOf(val);
+				return idx === -1 || idx % labelStep === 0 ? val : '';
+			},
+		},
+		tickAmount: Math.min(categories.length || 1, MAX_XAXIS_LABELS),
+	};
+};
 
 const commonYAxis = (yLabel = 'Liters') => ({
 	title: {

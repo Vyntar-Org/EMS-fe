@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react';
 
-import { api } from '../helpers/api';
+import { api, ensureFreshAccessToken } from '../helpers/api';
 import { API_URLS } from '../helpers/apiUrls';
 import { storage } from '../helpers/storage';
 
@@ -11,6 +11,11 @@ const AuthContext = createContext();
 // refresh token lives 7 days
 const ACCESS_TOKEN_LIFETIME_SECONDS = 30 * 60;
 const REFRESH_TOKEN_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
+
+// How often to check whether the access token needs a proactive refresh.
+// Independent of any API traffic — without this, a user idling on a page
+// that makes no requests would only get refreshed reactively, after a 401.
+const TOKEN_REFRESH_CHECK_INTERVAL_MS = 60 * 1000;
 
 const buildTokenPayload = (data) => {
 	const payload = data?.data || data || {};
@@ -109,6 +114,22 @@ export const AuthProvider = ({ children }) => {
 
 		initializeAuth();
 	}, []);
+
+	// Background proactive refresh — keeps the access token alive ~5 minutes
+	// ahead of expiry regardless of whether the user is actively making
+	// requests, so a session never has to fall back to the reactive
+	// refresh-after-401 path during normal use.
+	useEffect(() => {
+		if (!user) {
+			return undefined;
+		}
+
+		const interval = setInterval(() => {
+			ensureFreshAccessToken();
+		}, TOKEN_REFRESH_CHECK_INTERVAL_MS);
+
+		return () => clearInterval(interval);
+	}, [user]);
 
 	const login = async (username, password) => {
 		try {

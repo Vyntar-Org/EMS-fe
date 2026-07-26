@@ -121,6 +121,10 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
 									yLabel: 'Liters',
 									xLabel: 'Day',
 									colors: [CHART_COLORS.waterUsage, CHART_COLORS.secondary],
+									// No fixed `key` here on purpose — the API's date field
+									// name isn't guaranteed, and getChartCategories/autoFormat
+									// already searches common label fields (date, timestamp,
+									// label, ...) on each row automatically.
 									categoryOpts: { maxPoints: DEFAULT_MAX_POINTS },
 								}
 							)}

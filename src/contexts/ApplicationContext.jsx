@@ -4,8 +4,25 @@ import { api } from '../helpers/api';
 
 const ApplicationContext = createContext();
 
+// A hard refresh re-derives `selectedApp` from scratch every time — without
+// this, it always fell back to the API's default landing app, silently
+// bouncing the user off whatever page (and app) they were actually on back
+// to their default app's dashboard. Reading the app code straight out of
+// the URL (routes are always `/<appCode>/<page>`) keeps them exactly where
+// they were.
+const getAppCodeFromLocation = (appData) => {
+	const segment = window.location.pathname.split('/').filter(Boolean)[0];
+	if (!segment) {
+		return null;
+	}
+	const match = appData.find(
+		(app) => app.code?.toLowerCase() === segment.toLowerCase()
+	);
+	return match?.code || null;
+};
+
 export const ApplicationProvider = ({ children }) => {
-	const { user } = useAuth();
+	const { user, loading: authLoading } = useAuth();
 	const [applications, setApplications] = useState([]);
 	const [selectedApp, setSelectedApp] = useState(null);
 	const [appLoading, setAppLoading] = useState(true);
@@ -13,8 +30,26 @@ export const ApplicationProvider = ({ children }) => {
 
 	// Fetch applications from /me endpoint
 	useEffect(() => {
+		// AuthContext hasn't finished checking storage for a logged-in
+		// session yet — `user` being null right *now* means "not known yet",
+		// not "definitely logged out". Treating it as the latter here was
+		// the actual root cause of refresh bouncing to a 403: this effect
+		// always fires once on mount with `user` still at its initial
+		// `null` value (regardless of whether a session exists), so it set
+		// `appLoading` to false with an empty `applications` array for one
+		// render — long enough for ProtectedRoute to see no matching app
+		// and redirect to /unauthorized, via `replace`, before the real,
+		// already-authenticated user's applications ever loaded. Waiting
+		// for `authLoading` to resolve first means `user` is guaranteed to
+		// be in its final state (real user or genuinely null) before this
+		// effect ever acts on it.
+		if (authLoading) {
+			return;
+		}
+
 		const fetchApplications = async () => {
 			if (!user) {
+				setApplications([]);
 				setAppLoading(false);
 				return;
 			}
@@ -38,10 +73,16 @@ export const ApplicationProvider = ({ children }) => {
 
 				if (Array.isArray(appData) && appData.length > 0) {
 					setApplications(appData);
-					// Preserve existing selected app when possible.
+					// Preserve existing selected app when possible, otherwise prefer
+					// the app the current URL is actually pointing at, and only fall
+					// back to the API's default landing app when neither is known
+					// (e.g. landing on `/`).
 					const defaultApp =
 						appData.find((app) => app.default_landing_page) || appData[0];
-					setSelectedApp((prevApp) => prevApp || defaultApp?.code || null);
+					const urlAppCode = getAppCodeFromLocation(appData);
+					setSelectedApp(
+						(prevApp) => prevApp || urlAppCode || defaultApp?.code || null
+					);
 				} else {
 					setApplications([]);
 				}
@@ -54,7 +95,7 @@ export const ApplicationProvider = ({ children }) => {
 		};
 
 		fetchApplications();
-	}, [user]);
+	}, [user, authLoading]);
 
 	const switchApp = (appCode) => {
 		const app = applications.find((a) => a.code === appCode);

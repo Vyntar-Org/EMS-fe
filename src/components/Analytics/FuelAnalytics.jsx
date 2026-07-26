@@ -8,7 +8,7 @@ import {
 	Typography,
 } from '@mui/material';
 import dayjs from 'dayjs';
-import React, { memo, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
 import { UNIQUE_PASTEL_BGS } from '../../constants/energyAnalytics';
@@ -26,6 +26,13 @@ import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
+
+// Stable module-scope function (not recreated per render) so components
+// that depend on its output can memoize against a real change in selection.
+const extractActiveKeys = (currentSelectedParams) =>
+	currentSelectedParams?.flatMap((param) =>
+		param.value ? param.value.split(',') : []
+	) || [];
 
 const getProcessedChartData = (rawAnalytics, activeKeys) => {
 	if (!rawAnalytics?.data || rawAnalytics.data.length === 0) {
@@ -61,155 +68,196 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
 	return { series, categories };
 };
 
-const GlobalFiltersRow = ({
-	dateTime,
-	onDateChange,
-	addNewComparisonRow,
-	mergeCompare,
-	onMergeChange,
-	showMergeOption,
-}) => (
-	<Box
-		sx={{
-			pb: 2,
-			borderBottom: '1px dashed',
-			borderColor: 'divider',
-			display: 'flex',
-			gap: 2,
-		}}
-	>
-		<Grid container alignItems="end" spacing={2}>
-			<Grid item xs={12} md={8} lg={6}>
-				{/* <Typography
-					variant="subtitle2"
-					sx={{ mb: 0.5, color: 'text.secondary' }}
-				>
-					Global Date/Time
-				</Typography> */}
-				<CustomDatePicker
-					mode="datetimerangepicker"
-					onChange={onDateChange}
-					value={dateTime || ''}
-				/>
-			</Grid>
+// Rebuilt only when `categories` changes (memoized by callers) instead of on
+// every render — a fresh options object each render forces ApexCharts to
+// fully re-diff/re-render even when nothing on screen actually changed.
+const buildChartOptions = (categories) => ({
+	chart: {
+		type: 'line',
+		zoom: { enabled: false },
+		animations: {
+			enabled: false,
+		},
+		// Subtle lift under the line so it reads as a premium chart rather
+		// than a flat plot — cheap since chart animations are already off.
+		dropShadow: {
+			enabled: true,
+			top: 4,
+			left: 0,
+			blur: 4,
+			opacity: 0.12,
+		},
+		toolbar: {
+			show: true,
+			tools: {
+				download: true,
+				selection: false,
+				zoom: false,
+				zoomin: false,
+				zoomout: false,
+				pan: false,
+				reset: false,
+			},
+		},
+	},
+	dataLabels: { enabled: false },
+	markers: { size: 0, hover: { sizeOffset: 4 } },
+	stroke: { curve: 'straight', width: 1.5 },
+	xaxis: {
+		categories,
+		labels: { rotate: -45, style: { fontSize: '10px' } },
+		tooltip: { enabled: false },
+	},
+	yaxis: {
+		labels: {
+			formatter: (val) => (val !== null ? val.toFixed(2) : ''),
+		},
+	},
+	tooltip: { shared: true, intersect: false },
+	legend: { position: 'top', horizontalAlign: 'left' },
+	grid: { borderColor: '#f1f1f1' },
+	states: {
+		normal: { filter: { type: 'none' } },
+		hover: { filter: { type: 'none' } },
+		active: { filter: { type: 'none' } },
+	},
+});
 
-			<Grid
-				item
-				xs={12}
-				sm="auto"
-				ml="auto"
-				display="flex"
-				alignItems="center"
-				gap={1.5}
-			>
-				{showMergeOption && (
-					<FormControlLabel
-						control={
-							<Checkbox
-								checked={mergeCompare}
-								onChange={(e) => onMergeChange(e.target.checked)}
-								size="small"
-							/>
-						}
-						label="Merge all compare"
-						sx={{ whiteSpace: 'nowrap', mr: 0 }}
+const GlobalFiltersRow = memo(
+	({
+		dateTime,
+		onDateChange,
+		addNewComparisonRow,
+		mergeCompare,
+		onMergeChange,
+		showMergeOption,
+	}) => (
+		<Box
+			sx={{
+				pb: 2,
+				borderBottom: '1px dashed',
+				borderColor: 'divider',
+				display: 'flex',
+				gap: 2,
+			}}
+		>
+			<Grid container alignItems="end" spacing={2}>
+				<Grid item xs={12} md={8} lg={6}>
+					<CustomDatePicker
+						mode="datetimerangepicker"
+						onChange={onDateChange}
+						value={dateTime || ''}
 					/>
-				)}
-				{!mergeCompare && (
-					<Button
-						fullWidth
-						size="large"
-						disableElevation
-						sx={{
-							fontWeight: 'bold',
-							borderRadius: '16px',
-						}}
-						variant="contained"
-						color="secondary"
-						onClick={addNewComparisonRow}
-					>
-						+ Add Device To Compare
-					</Button>
-				)}
-			</Grid>
-		</Grid>
-	</Box>
-);
+				</Grid>
 
-const DeviceFilterRow = ({
-	comparisonId,
-	slaveOptions,
-	payload,
-	handleFieldChange,
-	handleSearch,
-	handleReset,
-	showCancel,
-	parameterOptions,
-}) => (
-	<Box
-		sx={{ py: 1.5, px: 2, bgcolor: 'background.paper', borderRadius: 2, mb: 1 }}
-	>
-		<Grid container spacing={2} alignItems="center">
-			<Grid item xs={12} md={3.5}>
-				<CustomAutocomplete
-					options={slaveOptions}
-					onChange={(val) => handleFieldChange(comparisonId, 'slave_id', val)}
-					value={payload?.slave_id || ''}
-					label="Select Device"
-					size="small"
-					sx={basePickerStyles}
-				/>
-			</Grid>
-			<Grid item xs={12} md={4.5}>
-				<CustomAutocomplete
-					multiple
-					options={parameterOptions}
-					onChange={(val) => handleFieldChange(comparisonId, 'parameters', val)}
-					value={payload?.parameters || ''}
-					label="Select Parameters"
-					size="small"
-					sx={basePickerStyles}
-				/>
-			</Grid>
-			<Grid
-				item
-				xs={12}
-				md={4}
-				display="flex"
-				gap={1}
-				justifyContent="flex-end"
-			>
-				<Button
-					variant="contained"
-					onClick={() => handleSearch(comparisonId)}
-					startIcon={<Search />}
-					size="small"
-					disableElevation
-					sx={{
-						fontWeight: 'bold',
-						borderRadius: '8px',
-					}}
+				<Grid
+					item
+					xs={12}
+					sm="auto"
+					ml="auto"
+					display="flex"
+					alignItems="center"
+					gap={1.5}
 				>
-					Analyze
-				</Button>
-				<Button
-					variant="outlined"
-					color="inherit"
-					onClick={() => handleReset(comparisonId)}
-					size="small"
-					disableElevation
-					sx={{
-						fontWeight: 'bold',
-						borderRadius: '8px',
-					}}
+					{showMergeOption && (
+						<FormControlLabel
+							control={
+								<Checkbox
+									checked={mergeCompare}
+									onChange={(e) => onMergeChange(e.target.checked)}
+									size="small"
+								/>
+							}
+							label="Merge All Devices into One Chart"
+							sx={{
+								whiteSpace: 'nowrap',
+								mr: 0,
+								'.MuiFormControlLabel-label': {
+									fontSize: '14px',
+									fontWeight: 600,
+								},
+							}}
+						/>
+					)}
+					{!mergeCompare && (
+						<Button
+							fullWidth
+							size="large"
+							disableElevation
+							sx={{
+								fontWeight: 'bold',
+								borderRadius: '16px',
+							}}
+							variant="contained"
+							color="secondary"
+							onClick={addNewComparisonRow}
+						>
+							+ Add Device To Compare
+						</Button>
+					)}
+				</Grid>
+			</Grid>
+		</Box>
+	)
+);
+GlobalFiltersRow.displayName = 'GlobalFiltersRow';
+
+const DeviceFilterRow = memo(
+	({
+		comparisonId,
+		slaveOptions,
+		payload,
+		handleFieldChange,
+		handleSearch,
+		handleReset,
+		showCancel,
+		parameterOptions,
+	}) => (
+		<Box
+			sx={{
+				py: 1.5,
+				px: 2,
+				bgcolor: 'background.paper',
+				borderRadius: 2,
+				mb: 1,
+			}}
+		>
+			<Grid container spacing={2} alignItems="center">
+				<Grid item xs={12} md={3.5}>
+					<CustomAutocomplete
+						options={slaveOptions}
+						onChange={(val) => handleFieldChange(comparisonId, 'slave_id', val)}
+						value={payload?.slave_id || ''}
+						label="Select Device"
+						size="small"
+						sx={basePickerStyles}
+					/>
+				</Grid>
+				<Grid item xs={12} md={4.5}>
+					<CustomAutocomplete
+						multiple
+						options={parameterOptions}
+						onChange={(val) =>
+							handleFieldChange(comparisonId, 'parameters', val)
+						}
+						value={payload?.parameters || []}
+						label="Select Parameters"
+						size="small"
+						sx={basePickerStyles}
+					/>
+				</Grid>
+				<Grid
+					item
+					xs={12}
+					md={4}
+					display="flex"
+					gap={1}
+					justifyContent="flex-end"
 				>
-					<RestartAlt fontSize="small" />
-				</Button>
-				{showCancel && (
 					<Button
-						variant="outlined"
-						color="error"
-						onClick={() => handleReset(comparisonId, true)}
+						variant="contained"
+						onClick={() => handleSearch(comparisonId)}
+						startIcon={<Search />}
 						size="small"
 						disableElevation
 						sx={{
@@ -217,13 +265,222 @@ const DeviceFilterRow = ({
 							borderRadius: '8px',
 						}}
 					>
-						Cancel
+						Analyze
 					</Button>
-				)}
+					<Button
+						variant="outlined"
+						color="inherit"
+						onClick={() => handleReset(comparisonId)}
+						size="small"
+						disableElevation
+						sx={{
+							fontWeight: 'bold',
+							borderRadius: '8px',
+						}}
+					>
+						<RestartAlt fontSize="small" />
+					</Button>
+					{showCancel && (
+						<Button
+							variant="outlined"
+							color="error"
+							onClick={() => handleReset(comparisonId, true)}
+							size="small"
+							disableElevation
+							sx={{
+								fontWeight: 'bold',
+								borderRadius: '8px',
+							}}
+						>
+							Cancel
+						</Button>
+					)}
+				</Grid>
 			</Grid>
-		</Grid>
-	</Box>
+		</Box>
+	)
 );
+DeviceFilterRow.displayName = 'DeviceFilterRow';
+
+// One comparison row: owns its own expensive downsampling + chart-options
+// build behind useMemo, and is itself memo()-wrapped, so a keystroke or
+// state change unrelated to this row (global date picker, another row's
+// device pick, adding a new empty row) no longer re-runs its chart math or
+// forces ApexCharts to re-render this row's SVG.
+const AnalyticsRow = memo(
+	({
+		id,
+		index,
+		rawAnalytics,
+		currentSelectedParams,
+		isLoading,
+		payload,
+		payloads,
+		slaveOptions,
+		parametersData,
+		handleFieldChange,
+		handleSearch,
+		handleReset,
+		showCancel,
+	}) => {
+		const activeKeys = useMemo(
+			() => extractActiveKeys(currentSelectedParams),
+			[currentSelectedParams]
+		);
+
+		const processedData = useMemo(
+			() => getProcessedChartData(rawAnalytics, activeKeys),
+			[rawAnalytics, activeKeys]
+		);
+
+		const chartOptions = useMemo(
+			() => buildChartOptions(processedData.categories),
+			[processedData.categories]
+		);
+
+		const filteredSlaveOptions = useMemo(() => {
+			const selectedDeviceIdsInOtherRows = Object.keys(payloads)
+				.filter((rowId) => Number(rowId) !== id)
+				.map((rowId) => payloads[rowId]?.slave_id?.value)
+				.filter(Boolean);
+			return slaveOptions.filter(
+				(option) => !selectedDeviceIdsInOtherRows.includes(option.value)
+			);
+		}, [payloads, id, slaveOptions]);
+
+		const uniqueBgColor = UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
+		const deviceLabel = payload?.slave_id?.label || `Device Segment ${id}`;
+
+		return (
+			<Box
+				sx={{
+					height: '100%',
+					p: 1,
+					borderRadius: 3,
+					bgcolor: uniqueBgColor,
+					transition: 'background-color 0.3s ease',
+					boxShadow: '0px 4px 12px rgba(0,0,0,0.05)',
+				}}
+			>
+				<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+					{deviceLabel} Analysis{' '}
+					{rawAnalytics?.data?.length > 1200 &&
+						`(Downsampled from ${rawAnalytics.data.length} points)`}
+				</Typography>
+
+				<DeviceFilterRow
+					comparisonId={id}
+					slaveOptions={filteredSlaveOptions}
+					payload={payload}
+					handleFieldChange={handleFieldChange}
+					handleSearch={handleSearch}
+					handleReset={handleReset}
+					showCancel={showCancel}
+					parameterOptions={parametersData}
+				/>
+
+				<Box
+					sx={{
+						height: {
+							xs: 'calc(100% - 167px - 28px - 8px)',
+							sm: 'calc(100% - 167px - 28px - 8px)',
+							md: 'calc(100% - 64px - 28px - 8px)',
+						},
+					}}
+				>
+					{isLoading ? (
+						<Loading />
+					) : !processedData.series.length ? (
+						<NoDataFound message="Select a device and parameters, then click Analyze to view insights" />
+					) : (
+						<ReactApexChart
+							options={chartOptions}
+							series={processedData.series}
+							type="line"
+							height="100%"
+							width="100%"
+						/>
+					)}
+				</Box>
+			</Box>
+		);
+	}
+);
+AnalyticsRow.displayName = 'AnalyticsRow';
+
+// One combined chart across every comparison row — used instead of
+// `AnalyticsRow` when "Merge all compare" is checked. Combines + memoizes
+// per-row chart data in one place instead of recomputing it on every
+// keystroke anywhere on the page.
+const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
+	const { mergedCategories, mergedSeries } = useMemo(() => {
+		const rowsWithData = rows
+			.map((row) => ({
+				...row,
+				processedData: getProcessedChartData(row.rawAnalytics, row.activeKeys),
+			}))
+			.filter((row) => row.processedData.series.length);
+
+		return {
+			mergedCategories: rowsWithData[0]?.processedData.categories || [],
+			mergedSeries: rowsWithData.flatMap((row) =>
+				row.processedData.series.map((series) => ({
+					...series,
+					name: `${row.deviceLabel} - ${series.name}`,
+				}))
+			),
+		};
+	}, [rows]);
+
+	const chartOptions = useMemo(
+		() => buildChartOptions(mergedCategories),
+		[mergedCategories]
+	);
+
+	return (
+		<Box
+			sx={{
+				height: '100%',
+				p: 1,
+				borderRadius: 3,
+				bgcolor: 'surface.muted',
+				boxShadow: '0px 4px 12px rgba(0,0,0,0.02)',
+			}}
+		>
+			<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+				Merged Comparison
+			</Typography>
+
+			<Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>
+				{rows.map((row) => row.deviceLabel).join(' merged ')}
+			</Typography>
+
+			<Box
+				sx={{
+					height: {
+						xs: 'calc(100% - 80px)',
+						sm: 'calc(100% - 64px)',
+					},
+				}}
+			>
+				{isAnyLoading ? (
+					<Loading />
+				) : !mergedSeries.length ? (
+					<NoDataFound message="Select devices and parameters, then click Analyze to view the merged comparison" />
+				) : (
+					<ReactApexChart
+						options={chartOptions}
+						series={mergedSeries}
+						type="line"
+						height="100%"
+						width="100%"
+					/>
+				)}
+			</Box>
+		</Box>
+	);
+});
+MergedAnalyticsRow.displayName = 'MergedAnalyticsRow';
 
 const FuelAnalytics = () => {
 	const { slavesData, parametersData } = useCommonData();
@@ -235,57 +492,66 @@ const FuelAnalytics = () => {
 	const [rowIds, setRowIds] = useState([1]);
 	const [mergeCompare, setMergeCompare] = useState(false);
 
-	const handleFieldChange = (id, key, value) => {
+	const handleFieldChange = useCallback((id, key, value) => {
 		setPayloads((prev) => ({ ...prev, [id]: { ...prev[id], [key]: value } }));
-	};
+	}, []);
 
-	const handleSearch = async (id) => {
-		const currentPayload = payloads[id];
-		if (!currentPayload?.slave_id) {
-			return;
-		}
+	const handleSearch = useCallback(
+		(id) => {
+			setPayloads((prevPayloads) => {
+				const currentPayload = prevPayloads[id];
+				if (!currentPayload?.slave_id) {
+					return prevPayloads;
+				}
 
-		setLoadingMap((prev) => ({ ...prev, [id]: true }));
-		try {
-			const slaveId = currentPayload.slave_id?.value ?? '';
-			const parameterValues = currentPayload.parameters
-				? currentPayload.parameters
-						.map((p) => p?.value)
-						.filter(Boolean)
-						.join(',')
-				: '';
+				setLoadingMap((prev) => ({ ...prev, [id]: true }));
+				(async () => {
+					try {
+						const slaveId = currentPayload.slave_id?.value ?? '';
+						const parameterValues = currentPayload.parameters
+							? currentPayload.parameters
+									.map((p) => p?.value)
+									.filter(Boolean)
+									.join(',')
+							: '';
 
-			const startDateObj = globalDateTime?.[0];
-			const endDateObj = globalDateTime?.[1];
-			const formattedStart = startDateObj?.isValid?.()
-				? startDateObj.format('YYYY-MM-DD[T]HH:mm:ss')
-				: '';
-			const formattedEnd = endDateObj?.isValid?.()
-				? endDateObj.format('YYYY-MM-DD[T]HH:mm:ss')
-				: '';
+						const startDateObj = globalDateTime?.[0];
+						const endDateObj = globalDateTime?.[1];
+						const formattedStart = startDateObj?.isValid?.()
+							? startDateObj.format('YYYY-MM-DD[T]HH:mm:ss')
+							: '';
+						const formattedEnd = endDateObj?.isValid?.()
+							? endDateObj.format('YYYY-MM-DD[T]HH:mm:ss')
+							: '';
 
-			const newApiUrl = API_URLS.WATER_ANALYTICS_DATA(
-				slaveId,
-				parameterValues,
-				formattedStart,
-				formattedEnd
-			);
-			const res = await api.get(newApiUrl);
-			if (res?.success) {
-				setAnalyticsDataMap((prev) => ({ ...prev, [id]: res.data }));
-				setSelectedParamsMap((prev) => ({
-					...prev,
-					[id]: currentPayload.parameters,
-				}));
-			}
-		} catch (error) {
-			console.error(`API Error on row ${id}:`, error);
-		} finally {
-			setLoadingMap((prev) => ({ ...prev, [id]: false }));
-		}
-	};
+						const url = API_URLS.FUEL_ANALYTICS_DATA(
+							slaveId,
+							parameterValues,
+							formattedStart,
+							formattedEnd
+						);
+						const res = await api.get(url);
+						if (res?.success) {
+							setAnalyticsDataMap((prev) => ({ ...prev, [id]: res.data }));
+							setSelectedParamsMap((prev) => ({
+								...prev,
+								[id]: currentPayload.parameters,
+							}));
+						}
+					} catch (error) {
+						console.error(`Fuel analytics API error on row ${id}:`, error);
+					} finally {
+						setLoadingMap((prev) => ({ ...prev, [id]: false }));
+					}
+				})();
 
-	const handleReset = (id, shouldRemoveRow = false) => {
+				return prevPayloads;
+			});
+		},
+		[globalDateTime]
+	);
+
+	const handleReset = useCallback((id, shouldRemoveRow = false) => {
 		if (shouldRemoveRow && id !== 1) {
 			setRowIds((prev) => prev.filter((rowId) => rowId !== id));
 			setPayloads((prev) => {
@@ -313,16 +579,18 @@ const FuelAnalytics = () => {
 			setAnalyticsDataMap((prev) => ({ ...prev, [id]: null }));
 			setSelectedParamsMap((prev) => ({ ...prev, [id]: null }));
 		}
-	};
+	}, []);
 
-	const addNewComparisonRow = () => {
-		const nextId = Math.max(...rowIds, 0) + 1;
-		setRowIds((prev) => [...prev, nextId]);
-	};
+	const addNewComparisonRow = useCallback(() => {
+		setRowIds((prev) => [...prev, Math.max(...prev, 0) + 1]);
+	}, []);
 
-	const slaveOptions =
-		slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) ||
-		[];
+	const slaveOptions = useMemo(
+		() =>
+			slavesData?.map((f) => ({ label: f?.slave_name, value: f?.slave_id })) ||
+			[],
+		[slavesData]
+	);
 
 	return (
 		<Box
@@ -335,7 +603,7 @@ const FuelAnalytics = () => {
 		>
 			<GlobalFiltersRow
 				dateTime={globalDateTime}
-				onDateChange={(val) => setGlobalDateTime(val)}
+				onDateChange={setGlobalDateTime}
 				addNewComparisonRow={addNewComparisonRow}
 				mergeCompare={mergeCompare}
 				onMergeChange={setMergeCompare}
@@ -343,204 +611,51 @@ const FuelAnalytics = () => {
 			/>
 
 			<Box
-				height={{ xs: 'calc(100% - 115px)', md: 'calc(100% - 58px)' }}
+				height={{
+					xs: mergeCompare ? 'calc(100% - 111px)' : 'calc(100% - 115px)',
+					sm:
+						!mergeCompare && rowIds?.length !== 1
+							? 'calc(100% - 115px)'
+							: 'calc(100% - 58px)',
+					lg: 'calc(100% - 59px)',
+				}}
 				pt={1}
 				overflow="auto"
 				display="flex"
 				flexDirection="column"
 				gap={1}
 			>
-				{(() => {
-					const rowsComputed = rowIds.map((id, index) => {
-						const rawAnalytics = analyticsDataMap[id];
-						const currentSelectedParams = selectedParamsMap[id];
-						const isLoading = loadingMap[id];
-
-						const activeKeys =
-							currentSelectedParams?.flatMap((param) =>
-								param.value ? param.value.split(',') : []
-							) || [];
-
-						const processedData = getProcessedChartData(
-							rawAnalytics,
-							activeKeys
-						);
-
-						const selectedDeviceIdsInOtherRows = Object.keys(payloads)
-							.filter((rowId) => Number(rowId) !== id)
-							.map((rowId) => payloads[rowId]?.slave_id?.value)
-							.filter(Boolean);
-
-						const filteredSlaveOptions = slaveOptions.filter(
-							(option) => !selectedDeviceIdsInOtherRows.includes(option.value)
-						);
-
-						const uniqueBgColor =
-							UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
-
-						const deviceLabel =
-							payloads[id]?.slave_id?.label || `Device Segment ${id}`;
-
-						return {
+				{mergeCompare ? (
+					<MergedAnalyticsRow
+						rows={rowIds.map((id) => ({
 							id,
-							rawAnalytics,
-							isLoading,
-							processedData,
-							filteredSlaveOptions,
-							uniqueBgColor,
-							deviceLabel,
-						};
-					});
-
-					const buildChartOptions = (categories) => ({
-						chart: {
-							type: 'line',
-							zoom: { enabled: false },
-							animations: {
-								enabled: false,
-							},
-							toolbar: {
-								show: true,
-								tools: {
-									download: true,
-									selection: false,
-									zoom: false,
-									zoomin: false,
-									zoomout: false,
-									pan: false,
-									reset: false,
-								},
-							},
-						},
-						dataLabels: { enabled: false },
-						markers: { size: 0, hover: { sizeOffset: 4 } },
-						stroke: { curve: 'straight', width: 1.5 },
-						xaxis: {
-							categories,
-							labels: { rotate: -45, style: { fontSize: '10px' } },
-							tooltip: { enabled: false },
-						},
-						yaxis: {
-							labels: {
-								formatter: (val) => (val !== null ? val.toFixed(2) : ''),
-							},
-						},
-						tooltip: { shared: true, intersect: false },
-						legend: { position: 'top', horizontalAlign: 'left' },
-						grid: { borderColor: '#f1f1f1' },
-						states: {
-							normal: { filter: { type: 'none' } },
-							hover: { filter: { type: 'none' } },
-							active: { filter: { type: 'none' } },
-						},
-					});
-
-					if (mergeCompare) {
-						const rowsWithData = rowsComputed.filter(
-							(row) => row.processedData.series.length
-						);
-						const mergedCategories =
-							rowsWithData[0]?.processedData.categories || [];
-						const mergedSeries = rowsWithData.flatMap((row) =>
-							row.processedData.series.map((series) => ({
-								...series,
-								name: `${row.deviceLabel} - ${series.name}`,
-							}))
-						);
-						const isAnyLoading = rowsComputed.some((row) => row.isLoading);
-
-						return (
-							<Box
-								sx={{
-									p: 1,
-									borderRadius: 3,
-									bgcolor: 'surface.muted',
-									boxShadow: '0px 4px 12px rgba(0,0,0,0.02)',
-								}}
-							>
-								<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-									Merged Comparison
-								</Typography>
-
-								{rowsComputed.map((row) => (
-									<DeviceFilterRow
-										key={row.id}
-										comparisonId={row.id}
-										slaveOptions={row.filteredSlaveOptions}
-										payload={payloads[row.id]}
-										handleFieldChange={handleFieldChange}
-										handleSearch={handleSearch}
-										handleReset={handleReset}
-										showCancel={rowIds.length > 1}
-										parameterOptions={parametersData}
-									/>
-								))}
-
-								<Box sx={{ height: { xs: 500, sm: 380 } }}>
-									{isAnyLoading ? (
-										<Loading />
-									) : !mergedSeries.length ? (
-										<NoDataFound message="Select devices and parameters, then click Analyze to view the merged comparison" />
-									) : (
-										<ReactApexChart
-											options={buildChartOptions(mergedCategories)}
-											series={mergedSeries}
-											type="line"
-											height="100%"
-											width="100%"
-										/>
-									)}
-								</Box>
-							</Box>
-						);
-					}
-
-					return rowsComputed.map((row) => (
-						<Box
-							key={row.id}
-							sx={{
-								p: 1,
-								borderRadius: 3,
-								bgcolor: row.uniqueBgColor,
-								transition: 'background-color 0.3s ease',
-								boxShadow: '0px 4px 12px rgba(0,0,0,0.02)',
-							}}
-						>
-							<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-								{row.deviceLabel} Analysis{' '}
-								{row.rawAnalytics?.data?.length > 1200 &&
-									`(Downsampled from ${row.rawAnalytics.data.length} points)`}
-							</Typography>
-
-							<DeviceFilterRow
-								comparisonId={row.id}
-								slaveOptions={row.filteredSlaveOptions}
-								payload={payloads[row.id]}
-								handleFieldChange={handleFieldChange}
-								handleSearch={handleSearch}
-								handleReset={handleReset}
-								showCancel={rowIds.length > 1}
-								parameterOptions={parametersData}
-							/>
-
-							<Box sx={{ height: { xs: 500, sm: 380 } }}>
-								{row.isLoading ? (
-									<Loading />
-								) : !row.processedData.series.length ? (
-									<NoDataFound message="Select a device and parameters, then click Analyze to view insights" />
-								) : (
-									<ReactApexChart
-										options={buildChartOptions(row.processedData.categories)}
-										series={row.processedData.series}
-										type="line"
-										height="100%"
-										width="100%"
-									/>
-								)}
-							</Box>
-						</Box>
-					));
-				})()}
+							rawAnalytics: analyticsDataMap[id],
+							activeKeys: extractActiveKeys(selectedParamsMap[id]),
+							deviceLabel:
+								payloads[id]?.slave_id?.label || `Device Segment ${id}`,
+						}))}
+						isAnyLoading={rowIds.some((id) => loadingMap[id])}
+					/>
+				) : (
+					rowIds.map((id, index) => (
+						<AnalyticsRow
+							key={id}
+							id={id}
+							index={index}
+							rawAnalytics={analyticsDataMap[id]}
+							currentSelectedParams={selectedParamsMap[id]}
+							isLoading={loadingMap[id]}
+							payload={payloads[id]}
+							payloads={payloads}
+							slaveOptions={slaveOptions}
+							parametersData={parametersData}
+							handleFieldChange={handleFieldChange}
+							handleSearch={handleSearch}
+							handleReset={handleReset}
+							showCancel={id !== 1 && rowIds.length > 1}
+						/>
+					))
+				)}
 			</Box>
 		</Box>
 	);

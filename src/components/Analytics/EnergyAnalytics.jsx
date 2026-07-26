@@ -101,12 +101,6 @@ const GlobalFiltersRow = memo(
 		>
 			<Grid container alignItems="end" spacing={2}>
 				<Grid item xs={12} md={8} lg={6}>
-					{/* <Typography
-					variant="subtitle2"
-					sx={{ mb: 0.5, color: 'text.secondary' }}
-				>
-					Global Date/Time
-				</Typography> */}
 					<CustomDatePicker
 						mode="datetimerangepicker"
 						onChange={onDateChange}
@@ -132,8 +126,15 @@ const GlobalFiltersRow = memo(
 									size="small"
 								/>
 							}
-							label="Merge all compare"
-							sx={{ whiteSpace: 'nowrap', mr: 0 }}
+							label="Merge All Devices into One Chart"
+							sx={{
+								whiteSpace: 'nowrap',
+								mr: 0,
+								'.MuiFormControlLabel-label': {
+									fontSize: '14px',
+									fontWeight: 600,
+								},
+							}}
 						/>
 					)}
 					{!mergeCompare && (
@@ -197,7 +198,7 @@ const DeviceFilterRow = memo(
 						onChange={(val) =>
 							handleFieldChange(comparisonId, 'parameters', val)
 						}
-						value={payload?.parameters || ''}
+						value={payload?.parameters || []}
 						label="Select Parameters"
 						size="small"
 						sx={basePickerStyles}
@@ -320,6 +321,15 @@ const AnalyticsRow = memo(
 					animations: {
 						enabled: false,
 					},
+					// Subtle lift under the line so it reads as a premium chart
+					// rather than a flat plot — cheap since animations are off.
+					dropShadow: {
+						enabled: true,
+						top: 4,
+						left: 0,
+						blur: 4,
+						opacity: 0.12,
+					},
 					toolbar: {
 						show: false,
 						tools: {
@@ -416,11 +426,12 @@ const AnalyticsRow = memo(
 			<Box
 				key={id}
 				sx={{
+					height: '100%',
 					p: 1,
 					borderRadius: 3,
 					bgcolor: uniqueBgColor,
 					transition: 'background-color 0.3s ease',
-					boxShadow: '0px 4px 12px rgba(0,0,0,0.02)',
+					boxShadow: '0px 4px 12px rgba(0,0,0,0.05)',
 				}}
 			>
 				<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
@@ -436,11 +447,19 @@ const AnalyticsRow = memo(
 					handleFieldChange={handleFieldChange}
 					handleSearch={handleSearch}
 					handleReset={handleReset}
-					showCancel={rowIds.length > 1}
+					showCancel={id !== 1 && rowIds.length > 1}
 					parameterOptions={parametersData}
 				/>
 
-				<Box sx={{ height: { xs: 520, sm: 420 } }}>
+				<Box
+					sx={{
+						height: {
+							xs: 'calc(100% - 167px - 28px - 8px)',
+							sm: 'calc(100% - 167px - 28px - 8px)',
+							md: 'calc(100% - 64px - 28px - 8px)',
+						},
+					}}
+				>
 					{isLoading ? (
 						<Loading />
 					) : !processedData.series.length ? (
@@ -563,121 +582,116 @@ AnalyticsRow.displayName = 'AnalyticsRow';
 // `AnalyticsRow` when "Merge all compare" is checked. Same underlying
 // per-row data processing, just concatenated into a single series list
 // (each series prefixed with its device label) on a shared category axis.
-const MergedAnalyticsRow = memo(
-	({
-		rows,
-		payloads,
-		parametersData,
-		handleFieldChange,
-		handleSearch,
-		handleReset,
-		rowIds,
-	}) => {
-		const rowsWithProcessedData = rows.map((row) => ({
-			...row,
-			deviceLabel: row.payload?.slave_id?.label || `Device Segment ${row.id}`,
-			processedData: getProcessedChartData(row.rawAnalytics, row.activeKeys),
-		}));
+const MergedAnalyticsRow = memo(({ rows }) => {
+	const rowsWithProcessedData = rows.map((row) => ({
+		...row,
+		deviceLabel: row.payload?.slave_id?.label || `Device Segment ${row.id}`,
+		processedData: getProcessedChartData(row.rawAnalytics, row.activeKeys),
+	}));
 
-		const rowsWithData = rowsWithProcessedData.filter(
-			(row) => row.processedData.series.length
-		);
-		const mergedCategories = rowsWithData[0]?.processedData.categories || [];
-		const mergedSeries = rowsWithData.flatMap((row) =>
-			row.processedData.series.map((series) => ({
-				...series,
-				name: `${row.deviceLabel} - ${series.name}`,
-			}))
-		);
-		const isAnyLoading = rows.some((row) => row.isLoading);
+	const rowsWithData = rowsWithProcessedData.filter(
+		(row) => row.processedData.series.length
+	);
+	const mergedCategories = rowsWithData[0]?.processedData.categories || [];
+	const mergedSeries = rowsWithData.flatMap((row) =>
+		row.processedData.series.map((series) => ({
+			...series,
+			name: `${row.deviceLabel} - ${series.name}`,
+		}))
+	);
+	const isAnyLoading = rows.some((row) => row.isLoading);
 
-		const chartOptions = {
-			chart: {
-				type: 'line',
-				zoom: { enabled: false },
-				animations: { enabled: false },
-				toolbar: {
-					show: true,
-					tools: {
-						download: true,
-						selection: false,
-						zoom: false,
-						zoomin: false,
-						zoomout: false,
-						pan: false,
-						reset: false,
-					},
+	const chartOptions = {
+		chart: {
+			type: 'line',
+			zoom: { enabled: false },
+			animations: { enabled: false },
+			dropShadow: {
+				enabled: true,
+				top: 4,
+				left: 0,
+				blur: 4,
+				opacity: 0.12,
+			},
+			toolbar: {
+				show: true,
+				tools: {
+					download: true,
+					selection: false,
+					zoom: false,
+					zoomin: false,
+					zoomout: false,
+					pan: false,
+					reset: false,
 				},
 			},
-			dataLabels: { enabled: false },
-			markers: { size: 0, hover: { sizeOffset: 4 } },
-			stroke: { curve: 'smooth', width: 2 },
-			xaxis: {
-				categories: mergedCategories,
-				labels: { rotate: -45, style: { fontSize: '10px' } },
-				tooltip: { enabled: false },
+		},
+		dataLabels: { enabled: false },
+		markers: { size: 0, hover: { sizeOffset: 4 } },
+		stroke: { curve: 'smooth', width: 2 },
+		xaxis: {
+			categories: mergedCategories,
+			labels: { rotate: -45, style: { fontSize: '10px' } },
+			tooltip: { enabled: false },
+		},
+		yaxis: {
+			labels: {
+				formatter: (val) => (val !== null ? val.toFixed(2) : ''),
 			},
-			yaxis: {
-				labels: {
-					formatter: (val) => (val !== null ? val.toFixed(2) : ''),
-				},
-			},
-			tooltip: { shared: true, intersect: false },
-			legend: { position: 'top', horizontalAlign: 'left' },
-			grid: { borderColor: '#f1f1f1' },
-			states: {
-				normal: { filter: { type: 'none' } },
-				hover: { filter: { type: 'none' } },
-				active: { filter: { type: 'none' } },
-			},
-		};
+		},
+		tooltip: { shared: true, intersect: false },
+		legend: { position: 'top', horizontalAlign: 'left' },
+		grid: { borderColor: '#f1f1f1' },
+		states: {
+			normal: { filter: { type: 'none' } },
+			hover: { filter: { type: 'none' } },
+			active: { filter: { type: 'none' } },
+		},
+	};
 
-		return (
+	return (
+		<Box
+			sx={{
+				height: '100%',
+				p: 1,
+				borderRadius: 3,
+				bgcolor: 'surface.muted',
+				boxShadow: '0px 4px 12px rgba(0,0,0,0.02)',
+			}}
+		>
+			<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+				Merged Comparison
+			</Typography>
+
+			<Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>
+				{rows.map((row) => row.deviceLabel).join(' merged ')}
+			</Typography>
+
 			<Box
 				sx={{
-					p: 1,
-					borderRadius: 3,
-					bgcolor: 'surface.muted',
-					boxShadow: '0px 4px 12px rgba(0,0,0,0.02)',
+					height: {
+						xs: 'calc(100% - 80px)',
+						sm: 'calc(100% - 64px)',
+					},
 				}}
 			>
-				<Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-					Merged Comparison
-				</Typography>
-
-				{rows.map((row) => (
-					<DeviceFilterRow
-						key={row.id}
-						comparisonId={row.id}
-						slaveOptions={row.filteredSlaveOptions}
-						payload={payloads[row.id]}
-						handleFieldChange={handleFieldChange}
-						handleSearch={handleSearch}
-						handleReset={handleReset}
-						showCancel={rowIds.length > 1}
-						parameterOptions={parametersData}
+				{isAnyLoading ? (
+					<Loading />
+				) : !mergedSeries.length ? (
+					<NoDataFound message="Select devices and parameters, then click Analyze to view the merged comparison" />
+				) : (
+					<ReactApexChart
+						options={chartOptions}
+						series={mergedSeries}
+						type="line"
+						height="100%"
+						width="100%"
 					/>
-				))}
-
-				<Box sx={{ height: { xs: 520, sm: 420 } }}>
-					{isAnyLoading ? (
-						<Loading />
-					) : !mergedSeries.length ? (
-						<NoDataFound message="Select devices and parameters, then click Analyze to view the merged comparison" />
-					) : (
-						<ReactApexChart
-							options={chartOptions}
-							series={mergedSeries}
-							type="line"
-							height="100%"
-							width="100%"
-						/>
-					)}
-				</Box>
+				)}
 			</Box>
-		);
-	}
-);
+		</Box>
+	);
+});
 MergedAnalyticsRow.displayName = 'MergedAnalyticsRow';
 
 const EnergyAnalytics = () => {
@@ -820,7 +834,14 @@ const EnergyAnalytics = () => {
 			/>
 
 			<Box
-				height={{ xs: 'calc(100% - 115px)', md: 'calc(100% - 58px)' }}
+				height={{
+					xs: mergeCompare ? 'calc(100% - 111px)' : 'calc(100% - 115px)',
+					sm:
+						!mergeCompare && rowIds?.length !== 1
+							? 'calc(100% - 115px)'
+							: 'calc(100% - 58px)',
+					lg: 'calc(100% - 59px)',
+				}}
 				pt={1}
 				overflow="auto"
 				display="flex"
@@ -850,12 +871,6 @@ const EnergyAnalytics = () => {
 								filteredSlaveOptions,
 							};
 						})}
-						payloads={payloads}
-						parametersData={parametersData}
-						handleFieldChange={handleFieldChange}
-						handleSearch={handleSearch}
-						handleReset={handleReset}
-						rowIds={rowIds}
 					/>
 				) : (
 					rowIds.map((id, index) => {
