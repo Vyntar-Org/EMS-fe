@@ -58,7 +58,12 @@ const ENERGYEnerTree = ({ data }) => {
 	);
 
 	return (
-		<CustomCard flat titleIcon={<Power />} title="Ener Tree" accentColor={ACCENT}>
+		<CustomCard
+			flat
+			titleIcon={<Power />}
+			title="Ener Tree"
+			accentColor={ACCENT}
+		>
 			{data ? (
 				<Box
 					sx={{

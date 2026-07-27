@@ -199,10 +199,7 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
 					flexDirection={{ xs: 'column-reverse', sm: 'row' }}
 					height="100%"
 				>
-					<Box
-						height="100%"
-						width={{ sm: 'calc(100% - 200px - 12px)' }}
-					>
+					<Box height="100%" width={{ sm: 'calc(100% - 200px - 12px)' }}>
 						<ReactApexChart
 							key={`chart-${mode}`}
 							options={getChartOptions(

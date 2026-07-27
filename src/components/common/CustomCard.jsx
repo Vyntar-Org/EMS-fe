@@ -257,12 +257,7 @@ const CustomCard = ({
 				    its content instead of scrolling it. Callers with content
 				    that must scroll (e.g. a data table) opt back in via
 				    `childrenOtherProps={{ overflow: 'auto' }}`. */}
-				<Box
-					flex={1}
-					minHeight={0}
-					overflow="visible"
-					{...childrenOtherProps}
-				>
+				<Box flex={1} minHeight={0} overflow="visible" {...childrenOtherProps}>
 					{children}
 				</Box>
 			</CardContent>
