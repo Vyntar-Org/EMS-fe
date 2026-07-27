@@ -101,14 +101,18 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	const [searchDevices, setSearchDevices] = useState(null);
 
 	const slavesDisplayName = useMemo(() => {
-		if (!slavesData && mode === 1) {return null;}
+		if (!slavesData && mode === 1) {
+			return null;
+		}
 
 		const slave = slavesData.find((s) => s.slave_id === slavesId);
 		return slave ? `${slave.slave_name}` : '';
 	}, [slavesId, slavesData, mode]);
 
 	const filteredSlaves = useMemo(() => {
-		if (!searchDevices?.trim()) {return slavesData;}
+		if (!searchDevices?.trim()) {
+			return slavesData;
+		}
 
 		const searchLower = searchDevices.toLowerCase().trim();
 
@@ -134,7 +138,9 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	};
 
 	useEffect(() => {
-		if (!slavesId) {return;}
+		if (!slavesId) {
+			return;
+		}
 
 		fetchMachineConsumption();
 	}, [slavesId]);

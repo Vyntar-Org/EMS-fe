@@ -176,7 +176,9 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 		yLabel: chartResponse?.unit || activeTab?.label || 'Value',
 		colors: [APP_ACCENT_COLOR['FIRE-SAFETY']],
 		categoryOpts: { key: 'timestamp', format: 'time' },
-		chartTitle: `${slaveName || 'Fire Safety'} — ${activeTab?.label || 'Trend'}`,
+		chartTitle: `${slaveName || 'Fire Safety'} — ${
+			activeTab?.label || 'Trend'
+		}`,
 	});
 
 	const chartSeries = getChartSeries(chartResponse?.data || [], {

@@ -312,14 +312,19 @@ export const getAxisInk = () => activeAxisInk();
 // Same escape hatch as `getAxisInk`, for call sites building a fully custom
 // HTML tooltip (bespoke multi-row status tooltips, etc.) that still need to
 // match the app's tooltip surface/border/text ink per theme mode.
-export const getTooltipInk = () => TOOLTIP_INK[chartThemeMode] || TOOLTIP_INK.light;
+export const getTooltipInk = () =>
+	TOOLTIP_INK[chartThemeMode] || TOOLTIP_INK.light;
 
 /**
  * Builds a themed, premium HTML tooltip for bar/line/area charts (shared
  * across series at a given point). Avoids ApexCharts' plain default box.
  * @param {Object} opts - { unit, titleFormat }
  */
-export const buildPremiumTooltip = ({ unit = '', titleFormat, chartTitle } = {}) =>
+export const buildPremiumTooltip = ({
+	unit = '',
+	titleFormat,
+	chartTitle,
+} = {}) =>
 	function ({ series, seriesIndex, dataPointIndex, w }) {
 		const ink = TOOLTIP_INK[chartThemeMode] || TOOLTIP_INK.light;
 		const isDatetime = w.config.xaxis?.type === 'datetime';

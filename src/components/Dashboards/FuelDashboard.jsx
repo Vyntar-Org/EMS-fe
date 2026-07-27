@@ -130,14 +130,18 @@ const FuelDashboard = () => {
 	};
 
 	const slavesDisplayName = useMemo(() => {
-		if (!slavesData) {return null;}
+		if (!slavesData) {
+			return null;
+		}
 
 		const slave = slavesData.find((s) => s.slave_id === slavesId);
 		return slave ? `${slave.slave_name}` : '';
 	}, [slavesId, slavesData]);
 
 	const filteredSlaves = useMemo(() => {
-		if (!searchDevices?.trim()) {return slavesData;}
+		if (!searchDevices?.trim()) {
+			return slavesData;
+		}
 
 		const searchLower = searchDevices.toLowerCase().trim();
 
@@ -172,7 +176,9 @@ const FuelDashboard = () => {
 	}, [slavesData]);
 
 	useEffect(() => {
-		if (!slavesId) {return;}
+		if (!slavesId) {
+			return;
+		}
 
 		fetchFuelConsumption();
 	}, [slavesId]);

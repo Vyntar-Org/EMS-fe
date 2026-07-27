@@ -180,7 +180,9 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 		yLabel: chartResponse?.unit || activeTab?.label || 'Value',
 		colors: [APP_ACCENT_COLOR.SOLAR],
 		categoryOpts: { key: 'timestamp', format: 'time' },
-		chartTitle: `${slaveName || 'Solar Machine'} — ${activeTab?.label || 'Trend'}`,
+		chartTitle: `${slaveName || 'Solar Machine'} — ${
+			activeTab?.label || 'Trend'
+		}`,
 	});
 
 	const chartSeries = getChartSeries(chartResponse?.data || [], {

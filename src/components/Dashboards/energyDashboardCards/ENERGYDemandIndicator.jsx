@@ -14,13 +14,14 @@ import {
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
 
-
 const ENERGYDemandIndicator = ({ slavesId }) => {
 	const { slavesData } = useCommonData();
 	const [demandIndicator, setDemandIndicator] = useState(null);
 
 	const slavesDisplayName = useMemo(() => {
-		if (!slavesData) {return null;}
+		if (!slavesData) {
+			return null;
+		}
 
 		const slave = slavesData.find((s) => s.slave_id === slavesId);
 		return slave ? ` - ${slave.slave_name}` : '';
@@ -40,13 +41,17 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 	};
 
 	useEffect(() => {
-		if (!slavesId) {return;}
+		if (!slavesId) {
+			return;
+		}
 
 		fetchDemandIndicator();
 	}, [slavesId]);
 
 	const seriesData = useMemo(() => {
-		if (!demandIndicator?.data) {return [];}
+		if (!demandIndicator?.data) {
+			return [];
+		}
 
 		const points = demandIndicator.data
 			.map((item) => ({
@@ -65,7 +70,9 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 	}, [demandIndicator]);
 
 	const yAxisMax = useMemo(() => {
-		if (!seriesData.length) {return 14;}
+		if (!seriesData.length) {
+			return 14;
+		}
 
 		const maxValue = Math.max(...seriesData.map((point) => point.y));
 		return maxValue <= 0 ? 14 : Math.ceil(maxValue * 1.2);

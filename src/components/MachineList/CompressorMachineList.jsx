@@ -817,9 +817,7 @@ const ModalContentForTrend = ({
 	// ─── Applied Code 1 Design to Status Trend ───
 	const chartOptions = useMemo(() => {
 		const ink = getAxisInk();
-		const chartTitle = `${slaveName || 'Compressor'} — ${
-			tabDesc || 'Trend'
-		}`;
+		const chartTitle = `${slaveName || 'Compressor'} — ${tabDesc || 'Trend'}`;
 		const baseOptions = {
 			chart: {
 				type: isStatusTrend ? 'area' : 'line',
@@ -996,7 +994,9 @@ const ModalContentForTrend = ({
                         <span style="flex:1;color:#333;font-size:12px;">${name}:</span>
                         <span style="font-weight:bold;color:#111;margin-left:5px;font-size:12px;">${
 													value !== undefined ? formatChartValue(value) : 'N/A'
-												}${chartResponse?.unit ? ` ${chartResponse.unit}` : ''}</span>
+												}${
+													chartResponse?.unit ? ` ${chartResponse.unit}` : ''
+												}</span>
                     </div>
                 </div>`;
 					},

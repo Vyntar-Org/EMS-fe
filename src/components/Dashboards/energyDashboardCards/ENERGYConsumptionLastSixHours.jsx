@@ -13,7 +13,6 @@ import {
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
 
-
 const ENERGYConsumptionLastSixHours = () => {
 	const [consumption, setConsumption] = useState(null);
 
