@@ -69,6 +69,7 @@ const MachineListHeader = ({
 				<Tooltip title="Download Report">
 					<span>
 						<IconButton
+							aria-label="Download report"
 							size="large"
 							disabled={isDownloadDisabled}
 							color="primary"
@@ -412,6 +413,7 @@ const FlowMeterMachineList = () => {
 				title={`${modalDetails?.tabDesc} - Trend`}
 				confirmText={null}
 				cancelText={null}
+				maxWidth="md"
 			>
 				{modalDetails?.isOpen ? (
 					<ModalContentForTrend

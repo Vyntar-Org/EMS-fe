@@ -5,6 +5,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import HistoryIcon from '@mui/icons-material/History';
 import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft';
+import MenuIcon from '@mui/icons-material/Menu';
 import SettingsIcon from '@mui/icons-material/Settings';
 import {
 	Drawer,
@@ -19,7 +20,6 @@ import {
 	Menu,
 	Button,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -289,7 +289,16 @@ export const Sidebar = ({
 					component="img"
 					src={fullLogoUrl}
 					alt="Logo"
+					role="button"
+					tabIndex={0}
+					aria-label="Go to dashboard"
 					onClick={() => navigate('/dashboard')}
+					onKeyDown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') {
+							e.preventDefault();
+							navigate('/dashboard');
+						}
+					}}
 					sx={{
 						mt: 1,
 						height: 70,
@@ -555,9 +564,19 @@ export const Sidebar = ({
 						component="img"
 						src={fullLogoUrl}
 						alt="Logo"
+						role="button"
+						tabIndex={0}
+						aria-label="Go to dashboard"
 						onClick={() => {
 							navigate('/dashboard');
 							setIsMobileOpen(false);
+						}}
+						onKeyDown={(e) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								navigate('/dashboard');
+								setIsMobileOpen(false);
+							}
 						}}
 						sx={{
 							height: 56,
@@ -597,6 +616,7 @@ export const Sidebar = ({
 					/>
 
 					<IconButton
+						aria-label="Close menu"
 						sx={{ color: '#fff' }}
 						onClick={() => setIsMobileOpen(false)}
 					>

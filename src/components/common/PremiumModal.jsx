@@ -32,8 +32,13 @@ const PremiumModal = ({
 	cancelText = 'Cancel',
 	children,
 	type = 'default',
+	maxWidth,
 }) => {
 	const isLogout = type === 'logout';
+	// Chart-heavy modal content (trend charts with legends/axes/tooltips)
+	// reads cramped at the default 'sm' — callers can widen it, but logout's
+	// small confirm dialog always stays 'xs' regardless.
+	const resolvedMaxWidth = isLogout ? 'xs' : maxWidth || 'sm';
 	const finalTitle = isLogout ? title || 'Confirm Logout' : title;
 	const finalConfirmText = isLogout
 		? confirmText === 'Confirm'
@@ -60,7 +65,7 @@ const PremiumModal = ({
 		<StyledDialog
 			open={open}
 			onClose={onClose}
-			maxWidth={isLogout ? 'xs' : 'sm'}
+			maxWidth={resolvedMaxWidth}
 			fullWidth
 			TransitionProps={{ onExited: () => setRenderedChildren(null) }}
 		>

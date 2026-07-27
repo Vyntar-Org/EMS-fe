@@ -146,6 +146,7 @@ const MachineListHeader = ({
 			<Tooltip title="Download Report">
 				<span>
 					<IconButton
+						aria-label="Download report"
 						size="large"
 						disabled={isDownloadDisabled}
 						color="primary"
@@ -575,6 +576,7 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 			title={`${machine?.name || machine?.slave_name} — Last ${hours} hrs`}
 			confirmText={null}
 			cancelText={null}
+			maxWidth="md"
 		>
 			<Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
 				<Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)}>
@@ -1284,6 +1286,7 @@ const CompressorMachineList = () => {
 				} - ${modalDetails?.tabDesc || 'Trend'}`}
 				confirmText={null}
 				cancelText={null}
+				maxWidth="md"
 			>
 				{modalDetails?.isOpen ? (
 					<ModalContentForTrend

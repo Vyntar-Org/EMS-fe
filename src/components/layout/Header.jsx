@@ -194,7 +194,16 @@ export const Header = ({
 								component="img"
 								src={LogoUrl}
 								alt="Logo"
+								role="button"
+								tabIndex={0}
+								aria-label="Go to dashboard"
 								onClick={() => navigate('/dashboard')}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter' || e.key === ' ') {
+										e.preventDefault();
+										navigate('/dashboard');
+									}
+								}}
 								sx={{
 									height: '44px',
 									width: 'auto',

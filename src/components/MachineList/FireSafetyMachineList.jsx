@@ -73,6 +73,7 @@ const MachineListHeader = ({
 				<Tooltip title="Download Report">
 					<span>
 						<IconButton
+							aria-label="Download report"
 							size="large"
 							disabled={isDownloadDisabled}
 							color="primary"
@@ -351,6 +352,7 @@ const FireSafetyMachineList = () => {
 				title={`${modalDetails?.data?.name} - ${modalDetails?.tabDesc}`}
 				confirmText={null}
 				cancelText={null}
+				maxWidth="md"
 			>
 				{modalDetails?.isOpen ? (
 					<ModalContentForTrend

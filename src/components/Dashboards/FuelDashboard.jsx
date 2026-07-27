@@ -61,6 +61,13 @@ const DeviceRow = ({ name, isActive, onClick }) => (
 	<Box
 		onClick={onClick}
 		role="button"
+		tabIndex={0}
+		onKeyDown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				onClick?.();
+			}
+		}}
 		sx={{
 			display: 'flex',
 			alignItems: 'center',
