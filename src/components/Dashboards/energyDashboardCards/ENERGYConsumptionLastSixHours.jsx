@@ -1,15 +1,18 @@
+import { Box } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import ReactApexChart from 'react-apexcharts';
+
+import { api } from '../../../helpers/api';
+import { API_URLS } from '../../../helpers/apiUrls';
 import {
 	CHART_COLORS,
-	buildPremiumTooltip,
-	downsample,
+	DEFAULT_MAX_POINTS,
+	getChartOptions,
+	getChartSeries,
 } from '../../../helpers/chartConfig';
-import React, { useEffect, useState } from 'react';
 import CustomCard from '../../common/CustomCard';
-import { API_URLS } from '../../../helpers/apiUrls';
-import { api } from '../../../helpers/api';
 import NoDataFound from '../../common/errors/NoDataFound';
-import ReactApexChart from 'react-apexcharts';
-import { Box } from '@mui/material';
+
 
 const ENERGYConsumptionLastSixHours = () => {
 	const [consumption, setConsumption] = useState(null);
@@ -31,80 +34,28 @@ const ENERGYConsumptionLastSixHours = () => {
 		fetchConsumptionData();
 	}, []);
 
-	// Safety cap — the API is expected to return one point per hour, but
-	// guard against a larger payload crowding a card-sized chart.
-	const hourlyData = downsample(consumption?.data || []);
+	const hourlyData = consumption?.data || [];
 
-	const series = [
+	const series = getChartSeries(
+		hourlyData,
 		{
-			name: '(kWh)',
-			data: hourlyData.map((item) => Math.round(item.consumption)),
+			actual: 'consumption',
+			actualLabel: '(kWh)',
+			includeTarget: false,
 		},
-	];
+		DEFAULT_MAX_POINTS
+	);
 
-	const options = {
-		chart: {
-			type: 'area',
-			toolbar: {
-				show: true,
-				tools: {
-					download: true,
-					selection: false,
-					zoom: false,
-					zoomin: false,
-					zoomout: false,
-					pan: false,
-					reset: false,
-				},
-			},
-			zoom: { enabled: false },
-			redrawOnParentResize: true,
-			redrawOnWindowResize: true,
-		},
-		stroke: {
-			curve: 'smooth',
-			width: 3,
-			colors: [CHART_COLORS.consumption6h],
-		},
-		fill: {
-			type: 'gradient',
-			gradient: {
-				shadeIntensity: 1,
-				opacityFrom: 0.1,
-				opacityTo: 0,
-				stops: [0, 90, 100],
-			},
-		},
-		dataLabels: { enabled: false },
-		markers: {
-			size: 0,
-			strokeWidth: 0,
-			hover: { size: 6 },
-		},
-		xaxis: {
-			categories: hourlyData.map((item) => {
-				const date = new Date(item.hour);
-				return date.getHours().toString().padStart(2, '0') + '.00';
-			}),
-			axisBorder: { show: false },
-			axisTicks: { show: false },
-		},
-		yaxis: {
-			labels: {
-				formatter: (val) => Math.round(val),
-			},
-		},
-		tooltip: {
-			shared: true,
-			intersect: false,
-			fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
-			custom: buildPremiumTooltip({ unit: 'kWh' }),
-		},
+	const options = getChartOptions('area', hourlyData, {
+		yLabel: 'kWh',
+		xLabel: 'Hour',
 		colors: [CHART_COLORS.consumption6h],
-		grid: {
-			show: false,
-		},
-	};
+		// The API returns one point per hour as an ISO timestamp under
+		// `hour` — format it as a bare "HH.00" tick (brackets escape the
+		// literal ".00" from dayjs's token parser) instead of a full date.
+		categoryOpts: { key: 'hour', customFormat: 'HH.[00]' },
+		chartTitle: 'Energy Consumption (Last 6 Hours)',
+	});
 
 	return (
 		<CustomCard

@@ -192,10 +192,13 @@ const ModalContentForTrend = ({
 				) : chartResponse?.data?.length ? (
 					<ReactApexChart
 						options={getChartOptions('line', chartResponse.data, {
-							xLabel: '',
-							yLabel: '',
+							xLabel: 'Time',
+							yLabel: activeTab?.label || 'Value',
 							colors: [APP_ACCENT_COLOR.FLOWMETER],
 							categoryOpts: { key: 'timestamp', format: 'time' },
+							chartTitle: `${activeTab?.desc ? `${activeTab.desc} — ` : ''}${
+								activeTab?.label || 'Flow Meter'
+							} Trend`,
 						})}
 						series={getChartSeries(chartResponse.data, {
 							actual: activeTab?.label,

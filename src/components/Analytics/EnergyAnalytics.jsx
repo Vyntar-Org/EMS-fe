@@ -20,7 +20,13 @@ import {
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { getCategoricalColors } from '../../helpers/chartConfig';
+import {
+	buildComparisonChartOptions,
+	buildPremiumTooltip,
+	formatChartValue,
+	getAxisInk,
+	getCategoricalColors,
+} from '../../helpers/chartConfig';
 import {
 	basePickerStyles,
 	downAnalyticsSampleData,
@@ -376,6 +382,10 @@ const AnalyticsRow = memo(
 				stroke: { curve: 'smooth', width: 2 },
 				xaxis: {
 					categories: processedData.categories,
+					title: {
+						text: 'Time',
+						style: { color: getAxisInk().title, fontWeight: 'bold' },
+					},
 					labels: {
 						show: true,
 						rotate: 0,
@@ -383,7 +393,7 @@ const AnalyticsRow = memo(
 						style: {
 							fontSize: '12px',
 							fontWeight: 600,
-							colors: '#a3aed0',
+							colors: getAxisInk().label,
 							cssClass: 'apexcharts-xaxis-label',
 						},
 						maxHeight: 80,
@@ -398,26 +408,30 @@ const AnalyticsRow = memo(
 						show: true,
 						width: 1,
 						opacity: 0.9,
-						stroke: { color: '#a3aed0', width: 1, dashArray: 4 },
+						stroke: { color: getAxisInk().label, width: 1, dashArray: 4 },
 					},
 					tooltip: { enabled: false },
 				},
 				yaxis: {
 					labels: {
-						formatter: (val) => (val !== null ? val.toFixed(2) : ''),
-						style: { fontSize: '11px' },
+						formatter: (val) => (val !== null ? formatChartValue(val) : ''),
+						style: { fontSize: '11px', colors: getAxisInk().label },
 					},
-					title: { text: 'Value' },
+					title: { text: 'Value', style: { color: getAxisInk().title } },
 				},
 				tooltip: {
 					enabled: true,
 					shared: true,
 					intersect: false,
-					custom: () => '',
+					custom: buildPremiumTooltip({
+						chartTitle: `${
+							payload?.slave_id?.label || 'Device'
+						} — Energy Trend`,
+					}),
 				},
 				legend: { show: false },
 				grid: {
-					borderColor: '#e0e0e0',
+					borderColor: 'rgba(128, 145, 170, 0.18)',
 					strokeDasharray: 0,
 					padding: { top: 0, right: 0, bottom: 0, left: 0 },
 				},
@@ -427,7 +441,7 @@ const AnalyticsRow = memo(
 					active: { filter: { type: 'none' } },
 				},
 			}),
-			[processedData.categories]
+			[processedData.categories, payload?.slave_id?.label]
 		);
 
 		const deviceLabel = payload?.slave_id?.label || `Device Segment ${id}`;
@@ -615,7 +629,7 @@ const AnalyticsRow = memo(
 										>
 											{item.value !== null && item.value !== undefined
 												? typeof item.value === 'number'
-													? item.value.toFixed(2)
+													? formatChartValue(item.value)
 													: item.value
 												: '—'}
 										</Typography>
@@ -654,53 +668,14 @@ const MergedAnalyticsRow = memo(({ rows }) => {
 	);
 	const isAnyLoading = rows.some((row) => row.isLoading);
 
-	const chartOptions = {
-		chart: {
-			type: 'line',
-			zoom: { enabled: false },
-			animations: { enabled: false },
-			dropShadow: {
-				enabled: true,
-				top: 4,
-				left: 0,
-				blur: 4,
-				opacity: 0.12,
-			},
-			toolbar: {
-				show: true,
-				tools: {
-					download: true,
-					selection: false,
-					zoom: false,
-					zoomin: false,
-					zoomout: false,
-					pan: false,
-					reset: false,
-				},
-			},
-		},
-		dataLabels: { enabled: false },
-		markers: { size: 0, hover: { sizeOffset: 4 } },
-		stroke: { curve: 'smooth', width: 2 },
-		xaxis: {
-			categories: mergedCategories,
-			labels: { rotate: -45, style: { fontSize: '10px' } },
-			tooltip: { enabled: false },
-		},
-		yaxis: {
-			labels: {
-				formatter: (val) => (val !== null ? val.toFixed(2) : ''),
-			},
-		},
-		tooltip: { shared: true, intersect: false },
-		legend: { position: 'top', horizontalAlign: 'left' },
-		grid: { borderColor: '#f1f1f1' },
-		states: {
-			normal: { filter: { type: 'none' } },
-			hover: { filter: { type: 'none' } },
-			active: { filter: { type: 'none' } },
-		},
-	};
+	const chartOptions = useMemo(
+		() =>
+			buildComparisonChartOptions({
+				categories: mergedCategories,
+				chartTitle: 'Energy Consumption Trend',
+			}),
+		[mergedCategories]
+	);
 
 	return (
 		<Box

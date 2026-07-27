@@ -9,6 +9,7 @@ import { useApplications } from '../../contexts/ApplicationContext';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
+import { getChartOptions, getChartSeries } from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
@@ -168,136 +169,22 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 		fetchTrendModalChartData(tab);
 	}, [slaveId]);
 
-	const chartOptions = {
-		chart: {
-			type: 'line',
-			// Subtle lift under the line so it reads as a premium chart
-			// rather than a flat plot.
-			dropShadow: {
-				enabled: true,
-				top: 4,
-				left: 0,
-				blur: 4,
-				opacity: 0.12,
-			},
-			toolbar: {
-				show: true,
-				tools: {
-					download: true,
-					selection: false,
-					zoom: false,
-					zoomin: false,
-					zoomout: false,
-					pan: false,
-					reset: false,
-				},
-			},
-		},
-		stroke: {
-			curve: 'smooth',
-			width: 2,
-		},
-		markers: {
-			size: 0,
-		},
-		grid: {
-			borderColor: '#ebe5e5',
-			strokeDashArray: 0,
-			xaxis: { lines: { show: false } },
-			yaxis: { lines: { show: false } },
-		},
-		xaxis: {
-			title: {
-				text: 'Time',
-				style: { color: '#6B7280', fontSize: '12px' },
-			},
-			categories: chartResponse?.data?.map((item) =>
-				new Date(item.timestamp).toLocaleTimeString('en-US', {
-					hour: '2-digit',
-					minute: '2-digit',
-					hour12: true,
-				})
-			),
-			labels: {
-				style: { colors: '#6B7280', fontSize: '11px' },
-				rotate: -45,
-				formatter: (val) => val,
-			},
-			tickAmount: 6,
-			tooltip: { enabled: false },
-		},
-		yaxis: {
-			title: {
-				text: chartResponse?.unit || '',
-				style: { color: '#6B7280', fontSize: '12px' },
-			},
-			labels: {
-				style: { colors: '#6B7280', fontSize: '11px' },
-			},
-		},
-		tooltip: {
-			enabled: true,
-			theme: 'light',
-			style: { fontSize: '12px' },
-			shared: true,
-			intersect: false,
-			custom: function ({ series, dataPointIndex, w }) {
-				let originalDate = '';
-				const targetArray = chartResponse?.data || [];
-
-				if (targetArray[dataPointIndex]) {
-					const timestamp = targetArray[dataPointIndex]?.timestamp || '';
-					if (timestamp) {
-						const date = new Date(timestamp);
-						originalDate = `${String(date.getDate()).padStart(2, '0')}/${String(
-							date.getMonth() + 1
-						).padStart(2, '0')}/${date.getFullYear()} ${String(
-							date.getHours()
-						).padStart(2, '0')}:${String(date.getMinutes()).padStart(
-							2,
-							'0'
-						)}:${String(date.getSeconds()).padStart(2, '0')}`;
-					}
-				}
-
-				let tooltipContent = `
-        <div class="apexcharts-tooltip-custom" style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-          <div style="font-weight: bold; margin-bottom: 8px; color: #6B7280; font-size: 13px; padding: 6px 10px; background-color: #f4f7f6; border-radius: 4px;">${originalDate}</div>
-      `;
-
-				w.globals.seriesNames.forEach((name, index) => {
-					const value = series[index][dataPointIndex];
-					const color =
-						w.config.series[index]?.color || APP_ACCENT_COLOR.TEMPERATURE;
-					tooltipContent += `
-          <div style="display: flex; align-items: center; margin-bottom: 6px; padding: 0 4px;">
-            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; margin-right: 8px;"></span>
-            <span style="flex: 1; color: #4B5563; font-size: 12px;">${name}:</span>
-            <span style="font-weight: bold; color: #1F2937; margin-left: 15px; font-size: 12px;">${
-							value !== undefined ? value : 'N/A'
-						}</span>
-          </div>`;
-				});
-
-				tooltipContent += '</div>';
-				return tooltipContent;
-			},
-		},
-		legend: {
-			show: true,
-			position: 'top',
-			horizontalAlign: 'center',
-		},
-	};
-
 	const activeTab = TEMPERATURE_TREND_TAB_OPTIONS.find((t) => t.tab === tab);
-	const chartSeries = [
-		{
-			name: `${slaveName} ${activeTab?.label || ''}`,
-			data: chartResponse?.data?.map((item) => item.value),
-			color: APP_ACCENT_COLOR['TEMPERATURE'],
-		},
-	];
+
+	const chartOptions = getChartOptions('line', chartResponse?.data || [], {
+		xLabel: 'Time',
+		yLabel: chartResponse?.unit || activeTab?.label || 'Value',
+		colors: [APP_ACCENT_COLOR.TEMPERATURE],
+		categoryOpts: { key: 'timestamp', format: 'time' },
+		chartTitle: `${slaveName || 'Temperature Machine'} — ${
+			activeTab?.label || 'Trend'
+		}`,
+	});
+
+	const chartSeries = getChartSeries(chartResponse?.data || [], {
+		actual: 'value',
+		actualLabel: `${slaveName || ''} ${activeTab?.label || ''}`.trim(),
+	});
 
 	return (
 		<>

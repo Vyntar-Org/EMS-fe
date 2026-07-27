@@ -19,6 +19,7 @@ import {
 import { alpha } from '@mui/material/styles';
 import { useId } from 'react';
 
+import { formatChartValue } from '../../helpers/chartConfig';
 import { getTemperatureScalePercent } from '../../helpers/temperatureStatus';
 
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
@@ -568,6 +569,7 @@ export const MiniComparisonBars = ({
 	yesterdayValue,
 	color,
 	height = 38,
+	unit = '',
 }) => {
 	const max = Math.max(Number(todayValue) || 0, Number(yesterdayValue) || 0, 1);
 	const pct = (v) => Math.max(6, ((Number(v) || 0) / max) * 100);
@@ -578,25 +580,36 @@ export const MiniComparisonBars = ({
 			alignItems="flex-end"
 			justifyContent="center"
 			gap={2.5}
-			sx={{ height, width: '100%' }}
+			sx={{ width: '100%' }}
 		>
 			{[
-				{ label: 'Yesterday', value: yesterdayValue, faded: true },
 				{ label: 'Today', value: todayValue, faded: false },
+				{ label: 'Yesterday', value: yesterdayValue, faded: true },
 			].map((b) => (
 				<Stack
 					key={b.label}
 					alignItems="center"
 					justifyContent="flex-end"
-					gap={0.4}
-					sx={{ height: '100%' }}
+					gap={0.25}
 				>
+					<Typography
+						sx={{
+							fontSize: '9px',
+							fontWeight: 700,
+							color: 'text.primary',
+							lineHeight: 1,
+							whiteSpace: 'nowrap',
+						}}
+					>
+						{formatChartValue(b.value)}
+						{unit ? ` ${unit}` : ''}
+					</Typography>
 					<Box
 						sx={{
 							width: 16,
 							borderRadius: '4px 4px 0 0',
 							bgcolor: b.faded ? alpha(color, 0.35) : color,
-							height: `${pct(b.value)}%`,
+							height: `${(pct(b.value) / 100) * height}px`,
 							transition: 'height 0.4s ease',
 						}}
 					/>

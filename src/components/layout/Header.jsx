@@ -291,7 +291,8 @@ export const Header = ({
 									// everywhere else) instead of one generic accent for every
 									// app — makes which app you're currently in unmistakable.
 									const accent =
-										APP_ACCENT_COLOR[appCode] || theme.palette.primary.main;
+										// APP_ACCENT_COLOR[appCode] ||
+										theme.palette.primary.main;
 									return (
 										<Tab
 											key={app.code}
@@ -321,6 +322,11 @@ export const Header = ({
 													borderColor: 'secondary.main',
 													'& .app-tab-icon': {
 														color: 'secondary.main',
+													},
+													'&:hover': {
+														'& .app-tab-icon': {
+															color: 'secondary.main',
+														},
 													},
 												},
 											}}

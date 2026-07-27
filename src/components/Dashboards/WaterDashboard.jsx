@@ -25,7 +25,7 @@ import { API_URLS } from '../../helpers/apiUrls';
 import { getCategoricalColors } from '../../helpers/chartConfig';
 import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
-import { MiniSparkline } from '../common/MachineCardBits';
+import { MiniComparisonBars } from '../common/MachineCardBits';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
 import WaterDashboardSkeleton from '../skeletonLoaders/WaterDashboardSkeleton';
 
@@ -86,6 +86,7 @@ const SIZE = {
 		trendGlyph: { xs: 12, md: 15 },
 		compare: { xs: '9.5px', md: '11.5px' },
 		asOf: { xs: '9px', md: '10.5px' },
+		barsHeight: 22,
 	},
 	compact: {
 		icon: { xs: 26, sm: 30, md: 34 },
@@ -97,8 +98,14 @@ const SIZE = {
 		trendGlyph: { xs: 11, md: 13 },
 		compare: { xs: '9px', md: '10px' },
 		asOf: { xs: '8.5px', md: '9.5px' },
+		barsHeight: 16,
 	},
 };
+
+// Only the volume metrics are measured in KLD — Water Positivity is an
+// index/ratio and Total Stations is a device count, neither of which is a
+// KLD quantity, so they render without a unit suffix.
+const NO_UNIT_METRICS = new Set(['water_positivity', 'total_stations']);
 
 const WaterKpiCard = ({
 	metricKey,
@@ -106,12 +113,14 @@ const WaterKpiCard = ({
 	hasData,
 	value,
 	yesterdayVal,
+	hasYesterday,
 	asOf,
 	compact = false,
 }) => {
 	const { icon: Icon, color } = CARD_META[metricKey];
 	const trend = hasData ? getTrend(value, yesterdayVal) : null;
 	const s = SIZE[compact ? 'compact' : 'comfortable'];
+	const unit = NO_UNIT_METRICS.has(metricKey) ? '' : 'KLD';
 
 	return (
 		<CustomCard
@@ -170,9 +179,17 @@ const WaterKpiCard = ({
 								sx={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}
 							/>
 						</Box>
-						{yesterdayVal ? (
-							<MiniSparkline data={[yesterdayVal, value]} color={color} />
-						) : null}
+						{asOf && (
+							<Box minWidth={0} flexShrink={0}>
+								<ResponsiveTextWrapper
+									fontSize={s.asOf}
+									color="text.secondary"
+									fontWeight={500}
+									value={asOf}
+									sx={{ textAlign: 'right' }}
+								/>
+							</Box>
+						)}
 					</Stack>
 
 					<Stack direction="row" alignItems="flex-end" gap={1} minWidth={0}>
@@ -180,7 +197,9 @@ const WaterKpiCard = ({
 							<ResponsiveTextWrapper
 								fontSize={s.value}
 								fontWeight={800}
-								value={`${value?.toLocaleString() || 0} KLD`}
+								value={`${value?.toLocaleString() || 0}${
+									unit ? ` ${unit}` : ''
+								}`}
 								color={color}
 								sx={{ lineHeight: 1.1 }}
 							/>
@@ -206,37 +225,17 @@ const WaterKpiCard = ({
 						)}
 					</Stack>
 
-					<Stack
-						direction="row"
-						alignItems="center"
-						justifyContent="space-between"
-						gap={1}
-						minWidth={0}
-					>
-						{yesterdayVal ? (
-							<Box minWidth={0} flex={1}>
-								<ResponsiveTextWrapper
-									fontSize={{ xs: '9.5px', md: '11.5px' }}
-									color="text.secondary"
-									fontWeight={600}
-									value={`Yesterday ${yesterdayVal?.toLocaleString() || 0} KLD`}
-								/>
-							</Box>
-						) : (
-							<span />
-						)}
-						{asOf && (
-							<Box minWidth={0} flexShrink={0}>
-								<ResponsiveTextWrapper
-									fontSize={{ xs: '9px', md: '10.5px' }}
-									color="text.secondary"
-									fontWeight={500}
-									value={asOf}
-									sx={{ textAlign: 'right' }}
-								/>
-							</Box>
-						)}
-					</Stack>
+					{hasYesterday ? (
+						<Box minWidth={0}>
+							<MiniComparisonBars
+								todayValue={value}
+								yesterdayValue={yesterdayVal}
+								color={color}
+								height={s.barsHeight}
+								unit={unit}
+							/>
+						</Box>
+					) : null}
 				</Box>
 			) : (
 				<NoDataFound message="Waiting for live device data — readings appear automatically" />
@@ -314,6 +313,7 @@ const WaterDashboard = () => {
 						hasData={Boolean(overviewData?.raw_water_inlet)}
 						value={overviewData?.raw_water_inlet?.current || 0}
 						yesterdayVal={overviewData?.raw_water_inlet?.previous || 0}
+						hasYesterday={overviewData?.raw_water_inlet?.previous !== undefined}
 						asOf={asOf}
 					/>
 				</Grid>
@@ -324,6 +324,9 @@ const WaterDashboard = () => {
 						hasData={Boolean(overviewData?.raw_water_outlet)}
 						value={overviewData?.raw_water_outlet?.current || 0}
 						yesterdayVal={overviewData?.raw_water_outlet?.previous || 0}
+						hasYesterday={
+							overviewData?.raw_water_outlet?.previous !== undefined
+						}
 						asOf={asOf}
 					/>
 				</Grid>
@@ -334,6 +337,9 @@ const WaterDashboard = () => {
 						hasData={Boolean(overviewData?.filter_water_outlet)}
 						value={overviewData?.filter_water_outlet?.current || 0}
 						yesterdayVal={overviewData?.filter_water_outlet?.previous || 0}
+						hasYesterday={
+							overviewData?.filter_water_outlet?.previous !== undefined
+						}
 						asOf={asOf}
 					/>
 				</Grid>
@@ -344,6 +350,7 @@ const WaterDashboard = () => {
 						hasData={Boolean(overviewData?.drinking_ro)}
 						value={overviewData?.drinking_ro?.current || 0}
 						yesterdayVal={overviewData?.drinking_ro?.previous || 0}
+						hasYesterday={overviewData?.drinking_ro?.previous !== undefined}
 						asOf={asOf}
 					/>
 				</Grid>
@@ -354,6 +361,9 @@ const WaterDashboard = () => {
 						hasData={Boolean(overviewData?.water_positivity)}
 						value={overviewData?.water_positivity?.current || 0}
 						yesterdayVal={overviewData?.water_positivity?.previous || 0}
+						hasYesterday={
+							overviewData?.water_positivity?.previous !== undefined
+						}
 						asOf={asOf}
 					/>
 				</Grid>
@@ -374,8 +384,11 @@ const WaterDashboard = () => {
 								hasData={Boolean(overviewData?.sewage_inlet)}
 								value={overviewData?.sewage_inlet?.current || 0}
 								yesterdayVal={overviewData?.sewage_inlet?.previous || 0}
+								hasYesterday={
+									overviewData?.sewage_inlet?.previous !== undefined
+								}
 								asOf={asOf}
-								compact
+								// compact
 							/>
 						</Grid>
 						<Grid item xs={12} sm={4} md={12} height={{ xs: 165, md: '33%' }}>
@@ -385,8 +398,11 @@ const WaterDashboard = () => {
 								hasData={Boolean(overviewData?.sewage_outlet)}
 								value={overviewData?.sewage_outlet?.current || 0}
 								yesterdayVal={overviewData?.sewage_outlet?.previous || 0}
+								hasYesterday={
+									overviewData?.sewage_outlet?.previous !== undefined
+								}
 								asOf={asOf}
-								compact
+								// compact
 							/>
 						</Grid>
 						<Grid
@@ -402,7 +418,7 @@ const WaterDashboard = () => {
 								hasData={Boolean(overviewData?.total_stations)}
 								value={overviewData?.total_stations || 0}
 								asOf={asOf}
-								compact
+								// compact
 							/>
 						</Grid>
 					</Grid>

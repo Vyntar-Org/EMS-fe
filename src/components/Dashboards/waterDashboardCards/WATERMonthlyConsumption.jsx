@@ -218,6 +218,7 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
 									// already searches common label fields (date, timestamp,
 									// label, ...) on each row automatically.
 									categoryOpts: { maxPoints: DEFAULT_MAX_POINTS },
+									chartTitle: 'Monthly Water Consumption',
 								}
 							)}
 							series={getChartSeries(machineConsumption, {

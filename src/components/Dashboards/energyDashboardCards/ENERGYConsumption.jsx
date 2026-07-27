@@ -115,6 +115,7 @@ const ENERGYConsumption = ({ data }) => {
 						todayValue={todayValue}
 						yesterdayValue={yesterdayValue}
 						color={ACCENT}
+						height={14}
 					/>
 				</Box>
 			) : (

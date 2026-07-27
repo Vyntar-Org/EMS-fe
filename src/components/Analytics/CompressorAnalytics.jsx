@@ -19,8 +19,12 @@ import {
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
+import {
+	getAxisInk,
+	getCategoricalColors,
+	getTooltipInk,
+} from '../../helpers/chartConfig';
 import { basePickerStyles } from '../../helpers/common';
-import { getCategoricalColors } from '../../helpers/chartConfig';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -128,23 +132,23 @@ const buildChartOptions = (isMultiSeries) => ({
 		type: 'datetime',
 		title: {
 			text: 'Time',
-			style: { color: '#6B7280', fontSize: '12px' },
+			style: { color: getAxisInk().title, fontSize: '12px' },
 		},
 		labels: {
-			style: { colors: '#6B7280', fontSize: '11px' },
+			style: { colors: getAxisInk().label, fontSize: '11px' },
 			datetimeUTC: false,
 		},
 	},
 	yaxis: {
 		title: {
 			text: 'Status',
-			style: { color: '#6B7280', fontSize: '12px' },
+			style: { color: getAxisInk().title, fontSize: '12px' },
 		},
 		min: -0.1,
 		max: 1.1,
 		tickAmount: 2,
 		labels: {
-			style: { colors: '#6B7280', fontSize: '12px' },
+			style: { colors: getAxisInk().label, fontSize: '12px' },
 			formatter: function (val) {
 				if (val >= 0.9) {
 					return 'Online';
@@ -157,15 +161,15 @@ const buildChartOptions = (isMultiSeries) => ({
 		},
 	},
 	grid: {
-		borderColor: '#E5E7EB',
+		borderColor: 'rgba(128, 145, 170, 0.18)',
 		xaxis: { lines: { show: false } },
 		yaxis: { lines: { show: true } },
 	},
 	tooltip: {
 		enabled: true,
-		theme: 'light',
 		shared: isMultiSeries,
 		custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+			const ink = getTooltipInk();
 			const allSeries = w.globals.initialSeries;
 			let tooltipHtml = '';
 			let timestamp = null;
@@ -176,7 +180,7 @@ const buildChartOptions = (isMultiSeries) => ({
 				return `
                     <div style="display: flex; align-items: center; margin-top: 4px;">
                       <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor}; margin-right: 8px;"></span>
-                      <span style="flex: 1; color: #333; font-size: 12px;">${name}:</span>
+                      <span style="flex: 1; color: ${ink.secondary}; font-size: 12px;">${name}:</span>
                       <span style="font-weight: bold; color: ${statusColor}; margin-left: 5px; font-size: 12px;">${statusText}</span>
                     </div>
                   `;
@@ -205,8 +209,9 @@ const buildChartOptions = (isMultiSeries) => ({
 				: 'N/A';
 
 			return `
-                  <div style="padding: 10px; background-color: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-                    <div style="font-weight: bold; margin-bottom: 8px; color: #333; font-size: 12px;">${formattedDate}</div>
+                  <div style="padding: 10px 12px; background-color: ${ink.surface}; border: 1px solid ${ink.border}; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.22);">
+                    <div style="font-weight: 700; margin-bottom: 6px; color: ${ink.primary}; font-size: 12px;">Compressor Status Trend</div>
+                    <div style="color: ${ink.secondary}; font-size: 11px; margin-bottom: 4px;">${formattedDate}</div>
                     ${tooltipHtml}
                   </div>
                 `;

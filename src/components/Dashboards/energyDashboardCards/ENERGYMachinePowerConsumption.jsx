@@ -1,14 +1,3 @@
-import { alpha } from '@mui/material/styles';
-import {
-	CHART_COLORS,
-	buildPremiumTooltip,
-	downsample,
-} from '../../../helpers/chartConfig';
-import React, { useEffect, useMemo, useState } from 'react';
-import CustomCard from '../../common/CustomCard';
-import { useCommonData } from '../../../contexts/CommonDataContext';
-import { api } from '../../../helpers/api';
-import { API_URLS } from '../../../helpers/apiUrls';
 import { BarChart, Search, SsidChart, Bolt } from '@mui/icons-material';
 import {
 	Box,
@@ -17,10 +6,23 @@ import {
 	ToggleButton,
 	ToggleButtonGroup,
 } from '@mui/material';
-import NoDataFound from '../../common/errors/NoDataFound';
-import { CustomAutocomplete } from '../../common/CustomAutocomplete';
-import { CustomInput } from '../../common/CustomInput';
+import { alpha } from '@mui/material/styles';
+import React, { useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
+
+import { useCommonData } from '../../../contexts/CommonDataContext';
+import { api } from '../../../helpers/api';
+import { API_URLS } from '../../../helpers/apiUrls';
+import {
+	CHART_COLORS,
+	downsample,
+	getChartOptions,
+	getChartSeries,
+} from '../../../helpers/chartConfig';
+import { CustomAutocomplete } from '../../common/CustomAutocomplete';
+import CustomCard from '../../common/CustomCard';
+import { CustomInput } from '../../common/CustomInput';
+import NoDataFound from '../../common/errors/NoDataFound';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
 const ACCENT = CHART_COLORS.machinePower;
@@ -99,14 +101,14 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	const [searchDevices, setSearchDevices] = useState(null);
 
 	const slavesDisplayName = useMemo(() => {
-		if (!slavesData && mode === 1) return null;
+		if (!slavesData && mode === 1) {return null;}
 
 		const slave = slavesData.find((s) => s.slave_id === slavesId);
 		return slave ? `${slave.slave_name}` : '';
 	}, [slavesId, slavesData, mode]);
 
 	const filteredSlaves = useMemo(() => {
-		if (!searchDevices?.trim()) return slavesData;
+		if (!searchDevices?.trim()) {return slavesData;}
 
 		const searchLower = searchDevices.toLowerCase().trim();
 
@@ -132,7 +134,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	};
 
 	useEffect(() => {
-		if (!slavesId) return;
+		if (!slavesId) {return;}
 
 		fetchMachineConsumption();
 	}, [slavesId]);
@@ -145,102 +147,26 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 		[machineConsumption]
 	);
 
-	const options1 = {
-		chart: {
-			type: 'bar',
-			toolbar: {
-				show: true,
-				tools: {
-					download: true,
-					selection: false,
-					zoom: false,
-					zoomin: false,
-					zoomout: false,
-					pan: false,
-					reset: false,
-				},
-			},
-			redrawOnParentResize: true,
-			redrawOnWindowResize: true,
-		},
-		plotOptions: {
-			bar: {
-				borderRadius: 8,
-				columnWidth: '45%',
-				dataLabels: { position: 'top' },
-			},
-		},
-		dataLabels: { enabled: false },
-		xaxis: {
-			categories: chartData.map((item) => {
-				const d = new Date(item.date);
-				return d.toLocaleDateString('en-US', {
-					month: 'short',
-					day: '2-digit',
-				});
-			}),
-			position: 'bottom',
-			axisBorder: { show: false },
-			axisTicks: { show: false },
-			labels: {
-				style: { colors: '#9e9e9e' },
-			},
-		},
-		yaxis: {
-			axisBorder: { show: false },
-			axisTicks: { show: false },
-			labels: {
-				style: { colors: '#9e9e9e' },
-				formatter: (val) => val.toFixed(2),
-			},
-		},
-		tooltip: {
-			shared: true,
-			intersect: false,
-			fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
-			custom: buildPremiumTooltip({ unit: 'kWh' }),
-		},
-		fill: {
-			colors: [CHART_COLORS.machinePower],
-		},
-		grid: {
-			show: false,
-		},
-	};
+	const chartTitle =
+		mode === 2 ? `${slavesDisplayName} Energy` : 'Machine Power Consumption';
 
-	const series1 = [
-		{
-			name: '(kWh)',
-			data: chartData.map((item) => item.value),
-		},
-	];
+	const chartOptions = getChartOptions(mode === 1 ? 'bar' : 'line', chartData, {
+		yLabel: 'kWh',
+		xLabel: 'Date',
+		colors: [CHART_COLORS.machinePower],
+		categoryOpts: { key: 'date', customFormat: 'MMM DD' },
+		chartTitle,
+	});
 
-	const options2 = {
-		...options1,
-		chart: {
-			...options1.chart,
-			type: 'line',
-		},
-		stroke: {
-			curve: 'smooth',
-			width: 3,
-			colors: [CHART_COLORS.machinePower],
-		},
-		plotOptions: {
-			bar: { enabled: false },
-		},
-		markers: {
-			size: 0,
-			strokeWidth: 0,
-			hover: { size: 6 },
-		},
-	};
+	const series = getChartSeries(chartData, {
+		actual: 'value',
+		actualLabel: '(kWh)',
+		includeTarget: false,
+	});
 
 	return (
 		<CustomCard
-			title={
-				mode === 2 ? `${slavesDisplayName} Energy` : 'Machine Power Consumption'
-			}
+			title={chartTitle}
 			accentColor={ACCENT}
 			icon={
 				<ToggleButtonGroup
@@ -288,28 +214,14 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 						width={{ sm: 'calc(100% - 200px - 12px)' }}
 						overflow="hidden"
 					>
-						{
-							{
-								1: (
-									<ReactApexChart
-										options={options1}
-										series={series1}
-										type="bar"
-										height="100%"
-										width="100%"
-									/>
-								),
-								2: (
-									<ReactApexChart
-										options={options2}
-										series={series1}
-										type="line"
-										height="100%"
-										width="100%"
-									/>
-								),
-							}[mode]
-						}
+						<ReactApexChart
+							key={`chart-${mode}`}
+							options={chartOptions}
+							series={series}
+							type={mode === 1 ? 'bar' : 'line'}
+							height="100%"
+							width="100%"
+						/>
 					</Box>
 
 					<Box

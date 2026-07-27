@@ -17,7 +17,10 @@ import { WATER_LOG_COLUMN_MAPPING } from '../../constants/waterLogs';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { getCategoricalColors } from '../../helpers/chartConfig';
+import {
+	buildComparisonChartOptions,
+	getCategoricalColors,
+} from '../../helpers/chartConfig';
 import {
 	basePickerStyles,
 	downAnalyticsSampleData,
@@ -77,61 +80,6 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
 
 	return { series, categories };
 };
-
-// Rebuilt only when `categories` changes (memoized by callers) instead of on
-// every render — a fresh options object each render forces ApexCharts to
-// fully re-diff/re-render even when nothing on screen actually changed.
-const buildChartOptions = (categories) => ({
-	chart: {
-		type: 'line',
-		zoom: { enabled: false },
-		animations: {
-			enabled: false,
-		},
-		// Subtle lift under the line so it reads as a premium chart rather
-		// than a flat plot — cheap since chart animations are already off.
-		dropShadow: {
-			enabled: true,
-			top: 4,
-			left: 0,
-			blur: 4,
-			opacity: 0.12,
-		},
-		toolbar: {
-			show: true,
-			tools: {
-				download: true,
-				selection: false,
-				zoom: false,
-				zoomin: false,
-				zoomout: false,
-				pan: false,
-				reset: false,
-			},
-		},
-	},
-	dataLabels: { enabled: false },
-	markers: { size: 0, hover: { sizeOffset: 4 } },
-	stroke: { curve: 'straight', width: 1.5 },
-	xaxis: {
-		categories,
-		labels: { rotate: -45, style: { fontSize: '10px' } },
-		tooltip: { enabled: false },
-	},
-	yaxis: {
-		labels: {
-			formatter: (val) => (val !== null ? val.toFixed(2) : ''),
-		},
-	},
-	tooltip: { shared: true, intersect: false },
-	legend: { position: 'top', horizontalAlign: 'left' },
-	grid: { borderColor: '#f1f1f1' },
-	states: {
-		normal: { filter: { type: 'none' } },
-		hover: { filter: { type: 'none' } },
-		active: { filter: { type: 'none' } },
-	},
-});
 
 const GlobalFiltersRow = memo(
 	({
@@ -344,7 +292,11 @@ const AnalyticsRow = memo(
 		);
 
 		const chartOptions = useMemo(
-			() => buildChartOptions(processedData.categories),
+			() =>
+				buildComparisonChartOptions({
+					categories: processedData.categories,
+					chartTitle: 'Fuel Consumption Trend',
+				}),
 			[processedData.categories]
 		);
 
@@ -487,7 +439,11 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 	}, [rows]);
 
 	const chartOptions = useMemo(
-		() => buildChartOptions(mergedCategories),
+		() =>
+			buildComparisonChartOptions({
+				categories: mergedCategories,
+				chartTitle: 'Fuel Consumption Trend',
+			}),
 		[mergedCategories]
 	);
 

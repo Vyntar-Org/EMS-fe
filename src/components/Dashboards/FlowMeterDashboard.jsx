@@ -1,5 +1,5 @@
-import { Box, Divider, Grid } from '@mui/material';
 import { Input, Output } from '@mui/icons-material';
+import { Box, Grid } from '@mui/material';
 import { useEffect, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
@@ -11,6 +11,7 @@ import {
 } from '../../helpers/chartConfig';
 import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
+import { MiniComparisonBars } from '../common/MachineCardBits';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
 import SiteLocationMap from '../common/SiteLocationMap';
 import FlowMeterDashboardSkeleton from '../skeletonLoaders/FlowMeterDashboardSkeleton';
@@ -21,77 +22,53 @@ const PALETTE = getCategoricalColors(8);
 const INLET_ACCENT = PALETTE[0];
 const OUTLET_ACCENT = PALETTE[2];
 
-// Compact, premium stat block: tight flexbox column (no accumulating
-// margins between lines, which is what made the old stacked-mt version
-// overflow its available card slot and force an internal scrollbar) with
-// the value as the clear visual focus, matching the KPI-tile hierarchy
-// used on the Water dashboard.
-const MetricBlock = ({ label, value, subLabel, showDivider, accent }) => (
-	<Grid
-		item
-		xs={12}
+// Hero value (Total) + a real today-vs-yesterday comparison, instead of two
+// equal-weight side-by-side stat blocks — matches the KPI-tile hierarchy
+// used on the Water dashboard, and reads clearer in the same tight space.
+const StatCard = ({ label, value, previousValue, accent }) => (
+	<Box
 		sx={{
 			height: '100%',
 			display: 'flex',
-			position: 'relative',
+			flexDirection: 'column',
 			alignItems: 'center',
 			justifyContent: 'center',
+			gap: { xs: 0.5, md: 0.75 },
+			width: '100%',
+			minWidth: 0,
+			px: 1,
 		}}
 	>
-		<Box
-			sx={{
-				display: 'flex',
-				flexDirection: 'column',
-				alignItems: 'center',
-				justifyContent: 'center',
-				gap: { xs: 0.25, md: 0.5 },
-				width: '100%',
-				minWidth: 0,
-			}}
-		>
-			{label && (
-				<ResponsiveTextWrapper
-					color="text.secondary"
-					fontWeight={700}
-					fontSize={{ xs: '10.5px', md: '12px' }}
-					value={label}
-					align="center"
-					sx={{ textTransform: 'uppercase', letterSpacing: '0.3px' }}
+		<ResponsiveTextWrapper
+			color="text.secondary"
+			fontWeight={700}
+			fontSize={{ xs: '10.5px', md: '12px' }}
+			value={label}
+			align="center"
+			sx={{ textTransform: 'uppercase', letterSpacing: '0.3px' }}
+		/>
+
+		<ResponsiveTextWrapper
+			fontSize={{ xs: '20px', sm: '24px', md: '27px' }}
+			fontWeight={800}
+			value={`${value?.toLocaleString() || 0} KL`}
+			align="center"
+			color={accent}
+			sx={{ lineHeight: 1.1 }}
+		/>
+
+		{previousValue !== undefined ? (
+			<Box width="100%" maxWidth={180}>
+				<MiniComparisonBars
+					todayValue={value}
+					yesterdayValue={previousValue}
+					color={accent}
+					height={18}
+					unit="KL"
 				/>
-			)}
-
-			<ResponsiveTextWrapper
-				fontSize={{ xs: '16px', sm: '19px', md: '22px' }}
-				fontWeight={800}
-				value={`${value?.toLocaleString() || 0} KL`}
-				align="center"
-				color={accent || 'text.accent'}
-				sx={{ lineHeight: 1.15 }}
-			/>
-
-			{subLabel ? (
-				<ResponsiveTextWrapper
-					fontSize={{ xs: '9.5px', md: '11px' }}
-					color="text.secondary"
-					fontWeight={600}
-					value={subLabel}
-					align="center"
-				/>
-			) : null}
-		</Box>
-
-		{showDivider && (
-			<Divider
-				orientation="vertical"
-				sx={{
-					borderStyle: 'dashed',
-					height: '70%',
-					position: 'absolute',
-					right: 0,
-				}}
-			/>
-		)}
-	</Grid>
+			</Box>
+		) : null}
+	</Box>
 );
 
 const FlowMeterDashboard = () => {
@@ -165,33 +142,14 @@ const FlowMeterDashboard = () => {
 										accentColor={INLET_ACCENT}
 									>
 										{summaryData?.inlet_water ? (
-											<Grid
-												container
-												sx={{ height: '100%', width: '100%' }}
-												alignItems="center"
-												spacing={0.5}
-											>
-												<Grid item xs={6} height={{ md: '100%' }}>
-													<MetricBlock
-														label="Total"
-														value={summaryData?.inlet_water?.value || 0}
-														subLabel="(Waste Water)"
-														accent={INLET_ACCENT}
-														showDivider
-													/>
-												</Grid>
-
-												<Grid item xs={6} height={{ md: '100%' }}>
-													<MetricBlock
-														label="Yesterday"
-														value={
-															summaryData?.inlet_water?.previous_value || 0
-														}
-														subLabel="(Waste Water)"
-														accent={INLET_ACCENT}
-													/>
-												</Grid>
-											</Grid>
+											<StatCard
+												label="Total (Waste Water)"
+												value={summaryData?.inlet_water?.value || 0}
+												previousValue={
+													summaryData?.inlet_water?.previous_value || 0
+												}
+												accent={INLET_ACCENT}
+											/>
 										) : (
 											<NoDataFound message="Waiting for live device data — readings appear automatically" />
 										)}
@@ -206,33 +164,14 @@ const FlowMeterDashboard = () => {
 										accentColor={OUTLET_ACCENT}
 									>
 										{summaryData?.outlet_water ? (
-											<Grid
-												container
-												sx={{ height: '100%', width: '100%' }}
-												alignItems="center"
-												spacing={0.5}
-											>
-												<Grid item xs={6} height={{ md: '100%' }}>
-													<MetricBlock
-														label="Total"
-														value={summaryData?.outlet_water?.value || 0}
-														subLabel="(Out)"
-														accent={OUTLET_ACCENT}
-														showDivider
-													/>
-												</Grid>
-
-												<Grid item xs={6} height={{ md: '100%' }}>
-													<MetricBlock
-														label="Yesterday"
-														value={
-															summaryData?.outlet_water?.previous_value || 0
-														}
-														subLabel="(Out)"
-														accent={OUTLET_ACCENT}
-													/>
-												</Grid>
-											</Grid>
+											<StatCard
+												label="Total (Out)"
+												value={summaryData?.outlet_water?.value || 0}
+												previousValue={
+													summaryData?.outlet_water?.previous_value || 0
+												}
+												accent={OUTLET_ACCENT}
+											/>
 										) : (
 											<NoDataFound message="Waiting for live device data — readings appear automatically" />
 										)}
@@ -260,6 +199,7 @@ const FlowMeterDashboard = () => {
 												{
 													colors: getCategoricalColors(4),
 													yLabel: 'KL',
+													chartTitle: 'Inlet vs Outlet Water Comparison',
 												}
 											)}
 											series={waterComparison?.series || []}

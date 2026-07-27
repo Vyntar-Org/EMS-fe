@@ -56,8 +56,10 @@ const buildRowChart = (rawAnalytics, activeKeys) => {
 
 	return {
 		options: getChartOptions('line', rawAnalytics, {
-			xLabel: '',
-			yLabel: '',
+			chartTitle: 'Flow Meter Analytics Trend',
+			tooltipFixed: false,
+			xLabel: 'Time',
+			yLabel: 'Value',
 			colors: getCategoricalColors(8),
 			categoryOpts: {
 				key: 'timestamp',
@@ -401,8 +403,10 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 		return {
 			mergedOptions: baseRow
 				? getChartOptions('line', baseRow.rawAnalytics, {
-						xLabel: '',
-						yLabel: '',
+						chartTitle: 'Flow Meter Analytics Trend',
+						tooltipFixed: false,
+						xLabel: 'Time',
+						yLabel: 'Value',
 						colors: getCategoricalColors(8),
 						categoryOpts: {
 							key: 'timestamp',

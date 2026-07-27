@@ -108,7 +108,7 @@ export const downsample = (data, maxPoints = DEFAULT_MAX_POINTS) => {
 // (e.g. 10.12545451224) — round to 2 decimals everywhere a value is
 // displayed (tooltip rows, donut/radial labels, axis ticks), and drop a
 // trailing ".00" so whole numbers stay clean.
-const formatChartValue = (val) => {
+export const formatChartValue = (val) => {
 	const num = Number(val);
 	if (!Number.isFinite(num)) {
 		return val;
@@ -232,17 +232,19 @@ const commonXAxis = (data, _isLarge, xLabel = 'Day', categoryOpts = {}) => {
 		Math.ceil(categories.length / MAX_XAXIS_LABELS)
 	);
 
+	const ink = activeAxisInk();
+
 	return {
 		categories,
 		title: {
 			text: xLabel,
-			style: { color: '#555', fontWeight: 'bold' },
+			style: { color: ink.title, fontWeight: 'bold' },
 		},
 		axisBorder: { show: false },
 		axisTicks: { show: false },
 		labels: {
 			rotate: -45,
-			style: { colors: '#757575', fontSize: '11px' },
+			style: { colors: ink.label, fontSize: '11px' },
 			// ApexCharts' category-axis formatter only reliably passes the
 			// label itself as the first argument — the 2nd/3rd args are
 			// documented for datetime/numeric axes, not category, and were
@@ -258,18 +260,21 @@ const commonXAxis = (data, _isLarge, xLabel = 'Day', categoryOpts = {}) => {
 	};
 };
 
-const commonYAxis = (yLabel = 'Liters') => ({
-	title: {
-		text: yLabel,
-		style: { color: '#555', fontWeight: 'bold' },
-	},
-	axisBorder: { show: false },
-	axisTicks: { show: false },
-	labels: {
-		style: { colors: '#757575' },
-		formatter: (val) => formatChartValue(val),
-	},
-});
+const commonYAxis = (yLabel = 'Liters') => {
+	const ink = activeAxisInk();
+	return {
+		title: {
+			text: yLabel,
+			style: { color: ink.title, fontWeight: 'bold' },
+		},
+		axisBorder: { show: false },
+		axisTicks: { show: false },
+		labels: {
+			style: { colors: ink.label },
+			formatter: (val) => formatChartValue(val),
+		},
+	};
+};
 
 // Chart chrome/ink per theme mode — mirrors the app's card surfaces so the
 // tooltip reads as part of the same design system in both modes.
@@ -288,28 +293,49 @@ const TOOLTIP_INK = {
 	},
 };
 
+// Axis/label ink per theme mode — hardcoded greys read as washed-out or
+// invisible against a dark card surface, so axis titles/ticks/data-label
+// text must swap alongside the tooltip and series palettes.
+const AXIS_INK = {
+	light: { title: '#555555', label: '#757575', dataLabel: '#1F2937' },
+	dark: { title: '#cbd5e1', label: '#94a3b8', dataLabel: '#e2e8f0' },
+};
+
+const activeAxisInk = () => AXIS_INK[chartThemeMode] || AXIS_INK.light;
+
+// Exposed for the handful of call sites that build a fully custom
+// ApexCharts `options` object (bespoke hover-sync behavior, etc.) instead of
+// going through `getChartOptions`/`buildComparisonChartOptions` — they still
+// need theme-aware ink rather than a hardcoded grey.
+export const getAxisInk = () => activeAxisInk();
+
+// Same escape hatch as `getAxisInk`, for call sites building a fully custom
+// HTML tooltip (bespoke multi-row status tooltips, etc.) that still need to
+// match the app's tooltip surface/border/text ink per theme mode.
+export const getTooltipInk = () => TOOLTIP_INK[chartThemeMode] || TOOLTIP_INK.light;
+
 /**
  * Builds a themed, premium HTML tooltip for bar/line/area charts (shared
  * across series at a given point). Avoids ApexCharts' plain default box.
  * @param {Object} opts - { unit, titleFormat }
  */
-export const buildPremiumTooltip = ({ unit = '', titleFormat } = {}) =>
+export const buildPremiumTooltip = ({ unit = '', titleFormat, chartTitle } = {}) =>
 	function ({ series, seriesIndex, dataPointIndex, w }) {
 		const ink = TOOLTIP_INK[chartThemeMode] || TOOLTIP_INK.light;
 		const isDatetime = w.config.xaxis?.type === 'datetime';
 
-		let title = '';
+		let xLabel = '';
 		if (isDatetime) {
 			const x = w.globals.seriesX?.[seriesIndex]?.[dataPointIndex];
 			if (x !== null && x !== undefined) {
-				title = dayjs(x).format(titleFormat || 'MMM D, h:mm A');
+				xLabel = dayjs(x).format(titleFormat || 'MMM D, h:mm A');
 			}
 		} else {
 			// Category axis: the label at this point, formatted the same way
 			// the x-axis ticks are (falls back to the raw label) so the
 			// tooltip title always reads as a real date/category, never blank.
 			const rawLabel = w.globals.labels?.[dataPointIndex];
-			title = rawLabel !== undefined && rawLabel !== null ? rawLabel : '';
+			xLabel = rawLabel !== undefined && rawLabel !== null ? rawLabel : '';
 		}
 
 		const rows = (w.globals.seriesNames || [])
@@ -339,10 +365,15 @@ export const buildPremiumTooltip = ({ unit = '', titleFormat } = {}) =>
 		return `
 			<div style="background:${ink.surface};border:1px solid ${
 				ink.border
-			};border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.22);min-width:130px;">
+			};border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.22);min-width:150px;">
 				${
-					title
-						? `<div style="font-size:11px;font-weight:700;color:${ink.secondary};margin-bottom:6px;">${title}</div>`
+					chartTitle
+						? `<div style="font-size:12px;font-weight:700;color:${ink.primary};margin-bottom:2px;">${chartTitle}</div>`
+						: ''
+				}
+				${
+					xLabel
+						? `<div style="font-size:11px;color:${ink.secondary};margin-bottom:6px;">${xLabel}</div>`
 						: ''
 				}
 				${rows}
@@ -366,9 +397,9 @@ export const buildDonutTooltip = ({ unit = '' } = {}) =>
 				<div style="display:flex;align-items:center;gap:8px;">
 					<span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></span>
 					<span style="font-size:12px;color:${ink.secondary};">${name}</span>
-					<span style="font-size:12px;font-weight:700;color:${ink.primary};">${value}${
-						unit ? ` ${unit}` : ''
-					}</span>
+					<span style="font-size:12px;font-weight:700;color:${
+						ink.primary
+					};">${formatChartValue(value)}${unit ? ` ${unit}` : ''}</span>
 				</div>
 			</div>`;
 	};
@@ -382,15 +413,20 @@ const commonLegend = {
 	itemMargin: { horizontal: 10 },
 };
 
-// Pinned to a fixed corner instead of following the cursor — a
-// cursor-tracked tooltip near a card's edge gets clipped by the card's own
-// rounded-corner overflow:hidden. Fixed positioning keeps it safely inside
-// the chart's own bounds at all times.
-const commonTooltip = (yLabel = 'Liters') => ({
+// Pinned to a fixed corner instead of following the cursor for small,
+// card-sized charts — a cursor-tracked tooltip near a card's edge gets
+// clipped by the card's own rounded-corner overflow:hidden there. Wide,
+// full-row charts (analytics comparison rows) don't have that edge-clipping
+// problem and are wide enough that a corner-pinned tooltip goes unnoticed
+// far from the cursor, so those pass `tooltipFixed: false` to get the
+// normal cursor-following tooltip instead.
+const commonTooltip = (yLabel = 'Liters', chartTitle, tooltipFixed = true) => ({
 	shared: true,
 	intersect: false,
-	fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
-	custom: buildPremiumTooltip({ unit: yLabel }),
+	...(tooltipFixed
+		? { fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 } }
+		: {}),
+	custom: buildPremiumTooltip({ unit: yLabel, chartTitle }),
 });
 
 const commonGrid = {
@@ -423,8 +459,28 @@ const commonChart = (type, isLarge) => ({
 	redrawOnWindowResize: true,
 });
 
-const barOptions = (data, isLarge, yLabel, xLabel, colors, categoryOpts) => ({
-	chart: commonChart('bar', isLarge),
+const barOptions = (
+	data,
+	isLarge,
+	yLabel,
+	xLabel,
+	colors,
+	categoryOpts,
+	chartTitle,
+	tooltipFixed
+) => ({
+	chart: {
+		...commonChart('bar', isLarge),
+		// Soft shadow under each bar lifts it off the grid, same treatment
+		// as the line/area charts.
+		dropShadow: {
+			enabled: !isLarge,
+			top: 3,
+			left: 0,
+			blur: 4,
+			opacity: 0.18,
+		},
+	},
 	colors,
 	plotOptions: {
 		bar: {
@@ -452,15 +508,26 @@ const barOptions = (data, isLarge, yLabel, xLabel, colors, categoryOpts) => ({
 		colors: ['transparent'],
 	},
 	markers: { size: 0 },
+	// Values live in the tooltip (hover), not printed permanently on every
+	// bar — keeps the chart itself clean; see `commonTooltip`.
 	dataLabels: { enabled: false },
 	xaxis: commonXAxis(data, isLarge, xLabel, categoryOpts),
 	yaxis: commonYAxis(yLabel),
-	tooltip: commonTooltip(yLabel),
+	tooltip: commonTooltip(yLabel, chartTitle, tooltipFixed),
 	legend: commonLegend,
 	grid: commonGrid,
 });
 
-const lineOptions = (data, isLarge, yLabel, xLabel, colors, categoryOpts) => ({
+const lineOptions = (
+	data,
+	isLarge,
+	yLabel,
+	xLabel,
+	colors,
+	categoryOpts,
+	chartTitle,
+	tooltipFixed
+) => ({
 	chart: {
 		...commonChart('line', isLarge),
 		// Soft shadow under the line lifts it off the grid
@@ -483,16 +550,38 @@ const lineOptions = (data, isLarge, yLabel, xLabel, colors, categoryOpts) => ({
 		strokeWidth: 2,
 		hover: { size: isLarge ? 4 : 6 },
 	},
+	// Values live in the tooltip (hover), not printed permanently on every
+	// point — keeps the chart itself clean; see `commonTooltip`.
 	dataLabels: { enabled: false },
 	xaxis: commonXAxis(data, isLarge, xLabel, categoryOpts),
 	yaxis: commonYAxis(yLabel),
-	tooltip: commonTooltip(yLabel),
+	tooltip: commonTooltip(yLabel, chartTitle, tooltipFixed),
 	legend: commonLegend,
 	grid: commonGrid,
 });
 
-const areaOptions = (data, isLarge, yLabel, xLabel, colors, categoryOpts) => ({
-	chart: commonChart('area', isLarge),
+const areaOptions = (
+	data,
+	isLarge,
+	yLabel,
+	xLabel,
+	colors,
+	categoryOpts,
+	chartTitle,
+	tooltipFixed
+) => ({
+	chart: {
+		...commonChart('area', isLarge),
+		// Soft shadow under the line/fill lifts it off the grid, same
+		// treatment as the bar/line charts.
+		dropShadow: {
+			enabled: !isLarge,
+			top: 4,
+			left: 0,
+			blur: 6,
+			opacity: 0.14,
+		},
+	},
 	colors,
 	fill: {
 		type: 'gradient',
@@ -512,10 +601,12 @@ const areaOptions = (data, isLarge, yLabel, xLabel, colors, categoryOpts) => ({
 		strokeWidth: 0,
 		hover: { size: isLarge ? 4 : 6 },
 	},
+	// Values live in the tooltip (hover), not printed permanently on every
+	// point — keeps the chart itself clean; see `commonTooltip`.
 	dataLabels: { enabled: false },
 	xaxis: commonXAxis(data, isLarge, xLabel, categoryOpts),
 	yaxis: commonYAxis(yLabel),
-	tooltip: commonTooltip(yLabel),
+	tooltip: commonTooltip(yLabel, chartTitle, tooltipFixed),
 	legend: commonLegend,
 	grid: commonGrid,
 });
@@ -539,6 +630,8 @@ const donutOptions = (labels = [], yLabel = '', colors) => ({
 	},
 	colors,
 	labels,
+	// Values live in the tooltip (hover) and legend, not printed permanently
+	// on each slice — keeps the chart itself clean; see `buildDonutTooltip`.
 	dataLabels: { enabled: false },
 	plotOptions: {
 		pie: {
@@ -549,7 +642,10 @@ const donutOptions = (labels = [], yLabel = '', colors) => ({
 					total: {
 						show: true,
 						label: yLabel || 'Total',
-						formatter: (w) => w.globals.seriesTotals.reduce((a, b) => a + b, 0),
+						formatter: (w) =>
+							formatChartValue(
+								w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+							),
 					},
 				},
 			},
@@ -598,17 +694,17 @@ const radialOptions = (labels = [], colors) => ({
 				name: {
 					show: true,
 					fontSize: '10px',
-					color: '#6B7280',
+					color: activeAxisInk().label,
 					offsetY: -10,
 				},
 				value: {
 					show: true,
 					fontSize: '14px',
 					fontWeight: 'bold',
-					color: '#1F2937',
+					color: activeAxisInk().dataLabel,
 					offsetY: -1,
 					formatter: function (val) {
-						return val;
+						return formatChartValue(val);
 					},
 				},
 			},
@@ -623,7 +719,7 @@ const radialOptions = (labels = [], colors) => ({
 	},
 	tooltip: {
 		enabled: true,
-		y: { formatter: (val) => `${Math.round(val)}` },
+		y: { formatter: (val) => formatChartValue(val) },
 	},
 });
 
@@ -640,17 +736,48 @@ export const getChartOptions = (type, data, opts = {}) => {
 		labels = [],
 		colors = [CHART_COLORS.primary, CHART_COLORS.secondary],
 		categoryOpts = {},
+		chartTitle,
+		// Wide, full-row charts (analytics comparison rows) should pass
+		// `false` here — see the comment on `commonTooltip` for why.
+		tooltipFixed = true,
 	} = opts;
 
 	const isLarge = Array.isArray(data) && data.length > LARGE_DATA_THRESHOLD;
 
 	switch (type) {
 		case 'bar':
-			return barOptions(data, isLarge, yLabel, xLabel, colors, categoryOpts);
+			return barOptions(
+				data,
+				isLarge,
+				yLabel,
+				xLabel,
+				colors,
+				categoryOpts,
+				chartTitle,
+				tooltipFixed
+			);
 		case 'line':
-			return lineOptions(data, isLarge, yLabel, xLabel, colors, categoryOpts);
+			return lineOptions(
+				data,
+				isLarge,
+				yLabel,
+				xLabel,
+				colors,
+				categoryOpts,
+				chartTitle,
+				tooltipFixed
+			);
 		case 'area':
-			return areaOptions(data, isLarge, yLabel, xLabel, colors, categoryOpts);
+			return areaOptions(
+				data,
+				isLarge,
+				yLabel,
+				xLabel,
+				colors,
+				categoryOpts,
+				chartTitle,
+				tooltipFixed
+			);
 		case 'donut':
 			return donutOptions(labels, yLabel, colors);
 		case 'radialBar':
@@ -702,4 +829,85 @@ export const getChartSeries = (
 	}
 
 	return series;
+};
+
+/**
+ * Shared options builder for the multi-device "comparison" line charts used
+ * across the Analytics screens (Water/Fuel/Solar/Temperature/FireSafety/...).
+ * Centralizes theme-aware axes, the premium tooltip (with a contextual
+ * `chartTitle`), shadows and 2-decimal formatting so each screen no longer
+ * hand-rolls its own copy of this options object.
+ * @param {Object} opts - { categories, chartTitle, unit, xLabel, yLabel }
+ */
+export const buildComparisonChartOptions = ({
+	categories = [],
+	chartTitle = '',
+	unit = '',
+	xLabel = 'Time',
+	yLabel = 'Value',
+} = {}) => {
+	const ink = activeAxisInk();
+
+	return {
+		chart: {
+			type: 'line',
+			zoom: { enabled: false },
+			animations: { enabled: false },
+			// Subtle lift under the line so it reads as a premium chart rather
+			// than a flat plot — cheap since chart animations are already off.
+			dropShadow: {
+				enabled: true,
+				top: 4,
+				left: 0,
+				blur: 4,
+				opacity: 0.12,
+			},
+			toolbar: {
+				show: true,
+				tools: {
+					download: true,
+					selection: false,
+					zoom: false,
+					zoomin: false,
+					zoomout: false,
+					pan: false,
+					reset: false,
+				},
+			},
+		},
+		dataLabels: { enabled: false },
+		markers: { size: 0, hover: { sizeOffset: 4 } },
+		stroke: { curve: 'smooth', width: 2, lineCap: 'round' },
+		xaxis: {
+			categories,
+			title: { text: xLabel, style: { color: ink.title, fontWeight: 'bold' } },
+			labels: { rotate: -45, style: { colors: ink.label, fontSize: '11px' } },
+			axisBorder: { show: false },
+			axisTicks: { show: false },
+			tooltip: { enabled: false },
+		},
+		yaxis: {
+			title: { text: yLabel, style: { color: ink.title, fontWeight: 'bold' } },
+			labels: {
+				style: { colors: ink.label },
+				formatter: (val) => (val !== null ? formatChartValue(val) : ''),
+			},
+		},
+		tooltip: {
+			shared: true,
+			intersect: false,
+			// No `fixed` positioning here (unlike `commonTooltip`) — these are
+			// wide, full-row comparison charts, not small cards with a
+			// rounded-corner overflow:hidden to dodge, so the normal
+			// cursor-following tooltip is what's actually visible/expected.
+			custom: buildPremiumTooltip({ unit, chartTitle }),
+		},
+		legend: commonLegend,
+		grid: commonGrid,
+		states: {
+			normal: { filter: { type: 'none' } },
+			hover: { filter: { type: 'none' } },
+			active: { filter: { type: 'none' } },
+		},
+	};
 };

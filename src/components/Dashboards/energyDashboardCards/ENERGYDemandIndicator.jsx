@@ -1,23 +1,26 @@
+import { Box } from '@mui/material';
+import React, { useEffect, useMemo, useState } from 'react';
+import ReactApexChart from 'react-apexcharts';
+
+import { useCommonData } from '../../../contexts/CommonDataContext';
+import { api } from '../../../helpers/api';
+import { API_URLS } from '../../../helpers/apiUrls';
 import {
 	CHART_COLORS,
 	buildPremiumTooltip,
 	downsample,
+	formatChartValue,
 } from '../../../helpers/chartConfig';
-import React, { useEffect, useMemo, useState } from 'react';
 import CustomCard from '../../common/CustomCard';
-import { api } from '../../../helpers/api';
-import { API_URLS } from '../../../helpers/apiUrls';
 import NoDataFound from '../../common/errors/NoDataFound';
-import { useCommonData } from '../../../contexts/CommonDataContext';
-import ReactApexChart from 'react-apexcharts';
-import { Box } from '@mui/material';
+
 
 const ENERGYDemandIndicator = ({ slavesId }) => {
 	const { slavesData } = useCommonData();
 	const [demandIndicator, setDemandIndicator] = useState(null);
 
 	const slavesDisplayName = useMemo(() => {
-		if (!slavesData) return null;
+		if (!slavesData) {return null;}
 
 		const slave = slavesData.find((s) => s.slave_id === slavesId);
 		return slave ? ` - ${slave.slave_name}` : '';
@@ -37,13 +40,13 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 	};
 
 	useEffect(() => {
-		if (!slavesId) return;
+		if (!slavesId) {return;}
 
 		fetchDemandIndicator();
 	}, [slavesId]);
 
 	const seriesData = useMemo(() => {
-		if (!demandIndicator?.data) return [];
+		if (!demandIndicator?.data) {return [];}
 
 		const points = demandIndicator.data
 			.map((item) => ({
@@ -62,7 +65,7 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 	}, [demandIndicator]);
 
 	const yAxisMax = useMemo(() => {
-		if (!seriesData.length) return 14;
+		if (!seriesData.length) {return 14;}
 
 		const maxValue = Math.max(...seriesData.map((point) => point.y));
 		return maxValue <= 0 ? 14 : Math.ceil(maxValue * 1.2);
@@ -87,9 +90,7 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 			redrawOnParentResize: true,
 			redrawOnWindowResize: true,
 		},
-		dataLabels: {
-			enabled: false,
-		},
+		dataLabels: { enabled: false },
 		colors: [CHART_COLORS.demand],
 		stroke: {
 			curve: 'smooth',
@@ -113,10 +114,14 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 		},
 		xaxis: {
 			type: 'datetime',
+			title: {
+				text: 'Time',
+				style: { color: CHART_COLORS.secondary, fontWeight: 'bold' },
+			},
 			labels: {
 				format: 'HH:mm',
 				datetimeUTC: false,
-				style: { colors: '#9e9e9e' },
+				style: { colors: CHART_COLORS.secondary },
 			},
 			axisBorder: { show: false },
 			axisTicks: { show: false },
@@ -125,15 +130,24 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 			min: 0,
 			max: yAxisMax,
 			tickAmount: 4,
+			title: {
+				text: 'Demand (kW)',
+				style: { color: CHART_COLORS.secondary, fontWeight: 'bold' },
+			},
 			labels: {
-				style: { colors: '#9e9e9e' },
+				style: { colors: CHART_COLORS.secondary },
+				formatter: (val) => formatChartValue(val),
 			},
 		},
 		tooltip: {
 			shared: true,
 			intersect: false,
 			fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
-			custom: buildPremiumTooltip({ unit: 'kW', titleFormat: 'HH:mm' }),
+			custom: buildPremiumTooltip({
+				unit: 'kW',
+				titleFormat: 'HH:mm',
+				chartTitle: 'Peak Demand Indicator',
+			}),
 		},
 		grid: { show: false },
 	};

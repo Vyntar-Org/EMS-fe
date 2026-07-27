@@ -6,6 +6,7 @@ const ResponsiveTextWrapper = ({
 	value,
 	charLimit = null,
 	tooltipValue = null,
+	sx,
 	...otherProps
 }) => {
 	const textRef = useRef(null);
@@ -20,7 +21,9 @@ const ResponsiveTextWrapper = ({
 
 	useEffect(() => {
 		const element = textRef.current;
-		if (!element) return;
+		if (!element) {
+			return;
+		}
 
 		const checkEllipsis = () => {
 			setIsEllipsed(element.scrollWidth > element.clientWidth + 1);
@@ -53,7 +56,7 @@ const ResponsiveTextWrapper = ({
 					textOverflow: 'ellipsis',
 					display: 'block',
 					width: '100%',
-					...otherProps.sx,
+					...sx,
 				}}
 				{...otherProps}
 			>

@@ -182,8 +182,16 @@ const PremiumMachineCard = ({
 									fontSize: '12px',
 									borderRadius: '14px',
 									py: 0.75,
-									bgcolor: accent,
-									'&:hover': { bgcolor: accent, filter: 'brightness(0.92)' },
+									// TREND always reflects live connectivity (green/red),
+									// same as the status chip above — independent of `accent`,
+									// which can be a threshold/band color (e.g. temperature)
+									// unrelated to whether the device is online.
+									bgcolor: (t) =>
+										isOnline ? t.palette.success.main : t.palette.error.main,
+									'&:hover': {
+										bgcolor: (t) =>
+											isOnline ? t.palette.success.dark : t.palette.error.dark,
+									},
 								}}
 							>
 								TREND

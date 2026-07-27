@@ -1,7 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useCommonData } from '../../contexts/CommonDataContext';
-import { api } from '../../helpers/api';
-import { API_URLS } from '../../helpers/apiUrls';
+import {
+	BarChart,
+	DeviceHub,
+	LocalGasStation,
+	Search,
+	SsidChart,
+} from '@mui/icons-material';
 import {
 	Box,
 	Grid,
@@ -10,16 +13,12 @@ import {
 	ToggleButtonGroup,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import CustomCard from '../common/CustomCard';
-import NoDataFound from '../common/errors/NoDataFound';
-import {
-	BarChart,
-	DeviceHub,
-	LocalGasStation,
-	Search,
-	SsidChart,
-} from '@mui/icons-material';
+import React, { useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
+
+import { useCommonData } from '../../contexts/CommonDataContext';
+import { api } from '../../helpers/api';
+import { API_URLS } from '../../helpers/apiUrls';
 import {
 	CHART_COLORS,
 	DEFAULT_MAX_POINTS,
@@ -27,7 +26,9 @@ import {
 	getChartSeries,
 } from '../../helpers/chartConfig';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import CustomCard from '../common/CustomCard';
 import { CustomInput } from '../common/CustomInput';
+import NoDataFound from '../common/errors/NoDataFound';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
 import FuelDashboardSkeleton from '../skeletonLoaders/FuelDashboardSkeleton';
 
@@ -129,14 +130,14 @@ const FuelDashboard = () => {
 	};
 
 	const slavesDisplayName = useMemo(() => {
-		if (!slavesData) return null;
+		if (!slavesData) {return null;}
 
 		const slave = slavesData.find((s) => s.slave_id === slavesId);
 		return slave ? `${slave.slave_name}` : '';
 	}, [slavesId, slavesData]);
 
 	const filteredSlaves = useMemo(() => {
-		if (!searchDevices?.trim()) return slavesData;
+		if (!searchDevices?.trim()) {return slavesData;}
 
 		const searchLower = searchDevices.toLowerCase().trim();
 
@@ -171,7 +172,7 @@ const FuelDashboard = () => {
 	}, [slavesData]);
 
 	useEffect(() => {
-		if (!slavesId) return;
+		if (!slavesId) {return;}
 
 		fetchFuelConsumption();
 	}, [slavesId]);
@@ -333,6 +334,7 @@ const FuelDashboard = () => {
 											// already searches common label fields (date, timestamp,
 											// label, ...) on each row automatically.
 											categoryOpts: { maxPoints: DEFAULT_MAX_POINTS },
+											chartTitle: 'Monthly Fuel Consumption',
 										}
 									)}
 									series={getChartSeries(fuelConsumption, {

@@ -1,13 +1,17 @@
-import { Box, Divider, Grid } from '@mui/material';
 import { Opacity, Recycling, Science } from '@mui/icons-material';
-import { useEffect, useState } from 'react';
+import { Box, Grid } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import {
-	getChartOptions,
+	buildPremiumTooltip,
+	formatChartValue,
 	getCategoricalColors,
+	getChartCategories,
+	getChartOptions,
 } from '../../helpers/chartConfig';
 import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -23,80 +27,60 @@ const INTAKE_ACCENT = PALETTE[0];
 const TREATED_ACCENT = PALETTE[2];
 const QUALITY_ACCENT = PALETTE[6];
 
-// Compact, premium stat block: tight flexbox column (no accumulating
-// margins between lines, which is what made the old stacked-mt version
-// overflow its ~100px card slot and force an internal scrollbar) with the
-// value as the clear visual focus, matching the KPI-tile hierarchy used on
-// the Water dashboard.
-const MetricBlock = ({ label, value, subLabel, showDivider, accent }) => (
-	<Grid
-		item
-		xs={12}
+// No hero "Total" value — just Today's and Yesterday's values side by side
+// (Today on the left, Yesterday on the right), each under its own label,
+// with a small caption (e.g. "(Waste Water)"/"(Out)") under the value.
+const StatCard = ({ value, previousValue, accent, caption }) => (
+	<Box
 		sx={{
 			height: '100%',
 			display: 'flex',
-			position: 'relative',
 			alignItems: 'center',
 			justifyContent: 'center',
+			gap: { xs: 3, md: 4 },
+			width: '100%',
+			minWidth: 0,
+			px: 1,
 		}}
 	>
-		<Box
-			sx={{
-				display: 'flex',
-				flexDirection: 'column',
-				alignItems: 'center',
-				justifyContent: 'center',
-				gap: { xs: 0.25, md: 0.5 },
-				width: '100%',
-				minWidth: 0,
-			}}
-		>
-			{label && (
+		{[
+			{ label: 'Today', value },
+			{ label: 'Yesterday', value: previousValue },
+		].map((item) => (
+			<Box key={item.label} sx={{ textAlign: 'center' }}>
 				<ResponsiveTextWrapper
 					color="text.secondary"
 					fontWeight={700}
 					fontSize={{ xs: '10.5px', md: '12px' }}
-					value={label}
+					value={item.label}
 					align="center"
 					sx={{ textTransform: 'uppercase', letterSpacing: '0.3px' }}
 				/>
-			)}
-
-			<ResponsiveTextWrapper
-				fontSize={{ xs: '16px', sm: '19px', md: '22px' }}
-				fontWeight={800}
-				value={`${value?.toLocaleString() || 0} KL`}
-				align="center"
-				color={accent || 'text.accent'}
-				sx={{ lineHeight: 1.15 }}
-			/>
-
-			{subLabel ? (
 				<ResponsiveTextWrapper
-					fontSize={{ xs: '9.5px', md: '11px' }}
-					color="text.secondary"
-					fontWeight={600}
-					value={subLabel}
+					fontSize={{ xs: '18px', sm: '21px', md: '23px' }}
+					fontWeight={800}
+					value={`${formatChartValue(item.value) || 0} KL`}
 					align="center"
+					color={accent}
+					sx={{ lineHeight: 1.1 }}
 				/>
-			) : null}
-		</Box>
-
-		{showDivider && (
-			<Divider
-				orientation="vertical"
-				sx={{
-					borderStyle: 'dashed',
-					height: '70%',
-					position: 'absolute',
-					right: 0,
-				}}
-			/>
-		)}
-	</Grid>
+				{caption ? (
+					<ResponsiveTextWrapper
+						color="text.secondary"
+						fontWeight={500}
+						fontSize={{ xs: '9px', md: '10px' }}
+						value={`(${caption})`}
+						align="center"
+						sx={{ lineHeight: 1.2, mt: 0.25 }}
+					/>
+				) : null}
+			</Box>
+		))}
+	</Box>
 );
 
 const STPDashboard = () => {
+	const theme = useTheme();
 	const [overviewData, setOverviewData] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [historyTrends, setHistoryTrends] = useState(null);
@@ -145,6 +129,108 @@ const STPDashboard = () => {
 		lon: overviewData?.locations[0]?.longitude || 0,
 	};
 
+	// pH (0-14) plotted on the same linear axis as TDS (hundreds-thousands)
+	// renders as a flat line at the bottom — invisible next to TDS. Give pH
+	// its own axis (on a fixed 0-14 scale, the real definition of the pH
+	// scale, not a guessed range) while TDS/COD/BOD keep sharing one axis,
+	// since `getChartOptions` only supports a single shared y-axis.
+	const historyChartOptions = useMemo(() => {
+		const categories = getChartCategories(historyTrends?.categories);
+		const seriesNames = (historyTrends?.series || []).map((s) => s.name || '');
+		const colors = getCategoricalColors(seriesNames.length || 4);
+		const phIndex = seriesNames.findIndex(
+			(name) => name.toLowerCase() === 'ph'
+		);
+		// A rotated label per category is noise on a card-sized chart — cap
+		// how many actually render, evenly spaced, same as the shared
+		// dashboard/card charts (`MAX_XAXIS_LABELS` in chartConfig.js).
+		const maxLabels = 8;
+		const labelStep = Math.max(1, Math.ceil(categories.length / maxLabels));
+		const ink = {
+			title: theme.palette.text.secondary,
+			label: theme.palette.text.secondary,
+		};
+
+		return {
+			chart: {
+				type: 'line',
+				toolbar: {
+					show: true,
+					tools: {
+						download: true,
+						selection: false,
+						zoom: false,
+						zoomin: false,
+						zoomout: false,
+						pan: false,
+						reset: false,
+					},
+				},
+				zoom: { enabled: false },
+				animations: { enabled: true, speed: 400 },
+				dropShadow: { enabled: true, top: 6, left: 0, blur: 8, opacity: 0.16 },
+			},
+			colors,
+			stroke: { curve: 'smooth', width: 3, lineCap: 'round' },
+			markers: { size: 0, strokeWidth: 2, hover: { size: 6 } },
+			dataLabels: { enabled: false },
+			xaxis: {
+				categories,
+				labels: {
+					rotate: -45,
+					style: { colors: ink.label, fontSize: '11px' },
+					formatter: (val) => {
+						const idx = categories.indexOf(val);
+						return idx === -1 || idx % labelStep === 0 ? val : '';
+					},
+				},
+				axisBorder: { show: false },
+				axisTicks: { show: false },
+				tickAmount: Math.min(categories.length || 1, maxLabels),
+			},
+			yaxis: seriesNames.map((name, i) => {
+				const isPh = i === phIndex;
+				// Every series needs its own yaxis entry (array is matched to
+				// series by index) — only the first non-pH axis and the pH axis
+				// are actually shown, so TDS/COD/BOD visually share one scale.
+				return {
+					seriesName: isPh ? name : seriesNames[0],
+					show: i === 0 || isPh,
+					opposite: isPh,
+					min: isPh ? 0 : undefined,
+					max: isPh ? 14 : undefined,
+					title: {
+						text: isPh ? 'pH' : '',
+						style: { color: ink.title, fontWeight: 'bold' },
+					},
+					labels: {
+						style: { colors: ink.label },
+						formatter: (val) => formatChartValue(val),
+					},
+				};
+			}),
+			tooltip: {
+				shared: true,
+				intersect: false,
+				fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
+				custom: buildPremiumTooltip({ chartTitle: 'STP Water Quality Trend' }),
+			},
+			legend: {
+				show: true,
+				position: 'top',
+				horizontalAlign: 'center',
+				fontWeight: 600,
+				markers: { shape: 'circle', size: 6, offsetX: -2 },
+				itemMargin: { horizontal: 10 },
+			},
+			grid: {
+				borderColor: 'rgba(128, 145, 170, 0.18)',
+				yaxis: { lines: { show: true } },
+				xaxis: { lines: { show: false } },
+			},
+		};
+	}, [historyTrends, theme]);
+
 	return isLoading ? (
 		<STPDashboardSkeleton />
 	) : (
@@ -172,33 +258,14 @@ const STPDashboard = () => {
 										accentColor={INTAKE_ACCENT}
 									>
 										{summaryData?.intake_total ? (
-											<Grid
-												container
-												sx={{ height: '100%', width: '100%' }}
-												alignItems="center"
-												spacing={0.5}
-											>
-												<Grid item xs={6} height={{ md: '100%' }}>
-													<MetricBlock
-														label="Total"
-														value={summaryData?.intake_total?.value || 0}
-														subLabel="(Waste Water)"
-														accent={INTAKE_ACCENT}
-														showDivider
-													/>
-												</Grid>
-
-												<Grid item xs={6} height={{ md: '100%' }}>
-													<MetricBlock
-														label="Yesterday"
-														value={
-															summaryData?.intake_total?.previous_value || 0
-														}
-														subLabel="(Waste Water)"
-														accent={INTAKE_ACCENT}
-													/>
-												</Grid>
-											</Grid>
+											<StatCard
+												caption="Waste Water"
+												value={summaryData?.intake_total?.value || 0}
+												previousValue={
+													summaryData?.intake_total?.previous_value || 0
+												}
+												accent={INTAKE_ACCENT}
+											/>
 										) : (
 											<NoDataFound message="Waiting for live device data — readings appear automatically" />
 										)}
@@ -213,33 +280,14 @@ const STPDashboard = () => {
 										accentColor={TREATED_ACCENT}
 									>
 										{summaryData?.treated_water ? (
-											<Grid
-												container
-												sx={{ height: '100%', width: '100%' }}
-												alignItems="center"
-												spacing={0.5}
-											>
-												<Grid item xs={6} height={{ md: '100%' }}>
-													<MetricBlock
-														label="Total"
-														value={summaryData?.treated_water?.value || 0}
-														subLabel="(Out)"
-														accent={TREATED_ACCENT}
-														showDivider
-													/>
-												</Grid>
-
-												<Grid item xs={6} height={{ md: '100%' }}>
-													<MetricBlock
-														label="Yesterday"
-														value={
-															summaryData?.treated_water?.previous_value || 0
-														}
-														subLabel="(Out)"
-														accent={TREATED_ACCENT}
-													/>
-												</Grid>
-											</Grid>
+											<StatCard
+												caption="Out"
+												value={summaryData?.treated_water?.value || 0}
+												previousValue={
+													summaryData?.treated_water?.previous_value || 0
+												}
+												accent={TREATED_ACCENT}
+											/>
 										) : (
 											<NoDataFound message="Waiting for live device data — readings appear automatically" />
 										)}
@@ -322,11 +370,7 @@ const STPDashboard = () => {
 						{historyTrends ? (
 							<Box height="100%" width="100%" overflow="hidden">
 								<ReactApexChart
-									options={getChartOptions('line', historyTrends?.categories, {
-										colors: getCategoricalColors(4),
-										xLabel: '',
-										yLabel: '',
-									})}
+									options={historyChartOptions}
 									series={historyTrends?.series || []}
 									type="line"
 									height="100%"
@@ -349,6 +393,7 @@ const STPDashboard = () => {
 									options={getChartOptions('bar', waterComparison?.categories, {
 										colors: getCategoricalColors(4),
 										yLabel: 'KL',
+										chartTitle: 'Intake vs Treated Water Comparison',
 									})}
 									series={waterComparison?.series || []}
 									type="bar"

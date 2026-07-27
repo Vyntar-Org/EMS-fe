@@ -25,6 +25,7 @@ import { useApplications } from '../../contexts/ApplicationContext';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
+import { formatChartValue, getAxisInk } from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
@@ -392,8 +393,13 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 	}, [stoppages, windowRange]);
 
 	// Chart Options - Mirroring Code 1 Design
-	const chartOptions = useMemo(
-		() => ({
+	const chartOptions = useMemo(() => {
+		const ink = getAxisInk();
+		const chartTitle = `${
+			machine?.name || machine?.slave_name || 'Compressor'
+		} Connectivity — Last ${hours} hrs`;
+
+		return {
 			chart: {
 				type: 'area',
 				height: 350,
@@ -411,6 +417,15 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 				},
 				zoom: { enabled: false },
 				animations: { enabled: false, dynamicAnimation: { enabled: false } },
+				redrawOnParentResize: true,
+				redrawOnWindowResize: true,
+				dropShadow: {
+					enabled: true,
+					top: 3,
+					left: 0,
+					blur: 4,
+					opacity: 0.16,
+				},
 			},
 			stroke: {
 				curve: 'stepline',
@@ -424,14 +439,14 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 			},
 			dataLabels: { enabled: false },
 			grid: {
-				borderColor: '#ebe5e5',
+				borderColor: 'rgba(128, 145, 170, 0.18)',
 				strokeDashArray: 0,
 			},
 			xaxis: {
 				type: 'datetime',
-				title: { text: 'Time', style: { color: '#6B7280', fontSize: '12px' } },
+				title: { text: 'Time', style: { color: ink.title, fontSize: '12px' } },
 				labels: {
-					style: { colors: '#6B7280', fontSize: '11px' },
+					style: { colors: ink.label, fontSize: '11px' },
 					datetimeUTC: false,
 				},
 				min: windowRange?.from
@@ -442,13 +457,13 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 			yaxis: {
 				title: {
 					text: 'Status',
-					style: { color: '#6B7280', fontSize: '12px' },
+					style: { color: ink.title, fontSize: '12px' },
 				},
 				min: -0.1,
 				max: 1.1,
 				tickAmount: 2,
 				labels: {
-					style: { colors: '#6B7280', fontSize: '11px' },
+					style: { colors: ink.label, fontSize: '11px' },
 					formatter: function (val) {
 						if (val >= 0.9) {
 							return 'Online';
@@ -495,6 +510,7 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 					}
 
 					return `<div style="padding:10px;background-color:white;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+            <div style="font-weight:bold;margin-bottom:2px;color:#111;font-size:12px;">${chartTitle}</div>
             <div style="font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;">${formattedDate}</div>
             <div style="display:flex;align-items:center;">
                 <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${statusColor};margin-right:8px;"></span>
@@ -518,9 +534,8 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 				},
 			},
 			legend: { show: false },
-		}),
-		[windowRange]
-	);
+		};
+	}, [windowRange, machine, hours]);
 
 	const handleTableDownload = () => {
 		const headers = ['#', 'Start Time', 'End Time', 'Duration'];
@@ -801,6 +816,10 @@ const ModalContentForTrend = ({
 
 	// ─── Applied Code 1 Design to Status Trend ───
 	const chartOptions = useMemo(() => {
+		const ink = getAxisInk();
+		const chartTitle = `${slaveName || 'Compressor'} — ${
+			tabDesc || 'Trend'
+		}`;
 		const baseOptions = {
 			chart: {
 				type: isStatusTrend ? 'area' : 'line',
@@ -812,9 +831,18 @@ const ModalContentForTrend = ({
 						enabled: false,
 					},
 				},
+				redrawOnParentResize: true,
+				redrawOnWindowResize: true,
+				dropShadow: {
+					enabled: true,
+					top: 3,
+					left: 0,
+					blur: 4,
+					opacity: 0.16,
+				},
 			},
 			grid: {
-				borderColor: '#ebe5e5',
+				borderColor: 'rgba(128, 145, 170, 0.18)',
 				strokeDashArray: 0,
 				xaxis: { lines: { show: false } },
 				yaxis: { lines: { show: false } },
@@ -862,23 +890,23 @@ const ModalContentForTrend = ({
 					type: 'datetime',
 					title: {
 						text: 'Time',
-						style: { color: '#6B7280', fontSize: '12px' },
+						style: { color: ink.title, fontSize: '12px' },
 					},
 					labels: {
-						style: { colors: '#6B7280', fontSize: '11px' },
+						style: { colors: ink.label, fontSize: '11px' },
 						datetimeUTC: false,
 					},
 				},
 				yaxis: {
 					title: {
 						text: 'Status',
-						style: { color: '#6B7280', fontSize: '12px' },
+						style: { color: ink.title, fontSize: '12px' },
 					},
 					min: -0.1,
 					max: 1.1,
 					tickAmount: 2,
 					labels: {
-						style: { colors: '#6B7280', fontSize: '11px' },
+						style: { colors: ink.label, fontSize: '11px' },
 						formatter: function (val) {
 							if (val >= 0.9) {
 								return 'Online';
@@ -904,6 +932,7 @@ const ModalContentForTrend = ({
 						const statusText = value === 1 ? 'Online' : 'Offline';
 						const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
 						return `<div style="padding:10px;background-color:white;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+                    <div style="font-weight:bold;margin-bottom:2px;color:#111;font-size:12px;">${chartTitle}</div>
                     <div style="font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;">${formattedDate}</div>
                     <div style="display:flex;align-items:center;">
                         <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${statusColor};margin-right:8px;"></span>
@@ -935,11 +964,11 @@ const ModalContentForTrend = ({
 				xaxis: {
 					title: {
 						text: 'Time',
-						style: { color: '#6B7280', fontSize: '12px' },
+						style: { color: ink.title, fontSize: '12px' },
 					},
 					categories: chartCategories,
 					labels: {
-						style: { colors: '#6B7280', fontSize: '11px' },
+						style: { colors: ink.label, fontSize: '11px' },
 						rotate: -45,
 					},
 					tooltip: { enabled: false },
@@ -947,13 +976,34 @@ const ModalContentForTrend = ({
 				yaxis: {
 					title: {
 						text: chartResponse?.unit || '',
-						style: { color: '#6B7280', fontSize: '12px' },
+						style: { color: ink.title, fontSize: '12px' },
 					},
-					labels: { style: { colors: '#6B7280', fontSize: '11px' } },
+					labels: {
+						style: { colors: ink.label, fontSize: '11px' },
+						formatter: (val) => formatChartValue(val),
+					},
+				},
+				tooltip: {
+					...baseOptions.tooltip,
+					custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+						const label = w.globals.labels?.[dataPointIndex] || '';
+						const name = w.globals.seriesNames?.[seriesIndex] || '';
+						const value = series?.[seriesIndex]?.[dataPointIndex];
+						return `<div style="padding:10px;background-color:white;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+                    <div style="font-weight:bold;margin-bottom:2px;color:#111;font-size:12px;">${chartTitle}</div>
+                    <div style="font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;">${label}</div>
+                    <div style="display:flex;align-items:center;">
+                        <span style="flex:1;color:#333;font-size:12px;">${name}:</span>
+                        <span style="font-weight:bold;color:#111;margin-left:5px;font-size:12px;">${
+													value !== undefined ? formatChartValue(value) : 'N/A'
+												}${chartResponse?.unit ? ` ${chartResponse.unit}` : ''}</span>
+                    </div>
+                </div>`;
+					},
 				},
 			};
 		}
-	}, [isStatusTrend, chartData, chartResponse?.unit]);
+	}, [isStatusTrend, chartData, chartResponse?.unit, slaveName, tabDesc]);
 
 	return (
 		<Box>
