@@ -62,7 +62,7 @@ const ENERGYConsumptionLastSixHours = () => {
 			accentColor={CHART_COLORS.consumption6h}
 		>
 			{consumption && consumption?.data?.length ? (
-				<Box height="100%" width="100%" overflow="hidden">
+				<Box height="100%" width="100%">
 					<ReactApexChart
 						options={options}
 						series={series}

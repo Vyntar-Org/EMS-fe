@@ -172,7 +172,7 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 			accentColor={CHART_COLORS.demand}
 		>
 			{demandIndicator && demandIndicator?.data?.length ? (
-				<Box height="100%" width="100%" overflow="hidden">
+				<Box height="100%" width="100%">
 					<ReactApexChart
 						options={options}
 						series={series}

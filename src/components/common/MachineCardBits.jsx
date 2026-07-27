@@ -147,9 +147,9 @@ export const MachineAvatar = ({ app }) => {
  * when the device is offline. No motion — kept static for performance
  * across large machine-list grids.
  */
-export const AnimatedMachineAvatar = ({ app, isOnline = true }) => {
+export const AnimatedMachineAvatar = ({ app, isOnline = true, accent }) => {
 	const Icon = APP_ICONS[app] || SensorsIcon;
-	const accent = APP_ACCENT_COLOR[app];
+	const resolvedAccent = accent || APP_ACCENT_COLOR[app];
 
 	return (
 		<Avatar
@@ -158,22 +158,22 @@ export const AnimatedMachineAvatar = ({ app, isOnline = true }) => {
 				height: 60,
 				flexShrink: 0,
 				background: (t) =>
-					accent
+					resolvedAccent
 						? `linear-gradient(135deg, ${alpha(
-								accent,
+								resolvedAccent,
 								t.palette.mode === 'dark' ? 0.34 : 0.18
 						  )} 0%, ${alpha(
-								accent,
+								resolvedAccent,
 								t.palette.mode === 'dark' ? 0.14 : 0.06
 						  )} 100%)`
 						: alpha(
 								t.palette.primary.main,
 								t.palette.mode === 'dark' ? 0.25 : 0.1
 						  ),
-				color: accent || 'primary.main',
+				color: resolvedAccent || 'primary.main',
 				opacity: isOnline ? 1 : 0.55,
 				boxShadow: (t) =>
-					`0 0 0 1px ${alpha(accent || t.palette.primary.main, 0.24)}`,
+					`0 0 0 1px ${alpha(resolvedAccent || t.palette.primary.main, 0.24)}`,
 			}}
 		>
 			<Icon fontSize="large" />

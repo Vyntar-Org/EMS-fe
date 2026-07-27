@@ -202,7 +202,6 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
 					<Box
 						height="100%"
 						width={{ sm: 'calc(100% - 200px - 12px)' }}
-						overflow="hidden"
 					>
 						<ReactApexChart
 							key={`chart-${mode}`}

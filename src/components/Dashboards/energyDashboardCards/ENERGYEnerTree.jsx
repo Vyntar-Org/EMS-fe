@@ -1,8 +1,9 @@
 import { Power } from '@mui/icons-material';
+import { Box, Divider, Grid } from '@mui/material';
 import React from 'react';
+
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
-import { Box, Divider, Grid } from '@mui/material';
 import { MiniMultiDonut } from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
@@ -57,7 +58,7 @@ const ENERGYEnerTree = ({ data }) => {
 	);
 
 	return (
-		<CustomCard titleIcon={<Power />} title="Ener Tree" accentColor={ACCENT}>
+		<CustomCard flat titleIcon={<Power />} title="Ener Tree" accentColor={ACCENT}>
 			{data ? (
 				<Box
 					sx={{

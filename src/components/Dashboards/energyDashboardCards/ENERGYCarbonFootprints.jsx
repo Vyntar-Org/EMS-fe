@@ -1,8 +1,9 @@
 import { Co2 } from '@mui/icons-material';
+import { Box, Divider, Grid } from '@mui/material';
 import React from 'react';
+
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
-import { Box, Divider, Grid } from '@mui/material';
 import { MiniColumnChart } from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
@@ -58,6 +59,7 @@ const ENERGYCarbonFootprints = ({ data }) => {
 
 	return (
 		<CustomCard
+			flat
 			titleIcon={<Co2 />}
 			title="Carbon Footprints"
 			accentColor={ACCENT}

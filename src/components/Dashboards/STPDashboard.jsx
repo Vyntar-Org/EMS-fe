@@ -252,6 +252,7 @@ const STPDashboard = () => {
 							<Grid container spacing={1} height={{ md: '100%' }}>
 								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
 									<CustomCard
+										flat
 										sx={{ textAlign: 'center' }}
 										title="Intake Total"
 										titleIcon={<Opacity />}
@@ -274,6 +275,7 @@ const STPDashboard = () => {
 
 								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
 									<CustomCard
+										flat
 										sx={{ textAlign: 'center' }}
 										title="Treated Water"
 										titleIcon={<Recycling />}
@@ -368,7 +370,7 @@ const STPDashboard = () => {
 						accentColor={getCategoricalColors(1)[0]}
 					>
 						{historyTrends ? (
-							<Box height="100%" width="100%" overflow="hidden">
+							<Box height="100%" width="100%">
 								<ReactApexChart
 									options={historyChartOptions}
 									series={historyTrends?.series || []}
@@ -388,7 +390,7 @@ const STPDashboard = () => {
 						accentColor={getCategoricalColors(3)[2]}
 					>
 						{waterComparison ? (
-							<Box height="100%" width="100%" overflow="hidden">
+							<Box height="100%" width="100%">
 								<ReactApexChart
 									options={getChartOptions('bar', waterComparison?.categories, {
 										colors: getCategoricalColors(4),

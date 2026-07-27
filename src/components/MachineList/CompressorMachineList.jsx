@@ -1032,7 +1032,6 @@ const ModalContentForTrend = ({
 					borderRadius: '14px',
 					p: { xs: 1, sm: 2 },
 					width: '100%',
-					overflow: 'hidden',
 				}}
 			>
 				{chartLoading ? (

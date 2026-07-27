@@ -35,9 +35,50 @@ const accentFromTitle = (title) => {
 	return ACCENT_PALETTE[h % ACCENT_PALETTE.length];
 };
 
-const StyledCard = styled(Card)(({ theme, accentcolor }) => {
-	const accent = accentcolor || theme.palette.brand.goldMuted;
+// KPI cards (a single stat/value tile, e.g. Today/Yesterday, Total-style
+// cards) stay a plain, theme-neutral surface — no gradient, no colored
+// border, no glow, per an explicit product call: those tiles read best flat.
+// Every other card (charts, trends, quality grids, maps, ...) keeps the
+// colorful accent-wash "premium" look. Callers opt into the flat look with
+// `flat`; `accent` still drives the header's icon chip either way, since
+// color is reserved for values/icons/charts, never denied outright.
+const StyledCard = styled(Card, {
+	shouldForwardProp: (prop) => prop !== 'accentcolor' && prop !== 'flat',
+})(({ theme, accentcolor, flat }) => {
 	const isDark = theme.palette.mode === 'dark';
+
+	if (flat) {
+		return {
+			position: 'relative',
+			borderRadius: '18px',
+			background: theme.palette.background.paper,
+			transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+			border: `1px solid ${theme.palette.divider}`,
+			boxShadow: isDark
+				? `inset 0 1px 0 ${alpha('#FFFFFF', 0.05)}, 0 2px 6px ${alpha(
+						'#000',
+						0.28
+				  )}, 0 10px 26px ${alpha('#000', 0.22)}`
+				: `inset 0 1px 0 ${alpha('#FFFFFF', 0.9)}, 0 1px 3px ${alpha(
+						'#0F233E',
+						0.06
+				  )}, 0 8px 22px ${alpha('#0F233E', 0.06)}`,
+			'&:hover': {
+				boxShadow: isDark
+					? `inset 0 1px 0 ${alpha('#FFFFFF', 0.07)}, 0 4px 10px ${alpha(
+							'#000',
+							0.32
+					  )}, 0 14px 34px ${alpha('#000', 0.3)}`
+					: `inset 0 1px 0 ${alpha('#FFFFFF', 0.95)}, 0 4px 10px ${alpha(
+							'#0F233E',
+							0.08
+					  )}, 0 14px 34px ${alpha('#0F233E', 0.1)}`,
+			},
+			height: '100%',
+		};
+	}
+
+	const accent = accentcolor || theme.palette.brand.goldMuted;
 
 	return {
 		position: 'relative',
@@ -78,7 +119,6 @@ const StyledCard = styled(Card)(({ theme, accentcolor }) => {
 			transition: 'transform 0.4s ease',
 		},
 		'&:hover': {
-			// transform: 'translateY(-3px)',
 			borderColor: alpha(accent, isDark ? 0.6 : 0.5),
 			boxShadow: isDark
 				? `inset 0 1px 0 ${alpha('#FFFFFF', 0.08)}, 0 4px 10px ${alpha(
@@ -104,6 +144,7 @@ const CustomCard = ({
 	children,
 	isPremium = false,
 	accentColor,
+	flat = false,
 	titleIcon,
 	childrenOtherProps = {},
 	disableContentPadding = false,
@@ -112,7 +153,7 @@ const CustomCard = ({
 	const accent = accentColor || accentFromTitle(title);
 
 	return (
-		<StyledCard accentcolor={accent} {...props}>
+		<StyledCard accentcolor={accent} flat={flat} {...props}>
 			<CardContent
 				sx={{
 					p: disableContentPadding ? '0px !important' : '8px !important',
@@ -211,7 +252,17 @@ const CustomCard = ({
 					</Box>
 				)}
 
-				<Box flex={1} minHeight={0} overflow="auto" {...childrenOtherProps}>
+				{/* `visible`, not `auto` — an internal scrollbar inside a
+				    dashboard card reads as broken; the card should size to fit
+				    its content instead of scrolling it. Callers with content
+				    that must scroll (e.g. a data table) opt back in via
+				    `childrenOtherProps={{ overflow: 'auto' }}`. */}
+				<Box
+					flex={1}
+					minHeight={0}
+					overflow="visible"
+					{...childrenOtherProps}
+				>
 					{children}
 				</Box>
 			</CardContent>

@@ -218,7 +218,6 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 						// flex={1}
 						height="100%"
 						width={{ sm: 'calc(100% - 200px - 12px)' }}
-						overflow="hidden"
 					>
 						<ReactApexChart
 							key={`chart-${mode}`}

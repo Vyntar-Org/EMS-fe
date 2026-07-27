@@ -210,7 +210,6 @@ const FuelDashboard = () => {
 									<Grid
 										container
 										sx={{ height: '100%', width: '100%' }}
-										overflow="hidden"
 										justifyContent="center"
 									>
 										<ReactApexChart
@@ -325,7 +324,7 @@ const FuelDashboard = () => {
 						}
 					>
 						{fuelConsumption && fuelConsumption?.length ? (
-							<Box height="100%" width="100%" overflow="hidden">
+							<Box height="100%" width="100%">
 								<ReactApexChart
 									key={`chart-${mode}`}
 									options={getChartOptions(

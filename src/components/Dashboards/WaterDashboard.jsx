@@ -124,6 +124,7 @@ const WaterKpiCard = ({
 
 	return (
 		<CustomCard
+			flat
 			title={!hasData && title}
 			titleIcon={!hasData && <Icon />}
 			accentColor={color}

@@ -62,7 +62,7 @@ const PremiumMachineCard = ({
 					minWidth={0}
 					flex={1}
 				>
-					<AnimatedMachineAvatar app={app} isOnline={isOnline} />
+					<AnimatedMachineAvatar app={app} isOnline={isOnline} accent={accent} />
 					<Box minWidth={0} flex={1}>
 						<ResponsiveTextWrapper
 							value={title}
@@ -113,7 +113,7 @@ const PremiumMachineCard = ({
 						sx={{
 							my: 1,
 							borderColor: (t) =>
-								alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16),
+						alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16),
 						}}
 					/>
 					<Stack
@@ -165,7 +165,7 @@ const PremiumMachineCard = ({
 							mt: 1,
 							mb: 0.75,
 							borderColor: (t) =>
-								alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16),
+						alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16),
 						}}
 					/>
 					<Stack direction="row" justifyContent="flex-end" alignItems="center">

@@ -136,6 +136,7 @@ const FlowMeterDashboard = () => {
 							<Grid container spacing={1} height={{ md: '100%' }}>
 								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
 									<CustomCard
+										flat
 										sx={{ textAlign: 'center' }}
 										title="Inlet Water"
 										titleIcon={<Input />}
@@ -158,6 +159,7 @@ const FlowMeterDashboard = () => {
 
 								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
 									<CustomCard
+										flat
 										sx={{ textAlign: 'center' }}
 										title="Outlet Water"
 										titleIcon={<Output />}
@@ -191,7 +193,7 @@ const FlowMeterDashboard = () => {
 								accentColor={getCategoricalColors(3)[2]}
 							>
 								{waterComparison ? (
-									<Box height="100%" width="100%" overflow="hidden">
+									<Box height="100%" width="100%">
 										<ReactApexChart
 											options={getChartOptions(
 												'bar',

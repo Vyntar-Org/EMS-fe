@@ -1,8 +1,9 @@
 import { Balance } from '@mui/icons-material';
+import { Box, Divider, Grid, Typography } from '@mui/material';
 import React from 'react';
+
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
-import { Box, Divider, Grid, Typography } from '@mui/material';
 import { MiniGaugeArc } from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
@@ -57,6 +58,7 @@ const ENERGYLoadBalance = ({ data }) => {
 
 	return (
 		<CustomCard
+			flat
 			titleIcon={<Balance />}
 			title="Load Balance"
 			accentColor={ACCENT}

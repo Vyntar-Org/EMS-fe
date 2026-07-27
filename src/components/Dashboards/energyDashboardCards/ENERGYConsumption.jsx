@@ -1,8 +1,9 @@
 import { ElectricBolt } from '@mui/icons-material';
+import { Box, Divider, Grid } from '@mui/material';
 import React from 'react';
+
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
-import { Box, Divider, Grid } from '@mui/material';
 import { MiniComparisonBars } from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
@@ -76,6 +77,7 @@ const ENERGYConsumption = ({ data }) => {
 
 	return (
 		<CustomCard
+			flat
 			titleIcon={<ElectricBolt />}
 			title="Energy Consumption"
 			accentColor={ACCENT}

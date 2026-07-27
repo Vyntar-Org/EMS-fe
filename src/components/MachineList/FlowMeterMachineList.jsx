@@ -186,7 +186,7 @@ const ModalContentForTrend = ({
 					}}
 				/>
 			</Box>
-			<Box height={355} mt={1} overflow="hidden">
+			<Box height={355} mt={1}>
 				{chartLoading ? (
 					<Loading />
 				) : chartResponse?.data?.length ? (
