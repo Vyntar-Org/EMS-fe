@@ -248,7 +248,9 @@ export const buildTheme = (mode) => {
 			MuiTooltip: {
 				styleOverrides: {
 					tooltip: {
-						backgroundColor: isDark ? palette.surface.tableHead : BRAND.navyDeep,
+						backgroundColor: isDark
+							? palette.surface.tableHead
+							: BRAND.navyDeep,
 						color: '#FFFFFF',
 						fontSize: '12px',
 						fontWeight: 500,

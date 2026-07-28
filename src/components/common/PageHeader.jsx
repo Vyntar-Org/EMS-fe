@@ -17,7 +17,13 @@ const PageHeader = ({ icon, title, subtitle, actions, sx = {} }) => {
 			gap={1.5}
 			sx={{ width: '100%', minWidth: 0, ...sx }}
 		>
-			<Stack direction="row" alignItems="center" gap={1.5} minWidth={0} flex={1}>
+			<Stack
+				direction="row"
+				alignItems="center"
+				gap={1.5}
+				minWidth={0}
+				flex={1}
+			>
 				{icon && (
 					<Box
 						sx={{
@@ -37,7 +43,10 @@ const PageHeader = ({ icon, title, subtitle, actions, sx = {} }) => {
 									t.palette.mode === 'dark' ? 0.1 : 0.05
 								)} 100%)`,
 							boxShadow: (t) =>
-								`0 0 0 1px ${alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.35 : 0.2)}`,
+								`0 0 0 1px ${alpha(
+									t.palette.primary.main,
+									t.palette.mode === 'dark' ? 0.35 : 0.2
+								)}`,
 							color: 'primary.main',
 							'& svg': { fontSize: 24 },
 						}}

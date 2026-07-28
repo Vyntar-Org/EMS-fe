@@ -30,7 +30,11 @@ const GraphContainer = ({
 			titleIcon={icon}
 			icon={headerAction}
 			accentColor={accentColor}
-			childrenOtherProps={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
+			childrenOtherProps={{
+				display: 'flex',
+				flexDirection: 'column',
+				minHeight: 0,
+			}}
 			{...cardProps}
 		>
 			{loading ? (

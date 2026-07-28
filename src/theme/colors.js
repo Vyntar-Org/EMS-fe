@@ -209,7 +209,11 @@ export const TYPE_SCALE = {
 	},
 	// KPI hero value — the single most prominent thing on the card
 	kpiValue: { fontSize: '30px', fontWeight: 800, letterSpacing: '-0.3px' },
-	kpiValueCompact: { fontSize: '22px', fontWeight: 800, letterSpacing: '-0.2px' },
+	kpiValueCompact: {
+		fontSize: '22px',
+		fontWeight: 800,
+		letterSpacing: '-0.2px',
+	},
 	// Unit suffix next to/under a value — present but visually secondary
 	unit: { fontSize: '13px', fontWeight: 600 },
 	// Trend/analytics text inside a card's footer zone

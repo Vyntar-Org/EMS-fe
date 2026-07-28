@@ -22,7 +22,9 @@ const ENERGYConsumption = ({ data }) => {
 				{ label: 'MTD', value: data?.mtd?.value, unit: data?.unit },
 				{ label: 'Yesterday', value: data?.yesterday?.value, unit: data?.unit },
 			]}
-			supportingText={`Today's cost: ₹ ${data?.today?.cost?.toLocaleString() || 0}`}
+			supportingText={`Today's cost: ₹ ${
+				data?.today?.cost?.toLocaleString() || 0
+			}`}
 			analytics={
 				<MiniComparisonBars
 					todayValue={todayValue}

@@ -27,11 +27,21 @@ const SIZE = {
 const CardSkeleton = () => (
 	<Stack sx={{ height: '100%', justifyContent: 'space-between' }}>
 		<Stack direction="row" alignItems="center" gap={SPACING.sm}>
-			<Skeleton variant="rounded" width={36} height={36} sx={{ borderRadius: '10px' }} />
+			<Skeleton
+				variant="rounded"
+				width={36}
+				height={36}
+				sx={{ borderRadius: '10px' }}
+			/>
 			<Skeleton variant="text" width="50%" height={14} />
 		</Stack>
 		<Skeleton variant="text" width="60%" height={38} />
-		<Skeleton variant="rounded" width="100%" height={8} sx={{ borderRadius: '99px' }} />
+		<Skeleton
+			variant="rounded"
+			width="100%"
+			height={8}
+			sx={{ borderRadius: '99px' }}
+		/>
 	</Stack>
 );
 
@@ -53,7 +63,9 @@ const SecondaryMetric = ({ label, value, unit }) => (
 		</Box>
 		<Box minWidth={0}>
 			<ResponsiveTextWrapper
-				value={`${value?.toLocaleString?.() ?? value ?? 0}${unit ? ` ${unit}` : ''}`}
+				value={`${value?.toLocaleString?.() ?? value ?? 0}${
+					unit ? ` ${unit}` : ''
+				}`}
 				color="text.primary"
 				fontWeight={700}
 				fontSize="11.5px"
@@ -98,8 +110,8 @@ const DashboardCard = ({
 		(trend?.direction === 'up'
 			? 'success'
 			: trend?.direction === 'down'
-				? 'error'
-				: 'neutral');
+			  ? 'error'
+			  : 'neutral');
 
 	return (
 		<CustomCard flat accentColor={accent} disableContentPadding {...cardProps}>
@@ -119,7 +131,12 @@ const DashboardCard = ({
 					justifyContent="space-between"
 					gap={SPACING.sm}
 				>
-					<Stack direction="row" alignItems="center" gap={SPACING.sm} minWidth={0}>
+					<Stack
+						direction="row"
+						alignItems="center"
+						gap={SPACING.sm}
+						minWidth={0}
+					>
 						{icon && (
 							<Box
 								sx={{
@@ -175,12 +192,22 @@ const DashboardCard = ({
 					<>
 						{/* The dominant element — everything above exists to identify
 						    this number, everything below exists to add context to it */}
-						<Stack direction="row" alignItems="baseline" gap={0.75} minWidth={0}>
+						<Stack
+							direction="row"
+							alignItems="baseline"
+							gap={0.75}
+							minWidth={0}
+						>
 							<Box minWidth={0} flexShrink={1}>
 								<ResponsiveTextWrapper
 									value={`${value?.toLocaleString?.() ?? value ?? 0}`}
 									color={accent}
-									sx={{ lineHeight: 1.05, ...TYPE_SCALE[size === 'compact' ? 'kpiValueCompact' : 'kpiValue'] }}
+									sx={{
+										lineHeight: 1.05,
+										...TYPE_SCALE[
+											size === 'compact' ? 'kpiValueCompact' : 'kpiValue'
+										],
+									}}
 								/>
 							</Box>
 							{unit && (
@@ -228,7 +255,11 @@ const DashboardCard = ({
 											value={trend.label}
 											fontWeight={700}
 											fontSize="11px"
-											color={trendTone === 'neutral' ? 'text.secondary' : `${trendTone}.main`}
+											color={
+												trendTone === 'neutral'
+													? 'text.secondary'
+													: `${trendTone}.main`
+											}
 										/>
 									</Box>
 								</Stack>

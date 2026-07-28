@@ -21,7 +21,9 @@ const ENERGYLoadBalance = ({ data }) => {
 				{ label: 'IY', value: data?.iy || 0, unit: data?.unit || '' },
 				{ label: 'IB', value: data?.ib || 0, unit: data?.unit || '' },
 			]}
-			analytics={<MiniGaugeArc percent={lbi} color={ACCENT} label="Current LBI" />}
+			analytics={
+				<MiniGaugeArc percent={lbi} color={ACCENT} label="Current LBI" />
+			}
 		/>
 	);
 };

@@ -25,7 +25,11 @@ const ENERGYDevices = ({ data }) => {
 			unit={`of ${total || 0} online`}
 			secondaryMetrics={[{ label: 'Offline', value: offline }]}
 			analytics={
-				<MiniProgressBar percent={onlinePercent} color={ONLINE_COLOR} label={`${onlinePercent}% online`} />
+				<MiniProgressBar
+					percent={onlinePercent}
+					color={ONLINE_COLOR}
+					label={`${onlinePercent}% online`}
+				/>
 			}
 		/>
 	);

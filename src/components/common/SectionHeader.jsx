@@ -16,7 +16,11 @@ const SectionHeader = ({ title, subtitle, actions, sx = {} }) => {
 			<Box minWidth={0}>
 				<Typography
 					variant="subtitle1"
-					sx={{ color: 'text.primary', fontWeight: 700, letterSpacing: '0.2px' }}
+					sx={{
+						color: 'text.primary',
+						fontWeight: 700,
+						letterSpacing: '0.2px',
+					}}
 				>
 					{title}
 				</Typography>

@@ -35,8 +35,8 @@ const StatsCard = ({
 		(trend?.direction === 'up'
 			? 'success'
 			: trend?.direction === 'down'
-				? 'error'
-				: 'neutral');
+			  ? 'error'
+			  : 'neutral');
 
 	return (
 		<CustomCard
@@ -86,7 +86,10 @@ const StatsCard = ({
 							<TrendIcon
 								sx={{
 									fontSize: 14,
-									color: trendTone === 'neutral' ? 'text.secondary' : `${trendTone}.main`,
+									color:
+										trendTone === 'neutral'
+											? 'text.secondary'
+											: `${trendTone}.main`,
 								}}
 							/>
 						)}
@@ -94,7 +97,10 @@ const StatsCard = ({
 							variant="caption"
 							sx={{
 								fontWeight: 700,
-								color: trendTone === 'neutral' ? 'text.secondary' : `${trendTone}.main`,
+								color:
+									trendTone === 'neutral'
+										? 'text.secondary'
+										: `${trendTone}.main`,
 							}}
 						>
 							{trend.label}
