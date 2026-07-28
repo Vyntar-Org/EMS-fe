@@ -1,34 +1,7 @@
-import { Grid, Skeleton } from '@mui/material';
-import React from 'react';
+import MachineListSkeleton from './MachineListSkeleton';
 
-const FireSafetyMachineListSkeleton = () => {
-	const skeletonItems = Array.from({ length: 12 }, (_, i) => i);
-
-	return (
-		<Grid container rowGap={1} columnSpacing={1}>
-			{skeletonItems.map((_, ind) => {
-				return (
-					<Grid
-						item
-						xs={12}
-						sm={6}
-						md={4}
-						lg={3}
-						key={`fire-safety-machine-card-skeleton-${ind + 1}`}
-						height="274px"
-					>
-						<Skeleton
-							sx={{ borderRadius: '16px' }}
-							animation="wave"
-							variant="rounded"
-							width="100%"
-							height="100%"
-						/>
-					</Grid>
-				);
-			})}
-		</Grid>
-	);
-};
+const FireSafetyMachineListSkeleton = () => (
+	<MachineListSkeleton count={12} cardHeight="274px" lg={3} />
+);
 
 export default FireSafetyMachineListSkeleton;

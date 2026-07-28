@@ -14,6 +14,8 @@ import {
 import { List, useListRef } from 'react-window';
 import { CheckBox, CheckBoxOutlineBlankOutlined } from '@mui/icons-material';
 
+import { RADIUS } from '../../theme/colors';
+
 const LISTBOX_PADDING = 8; // px
 
 function RowComponent({ index, itemData, style }) {
@@ -226,7 +228,7 @@ export const CustomAutocomplete = ({
 						// }}
 						sx={{
 							'& .MuiOutlinedInput-root': {
-								borderRadius: 2,
+								borderRadius: `${RADIUS.sm}px`,
 								height: '40px',
 								overflowY: 'hidden',
 								display: 'flex',

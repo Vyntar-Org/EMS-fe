@@ -5,6 +5,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useApplications } from '../contexts/ApplicationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getPagePath, pageComponentMap } from '../helpers/pageMapping.jsx';
+import { DARK, LIGHT } from '../theme/colors';
 
 // Day window: 06:00–17:59 shows the light background, otherwise the dark one
 const isDayTime = () => {
@@ -40,7 +41,9 @@ export const PublicLayout = () => {
 			sx={{
 				minHeight: '100vh',
 				width: '100vw',
-				backgroundColor: isDay ? '#F8FAFC' : '#131C31',
+				backgroundColor: isDay
+					? LIGHT.background.default
+					: DARK.background.default,
 				backgroundImage: `url(/assets/login-bg-${isDay ? 'day' : 'night'}.png)`,
 				backgroundSize: 'cover',
 				backgroundPosition: 'center bottom',

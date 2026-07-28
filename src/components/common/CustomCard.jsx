@@ -8,22 +8,13 @@ import {
 } from '@mui/material';
 import React from 'react';
 
-import ResponsiveTextWrapper from './ResponsiveTextWrapper';
+import { KPI_ACCENT_COLORS, RADIUS, getElevation } from '../../theme/colors';
 
-// Curated KPI accent palette — vivid enough to color the wash and icon
-// chip, and readable on both light and dark surfaces.
-const ACCENT_PALETTE = [
-	'#2563EB', // blue
-	'#16A34A', // green
-	'#E3B13E', // gold
-	'#7C3AED', // purple
-	'#0891B2', // teal
-	'#EA580C', // orange
-];
+import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 
 // Stable accent per card: same title always yields the same color, so the
 // dashboard reads as a colorful KPI grid without any caller changes.
-const accentFromTitle = (title) => {
+export const accentFromTitle = (title) => {
 	if (!title) {
 		return null;
 	}
@@ -32,7 +23,7 @@ const accentFromTitle = (title) => {
 	for (let i = 0; i < s.length; i += 1) {
 		h = (h + s.charCodeAt(i) * (i + 1)) % 997;
 	}
-	return ACCENT_PALETTE[h % ACCENT_PALETTE.length];
+	return KPI_ACCENT_COLORS[h % KPI_ACCENT_COLORS.length];
 };
 
 // KPI cards (a single stat/value tile, e.g. Today/Yesterday, Total-style
@@ -47,43 +38,48 @@ const StyledCard = styled(Card, {
 })(({ theme, accentcolor, flat }) => {
 	const isDark = theme.palette.mode === 'dark';
 
+	const mode = isDark ? 'dark' : 'light';
+	const accent = accentcolor || theme.palette.brand.goldMuted;
+
 	if (flat) {
 		return {
 			position: 'relative',
-			borderRadius: '18px',
+			borderRadius: `${RADIUS.xxl}px`,
 			background: theme.palette.background.paper,
-			transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+			transition:
+				'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease',
 			border: `1px solid ${theme.palette.divider}`,
-			boxShadow: isDark
-				? `inset 0 1px 0 ${alpha('#FFFFFF', 0.05)}, 0 2px 6px ${alpha(
-						'#000',
-						0.28
-				  )}, 0 10px 26px ${alpha('#000', 0.22)}`
-				: `inset 0 1px 0 ${alpha('#FFFFFF', 0.9)}, 0 1px 3px ${alpha(
-						'#0F233E',
-						0.06
-				  )}, 0 8px 22px ${alpha('#0F233E', 0.06)}`,
+			// Deeper idle shadow than a truly "flat" surface — cards should read
+			// as gently elevated even before interaction.
+			boxShadow: `inset 0 1px 0 ${alpha(
+				'#FFFFFF',
+				isDark ? 0.05 : 0.9
+			)}, ${getElevation('md', mode)}`,
 			'&:hover': {
-				boxShadow: isDark
-					? `inset 0 1px 0 ${alpha('#FFFFFF', 0.07)}, 0 4px 10px ${alpha(
-							'#000',
-							0.32
-					  )}, 0 14px 34px ${alpha('#000', 0.3)}`
-					: `inset 0 1px 0 ${alpha('#FFFFFF', 0.95)}, 0 4px 10px ${alpha(
-							'#0F233E',
-							0.08
-					  )}, 0 14px 34px ${alpha('#0F233E', 0.1)}`,
+				// transform: 'translateY(-3px)',
+				borderColor: alpha(accent, isDark ? 0.5 : 0.4),
+				// Richer on hover: inner highlight + a soft accent-tinted ring +
+				// a wider ambient shadow for real lift, not just a color change.
+				boxShadow: `inset 0 1px 0 ${alpha(
+					'#FFFFFF',
+					isDark ? 0.07 : 0.95
+				)}, 0 0 0 1px ${alpha(accent, isDark ? 0.28 : 0.18)}, ${getElevation(
+					'lg',
+					mode
+				)}`,
+				'& > .MuiCardContent-root > div:first-of-type > svg, & > .MuiCardContent-root > div:first-of-type .MuiSvgIcon-root':
+					{
+						transform: 'scale(1.06)',
+					},
 			},
 			height: '100%',
 		};
 	}
 
-	const accent = accentcolor || theme.palette.brand.goldMuted;
-
 	return {
 		position: 'relative',
 		overflow: 'hidden',
-		borderRadius: '18px',
+		borderRadius: `${RADIUS.xxl}px`,
 		// KPI-style accent wash flowing into the theme surface
 		background: `linear-gradient(155deg, ${alpha(
 			accent,
@@ -91,17 +87,12 @@ const StyledCard = styled(Card, {
 		)} 0%, ${theme.palette.background.paper} 62%)`,
 		transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 		border: `2px solid ${alpha(accent, isDark ? 0.34 : 0.26)}`,
-		// Layered elevation: tight key shadow + wide soft ambient + a subtle
-		// inner top highlight for a glass finish
-		boxShadow: isDark
-			? `inset 0 1px 0 ${alpha('#FFFFFF', 0.06)}, 0 2px 6px ${alpha(
-					'#000',
-					0.3
-			  )}, 0 12px 32px ${alpha('#000', 0.28)}`
-			: `inset 0 1px 0 ${alpha('#FFFFFF', 0.9)}, 0 1px 3px ${alpha(
-					'#0F233E',
-					0.06
-			  )}, 0 10px 28px ${alpha('#0F233E', 0.07)}`,
+		// Layered elevation: tight key shadow + a subtle inner top highlight
+		// for a glass finish
+		boxShadow: `inset 0 1px 0 ${alpha(
+			'#FFFFFF',
+			isDark ? 0.06 : 0.9
+		)}, ${getElevation('md', mode)}`,
 		// Soft accent glow in the bottom-right corner for depth
 		'&::after': {
 			content: '""',
@@ -119,19 +110,22 @@ const StyledCard = styled(Card, {
 			transition: 'transform 0.4s ease',
 		},
 		'&:hover': {
+			// transform: 'translateY(-3px)',
 			borderColor: alpha(accent, isDark ? 0.6 : 0.5),
-			boxShadow: isDark
-				? `inset 0 1px 0 ${alpha('#FFFFFF', 0.08)}, 0 4px 10px ${alpha(
-						'#000',
-						0.35
-				  )}, 0 18px 44px ${alpha(accent, 0.3)}`
-				: `inset 0 1px 0 ${alpha('#FFFFFF', 0.95)}, 0 4px 10px ${alpha(
-						'#0F233E',
-						0.08
-				  )}, 0 18px 44px ${alpha(accent, 0.22)}`,
+			boxShadow: `inset 0 1px 0 ${alpha(
+				'#FFFFFF',
+				isDark ? 0.08 : 0.95
+			)}, ${getElevation('sm', mode)}, 0 18px 44px ${alpha(
+				accent,
+				isDark ? 0.3 : 0.22
+			)}`,
 			'&::after': {
 				transform: 'scale(1.35)',
 			},
+			'& > .MuiCardContent-root > div:first-of-type > svg, & > .MuiCardContent-root > div:first-of-type .MuiSvgIcon-root':
+				{
+					transform: 'scale(1.06)',
+				},
 		},
 		height: '100%',
 	};
@@ -196,7 +190,7 @@ const CustomCard = ({
 										accent || t.palette.primary.main,
 										t.palette.mode === 'dark' ? 0.35 : 0.22
 									)}`,
-								// transition: 'transform 0.3s ease',
+								transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
 							},
 							// Icons inside interactive controls (toggles, buttons)
 							// keep their own styling — no accent chip
@@ -209,10 +203,6 @@ const CustomCard = ({
 									fontSize: 20,
 									color: 'inherit',
 								},
-							// '.MuiCard-root:hover & > svg, .MuiCard-root:hover & .MuiSvgIcon-root':
-							// 	{
-							// 		transform: 'scale(1.08)',
-							// 	},
 						}}
 						width="100%"
 						minWidth={0}
@@ -236,6 +226,7 @@ const CustomCard = ({
 										color="text.primary"
 										letterSpacing="0.2px"
 										fontWeight={700}
+										fontSize={{ xs: '13px', md: '14.5px' }}
 									/>
 								</Box>
 							</Box>

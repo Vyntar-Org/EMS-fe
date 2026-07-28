@@ -10,9 +10,9 @@ import {
 	getCategoricalColors,
 } from '../../helpers/chartConfig';
 import CustomCard from '../common/CustomCard';
+import DashboardCard from '../common/DashboardCard';
 import NoDataFound from '../common/errors/NoDataFound';
 import { MiniComparisonBars } from '../common/MachineCardBits';
-import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
 import SiteLocationMap from '../common/SiteLocationMap';
 import FlowMeterDashboardSkeleton from '../skeletonLoaders/FlowMeterDashboardSkeleton';
 
@@ -21,55 +21,6 @@ import FlowMeterDashboardSkeleton from '../skeletonLoaders/FlowMeterDashboardSke
 const PALETTE = getCategoricalColors(8);
 const INLET_ACCENT = PALETTE[0];
 const OUTLET_ACCENT = PALETTE[2];
-
-// Hero value (Total) + a real today-vs-yesterday comparison, instead of two
-// equal-weight side-by-side stat blocks — matches the KPI-tile hierarchy
-// used on the Water dashboard, and reads clearer in the same tight space.
-const StatCard = ({ label, value, previousValue, accent }) => (
-	<Box
-		sx={{
-			height: '100%',
-			display: 'flex',
-			flexDirection: 'column',
-			alignItems: 'center',
-			justifyContent: 'center',
-			gap: { xs: 0.5, md: 0.75 },
-			width: '100%',
-			minWidth: 0,
-			px: 1,
-		}}
-	>
-		<ResponsiveTextWrapper
-			color="text.secondary"
-			fontWeight={700}
-			fontSize={{ xs: '10.5px', md: '12px' }}
-			value={label}
-			align="center"
-			sx={{ textTransform: 'uppercase', letterSpacing: '0.3px' }}
-		/>
-
-		<ResponsiveTextWrapper
-			fontSize={{ xs: '20px', sm: '24px', md: '27px' }}
-			fontWeight={800}
-			value={`${value?.toLocaleString() || 0} KL`}
-			align="center"
-			color={accent}
-			sx={{ lineHeight: 1.1 }}
-		/>
-
-		{previousValue !== undefined ? (
-			<Box width="100%" maxWidth={180}>
-				<MiniComparisonBars
-					todayValue={value}
-					yesterdayValue={previousValue}
-					color={accent}
-					height={18}
-					unit="KL"
-				/>
-			</Box>
-		) : null}
-	</Box>
-);
 
 const FlowMeterDashboard = () => {
 	const [overviewData, setOverviewData] = useState(null);
@@ -135,49 +86,47 @@ const FlowMeterDashboard = () => {
 						<Grid item xs={12} height={{ md: '30%' }}>
 							<Grid container spacing={1} height={{ md: '100%' }}>
 								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
-									<CustomCard
-										flat
-										sx={{ textAlign: 'center' }}
-										title="Inlet Water"
-										titleIcon={<Input />}
+									<DashboardCard
+										icon={<Input />}
+										title="Inlet Water (Waste Water)"
 										accentColor={INLET_ACCENT}
-									>
-										{summaryData?.inlet_water ? (
-											<StatCard
-												label="Total (Waste Water)"
-												value={summaryData?.inlet_water?.value || 0}
-												previousValue={
+										hasData={Boolean(summaryData?.inlet_water)}
+										value={summaryData?.inlet_water?.value || 0}
+										unit="KL"
+										analytics={
+											<MiniComparisonBars
+												todayValue={summaryData?.inlet_water?.value || 0}
+												yesterdayValue={
 													summaryData?.inlet_water?.previous_value || 0
 												}
-												accent={INLET_ACCENT}
+												color={INLET_ACCENT}
+												height={18}
+												unit="KL"
 											/>
-										) : (
-											<NoDataFound message="Waiting for live device data — readings appear automatically" />
-										)}
-									</CustomCard>
+										}
+									/>
 								</Grid>
 
 								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
-									<CustomCard
-										flat
-										sx={{ textAlign: 'center' }}
-										title="Outlet Water"
-										titleIcon={<Output />}
+									<DashboardCard
+										icon={<Output />}
+										title="Outlet Water (Out)"
 										accentColor={OUTLET_ACCENT}
-									>
-										{summaryData?.outlet_water ? (
-											<StatCard
-												label="Total (Out)"
-												value={summaryData?.outlet_water?.value || 0}
-												previousValue={
+										hasData={Boolean(summaryData?.outlet_water)}
+										value={summaryData?.outlet_water?.value || 0}
+										unit="KL"
+										analytics={
+											<MiniComparisonBars
+												todayValue={summaryData?.outlet_water?.value || 0}
+												yesterdayValue={
 													summaryData?.outlet_water?.previous_value || 0
 												}
-												accent={OUTLET_ACCENT}
+												color={OUTLET_ACCENT}
+												height={18}
+												unit="KL"
 											/>
-										) : (
-											<NoDataFound message="Waiting for live device data — readings appear automatically" />
-										)}
-									</CustomCard>
+										}
+									/>
 								</Grid>
 							</Grid>
 						</Grid>

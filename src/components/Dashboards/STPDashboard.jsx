@@ -7,6 +7,7 @@ import ReactApexChart from 'react-apexcharts';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import {
+	DEFAULT_MAX_POINTS,
 	buildPremiumTooltip,
 	formatChartValue,
 	getCategoricalColors,
@@ -14,7 +15,9 @@ import {
 	getChartOptions,
 } from '../../helpers/chartConfig';
 import CustomCard from '../common/CustomCard';
+import DashboardCard from '../common/DashboardCard';
 import NoDataFound from '../common/errors/NoDataFound';
+import { MiniComparisonBars } from '../common/MachineCardBits';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
 import SiteLocationMap from '../common/SiteLocationMap';
 import STPDashboardSkeleton from '../skeletonLoaders/STPDashboardSkeleton';
@@ -26,58 +29,6 @@ const PALETTE = getCategoricalColors(8);
 const INTAKE_ACCENT = PALETTE[0];
 const TREATED_ACCENT = PALETTE[2];
 const QUALITY_ACCENT = PALETTE[6];
-
-// No hero "Total" value — just Today's and Yesterday's values side by side
-// (Today on the left, Yesterday on the right), each under its own label,
-// with a small caption (e.g. "(Waste Water)"/"(Out)") under the value.
-const StatCard = ({ value, previousValue, accent, caption }) => (
-	<Box
-		sx={{
-			height: '100%',
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			gap: { xs: 3, md: 4 },
-			width: '100%',
-			minWidth: 0,
-			px: 1,
-		}}
-	>
-		{[
-			{ label: 'Today', value },
-			{ label: 'Yesterday', value: previousValue },
-		].map((item) => (
-			<Box key={item.label} sx={{ textAlign: 'center' }}>
-				<ResponsiveTextWrapper
-					color="text.secondary"
-					fontWeight={700}
-					fontSize={{ xs: '10.5px', md: '12px' }}
-					value={item.label}
-					align="center"
-					sx={{ textTransform: 'uppercase', letterSpacing: '0.3px' }}
-				/>
-				<ResponsiveTextWrapper
-					fontSize={{ xs: '18px', sm: '21px', md: '23px' }}
-					fontWeight={800}
-					value={`${formatChartValue(item.value) || 0} KL`}
-					align="center"
-					color={accent}
-					sx={{ lineHeight: 1.1 }}
-				/>
-				{caption ? (
-					<ResponsiveTextWrapper
-						color="text.secondary"
-						fontWeight={500}
-						fontSize={{ xs: '9px', md: '10px' }}
-						value={`(${caption})`}
-						align="center"
-						sx={{ lineHeight: 1.2, mt: 0.25 }}
-					/>
-				) : null}
-			</Box>
-		))}
-	</Box>
-);
 
 const STPDashboard = () => {
 	const theme = useTheme();
@@ -134,24 +85,48 @@ const STPDashboard = () => {
 	// its own axis (on a fixed 0-14 scale, the real definition of the pH
 	// scale, not a guessed range) while TDS/COD/BOD keep sharing one axis,
 	// since `getChartOptions` only supports a single shared y-axis.
-	const historyChartOptions = useMemo(() => {
-		const categories = getChartCategories(historyTrends?.categories);
-		const seriesNames = (historyTrends?.series || []).map((s) => s.name || '');
+	const historyChart = useMemo(() => {
+		const rawCategories = historyTrends?.categories || [];
+		const rawSeries = historyTrends?.series || [];
+
+		// This endpoint can return a very dense series (one point per few
+		// minutes). Only *hiding* most x-axis labels (via the formatter below)
+		// still left ApexCharts laying out one tick per raw point internally,
+		// which — combined with -45° rotated "date, time" label text — pushed
+		// the rendered labels below the chart's own SVG bounds and clipped
+		// them. Downsampling the actual series/categories (same indices, so
+		// series stay aligned to categories) fixes the layout at the root
+		// instead of fighting it with padding.
+		const maxPoints = DEFAULT_MAX_POINTS;
+		const step = Math.max(1, Math.ceil(rawCategories.length / maxPoints));
+		const pickIndices = rawCategories
+			.map((_, i) => i)
+			.filter((i) => i % step === 0);
+		const sampledCategories = pickIndices.map((i) => rawCategories[i]);
+		const sampledSeries = rawSeries.map((s) => ({
+			...s,
+			data: pickIndices.map((i) => s.data?.[i]),
+		}));
+
+		// Short "h:mm A" labels instead of the default "MMM D, h:mm A" — with
+		// -45° rotation and long date+time strings, ApexCharts' own tick
+		// placement and our label-hiding formatter fought each other and two
+		// ticks ended up rendered on top of one another. Short, unrotated
+		// labels sidestep that class of bug entirely rather than fighting it.
+		const categories = getChartCategories(sampledCategories, {
+			format: 'time',
+		});
+		const seriesNames = sampledSeries.map((s) => s.name || '');
 		const colors = getCategoricalColors(seriesNames.length || 4);
 		const phIndex = seriesNames.findIndex(
 			(name) => name.toLowerCase() === 'ph'
 		);
-		// A rotated label per category is noise on a card-sized chart — cap
-		// how many actually render, evenly spaced, same as the shared
-		// dashboard/card charts (`MAX_XAXIS_LABELS` in chartConfig.js).
-		const maxLabels = 8;
-		const labelStep = Math.max(1, Math.ceil(categories.length / maxLabels));
 		const ink = {
 			title: theme.palette.text.secondary,
 			label: theme.palette.text.secondary,
 		};
 
-		return {
+		const options = {
 			chart: {
 				type: 'line',
 				toolbar: {
@@ -177,16 +152,14 @@ const STPDashboard = () => {
 			xaxis: {
 				categories,
 				labels: {
-					rotate: -45,
+					rotate: 0,
+					hideOverlappingLabels: true,
+					trim: true,
 					style: { colors: ink.label, fontSize: '11px' },
-					formatter: (val) => {
-						const idx = categories.indexOf(val);
-						return idx === -1 || idx % labelStep === 0 ? val : '';
-					},
 				},
 				axisBorder: { show: false },
 				axisTicks: { show: false },
-				tickAmount: Math.min(categories.length || 1, maxLabels),
+				tickAmount: Math.min(categories.length || 1, 6),
 			},
 			yaxis: seriesNames.map((name, i) => {
 				const isPh = i === phIndex;
@@ -227,8 +200,14 @@ const STPDashboard = () => {
 				borderColor: 'rgba(128, 145, 170, 0.18)',
 				yaxis: { lines: { show: true } },
 				xaxis: { lines: { show: false } },
+				// Reserves room below the plot for the rotated x-axis labels —
+				// without it, longer date+time category labels at -45° can
+				// render partially outside the chart's own bounding box.
+				padding: { bottom: 8, left: 8, right: 8 },
 			},
 		};
+
+		return { options, series: sampledSeries };
 	}, [historyTrends, theme]);
 
 	return isLoading ? (
@@ -248,60 +227,80 @@ const STPDashboard = () => {
 			<Grid container spacing={1} height={{ md: '350px' }} flexShrink={0}>
 				<Grid item xs={12} md={6} height={{ md: '100%' }}>
 					<Grid container height={{ md: '100%' }}>
-						<Grid item xs={12} height={{ md: '50%' }}>
+						<Grid item xs={12} height={{ md: '55%' }}>
 							<Grid container spacing={1} height={{ md: '100%' }}>
 								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
-									<CustomCard
-										flat
-										sx={{ textAlign: 'center' }}
-										title="Intake Total"
-										titleIcon={<Opacity />}
+									<DashboardCard
+										icon={<Opacity />}
+										title="Intake Total (Waste Water)"
 										accentColor={INTAKE_ACCENT}
-									>
-										{summaryData?.intake_total ? (
-											<StatCard
-												caption="Waste Water"
-												value={summaryData?.intake_total?.value || 0}
-												previousValue={
+										hasData={Boolean(summaryData?.intake_total)}
+										value={formatChartValue(
+											summaryData?.intake_total?.value || 0
+										)}
+										unit="KL"
+										secondaryMetrics={[
+											{
+												label: 'Yesterday',
+												value: formatChartValue(
+													summaryData?.intake_total?.previous_value || 0
+												),
+												unit: 'KL',
+											},
+										]}
+										analytics={
+											<MiniComparisonBars
+												todayValue={summaryData?.intake_total?.value || 0}
+												yesterdayValue={
 													summaryData?.intake_total?.previous_value || 0
 												}
-												accent={INTAKE_ACCENT}
+												color={INTAKE_ACCENT}
+												height={14}
+												unit="KL"
 											/>
-										) : (
-											<NoDataFound message="Waiting for live device data — readings appear automatically" />
-										)}
-									</CustomCard>
+										}
+									/>
 								</Grid>
 
 								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
-									<CustomCard
-										flat
-										sx={{ textAlign: 'center' }}
-										title="Treated Water"
-										titleIcon={<Recycling />}
+									<DashboardCard
+										icon={<Recycling />}
+										title="Treated Water (Out)"
 										accentColor={TREATED_ACCENT}
-									>
-										{summaryData?.treated_water ? (
-											<StatCard
-												caption="Out"
-												value={summaryData?.treated_water?.value || 0}
-												previousValue={
+										hasData={Boolean(summaryData?.treated_water)}
+										value={formatChartValue(
+											summaryData?.treated_water?.value || 0
+										)}
+										unit="KL"
+										secondaryMetrics={[
+											{
+												label: 'Yesterday',
+												value: formatChartValue(
+													summaryData?.treated_water?.previous_value || 0
+												),
+												unit: 'KL',
+											},
+										]}
+										analytics={
+											<MiniComparisonBars
+												todayValue={summaryData?.treated_water?.value || 0}
+												yesterdayValue={
 													summaryData?.treated_water?.previous_value || 0
 												}
-												accent={TREATED_ACCENT}
+												color={TREATED_ACCENT}
+												height={14}
+												unit="KL"
 											/>
-										) : (
-											<NoDataFound message="Waiting for live device data — readings appear automatically" />
-										)}
-									</CustomCard>
+										}
+									/>
 								</Grid>
 							</Grid>
 						</Grid>
 
-						<Grid item xs={12} mt={{ xs: 1, md: 0 }} height={{ md: '50%' }}>
+						<Grid item xs={12} mt={{ xs: 1, md: 0 }} height={{ md: '45%' }}>
 							<CustomCard
 								title="Water Quality"
-								titleIcon={<Science />}
+								// titleIcon={<Science />}
 								accentColor={QUALITY_ACCENT}
 							>
 								<Grid container sx={{ height: '100%', width: '100%' }}>
@@ -372,8 +371,8 @@ const STPDashboard = () => {
 						{historyTrends ? (
 							<Box height="100%" width="100%">
 								<ReactApexChart
-									options={historyChartOptions}
-									series={historyTrends?.series || []}
+									options={historyChart.options}
+									series={historyChart.series}
 									type="line"
 									height="100%"
 									width="100%"

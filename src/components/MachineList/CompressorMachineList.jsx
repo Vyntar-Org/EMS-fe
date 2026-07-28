@@ -25,7 +25,11 @@ import { useApplications } from '../../contexts/ApplicationContext';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { formatChartValue, getAxisInk } from '../../helpers/chartConfig';
+import {
+	formatChartValue,
+	getAxisInk,
+	getTooltipInk,
+} from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
@@ -924,6 +928,7 @@ const ModalContentForTrend = ({
 					x: { format: 'dd MMM HH:mm' },
 					// Exact Tooltip Design from Code 1
 					custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+						const ink = getTooltipInk();
 						const dataPoint =
 							w.globals.initialSeries[seriesIndex].data[dataPointIndex];
 						const date = new Date(dataPoint.x);
@@ -931,12 +936,12 @@ const ModalContentForTrend = ({
 						const value = dataPoint.y;
 						const statusText = value === 1 ? 'Online' : 'Offline';
 						const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
-						return `<div style="padding:10px;background-color:white;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
-                    <div style="font-weight:bold;margin-bottom:2px;color:#111;font-size:12px;">${chartTitle}</div>
-                    <div style="font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;">${formattedDate}</div>
+						return `<div style="padding:10px;background-color:${ink.surface};border-radius:10px;border:1px solid ${ink.border};box-shadow:0 10px 28px rgba(0,0,0,0.2);">
+                    <div style="font-weight:bold;margin-bottom:2px;color:${ink.primary};font-size:12px;">${chartTitle}</div>
+                    <div style="font-weight:bold;margin-bottom:8px;color:${ink.secondary};font-size:12px;">${formattedDate}</div>
                     <div style="display:flex;align-items:center;">
                         <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${statusColor};margin-right:8px;"></span>
-                        <span style="flex:1;color:#333;font-size:12px;">Status:</span>
+                        <span style="flex:1;color:${ink.secondary};font-size:12px;">Status:</span>
                         <span style="font-weight:bold;color:${statusColor};margin-left:5px;font-size:12px;">${statusText}</span>
                     </div>
                 </div>`;
@@ -970,6 +975,9 @@ const ModalContentForTrend = ({
 					labels: {
 						style: { colors: ink.label, fontSize: '11px' },
 						rotate: -45,
+						rotateAlways: false,
+						hideOverlappingLabels: true,
+						trim: true,
 					},
 					tooltip: { enabled: false },
 				},

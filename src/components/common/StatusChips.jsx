@@ -1,4 +1,4 @@
-import { useTheme } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import { alpha, darken, lighten } from '@mui/material/styles';
 
 // Semantic tone per status value — resolved against the active theme
@@ -27,9 +27,9 @@ const StatusChips = ({ value }) => {
 
 	if (!tone) {
 		return (
-			<span style={{ fontSize: '13px', color: theme.palette.text.primary }}>
+			<Box component="span" sx={{ fontSize: '13px', color: 'text.primary' }}>
 				{value ?? '-'}
-			</span>
+			</Box>
 		);
 	}
 
@@ -40,11 +40,13 @@ const StatusChips = ({ value }) => {
 			: theme.palette[tone].main;
 
 	return (
-		<span
-			style={{
+		<Box
+			component="span"
+			sx={{
 				display: 'inline-block',
-				padding: '2px 10px',
-				borderRadius: '20px',
+				px: 1.25,
+				py: 0.25,
+				borderRadius: '999px',
 				fontSize: '11px',
 				fontWeight: 600,
 				backgroundColor: alpha(base, isDark ? 0.24 : 0.14),
@@ -53,8 +55,9 @@ const StatusChips = ({ value }) => {
 			}}
 		>
 			{value}
-		</span>
+		</Box>
 	);
 };
 
 export default StatusChips;
+export const StatusBadge = StatusChips;

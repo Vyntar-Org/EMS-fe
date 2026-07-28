@@ -1,18 +1,14 @@
 import {
-	ArrowDownward,
-	ArrowUpward,
 	DeviceHub,
 	FilterAlt,
 	LocalDrink,
 	Opacity,
 	Plumbing,
 	Recycling,
-	TrendingFlat,
 	TrendingUp,
 	Waves,
 } from '@mui/icons-material';
-import { Box, Grid, Stack } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { Box, Grid } from '@mui/material';
 import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -23,10 +19,8 @@ import { API_URLS } from '../../helpers/apiUrls';
 // use, so each card gets its own distinct, deliberate color instead of a
 // random per-title hash — chosen per metric below, not just cycled in order.
 import { getCategoricalColors } from '../../helpers/chartConfig';
-import CustomCard from '../common/CustomCard';
-import NoDataFound from '../common/errors/NoDataFound';
+import DashboardCard from '../common/DashboardCard';
 import { MiniComparisonBars } from '../common/MachineCardBits';
-import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
 import WaterDashboardSkeleton from '../skeletonLoaders/WaterDashboardSkeleton';
 
 import WATERMonthlyConsumption from './waterDashboardCards/WATERMonthlyConsumption';
@@ -60,46 +54,11 @@ const getTrend = (current, previous) => {
 	}
 	const pct = ((cur - prev) / Math.abs(prev)) * 100;
 	if (Math.abs(pct) < 1) {
-		return { Icon: TrendingFlat, label: 'Stable' };
+		return { direction: 'flat', label: 'Stable' };
 	}
 	return pct > 0
-		? { Icon: ArrowUpward, label: `+${pct.toFixed(1)}%` }
-		: { Icon: ArrowDownward, label: `${pct.toFixed(1)}%` };
-};
-
-// One KPI tile: icon + label identify the metric, the value is the visual
-// focus (large, bold, in the card's own color), with a real trend chip and
-// a 2-point sparkline (today vs. yesterday — the only history this
-// endpoint actually returns) rather than a fabricated multi-point graph.
-// Row 1's 5 cards each get a guaranteed 200px on desktop; row 2's 3 cards
-// (sewage/stations) only get ~1/3 of whatever's left after row 1, which can
-// be considerably tighter — so they use the `compact` size tier (a lower
-// ceiling on desktop) instead of scaling all the way up like row 1.
-const SIZE = {
-	comfortable: {
-		icon: { xs: 30, sm: 36, md: 44 },
-		iconRadius: { xs: '9px', md: '13px' },
-		iconGlyph: { xs: 16, sm: 19, md: 24 },
-		label: { xs: '10.5px', md: '12.5px' },
-		value: { xs: '20px', sm: '24px', md: '30px', lg: '34px' },
-		trend: { xs: '10.5px', md: '12.5px' },
-		trendGlyph: { xs: 12, md: 15 },
-		compare: { xs: '9.5px', md: '11.5px' },
-		asOf: { xs: '9px', md: '10.5px' },
-		barsHeight: 22,
-	},
-	compact: {
-		icon: { xs: 26, sm: 30, md: 34 },
-		iconRadius: '9px',
-		iconGlyph: { xs: 14, md: 17 },
-		label: { xs: '10px', md: '11px' },
-		value: { xs: '18px', sm: '20px', md: '23px', lg: '25px' },
-		trend: { xs: '10px', md: '11px' },
-		trendGlyph: { xs: 11, md: 13 },
-		compare: { xs: '9px', md: '10px' },
-		asOf: { xs: '8.5px', md: '9.5px' },
-		barsHeight: 16,
-	},
+		? { direction: 'up', label: `+${pct.toFixed(1)}%` }
+		: { direction: 'down', label: `${pct.toFixed(1)}%` };
 };
 
 // Only the volume metrics are measured in KLD — Water Positivity is an
@@ -107,6 +66,13 @@ const SIZE = {
 // KLD quantity, so they render without a unit suffix.
 const NO_UNIT_METRICS = new Set(['water_positivity', 'total_stations']);
 
+// One KPI tile: icon + label identify the metric, the value is the visual
+// focus (large, bold, in the card's own color), with a real trend chip and
+// a 2-point sparkline (today vs. yesterday — the only history this
+// endpoint actually returns) rather than a fabricated multi-point graph.
+// Built on the shared DashboardCard so every metric tile — here and on every
+// other dashboard — has the same icon chip, typography scale, and hover
+// behavior; only the icon/title/value/accent/trend differ per metric.
 const WaterKpiCard = ({
 	metricKey,
 	title,
@@ -115,133 +81,33 @@ const WaterKpiCard = ({
 	yesterdayVal,
 	hasYesterday,
 	asOf,
-	compact = false,
 }) => {
 	const { icon: Icon, color } = CARD_META[metricKey];
 	const trend = hasData ? getTrend(value, yesterdayVal) : null;
-	const s = SIZE[compact ? 'compact' : 'comfortable'];
 	const unit = NO_UNIT_METRICS.has(metricKey) ? '' : 'KLD';
 
 	return (
-		<CustomCard
-			flat
-			title={!hasData && title}
-			titleIcon={!hasData && <Icon />}
+		<DashboardCard
+			icon={<Icon />}
+			title={title}
 			accentColor={color}
-		>
-			{hasData ? (
-				<Box
-					sx={{
-						height: '100%',
-						display: 'flex',
-						flexDirection: 'column',
-						justifyContent: 'space-evenly',
-						gap: { xs: 0.5, md: 1 },
-						px: { xs: 0.75, md: 1 },
-						py: { xs: 0.25, md: 0.5 },
-					}}
-				>
-					<Stack
-						direction="row"
-						alignItems="center"
-						gap={{ xs: 0.75, md: 1.25 }}
-						minWidth={0}
-					>
-						<Box
-							sx={{
-								width: s.icon,
-								height: s.icon,
-								borderRadius: s.iconRadius,
-								display: 'flex',
-								alignItems: 'center',
-								justifyContent: 'center',
-								flexShrink: 0,
-								background: (t) =>
-									`linear-gradient(135deg, ${alpha(
-										color,
-										t.palette.mode === 'dark' ? 0.36 : 0.18
-									)} 0%, ${alpha(
-										color,
-										t.palette.mode === 'dark' ? 0.16 : 0.07
-									)} 100%)`,
-								color,
-								boxShadow: `0 0 0 1px ${alpha(color, 0.26)}`,
-								'& svg': { fontSize: s.iconGlyph },
-							}}
-						>
-							<Icon />
-						</Box>
-						<Box minWidth={0} flex={1}>
-							<ResponsiveTextWrapper
-								color="text.secondary"
-								fontWeight={700}
-								fontSize={s.label}
-								value={title}
-								sx={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}
-							/>
-						</Box>
-						{asOf && (
-							<Box minWidth={0} flexShrink={0}>
-								<ResponsiveTextWrapper
-									fontSize={s.asOf}
-									color="text.secondary"
-									fontWeight={500}
-									value={asOf}
-									sx={{ textAlign: 'right' }}
-								/>
-							</Box>
-						)}
-					</Stack>
-
-					<Stack direction="row" alignItems="flex-end" gap={1} minWidth={0}>
-						<Box minWidth={0} flex={1}>
-							<ResponsiveTextWrapper
-								fontSize={s.value}
-								fontWeight={800}
-								value={`${value?.toLocaleString() || 0}${
-									unit ? ` ${unit}` : ''
-								}`}
-								color={color}
-								sx={{ lineHeight: 1.1 }}
-							/>
-						</Box>
-						{trend && (
-							<Stack
-								direction="row"
-								alignItems="center"
-								gap={0.35}
-								flexShrink={0}
-								sx={{ pb: '4px' }}
-							>
-								<trend.Icon
-									sx={{ fontSize: s.trendGlyph, color: 'text.secondary' }}
-								/>
-								<ResponsiveTextWrapper
-									fontSize={s.trend}
-									fontWeight={700}
-									color="text.secondary"
-									value={trend.label}
-								/>
-							</Stack>
-						)}
-					</Stack>
-
-					{hasYesterday ? (
-						<Box minWidth={0}>
-							<MiniComparisonBars
-								todayValue={value}
-								yesterdayValue={yesterdayVal}
-								color={color}
-								height={s.barsHeight}
-								unit={unit}
-							/>
-						</Box>
-					) : null}
-				</Box>
-			) : (
-				<NoDataFound message="Waiting for live device data — readings appear automatically" />
-			)}
-		</CustomCard>
+			hasData={hasData}
+			value={value}
+			unit={unit}
+			trend={trend ? { ...trend, tone: 'neutral' } : null}
+			asOf={asOf}
+			analytics={
+				hasYesterday ? (
+					<MiniComparisonBars
+						todayValue={value}
+						yesterdayValue={yesterdayVal}
+						color={color}
+						height={18}
+						unit={unit}
+					/>
+				) : null
+			}
+		/>
 	);
 };
 

@@ -18,6 +18,9 @@ import {
 	useTheme,
 } from '@mui/material';
 import { List } from 'react-window';
+
+import { RADIUS } from '../../theme/colors';
+
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 
 export const CustomTable = ({
@@ -154,8 +157,10 @@ export const CustomTable = ({
 				height: '100%',
 				display: 'flex',
 				flexDirection: 'column',
-				borderRadius: 1,
+				borderRadius: `${RADIUS.md}px`,
 				overflow: 'hidden',
+				border: '1px solid',
+				borderColor: 'divider',
 			}}
 		>
 			<Box height="100%" width="100%" overflow="auto">
@@ -177,7 +182,8 @@ export const CustomTable = ({
 								sx={{
 									display: 'flex',
 									width: '100%',
-									backgroundColor: 'primary.main',
+									background: (t) =>
+										`linear-gradient(135deg, ${t.palette.primary.dark} 0%, ${t.palette.primary.main} 100%)`,
 								}}
 							>
 								{headerGroup.headers.map((header) => (
@@ -243,8 +249,7 @@ export const CustomTable = ({
 				}
 				sx={{
 					overflow: 'hidden',
-					border: '1px solid',
-					borderRadius: 1,
+					borderTop: '1px solid',
 					borderColor: 'divider',
 					backgroundColor: 'surface.zebra',
 					'.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows':

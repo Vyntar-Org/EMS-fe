@@ -7,6 +7,8 @@ import {
 	FormHelperText,
 } from '@mui/material';
 
+import { RADIUS } from '../../theme/colors';
+
 export const CustomSelect = ({
 	label,
 	value,
@@ -29,7 +31,7 @@ export const CustomSelect = ({
 			size={size}
 			sx={{
 				'& .MuiOutlinedInput-root': {
-					borderRadius: 2,
+					borderRadius: `${RADIUS.sm}px`,
 				},
 			}}
 		>

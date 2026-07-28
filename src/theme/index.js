@@ -1,6 +1,6 @@
 import { alpha, createTheme } from '@mui/material/styles';
 
-import { BRAND, getPaletteForMode } from './colors';
+import { BRAND, RADIUS, getElevation, getPaletteForMode } from './colors';
 
 /**
  * Build the app theme for a mode ('light' | 'dark') from the color tokens
@@ -52,40 +52,34 @@ export const buildTheme = (mode) => {
 			MuiCard: {
 				styleOverrides: {
 					root: {
-						borderRadius: 16,
+						borderRadius: RADIUS.xl,
 						border: `1px solid ${palette.divider}`,
-						boxShadow: isDark
-							? '0 4px 20px rgba(0, 0, 0, 0.35)'
-							: '0 4px 20px rgba(15, 35, 62, 0.06)',
+						boxShadow: getElevation('md', mode),
 					},
 				},
 			},
 			MuiDialog: {
 				styleOverrides: {
 					paper: {
-						borderRadius: 16,
+						borderRadius: RADIUS.xl,
 						border: `1px solid ${palette.divider}`,
-						boxShadow: isDark
-							? '0 24px 60px rgba(0, 0, 0, 0.6)'
-							: '0 24px 60px rgba(15, 35, 62, 0.18)',
+						boxShadow: getElevation('xl', mode),
 					},
 				},
 			},
 			MuiPopover: {
 				styleOverrides: {
 					paper: {
-						borderRadius: 14,
+						borderRadius: RADIUS.lg,
 						border: `1px solid ${palette.divider}`,
-						boxShadow: isDark
-							? '0 12px 40px rgba(0, 0, 0, 0.55)'
-							: '0 12px 40px rgba(15, 35, 62, 0.14)',
+						boxShadow: getElevation('lg', mode),
 					},
 				},
 			},
 			MuiMenu: {
 				styleOverrides: {
 					paper: {
-						borderRadius: 14,
+						borderRadius: RADIUS.lg,
 						border: `1px solid ${palette.divider}`,
 					},
 					list: {
@@ -96,7 +90,7 @@ export const buildTheme = (mode) => {
 			MuiMenuItem: {
 				styleOverrides: {
 					root: {
-						borderRadius: 8,
+						borderRadius: RADIUS.xs,
 						margin: '1px 2px',
 					},
 				},
@@ -104,7 +98,7 @@ export const buildTheme = (mode) => {
 			MuiButton: {
 				styleOverrides: {
 					root: {
-						borderRadius: 10,
+						borderRadius: RADIUS.sm,
 						fontWeight: 600,
 						transition: 'all 0.25s ease',
 					},
@@ -166,7 +160,7 @@ export const buildTheme = (mode) => {
 			MuiOutlinedInput: {
 				styleOverrides: {
 					root: {
-						borderRadius: 10,
+						borderRadius: RADIUS.sm,
 						backgroundColor: palette.background.paper,
 						transition: 'box-shadow 0.2s ease',
 						'& .MuiOutlinedInput-notchedOutline': {
@@ -215,14 +209,12 @@ export const buildTheme = (mode) => {
 			MuiAutocomplete: {
 				styleOverrides: {
 					paper: {
-						borderRadius: 12,
+						borderRadius: RADIUS.md,
 						border: `1px solid ${palette.divider}`,
-						boxShadow: isDark
-							? '0 12px 32px rgba(0, 0, 0, 0.5)'
-							: '0 12px 32px rgba(15, 35, 62, 0.12)',
+						boxShadow: getElevation('lg', mode),
 					},
 					option: {
-						borderRadius: 8,
+						borderRadius: RADIUS.xs,
 						margin: '1px 4px',
 						'&[aria-selected="true"]': {
 							backgroundColor: alpha(palette.secondary.main, 0.18),
@@ -248,7 +240,7 @@ export const buildTheme = (mode) => {
 				styleOverrides: {
 					root: {
 						fontWeight: 600,
-						borderRadius: 8,
+						borderRadius: RADIUS.xs,
 						transition: 'all 0.2s ease',
 					},
 				},
@@ -256,17 +248,17 @@ export const buildTheme = (mode) => {
 			MuiTooltip: {
 				styleOverrides: {
 					tooltip: {
-						backgroundColor: '#1A1A1A',
+						backgroundColor: isDark ? palette.surface.tableHead : BRAND.navyDeep,
 						color: '#FFFFFF',
 						fontSize: '12px',
 						fontWeight: 500,
 						padding: '8px 12px',
-						borderRadius: '8px',
-						boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.25)',
-						border: '1px solid rgba(255, 255, 255, 0.1)',
+						borderRadius: `${RADIUS.xs}px`,
+						boxShadow: getElevation('sm', mode),
+						border: `1px solid ${alpha('#FFFFFF', 0.1)}`,
 					},
 					arrow: {
-						color: '#1A1A1A',
+						color: isDark ? palette.surface.tableHead : BRAND.navyDeep,
 					},
 				},
 			},

@@ -12,11 +12,13 @@ import {
 import { styled } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 
+import { RADIUS } from '../../theme/colors';
+
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
 	'& .MuiDialog-paper': {
-		borderRadius: '16px',
+		borderRadius: `${RADIUS.xl}px`,
 		backgroundColor: theme.palette.background.paper,
 		color: theme.palette.text.primary,
 	},
@@ -67,6 +69,7 @@ const PremiumModal = ({
 			onClose={onClose}
 			maxWidth={resolvedMaxWidth}
 			fullWidth
+			transitionDuration={{ enter: 160, exit: 120 }}
 			TransitionProps={{ onExited: () => setRenderedChildren(null) }}
 		>
 			<DialogTitle
@@ -169,7 +172,7 @@ const PremiumModal = ({
 								fontWeight: 600,
 								color: 'text.secondary',
 								textTransform: 'none',
-								borderRadius: '8px',
+								borderRadius: `${RADIUS.sm}px`,
 								'&:hover': {
 									backgroundColor: 'surface.muted',
 									color: 'text.primary',
@@ -190,7 +193,7 @@ const PremiumModal = ({
 								height: '40px',
 								fontWeight: 600,
 								textTransform: 'none',
-								borderRadius: '8px',
+								borderRadius: `${RADIUS.sm}px`,
 								backgroundColor: isLogout ? 'error.main' : 'secondary.main',
 								color: isLogout
 									? 'primary.contrastText'

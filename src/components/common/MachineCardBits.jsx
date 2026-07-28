@@ -21,8 +21,15 @@ import { useId } from 'react';
 
 import { formatChartValue } from '../../helpers/chartConfig';
 import { getTemperatureScalePercent } from '../../helpers/temperatureStatus';
+// Each app's identity color — drives the icon chip, card wash/border and
+// sparkline tint everywhere, so the machine-list grid reads as a colorful
+// set of distinct apps rather than one repeated template. Single source of
+// truth lives in theme/colors.js; re-exported here for existing call sites.
+import { APP_ACCENT_COLOR } from '../../theme/colors';
 
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
+
+export { APP_ACCENT_COLOR };
 
 export const APP_ICONS = {
 	ENERGY: BoltIcon,
@@ -34,21 +41,6 @@ export const APP_ICONS = {
 	'FIRE-SAFETY': LocalFireDepartmentIcon,
 	FLOWMETER: SpeedIcon,
 	COMPRESSOR: CompressIcon,
-};
-
-// Each app's identity color — drives the icon chip, card wash/border and
-// sparkline tint everywhere, so the machine-list grid reads as a colorful
-// set of distinct apps rather than one repeated template.
-export const APP_ACCENT_COLOR = {
-	ENERGY: '#E3B13E',
-	WATER: '#2E90E5',
-	FUEL: '#EA580C',
-	SOLAR: '#F5A524',
-	STP: '#0891B2',
-	TEMPERATURE: '#DC2626',
-	'FIRE-SAFETY': '#DC2626',
-	FLOWMETER: '#7C3AED',
-	COMPRESSOR: '#16A34A',
 };
 
 /**

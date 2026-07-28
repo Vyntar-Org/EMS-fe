@@ -244,6 +244,10 @@ const commonXAxis = (data, _isLarge, xLabel = 'Day', categoryOpts = {}) => {
 		axisTicks: { show: false },
 		labels: {
 			rotate: -45,
+			rotateAlways: false,
+			hideOverlappingLabels: true,
+			trim: true,
+			offsetY: 2,
 			style: { colors: ink.label, fontSize: '11px' },
 			// ApexCharts' category-axis formatter only reliably passes the
 			// label itself as the first argument — the 2nd/3rd args are
@@ -370,15 +374,15 @@ export const buildPremiumTooltip = ({
 		return `
 			<div style="background:${ink.surface};border:1px solid ${
 				ink.border
-			};border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.22);min-width:150px;">
+			};border-radius:12px;padding:12px 14px;box-shadow:0 10px 28px rgba(0,0,0,0.2);min-width:160px;">
 				${
 					chartTitle
-						? `<div style="font-size:12px;font-weight:700;color:${ink.primary};margin-bottom:2px;">${chartTitle}</div>`
+						? `<div style="font-size:12px;font-weight:700;color:${ink.primary};margin-bottom:3px;">${chartTitle}</div>`
 						: ''
 				}
 				${
 					xLabel
-						? `<div style="font-size:11px;color:${ink.secondary};margin-bottom:6px;">${xLabel}</div>`
+						? `<div style="font-size:11px;color:${ink.secondary};margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid ${ink.border};">${xLabel}</div>`
 						: ''
 				}
 				${rows}
@@ -398,7 +402,7 @@ export const buildDonutTooltip = ({ unit = '' } = {}) =>
 		return `
 			<div style="background:${ink.surface};border:1px solid ${
 				ink.border
-			};border-radius:10px;padding:8px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.22);">
+			};border-radius:12px;padding:8px 12px;box-shadow:0 10px 28px rgba(0,0,0,0.2);">
 				<div style="display:flex;align-items:center;gap:8px;">
 					<span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></span>
 					<span style="font-size:12px;color:${ink.secondary};">${name}</span>
@@ -414,8 +418,9 @@ const commonLegend = {
 	position: 'top',
 	horizontalAlign: 'center',
 	fontWeight: 600,
-	markers: { shape: 'circle', size: 6, offsetX: -2 },
-	itemMargin: { horizontal: 10 },
+	fontSize: '12px',
+	markers: { shape: 'circle', size: 7, offsetX: -2 },
+	itemMargin: { horizontal: 14, vertical: 4 },
 };
 
 // Pinned to a fixed corner instead of following the cursor for small,
@@ -438,6 +443,9 @@ const commonGrid = {
 	borderColor: 'rgba(128, 145, 170, 0.18)',
 	yaxis: { lines: { show: true } },
 	xaxis: { lines: { show: false } },
+	// Reserves room around the plot so rotated x-axis labels and y-axis
+	// titles never render partially outside the chart's own bounding box.
+	padding: { bottom: 12, left: 8, right: 8 },
 };
 
 const commonChart = (type, isLarge) => ({
