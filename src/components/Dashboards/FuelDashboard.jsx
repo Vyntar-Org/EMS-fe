@@ -61,6 +61,13 @@ const DeviceRow = ({ name, isActive, onClick }) => (
 	<Box
 		onClick={onClick}
 		role="button"
+		tabIndex={0}
+		onKeyDown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				onClick?.();
+			}
+		}}
 		sx={{
 			display: 'flex',
 			alignItems: 'center',
@@ -199,7 +206,7 @@ const FuelDashboard = () => {
 		>
 			<Grid container spacing={1} flex={1} minHeight={0}>
 				<Grid item xs={12} md={4} height={{ md: '100%' }}>
-					<Grid container rowGap={1} height={{ md: '100%' }}>
+					<Grid container rowGap={1} height={{ md: 'calc(100% - 8px)' }}>
 						<Grid item xs={12} height={{ xs: 250, md: '40%' }}>
 							<CustomCard
 								title="Fuel Station"
@@ -210,7 +217,6 @@ const FuelDashboard = () => {
 									<Grid
 										container
 										sx={{ height: '100%', width: '100%' }}
-										overflow="hidden"
 										justifyContent="center"
 									>
 										<ReactApexChart
@@ -288,7 +294,7 @@ const FuelDashboard = () => {
 					</Grid>
 				</Grid>
 
-				<Grid item xs={12} md height={{ xs: 400, md: '100%' }}>
+				<Grid item xs={12} md={8} height={{ xs: 400, md: '100%' }}>
 					<CustomCard
 						title={`Monthly Fuel Consumption ${
 							slavesDisplayName ? `- ${slavesDisplayName}` : ''
