@@ -13,6 +13,7 @@ const EnergyMachineListSkeleton = () => {
 						xs={12}
 						sm={6}
 						md={4}
+						lg={3}
 						key={`machine-card-skeleton-${ind + 1}`}
 						height="390px"
 					>

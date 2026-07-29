@@ -3,7 +3,10 @@ import React from 'react';
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
 import { Box, Divider, Grid } from '@mui/material';
-import { MiniComparisonBars } from '../../common/MachineCardBits';
+import {
+	MiniComparisonBars,
+	MiniSparkline,
+} from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
 const ACCENT = '#EDA100';
@@ -23,7 +26,7 @@ const ENERGYConsumption = ({ data }) => {
 			<Box sx={{ textAlign: 'center', width: '100%', px: 0.5 }}>
 				<ResponsiveTextWrapper
 					variant="caption"
-					color="text.secondary"
+					color="text.primary"
 					fontWeight={700}
 					textTransform="uppercase"
 					fontSize={{ xs: '9.5px', md: '11px' }}
@@ -34,7 +37,7 @@ const ENERGYConsumption = ({ data }) => {
 					fontSize={{ xs: '13px', sm: '14px', md: '16px' }}
 					color={ACCENT}
 					fontWeight={800}
-					mt={0.5}
+					mt={1.5}
 					value={value?.toLocaleString() || 0}
 				/>
 
@@ -43,6 +46,14 @@ const ENERGYConsumption = ({ data }) => {
 					fontWeight={500}
 					fontSize={{ xs: '10.5px', md: '12px' }}
 					value={unit}
+					mb={1.5}
+				/>
+
+				<MiniSparkline
+					color={ACCENT}
+					data={[10, 18, 15, 25, 22, 27, 14, 21, 18, 29, 22, 25]}
+					height={14}
+					width="100%"
 				/>
 
 				<ResponsiveTextWrapper
@@ -50,7 +61,7 @@ const ENERGYConsumption = ({ data }) => {
 					color="text.primary"
 					fontWeight={600}
 					borderRadius={1}
-					mt={0.5}
+					mt={2.5}
 					fontSize={{ xs: '11px', md: '13px' }}
 					value={`₹ ${cost?.toLocaleString() || 0}`}
 					tooltipValue={`COST = ₹ ${cost?.toLocaleString() || 0}`}
@@ -111,12 +122,12 @@ const ENERGYConsumption = ({ data }) => {
 							unit={data.unit}
 						/>
 					</Grid>
-					<MiniComparisonBars
+					{/* <MiniComparisonBars
 						todayValue={todayValue}
 						yesterdayValue={yesterdayValue}
 						color={ACCENT}
 						height={14}
-					/>
+					/> */}
 				</Box>
 			) : (
 				<NoDataFound message="Waiting for live device data — readings appear automatically" />

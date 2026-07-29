@@ -1,9 +1,17 @@
-import { Power } from '@mui/icons-material';
+import {
+	Battery90,
+	ElectricalServices,
+	EnergySavingsLeaf,
+	Power,
+} from '@mui/icons-material';
 import React from 'react';
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
 import { Box, Divider, Grid } from '@mui/material';
-import { MiniMultiDonut } from '../../common/MachineCardBits';
+import {
+	CustomProgressBar,
+	MiniMultiDonut,
+} from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
 const ACCENT = '#008300';
@@ -12,10 +20,17 @@ const BACKUP_COLOR = '#EA580C';
 const GREEN_COLOR = ACCENT;
 
 const ENERGYEnerTree = ({ data }) => {
-	const MetricBlock = ({ label, value, showDivider, unit }) => (
+	const MetricBlock = ({
+		label,
+		value,
+		showDivider,
+		unit,
+		icon: Icon,
+		iconColor,
+	}) => (
 		<Grid
 			item
-			xs={4}
+			xs={12}
 			sx={{
 				display: 'flex',
 				position: 'relative',
@@ -23,26 +38,33 @@ const ENERGYEnerTree = ({ data }) => {
 				justifyContent: 'center',
 			}}
 		>
-			<Box sx={{ textAlign: 'center', width: '100%', px: 0.5 }}>
-				<ResponsiveTextWrapper
+			<Box sx={{ width: '100%', px: 0.5 }}>
+				{/* <ResponsiveTextWrapper
 					variant="caption"
-					color="text.secondary"
+					color="text.primary"
 					fontWeight={700}
 					textTransform="uppercase"
 					fontSize={{ xs: '9.5px', md: '11px' }}
 					value={label}
-				/>
+				/> */}
 
-				<ResponsiveTextWrapper
-					mt={0.5}
+				<CustomProgressBar
+					icon={Icon}
+					color={ACCENT}
+					value={value}
+					label={label}
+					iconColor={iconColor}
+				/>
+				{/* <ResponsiveTextWrapper
+					// mt={0.5}
 					fontSize={{ xs: '12px', sm: '13px', md: '15px' }}
 					color={ACCENT}
 					fontWeight={800}
 					value={`${value?.toLocaleString() || 0} ${unit}`}
-				/>
+				/> */}
 			</Box>
 
-			{showDivider && (
+			{/* {showDivider && (
 				<Divider
 					orientation="vertical"
 					sx={{
@@ -52,7 +74,7 @@ const ENERGYEnerTree = ({ data }) => {
 						right: 0,
 					}}
 				/>
-			)}
+			)} */}
 		</Grid>
 	);
 
@@ -68,26 +90,37 @@ const ENERGYEnerTree = ({ data }) => {
 						gap: 0.5,
 					}}
 				>
-					<Grid container sx={{ width: '100%' }} alignItems="center">
+					<Grid
+						container
+						sx={{ width: '100%' }}
+						alignItems="center"
+						rowGap={1.5}
+					>
 						<MetricBlock
 							label="Main"
 							value={data?.main || 0}
 							showDivider
 							unit={data?.unit || ''}
+							icon={ElectricalServices}
+							iconColor="#2563EB"
 						/>
 						<MetricBlock
 							label="Backup"
 							value={data?.backup || 0}
 							showDivider
 							unit={data?.unit || ''}
+							icon={Battery90}
+							iconColor="#EA580C"
 						/>
 						<MetricBlock
 							label="Green"
 							value={data?.green || 0}
 							unit={data?.unit || ''}
+							icon={EnergySavingsLeaf}
+							iconColor="#1BAF7A" //
 						/>
 					</Grid>
-					<MiniMultiDonut
+					{/* <MiniMultiDonut
 						segments={[
 							{ label: 'Main', value: data?.main || 0, color: MAIN_COLOR },
 							{
@@ -97,7 +130,7 @@ const ENERGYEnerTree = ({ data }) => {
 							},
 							{ label: 'Green', value: data?.green || 0, color: GREEN_COLOR },
 						]}
-					/>
+					/> */}
 				</Box>
 			) : (
 				<NoDataFound message="Waiting for live device data — readings appear automatically" />

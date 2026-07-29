@@ -6,7 +6,7 @@ import {
 	alpha,
 	styled,
 } from '@mui/material';
-import React from 'react';
+// import React from 'react';
 
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 
@@ -44,12 +44,12 @@ const StyledCard = styled(Card)(({ theme, accentcolor }) => {
 		overflow: 'hidden',
 		borderRadius: '18px',
 		// KPI-style accent wash flowing into the theme surface
-		background: `linear-gradient(155deg, ${alpha(
-			accent,
-			isDark ? 0.22 : 0.13
-		)} 0%, ${theme.palette.background.paper} 62%)`,
+		// background: `linear-gradient(155deg, ${alpha(
+		// 	accent,
+		// 	isDark ? 0.22 : 0.13
+		// )} 0%, ${theme.palette.background.paper} 62%)`,
 		transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-		border: `2px solid ${alpha(accent, isDark ? 0.34 : 0.26)}`,
+		// border: `2px solid ${alpha(accent, isDark ? 0.34 : 0.26)}`,
 		// Layered elevation: tight key shadow + wide soft ambient + a subtle
 		// inner top highlight for a glass finish
 		boxShadow: isDark
@@ -62,23 +62,32 @@ const StyledCard = styled(Card)(({ theme, accentcolor }) => {
 					0.06
 			  )}, 0 10px 28px ${alpha('#0F233E', 0.07)}`,
 		// Soft accent glow in the bottom-right corner for depth
-		'&::after': {
-			content: '""',
-			position: 'absolute',
-			right: -50,
-			bottom: -50,
-			width: 160,
-			height: 160,
-			borderRadius: '50%',
-			background: `radial-gradient(circle, ${alpha(
-				accent,
-				isDark ? 0.16 : 0.1
-			)} 0%, transparent 70%)`,
-			pointerEvents: 'none',
-			transition: 'transform 0.4s ease',
-		},
+		// '&::after': {
+		// 	content: '""',
+		// 	position: 'absolute',
+		// 	right: -50,
+		// 	bottom: -50,
+		// 	width: 160,
+		// 	height: 160,
+		// 	borderRadius: '50%',
+		// 	background: `radial-gradient(circle, ${alpha(
+		// 		accent,
+		// 		isDark ? 0.16 : 0.1
+		// 	)} 0%, transparent 70%)`,
+		// 	pointerEvents: 'none',
+		// 	transition: 'transform 0.4s ease',
+		// },
+		border: '2px solid #fff',
 		'&:hover': {
 			// transform: 'translateY(-3px)',
+
+			// background: `linear-gradient(135deg, ${alpha(
+			// 			accent || theme.palette.primary.main,
+			// 			theme.palette.mode === 'dark' ? 0.28 : 0.18
+			// 		)} 0%, ${alpha(
+			// 			accent || theme.palette.primary.main,
+			// 			theme.palette.mode === 'dark' ? 0.1 : 0.06
+			// 		)} 100%)`,
 			borderColor: alpha(accent, isDark ? 0.6 : 0.5),
 			boxShadow: isDark
 				? `inset 0 1px 0 ${alpha('#FFFFFF', 0.08)}, 0 4px 10px ${alpha(
@@ -102,7 +111,7 @@ const CustomCard = ({
 	subtitle,
 	icon,
 	children,
-	isPremium = false,
+	// isPremium = false,
 	accentColor,
 	titleIcon,
 	childrenOtherProps = {},
@@ -141,6 +150,7 @@ const CustomCard = ({
 										? '#FFFFFF'
 										: accent || t.palette.primary.main,
 								flexShrink: 0,
+
 								background: (t) => {
 									const a = accent || t.palette.primary.main;
 									const strong = t.palette.mode === 'dark' ? 0.28 : 0.18;

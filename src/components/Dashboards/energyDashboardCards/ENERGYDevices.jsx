@@ -1,9 +1,16 @@
-import { OnDeviceTraining } from '@mui/icons-material';
+import {
+	DeviceHub,
+	OnDeviceTraining,
+	OnDeviceTrainingOutlined,
+} from '@mui/icons-material';
 import React from 'react';
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
 import { Box, Stack } from '@mui/material';
-import { MachineRatioDonut } from '../../common/MachineCardBits';
+import {
+	MachineRatioDonut,
+	MiniMultiDonut,
+} from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
 // Device status is its own semantic color regardless of app theme — green
@@ -13,19 +20,22 @@ const OFFLINE_COLOR = '#DC2626';
 const ACCENT = '#2563EB';
 
 const CountChip = ({ label, value, color }) => (
-	<Stack direction="row" alignItems="center" gap={0.5} minWidth={0}>
-		<Box
-			sx={{
-				width: 6,
-				height: 6,
-				borderRadius: '50%',
-				bgcolor: color,
-				flexShrink: 0,
-			}}
+	<Stack
+		direction="column"
+		alignItems="center"
+		textAlign="center"
+		gap={0.5}
+		minWidth={0}
+	>
+		<ResponsiveTextWrapper
+			value={label}
+			// fontSize="14px"
+			fontWeight={700}
+			color={color}
 		/>
 		<ResponsiveTextWrapper
-			value={`${value} ${label}`}
-			fontSize="10.5px"
+			value={value}
+			fontSize="14px"
 			fontWeight={700}
 			color={color}
 		/>
@@ -35,8 +45,8 @@ const CountChip = ({ label, value, color }) => (
 const ENERGYDevices = ({ data }) => {
 	const online = data?.online || 0;
 	const offline = data?.offline || 0;
-	const total = online + offline;
-	const onlinePercent = total > 0 ? (online / total) * 100 : 0;
+	// const total = online + offline;
+	// const onlinePercent = total > 0 ? (online / total) * 100 : 0;
 
 	return (
 		<CustomCard
@@ -49,20 +59,38 @@ const ENERGYDevices = ({ data }) => {
 					sx={{
 						height: '100%',
 						display: 'flex',
-						flexDirection: 'column',
+						// flexDirection: 'column',
 						justifyContent: 'center',
-						gap: 1,
+						// gap: 1,
 					}}
 				>
-					<MachineRatioDonut
+					<MiniMultiDonut
+						icon={OnDeviceTrainingOutlined}
+						isThin
+						size={110}
+						segments={[
+							{ value: online, color: ONLINE_COLOR },
+							{
+								value: offline,
+								color: OFFLINE_COLOR,
+							},
+						]}
+					/>
+
+					{/* <MachineRatioDonut
 						percent={onlinePercent}
 						color={ONLINE_COLOR}
 						label="Devices online"
 						caption={`${online} of ${total || 0} total`}
-					/>
-					<Stack direction="row" justifyContent="center" gap={1.5}>
-						<CountChip label="Online" value={online} color={ONLINE_COLOR} />
-						<CountChip label="Offline" value={offline} color={OFFLINE_COLOR} />
+					/> */}
+					<Stack
+						direction="column"
+						justifyContent="center"
+						gap={1}
+						width="calc(100% - 110px - 16px)"
+					>
+						<CountChip label="ONLINE" value={online} color={ONLINE_COLOR} />
+						<CountChip label="OFFLINE" value={offline} color={OFFLINE_COLOR} />
 					</Stack>
 				</Box>
 			) : (

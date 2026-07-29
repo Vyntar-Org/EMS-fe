@@ -282,22 +282,27 @@ export const MachineRatioDonut = ({ percent = 0, color, label, caption }) => {
 					</Typography>
 				</Box>
 			</Box>
-			<Box minWidth={0} flex={1}>
-				<ResponsiveTextWrapper
-					value={label}
-					fontSize="12.5px"
-					color="text.secondary"
-					fontWeight={500}
-				/>
-				{caption && (
-					<ResponsiveTextWrapper
-						value={caption}
-						fontSize="12px"
-						color="text.primary"
-						fontWeight={700}
-					/>
-				)}
-			</Box>
+
+			{(label || caption) && (
+				<Box minWidth={0} flex={1}>
+					{label && (
+						<ResponsiveTextWrapper
+							value={label}
+							fontSize="12.5px"
+							color="text.secondary"
+							fontWeight={500}
+						/>
+					)}
+					{caption && (
+						<ResponsiveTextWrapper
+							value={caption}
+							fontSize="12px"
+							color="text.primary"
+							fontWeight={700}
+						/>
+					)}
+				</Box>
+			)}
 		</Stack>
 	);
 };
@@ -434,7 +439,12 @@ export const MiniProportionBar = ({ segments = [] }) => {
  * just with multiple color stops instead of one. Legend sits below rather
  * than beside so it still fits narrow KPI-tile-width cards.
  */
-export const MiniMultiDonut = ({ segments = [], size = 46 }) => {
+export const MiniMultiDonut = ({
+	segments = [],
+	size = 46,
+	isThin,
+	icon: Icon,
+}) => {
 	const total = segments.reduce((sum, s) => sum + (Number(s.value) || 0), 0);
 
 	let cumulative = 0;
@@ -447,60 +457,97 @@ export const MiniMultiDonut = ({ segments = [], size = 46 }) => {
 		})
 		.join(', ');
 
+	// 1. Calculate explicit thickness based on the size and thinness props
+	const thickness = isThin ? Math.max(2, size * 0.1) : Math.max(4, size * 0.18);
+
+	// 2. Scale the center icon cleanly based on the remaining inner space
+	const innerSpace = size - thickness * 2;
+	const iconFontSize = Math.floor(innerSpace * 0.65);
+
 	return (
-		<Stack direction="row" alignItems="center" gap={1.25} width="100%">
+		<Stack direction="row" alignItems="center" gap={1.25}>
+			{/* Main Outer Layout Grid Container */}
 			<Box
 				sx={{
 					position: 'relative',
 					width: size,
 					height: size,
 					flexShrink: 0,
-					borderRadius: '50%',
-					background: (t) =>
-						total > 0
-							? `conic-gradient(${stops})`
-							: alpha(t.palette.text.secondary, 0.14),
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
 				}}
 			>
+				{/* 
+                  1. THE DONUT RING (No masks used here!)
+                  We paint the conic-gradient as a background-image, then use a standard 
+                  CSS clipping trick (`background-clip`) over transparent borders.
+                */}
 				<Box
 					sx={{
 						position: 'absolute',
-						top: '50%',
-						left: '50%',
-						transform: 'translate(-50%, -50%)',
-						width: size * 0.62,
-						height: size * 0.62,
+						inset: 0,
 						borderRadius: '50%',
-						bgcolor: 'background.paper',
+						boxSizing: 'border-box',
+						padding: `${thickness}px`, // This dictates the hollow space inside
+						background: (t) =>
+							total > 0
+								? `conic-gradient(${stops})`
+								: alpha(t.palette.text.secondary, 0.14),
+						// Cuts the center hole cleanly using standard CSS background isolation
+						WebkitMask:
+							'linear-gradient(#fff 0 0) content-box exclude, linear-gradient(#fff 0 0)',
+						mask: 'linear-gradient(#fff 0 0) content-box exclude, linear-gradient(#fff 0 0)',
 					}}
 				/>
-			</Box>
-			<Stack direction="row" flexWrap="wrap" gap={0.75} minWidth={0} flex={1}>
-				{segments.map((s, i) => (
-					<Stack
-						key={s.label || i}
-						direction="row"
-						alignItems="center"
-						gap={0.4}
-						minWidth={0}
+
+				{/* 2. THE CENTER ICON (Safely aligned on its own independent layer stack) */}
+				{Icon && (
+					<Box
+						sx={{
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							color: 'primary.light',
+							width: innerSpace,
+							height: innerSpace,
+							zIndex: 2,
+						}}
 					>
-						<Box
-							sx={{
-								width: 6,
-								height: 6,
-								borderRadius: '50%',
-								bgcolor: s.color,
-								flexShrink: 0,
-							}}
-						/>
-						<ResponsiveTextWrapper
-							value={s.label}
-							fontSize="9px"
-							fontWeight={600}
-							color="text.secondary"
-						/>
-					</Stack>
-				))}
+						<Icon sx={{ fontSize: `${iconFontSize}px !important` }} />
+					</Box>
+				)}
+			</Box>
+
+			<Stack direction="row" flexWrap="wrap" gap={0.75} minWidth={0} flex={1}>
+				{segments.map(
+					(s, i) =>
+						s.label && (
+							<Stack
+								key={s.label || i}
+								direction="row"
+								alignItems="center"
+								gap={0.4}
+								minWidth={0}
+							>
+								<Box
+									sx={{
+										width: 6,
+										height: 6,
+										borderRadius: '50%',
+										bgcolor: s.color,
+										flexShrink: 0,
+									}}
+								/>
+								<ResponsiveTextWrapper
+									value={s.label}
+									fontSize="9px"
+									fontWeight={600}
+									color="text.secondary"
+								/>
+							</Stack>
+						)
+				)}
 			</Stack>
 		</Stack>
 	);
@@ -653,7 +700,7 @@ export const MiniGaugeArc = ({ percent = 0, color, label }) => {
 					value={label}
 					fontSize="12px"
 					fontWeight={600}
-					color="text.secondary"
+					color="text.primary"
 				/>
 			</Box>
 			<Box sx={{ position: 'relative', width: 64, height: 32, flexShrink: 0 }}>
@@ -844,3 +891,115 @@ export const MachineHealthBadge = ({ isOnline }) => (
 		</Typography>
 	</Stack>
 );
+
+export const CustomProgressBar = ({
+	value = 100,
+	color = '#0046FE',
+	trackColor = '#F1F5F9',
+	height = 8,
+	label,
+	icon: Icon, // Pass any MUI Icon component here (e.g., icon={SettingsIcon})
+	iconColor,
+	unit = '%',
+}) => {
+	const clampedValue = Math.max(0, Math.min(100, Number(value) || 0));
+	const activeIconColor = iconColor || color;
+
+	return (
+		<Stack direction="row" alignItems="flex-start" spacing={1.5} width="100%">
+			{/* 1. LEFT SIDE ICON CONTAINER */}
+			{Icon && (
+				<Box
+					sx={{
+						display: 'inline-flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						color: activeIconColor,
+						flexShrink: 0,
+						width: 36,
+						height: 36,
+						borderRadius: '50%', // Sleek modern rounded corners
+						// 🟢 The Glass effect: 12% opacity background of the icon's color
+						backgroundColor: alpha(activeIconColor, 0.12),
+						// 🟢 THE MAGIC LINE: Blurs background elements passing behind the glass tile
+						backdropFilter: 'blur(8px)',
+						WebkitBackdropFilter: 'blur(8px)', // Core Safari support
+
+						// 💡 Specular highlight: A slightly brighter white/color mix border to catch edges
+						// border: (theme) =>
+						// 	`1px solid ${
+						// 		theme.palette.mode === 'dark'
+						// 			? alpha('#ffffff', 0.15)
+						// 			: alpha(activeIconColor, 0.25)
+						// 	}`,
+
+						// Optional: Adds a tiny ambient depth glow under the glass pod
+						boxShadow: `0 4px 12px 0 ${alpha(activeIconColor, 0.08)}`,
+					}}
+				>
+					<Icon sx={{ fontSize: '20px' }} />
+				</Box>
+			)}
+
+			{/* 2. RIGHT SIDE CONTENT CONTAINER (Holds both Label & Progress Row) */}
+			<Stack spacing={0.5} flexGrow={1} minWidth={0}>
+				{/* Optional Top Label */}
+				{label && (
+					<Typography
+						sx={{
+							fontSize: '12px',
+							fontWeight: 600,
+							color: 'text.primary',
+							lineHeight: 1.2,
+						}}
+					>
+						{label}
+					</Typography>
+				)}
+
+				{/* Progress Bar + Percentage Text Row */}
+				<Stack direction="row" alignItems="center" width="100%">
+					{/* The Main Track */}
+					<Box
+						sx={{
+							position: 'relative',
+							height: height,
+							flexGrow: 1,
+							backgroundColor: trackColor,
+							borderRadius: height / 2,
+							overflow: 'hidden',
+						}}
+					>
+						{/* The Active Fill */}
+						<Box
+							sx={{
+								position: 'absolute',
+								left: 0,
+								top: 0,
+								bottom: 0,
+								width: `${clampedValue}%`,
+								backgroundColor: color,
+								borderRadius: height / 2,
+								transition: 'width 0.4s ease-in-out',
+							}}
+						/>
+					</Box>
+
+					{/* Right Percentage Label */}
+					<Box maxWidth="50px" minWidth="36px">
+						<ResponsiveTextWrapper
+							value={`${Math.round(clampedValue)}${unit}`}
+							sx={{
+								fontSize: '13px',
+								fontWeight: 700,
+								color: color,
+								textAlign: 'right',
+								whiteSpace: 'nowrap',
+							}}
+						/>
+					</Box>
+				</Stack>
+			</Stack>
+		</Stack>
+	);
+};

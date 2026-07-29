@@ -1,4 +1,4 @@
-import { Opacity, Recycling, Science } from '@mui/icons-material';
+import { Opacity, Recycling } from '@mui/icons-material';
 import { Box, Grid } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useMemo, useState } from 'react';
@@ -299,7 +299,7 @@ const STPDashboard = () => {
 						<Grid item xs={12} mt={{ xs: 1, md: 0 }} height={{ md: '50%' }}>
 							<CustomCard
 								title="Water Quality"
-								titleIcon={<Science />}
+								// titleIcon={<Science />}
 								accentColor={QUALITY_ACCENT}
 							>
 								<Grid container sx={{ height: '100%', width: '100%' }}>

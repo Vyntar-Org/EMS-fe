@@ -10,10 +10,10 @@ const EnergyDashboardSkeleton = () => {
 		>
 			<Grid
 				container
-				spacing={1}
-				height={{ xs: '450px', sm: '350px', md: '200px' }}
+				spacing={1.5}
+				height={{ xs: '450px', sm: '350px', md: '230px' }}
 			>
-				<Grid item xs={12} sm={4} md={1.7}>
+				<Grid item s={12} sm={4} md={2.2}>
 					<Skeleton
 						sx={{ borderRadius: '16px' }}
 						animation="wave"
@@ -22,7 +22,7 @@ const EnergyDashboardSkeleton = () => {
 						height="100%"
 					/>
 				</Grid>
-				<Grid item xs={12} sm={8} md={3.7}>
+				<Grid item xs={12} sm={8} md={3.2}>
 					<Skeleton
 						sx={{ borderRadius: '16px' }}
 						animation="wave"
@@ -31,7 +31,7 @@ const EnergyDashboardSkeleton = () => {
 						height="100%"
 					/>
 				</Grid>
-				<Grid item xs={12} sm={4} md={2}>
+				<Grid item xs={12} sm={4} md={2.3}>
 					<Skeleton
 						sx={{ borderRadius: '16px' }}
 						animation="wave"
@@ -40,7 +40,7 @@ const EnergyDashboardSkeleton = () => {
 						height="100%"
 					/>
 				</Grid>
-				<Grid item xs={12} sm={4} md={2.6}>
+				<Grid item xs={12} sm={4} md={2.3}>
 					<Skeleton
 						sx={{ borderRadius: '16px' }}
 						animation="wave"
@@ -62,12 +62,12 @@ const EnergyDashboardSkeleton = () => {
 
 			<Grid
 				container
-				spacing={1}
+				spacing={1.5}
 				sx={{ mt: 0 }}
-				height={{ md: 'calc(100% - 200px)' }}
+				height={{ md: 'calc(100% - 230px)' }}
 			>
 				<Grid item xs={12} sm={12} md={5.4} height={{ md: '100%' }}>
-					<Grid container rowGap={1} height={{ md: '100%' }}>
+					<Grid container rowGap={1.5} height={{ md: '100%' }}>
 						<Grid item xs={12} sm={12} height={{ xs: 300, md: '50%' }}>
 							<Skeleton
 								sx={{ borderRadius: '16px' }}

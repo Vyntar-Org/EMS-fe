@@ -66,17 +66,17 @@ const EnergyDashboard = () => {
 				overflowY: 'auto',
 			}}
 		>
-			<Grid container spacing={1} height={{ md: '200px' }} flexShrink={0}>
-				<Grid item xs={12} sm={4} md={1.7} height={{ md: '100%' }}>
+			<Grid container spacing={1.5} height={{ md: '230px' }} flexShrink={0}>
+				<Grid item xs={12} sm={4} md={2.2} height={{ md: '100%' }}>
 					<ENERGYDevices data={overviewData?.devices} />
 				</Grid>
-				<Grid item xs={12} sm={8} md={3.7} height={{ md: '100%' }}>
+				<Grid item xs={12} sm={8} md={3.2} height={{ md: '100%' }}>
 					<ENERGYConsumption data={overviewData?.energy_consumption} />
 				</Grid>
-				<Grid item xs={12} sm={4} md={2} height={{ md: '100%' }}>
+				<Grid item xs={12} sm={4} md={2.3} height={{ md: '100%' }}>
 					<ENERGYEnerTree data={overviewData?.ener_tree} />
 				</Grid>
-				<Grid item xs={12} sm={4} md={2.6} height={{ md: '100%' }}>
+				<Grid item xs={12} sm={4} md={2.3} height={{ md: '100%' }}>
 					<ENERGYCarbonFootprints data={overviewData?.carbon_footprints} />
 				</Grid>
 				<Grid item xs={12} sm={4} md={2} height={{ md: '100%' }}>
@@ -84,19 +84,24 @@ const EnergyDashboard = () => {
 				</Grid>
 			</Grid>
 
-			<Grid container spacing={1} sx={{ mt: 0 }} flex={1} minHeight={0}>
+			<Grid container spacing={1.5} sx={{ mt: 0 }} flex={1} minHeight={0}>
 				<Grid item xs={12} sm={12} md={5.4} height={{ md: '100%' }}>
-					<Grid container rowGap={1} height={{ md: '100%' }}>
-						<Grid item xs={12} sm={12} height={{ md: '50%' }}>
+					<Grid container rowGap={1.5} height={{ md: '100%' }}>
+						<Grid item xs={12} sm={12} height={{ xs: 300, md: '50%' }}>
 							<ENERGYConsumptionLastSixHours />
 						</Grid>
-						<Grid item xs={12} sm={12} height={{ md: 'calc(50% - 8px)' }}>
+						<Grid
+							item
+							xs={12}
+							sm={12}
+							height={{ xs: 300, md: 'calc(50% - 12px)' }}
+						>
 							<ENERGYDemandIndicator slavesId={slavesId} />
 						</Grid>
 					</Grid>
 				</Grid>
 
-				<Grid item xs={12} sm={12} md={6.6} height={{ md: '100%' }}>
+				<Grid item xs={12} sm={12} md={6.6} height={{ xs: 400, md: '100%' }}>
 					<ENERGYMachinePowerConsumption
 						slavesId={slavesId}
 						setSlavesId={setSlavesId}
