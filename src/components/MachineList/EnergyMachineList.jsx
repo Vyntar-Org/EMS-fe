@@ -157,271 +157,274 @@ const handleDownload = (filteredMachines, selectedApp) => {
 	URL.revokeObjectURL(url);
 };
 
-const ModalContentForTrend = memo(({
-	handleTabChange,
-	tab,
-	keyParam,
-	slaveId,
-	slaveName,
-}) => {
-	const [chartResponse, setChartResponse] = useState(null);
-	const [chartLoading, setChartLoading] = useState(true);
+const ModalContentForTrend = memo(
+	({ handleTabChange, tab, keyParam, slaveId, slaveName }) => {
+		const [chartResponse, setChartResponse] = useState(null);
+		const [chartLoading, setChartLoading] = useState(true);
 
-	const fetchTrendModalChartData = async (selectedTab, keyForParameter) => {
-		if (!slaveId) {
-			setChartResponse(null);
-			return;
-		}
-
-		let API_URL_NAME = '';
-
-		if (selectedTab === 'ACTIVE_POWER') {
-			API_URL_NAME = API_URLS.EMS_MACHINE_LIST_ACTIVE_POWER(slaveId);
-		}
-		if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'voltage') {
-			API_URL_NAME = API_URLS.EMS_MACHINE_LIST_VOLTAGE(slaveId);
-		}
-		if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'current') {
-			API_URL_NAME = API_URLS.EMS_MACHINE_LIST_CURRENT(slaveId);
-		}
-		if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'pf') {
-			API_URL_NAME = API_URLS.EMS_MACHINE_LIST_POWER_FACTOR(slaveId);
-		}
-		if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'frequency') {
-			API_URL_NAME = API_URLS.EMS_MACHINE_LIST_FREQUENCY(slaveId);
-		}
-
-		if (!API_URL_NAME) {
-			setChartResponse(null);
-			return;
-		}
-
-		try {
-			setChartLoading(true);
-			const res = await api.get(API_URL_NAME);
-			if (res?.success) {
-				setChartResponse(res?.data);
+		const fetchTrendModalChartData = async (selectedTab, keyForParameter) => {
+			if (!slaveId) {
+				setChartResponse(null);
+				return;
 			}
-		} catch (error) {
-			console.error('Modal Trend API calls failed:', error);
-			setChartResponse(null);
-		} finally {
-			setChartLoading(false);
-		}
-	};
 
-	useEffect(() => {
-		if (tab === 'ACTIVE_POWER') {
-			fetchTrendModalChartData(tab);
-		}
-	}, [tab]);
+			let API_URL_NAME = '';
 
-	const trendChartTitle = useMemo(() => {
-		const paramLabel =
-			KEY_PARAMETER_OPTIONS.find((k) => k.value === keyParam)?.label ||
-			keyParam;
-		const suffix = tab === 'KEY_PARAMETERS' ? paramLabel : 'Active Power';
-		return `${slaveName || 'Energy Machine'} — ${suffix || 'Trend'}`;
-	}, [slaveName, tab, keyParam]);
+			if (selectedTab === 'ACTIVE_POWER') {
+				API_URL_NAME = API_URLS.EMS_MACHINE_LIST_ACTIVE_POWER(slaveId);
+			}
+			if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'voltage') {
+				API_URL_NAME = API_URLS.EMS_MACHINE_LIST_VOLTAGE(slaveId);
+			}
+			if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'current') {
+				API_URL_NAME = API_URLS.EMS_MACHINE_LIST_CURRENT(slaveId);
+			}
+			if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'pf') {
+				API_URL_NAME = API_URLS.EMS_MACHINE_LIST_POWER_FACTOR(slaveId);
+			}
+			if (selectedTab === 'KEY_PARAMETERS' && keyForParameter === 'frequency') {
+				API_URL_NAME = API_URLS.EMS_MACHINE_LIST_FREQUENCY(slaveId);
+			}
 
-	const chartOptions = getChartOptions('line', chartResponse?.data || [], {
-		xLabel: 'Time',
-		yLabel: chartResponse?.unit || 'Value',
-		colors: ['#E34D4D', '#F8C537', '#4A90E2', '#EF4444', '#8B5CF6', '#2563EB'],
-		categoryOpts: { key: 'timestamp', format: 'time' },
-		chartTitle: trendChartTitle,
-	});
+			if (!API_URL_NAME) {
+				setChartResponse(null);
+				return;
+			}
 
-	const getCurrentChartSeries = () => {
-		switch (tab) {
-			case 'ACTIVE_POWER':
-				return [
-					{
-						name: `${slaveName} Active Power`,
-						data: chartResponse?.data?.map((item) => item.value),
-						color: APP_ACCENT_COLOR.ENERGY,
-					},
-				];
-			case 'KEY_PARAMETERS':
-				switch (keyParam) {
-					case 'voltage':
-						return [
-							{
-								name: 'R-Voltage',
-								data: chartResponse?.data?.map((item) => item.rv),
-								color: '#E34D4D',
-							},
-							{
-								name: 'Y-Voltage',
-								data: chartResponse?.data?.map((item) => item.yv),
-								color: '#F8C537',
-							},
-							{
-								name: 'B-Voltage',
-								data: chartResponse?.data?.map((item) => item.bv),
-								color: '#4A90E2',
-							},
-						];
-					case 'current':
-						return [
-							{
-								name: 'R-Current',
-								data: chartResponse?.data?.map((item) => item.i_r),
-								color: '#E34D4D',
-							},
-							{
-								name: 'Y-Current',
-								data: chartResponse?.data?.map((item) => item.i_y),
-								color: '#F8C537',
-							},
-							{
-								name: 'B-Current',
-								data: chartResponse?.data?.map((item) => item.i_b),
-								color: '#4A90E2',
-							},
-						];
-
-					case 'pf':
-						return [
-							{
-								name: `${slaveName} Power Factor`,
-								data: chartResponse?.data?.map((item) => item.value),
-								color: '#E34D4D',
-							},
-						];
-
-					case 'frequency':
-						return [
-							{
-								name: `${slaveName} Frequency`,
-								data: chartResponse?.data?.map((item) => item.value),
-								color: '#E34D4D',
-							},
-						];
+			try {
+				setChartLoading(true);
+				const res = await api.get(API_URL_NAME);
+				if (res?.success) {
+					setChartResponse(res?.data);
 				}
-				break;
-			default:
-				return [];
-		}
-	};
+			} catch (error) {
+				console.error('Modal Trend API calls failed:', error);
+				setChartResponse(null);
+			} finally {
+				setChartLoading(false);
+			}
+		};
 
-	const chartSeries = getCurrentChartSeries();
+		useEffect(() => {
+			if (tab === 'ACTIVE_POWER') {
+				fetchTrendModalChartData(tab);
+			}
+		}, [tab]);
 
-	return (
-		<>
-			<Box
-				display="flex"
-				justifyContent="space-between"
-				flexDirection={{ xs: 'column', sm: 'row' }}
-			>
-				<Tabs
-					value={tab}
-					onChange={(e, val) => {
-						if (!val) {
-							return;
-						}
+		const trendChartTitle = useMemo(() => {
+			const paramLabel =
+				KEY_PARAMETER_OPTIONS.find((k) => k.value === keyParam)?.label ||
+				keyParam;
+			const suffix = tab === 'KEY_PARAMETERS' ? paramLabel : 'Active Power';
+			return `${slaveName || 'Energy Machine'} — ${suffix || 'Trend'}`;
+		}, [slaveName, tab, keyParam]);
 
-						const { tabDesc, tab: newTab } =
-							TREND_TAB_OPTIONS?.find((t) => t.tab === val) || {};
+		const chartOptions = getChartOptions('line', chartResponse?.data || [], {
+			xLabel: 'Time',
+			yLabel: chartResponse?.unit || 'Value',
+			colors: [
+				'#E34D4D',
+				'#F8C537',
+				'#4A90E2',
+				'#EF4444',
+				'#8B5CF6',
+				'#2563EB',
+			],
+			categoryOpts: { key: 'timestamp', format: 'time' },
+			chartTitle: trendChartTitle,
+		});
 
-						if (newTab === 'KEY_PARAMETERS') {
-							// Default to the first real key parameter (skip the
-							// "None" placeholder) instead of leaving the chart
-							// empty until the user manually picks one.
-							const defaultKeyParam = KEY_PARAMETER_OPTIONS.find(
-								(k) => k.value
-							);
-							fetchTrendModalChartData(newTab, defaultKeyParam?.value);
-							handleTabChange(
-								newTab,
-								defaultKeyParam?.desc,
-								defaultKeyParam?.value
-							);
-							return;
-						}
-
-						handleTabChange(newTab, tabDesc);
-					}}
-					variant="scrollable"
-					scrollButtons="auto"
-					sx={{
-						'& .MuiTabs-scroller': {
-							height: '40px',
+		const getCurrentChartSeries = () => {
+			switch (tab) {
+				case 'ACTIVE_POWER':
+					return [
+						{
+							name: `${slaveName} Active Power`,
+							data: chartResponse?.data?.map((item) => item.value),
+							color: APP_ACCENT_COLOR.ENERGY,
 						},
-						'& .MuiTab-root': {
-							textTransform: 'none',
-							fontSize: '0.95rem',
+					];
+				case 'KEY_PARAMETERS':
+					switch (keyParam) {
+						case 'voltage':
+							return [
+								{
+									name: 'R-Voltage',
+									data: chartResponse?.data?.map((item) => item.rv),
+									color: '#E34D4D',
+								},
+								{
+									name: 'Y-Voltage',
+									data: chartResponse?.data?.map((item) => item.yv),
+									color: '#F8C537',
+								},
+								{
+									name: 'B-Voltage',
+									data: chartResponse?.data?.map((item) => item.bv),
+									color: '#4A90E2',
+								},
+							];
+						case 'current':
+							return [
+								{
+									name: 'R-Current',
+									data: chartResponse?.data?.map((item) => item.i_r),
+									color: '#E34D4D',
+								},
+								{
+									name: 'Y-Current',
+									data: chartResponse?.data?.map((item) => item.i_y),
+									color: '#F8C537',
+								},
+								{
+									name: 'B-Current',
+									data: chartResponse?.data?.map((item) => item.i_b),
+									color: '#4A90E2',
+								},
+							];
 
-							color: 'primary.main',
-							minHeight: '32px',
-							transition: 'all 0.3s ease',
-							p: 0,
-							mr: 3,
-							'&.Mui-selected': {
-								color: 'primary.main',
-								fontWeight: 1000,
-							},
-						},
-						'& .MuiTabs-indicator': {
-							backgroundColor: 'rgb(245, 213, 71)',
-							height: 3,
-							borderRadius: '3px 3px 0 0',
-							pr: 3,
-						},
-					}}
+						case 'pf':
+							return [
+								{
+									name: `${slaveName} Power Factor`,
+									data: chartResponse?.data?.map((item) => item.value),
+									color: '#E34D4D',
+								},
+							];
+
+						case 'frequency':
+							return [
+								{
+									name: `${slaveName} Frequency`,
+									data: chartResponse?.data?.map((item) => item.value),
+									color: '#E34D4D',
+								},
+							];
+					}
+					break;
+				default:
+					return [];
+			}
+		};
+
+		const chartSeries = getCurrentChartSeries();
+
+		return (
+			<>
+				<Box
+					display="flex"
+					justifyContent="space-between"
+					flexDirection={{ xs: 'column', sm: 'row' }}
 				>
-					{TREND_TAB_OPTIONS.map((app) => (
-						<Tab
-							disableRipple
-							key={app.tab}
-							label={
-								<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-									{app.label}
-								</Box>
+					<Tabs
+						value={tab}
+						onChange={(e, val) => {
+							if (!val) {
+								return;
 							}
-							value={app.tab}
-						/>
-					))}
-				</Tabs>
 
-				{tab === 'KEY_PARAMETERS' && (
-					<Box width={{ sm: '200px' }}>
-						<CustomSelect
-							value={keyParam}
-							options={KEY_PARAMETER_OPTIONS}
-							label="Key Parameters"
-							size="small"
-							onChange={(e) => {
-								const { desc } =
-									KEY_PARAMETER_OPTIONS?.find(
-										(k) => k.value === e?.target?.value
-									) || {};
-								fetchTrendModalChartData(tab, e?.target?.value);
-								handleTabChange(tab, desc, e?.target?.value);
-							}}
-						/>
-					</Box>
-				)}
-			</Box>
+							const { tabDesc, tab: newTab } =
+								TREND_TAB_OPTIONS?.find((t) => t.tab === val) || {};
 
-			<Box height={355}>
-				{tab === 'KEY_PARAMETERS' && !keyParam ? (
-					<NoDataFound message="Need to select 'Key Parameters' to get details" />
-				) : chartLoading ? (
-					<Loading />
-				) : (
-					<ReactApexChart
-						options={chartOptions}
-						series={chartSeries}
-						type="line"
-						height={350}
-						width="100%"
-					/>
-				)}
-			</Box>
-		</>
-	);
-});
+							if (newTab === 'KEY_PARAMETERS') {
+								// Default to the first real key parameter (skip the
+								// "None" placeholder) instead of leaving the chart
+								// empty until the user manually picks one.
+								const defaultKeyParam = KEY_PARAMETER_OPTIONS.find(
+									(k) => k.value
+								);
+								fetchTrendModalChartData(newTab, defaultKeyParam?.value);
+								handleTabChange(
+									newTab,
+									defaultKeyParam?.desc,
+									defaultKeyParam?.value
+								);
+								return;
+							}
+
+							handleTabChange(newTab, tabDesc);
+						}}
+						variant="scrollable"
+						scrollButtons="auto"
+						sx={{
+							'& .MuiTabs-scroller': {
+								height: '40px',
+							},
+							'& .MuiTab-root': {
+								textTransform: 'none',
+								fontSize: '0.95rem',
+
+								color: 'primary.main',
+								minHeight: '32px',
+								transition: 'all 0.3s ease',
+								p: 0,
+								mr: 3,
+								'&.Mui-selected': {
+									color: 'primary.main',
+									fontWeight: 1000,
+								},
+							},
+							'& .MuiTabs-indicator': {
+								backgroundColor: 'rgb(245, 213, 71)',
+								height: 3,
+								borderRadius: '3px 3px 0 0',
+								pr: 3,
+							},
+						}}
+					>
+						{TREND_TAB_OPTIONS.map((app) => (
+							<Tab
+								disableRipple
+								key={app.tab}
+								label={
+									<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+										{app.label}
+									</Box>
+								}
+								value={app.tab}
+							/>
+						))}
+					</Tabs>
+
+					{tab === 'KEY_PARAMETERS' && (
+						<Box width={{ sm: '200px' }}>
+							<CustomSelect
+								value={keyParam}
+								options={KEY_PARAMETER_OPTIONS}
+								label="Key Parameters"
+								size="small"
+								onChange={(e) => {
+									const { desc } =
+										KEY_PARAMETER_OPTIONS?.find(
+											(k) => k.value === e?.target?.value
+										) || {};
+									fetchTrendModalChartData(tab, e?.target?.value);
+									handleTabChange(tab, desc, e?.target?.value);
+								}}
+							/>
+						</Box>
+					)}
+				</Box>
+
+				<Box height={355}>
+					{tab === 'KEY_PARAMETERS' && !keyParam ? (
+						<NoDataFound message="Need to select 'Key Parameters' to get details" />
+					) : chartLoading ? (
+						<Loading />
+					) : (
+						<ReactApexChart
+							options={chartOptions}
+							series={chartSeries}
+							type="line"
+							height={350}
+							width="100%"
+						/>
+					)}
+				</Box>
+			</>
+		);
+	}
+);
 ModalContentForTrend.displayName = 'ModalContentForTrend';
 
 const EnergyMachineList = () => {

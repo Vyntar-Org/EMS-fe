@@ -134,101 +134,103 @@ const handleDownload = (filteredMachines, selectedApp) => {
 	URL.revokeObjectURL(url);
 };
 
-const ModalContentForTrend = memo(({ handleTabChange, tab, slaveId, slaveName }) => {
-	const [chartResponse, setChartResponse] = useState(null);
-	const [chartLoading, setChartLoading] = useState(true);
+const ModalContentForTrend = memo(
+	({ handleTabChange, tab, slaveId, slaveName }) => {
+		const [chartResponse, setChartResponse] = useState(null);
+		const [chartLoading, setChartLoading] = useState(true);
 
-	const fetchTrendModalChartData = async (parameter) => {
-		if (!slaveId || !parameter) {
-			setChartResponse(null);
-			return;
-		}
-
-		try {
-			setChartLoading(true);
-			const res = await api.get(
-				API_URLS.FIRE_SAFETY_MACHINE_LIST_TREND(slaveId, parameter)
-			);
-			if (res?.success) {
-				setChartResponse({
-					data: res?.data?.data || [],
-					unit: res?.meta?.unit || '',
-				});
+		const fetchTrendModalChartData = async (parameter) => {
+			if (!slaveId || !parameter) {
+				setChartResponse(null);
+				return;
 			}
-		} catch (error) {
-			console.error('Fire Safety trend API failed:', error);
-			setChartResponse(null);
-		} finally {
-			setChartLoading(false);
-		}
-	};
 
-	useEffect(() => {
-		if (tab) {
-			fetchTrendModalChartData(tab);
-		}
-	}, [slaveId]);
+			try {
+				setChartLoading(true);
+				const res = await api.get(
+					API_URLS.FIRE_SAFETY_MACHINE_LIST_TREND(slaveId, parameter)
+				);
+				if (res?.success) {
+					setChartResponse({
+						data: res?.data?.data || [],
+						unit: res?.meta?.unit || '',
+					});
+				}
+			} catch (error) {
+				console.error('Fire Safety trend API failed:', error);
+				setChartResponse(null);
+			} finally {
+				setChartLoading(false);
+			}
+		};
 
-	const activeTab = FIRE_SAFETY_TREND_TAB_OPTIONS.find((t) => t.tab === tab);
+		useEffect(() => {
+			if (tab) {
+				fetchTrendModalChartData(tab);
+			}
+		}, [slaveId]);
 
-	const chartOptions = getChartOptions('line', chartResponse?.data || [], {
-		xLabel: 'Time',
-		yLabel: chartResponse?.unit || activeTab?.label || 'Value',
-		colors: [APP_ACCENT_COLOR['FIRE-SAFETY']],
-		categoryOpts: { key: 'timestamp', format: 'time' },
-		chartTitle: `${slaveName || 'Fire Safety'} — ${
-			activeTab?.label || 'Trend'
-		}`,
-	});
+		const activeTab = FIRE_SAFETY_TREND_TAB_OPTIONS.find((t) => t.tab === tab);
 
-	const chartSeries = getChartSeries(chartResponse?.data || [], {
-		actual: 'value',
-		actualLabel: `${slaveName || ''} ${activeTab?.label || ''}`.trim(),
-	});
+		const chartOptions = getChartOptions('line', chartResponse?.data || [], {
+			xLabel: 'Time',
+			yLabel: chartResponse?.unit || activeTab?.label || 'Value',
+			colors: [APP_ACCENT_COLOR['FIRE-SAFETY']],
+			categoryOpts: { key: 'timestamp', format: 'time' },
+			chartTitle: `${slaveName || 'Fire Safety'} — ${
+				activeTab?.label || 'Trend'
+			}`,
+		});
 
-	return (
-		<>
-			<Box width={{ xs: '100%', sm: 200 }}>
-				<CustomSelect
-					label="Parameter"
-					value={tab}
-					size="small"
-					fullWidth
-					options={FIRE_SAFETY_TREND_TAB_OPTIONS.map((option) => ({
-						value: option.tab,
-						label: option.label,
-					}))}
-					onChange={(e) => {
-						const selected = FIRE_SAFETY_TREND_TAB_OPTIONS.find(
-							(t) => t.tab === e.target.value
-						);
-						if (!selected) {
-							return;
-						}
-						fetchTrendModalChartData(selected.tab);
-						handleTabChange(selected.tab, selected.tabDesc);
-					}}
-				/>
-			</Box>
+		const chartSeries = getChartSeries(chartResponse?.data || [], {
+			actual: 'value',
+			actualLabel: `${slaveName || ''} ${activeTab?.label || ''}`.trim(),
+		});
 
-			<Box height={355} mt={1}>
-				{chartLoading ? (
-					<Loading />
-				) : chartResponse?.data?.length ? (
-					<ReactApexChart
-						options={chartOptions}
-						series={chartSeries}
-						type="line"
-						height={350}
-						width="100%"
+		return (
+			<>
+				<Box width={{ xs: '100%', sm: 200 }}>
+					<CustomSelect
+						label="Parameter"
+						value={tab}
+						size="small"
+						fullWidth
+						options={FIRE_SAFETY_TREND_TAB_OPTIONS.map((option) => ({
+							value: option.tab,
+							label: option.label,
+						}))}
+						onChange={(e) => {
+							const selected = FIRE_SAFETY_TREND_TAB_OPTIONS.find(
+								(t) => t.tab === e.target.value
+							);
+							if (!selected) {
+								return;
+							}
+							fetchTrendModalChartData(selected.tab);
+							handleTabChange(selected.tab, selected.tabDesc);
+						}}
 					/>
-				) : (
-					<NoDataFound message="No machine readings received yet — data appears once the device reports" />
-				)}
-			</Box>
-		</>
-	);
-});
+				</Box>
+
+				<Box height={355} mt={1}>
+					{chartLoading ? (
+						<Loading />
+					) : chartResponse?.data?.length ? (
+						<ReactApexChart
+							options={chartOptions}
+							series={chartSeries}
+							type="line"
+							height={350}
+							width="100%"
+						/>
+					) : (
+						<NoDataFound message="No machine readings received yet — data appears once the device reports" />
+					)}
+				</Box>
+			</>
+		);
+	}
+);
 ModalContentForTrend.displayName = 'ModalContentForTrend';
 
 const FireSafetyMachineList = () => {

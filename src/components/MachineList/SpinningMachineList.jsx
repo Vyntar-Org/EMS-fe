@@ -709,227 +709,221 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 	);
 };
 
-const ModalContentForTrend = memo(({
-	handleTabChange,
-	tab,
-	tabDesc,
-	slaveId,
-	slaveName,
-	trendOptions,
-}) => {
-	const [chartResponse, setChartResponse] = useState(null);
-	const [chartLoading, setChartLoading] = useState(true);
-	const [downtimeHistory, setDowntimeHistory] = useState(null);
+const ModalContentForTrend = memo(
+	({ handleTabChange, tab, tabDesc, slaveId, slaveName, trendOptions }) => {
+		const [chartResponse, setChartResponse] = useState(null);
+		const [chartLoading, setChartLoading] = useState(true);
+		const [downtimeHistory, setDowntimeHistory] = useState(null);
 
-	const fetchTrendAndDowntime = async (parameter) => {
-		if (!slaveId || !parameter) {
-			setChartResponse(null);
-			setDowntimeHistory(null);
-			setChartLoading(false);
-			return;
-		}
-
-		try {
-			setChartLoading(true);
-
-			const [trendRes, downtimeRes] = await Promise.all([
-				api.get(API_URLS.SPINNING_MACHINE_LIST_TREND(slaveId, parameter)),
-				// api.get(API_URLS.SPINNING_DOWNTIME_HISTORY(slaveId, 48)),
-			]);
-
-			if (trendRes?.success) {
-				setChartResponse({
-					data: trendRes?.data?.data || [],
-					unit: trendRes?.meta?.unit || '',
-				});
-			} else {
+		const fetchTrendAndDowntime = async (parameter) => {
+			if (!slaveId || !parameter) {
 				setChartResponse(null);
-			}
-
-			if (downtimeRes?.success) {
-				setDowntimeHistory(downtimeRes?.data || null);
-			} else {
 				setDowntimeHistory(null);
+				setChartLoading(false);
+				return;
 			}
-		} catch (error) {
-			console.error('Compressor trend/downtime API failed:', error);
-			setChartResponse(null);
-			setDowntimeHistory(null);
-		} finally {
-			setChartLoading(false);
-		}
-	};
 
-	useEffect(() => {
-		fetchTrendAndDowntime(tab);
-	}, [slaveId, tab]);
+			try {
+				setChartLoading(true);
 
-	const isStatusTrend = tab === 'status';
-	const chartData = chartResponse?.data || [];
+				const [trendRes, downtimeRes] = await Promise.all([
+					api.get(API_URLS.SPINNING_MACHINE_LIST_TREND(slaveId, parameter)),
+					// api.get(API_URLS.SPINNING_DOWNTIME_HISTORY(slaveId, 48)),
+				]);
 
-	// ─── FIXED: Handle both numeric (1/0) and string ("online"/"offline") status values ───
-	const chartSeries = useMemo(() => {
-		if (!chartData.length) {
-			return [];
-		}
+				if (trendRes?.success) {
+					setChartResponse({
+						data: trendRes?.data?.data || [],
+						unit: trendRes?.meta?.unit || '',
+					});
+				} else {
+					setChartResponse(null);
+				}
 
-		if (isStatusTrend) {
-			const data = [];
-
-			chartData.forEach((item) => {
-				const startTime = new Date(item.start).getTime();
-				const endTime = new Date(item.end).getTime();
-
-				// Robust check: handles 1, "1", "online", true
-				const rawStatus = item.status;
-				const isOnline =
-					rawStatus === 1 ||
-					rawStatus === '1' ||
-					String(rawStatus).toLowerCase() === 'online' ||
-					rawStatus === true;
-
-				const yVal = isOnline ? 1 : 0;
-
-				data.push({ x: startTime, y: yVal });
-				data.push({ x: endTime, y: yVal });
-			});
-
-			// Sort by time to ensure proper line connection
-			data.sort((a, b) => a.x - b.x);
-
-			// Match series name 'Connectivity' from Code 1
-			return [{ name: 'Connectivity', data: data }];
-		} else {
-			return [
-				{
-					name: `${tabDesc || 'Trend'}`,
-					data: chartData.map((item) => {
-						const value = item.value ?? item[tab];
-						return typeof value === 'number'
-							? Number(value)
-							: Number(value || 0);
-					}),
-				},
-			];
-		}
-	}, [chartData, isStatusTrend, tab, tabDesc]);
-
-	// ─── Applied Code 1 Design to Status Trend ───
-	const chartOptions = useMemo(() => {
-		const ink = getAxisInk();
-		const chartTitle = `${slaveName || 'Compressor'} — ${tabDesc || 'Trend'}`;
-		const baseOptions = {
-			chart: {
-				type: isStatusTrend ? 'area' : 'line',
-				toolbar: { show: !isStatusTrend },
-				zoom: { enabled: !isStatusTrend },
-				animations: {
-					enabled: false,
-					dynamicAnimation: {
-						enabled: false,
-					},
-				},
-				redrawOnParentResize: true,
-				redrawOnWindowResize: true,
-				dropShadow: {
-					enabled: true,
-					top: 3,
-					left: 0,
-					blur: 4,
-					opacity: 0.16,
-				},
-			},
-			grid: {
-				borderColor: 'rgba(128, 145, 170, 0.18)',
-				strokeDashArray: 0,
-				xaxis: { lines: { show: false } },
-				yaxis: { lines: { show: false } },
-			},
-			tooltip: {
-				enabled: true,
-				theme: 'light',
-				style: { fontSize: '12px' },
-			},
-			legend: { show: false },
+				if (downtimeRes?.success) {
+					setDowntimeHistory(downtimeRes?.data || null);
+				} else {
+					setDowntimeHistory(null);
+				}
+			} catch (error) {
+				console.error('Compressor trend/downtime API failed:', error);
+				setChartResponse(null);
+				setDowntimeHistory(null);
+			} finally {
+				setChartLoading(false);
+			}
 		};
 
-		if (isStatusTrend) {
-			return {
-				...baseOptions,
+		useEffect(() => {
+			fetchTrendAndDowntime(tab);
+		}, [slaveId, tab]);
+
+		const isStatusTrend = tab === 'status';
+		const chartData = chartResponse?.data || [];
+
+		// ─── FIXED: Handle both numeric (1/0) and string ("online"/"offline") status values ───
+		const chartSeries = useMemo(() => {
+			if (!chartData.length) {
+				return [];
+			}
+
+			if (isStatusTrend) {
+				const data = [];
+
+				chartData.forEach((item) => {
+					const startTime = new Date(item.start).getTime();
+					const endTime = new Date(item.end).getTime();
+
+					// Robust check: handles 1, "1", "online", true
+					const rawStatus = item.status;
+					const isOnline =
+						rawStatus === 1 ||
+						rawStatus === '1' ||
+						String(rawStatus).toLowerCase() === 'online' ||
+						rawStatus === true;
+
+					const yVal = isOnline ? 1 : 0;
+
+					data.push({ x: startTime, y: yVal });
+					data.push({ x: endTime, y: yVal });
+				});
+
+				// Sort by time to ensure proper line connection
+				data.sort((a, b) => a.x - b.x);
+
+				// Match series name 'Connectivity' from Code 1
+				return [{ name: 'Connectivity', data: data }];
+			} else {
+				return [
+					{
+						name: `${tabDesc || 'Trend'}`,
+						data: chartData.map((item) => {
+							const value = item.value ?? item[tab];
+							return typeof value === 'number'
+								? Number(value)
+								: Number(value || 0);
+						}),
+					},
+				];
+			}
+		}, [chartData, isStatusTrend, tab, tabDesc]);
+
+		// ─── Applied Code 1 Design to Status Trend ───
+		const chartOptions = useMemo(() => {
+			const ink = getAxisInk();
+			const chartTitle = `${slaveName || 'Compressor'} — ${tabDesc || 'Trend'}`;
+			const baseOptions = {
 				chart: {
-					...baseOptions.chart,
-					toolbar: {
-						show: true,
-						tools: {
-							download: true,
-							selection: false,
-							zoom: false,
-							zoomin: false,
-							zoomout: false,
-							pan: false,
-							reset: false,
-						},
-					}, // Exact match to Code 1
-					zoom: { enabled: false }, // Exact match to Code 1
-				},
-				stroke: {
-					curve: 'stepline',
-					width: 2,
-					colors: ['#30b44a'],
-				},
-				fill: {
-					type: 'solid',
-					colors: ['#30b44a'],
-					opacity: 0.2,
-				},
-				colors: ['#30b44a'],
-				dataLabels: { enabled: false },
-				xaxis: {
-					type: 'datetime',
-					title: {
-						text: 'Time',
-						style: { color: ink.title, fontSize: '12px' },
-					},
-					labels: {
-						style: { colors: ink.label, fontSize: '11px' },
-						datetimeUTC: false,
-					},
-				},
-				yaxis: {
-					title: {
-						text: 'Status',
-						style: { color: ink.title, fontSize: '12px' },
-					},
-					min: -0.1,
-					max: 1.1,
-					tickAmount: 2,
-					labels: {
-						style: { colors: ink.label, fontSize: '11px' },
-						formatter: function (val) {
-							if (val >= 0.9) {
-								return 'Online';
-							}
-							if (val <= 0.1) {
-								return 'Offline';
-							}
-							return '';
+					type: isStatusTrend ? 'area' : 'line',
+					toolbar: { show: !isStatusTrend },
+					zoom: { enabled: !isStatusTrend },
+					animations: {
+						enabled: false,
+						dynamicAnimation: {
+							enabled: false,
 						},
 					},
+					redrawOnParentResize: true,
+					redrawOnWindowResize: true,
+					dropShadow: {
+						enabled: true,
+						top: 3,
+						left: 0,
+						blur: 4,
+						opacity: 0.16,
+					},
 				},
-				markers: { size: 0 },
+				grid: {
+					borderColor: 'rgba(128, 145, 170, 0.18)',
+					strokeDashArray: 0,
+					xaxis: { lines: { show: false } },
+					yaxis: { lines: { show: false } },
+				},
 				tooltip: {
-					...baseOptions.tooltip,
-					x: { format: 'dd MMM HH:mm' },
-					// Exact Tooltip Design from Code 1
-					custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-						const dataPoint =
-							w.globals.initialSeries[seriesIndex].data[dataPointIndex];
-						const date = new Date(dataPoint.x);
-						const formattedDate = date.toLocaleString();
-						const value = dataPoint.y;
-						const statusText = value === 1 ? 'Online' : 'Offline';
-						const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
-						return `<div style="padding:10px;background-color:white;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+					enabled: true,
+					theme: 'light',
+					style: { fontSize: '12px' },
+				},
+				legend: { show: false },
+			};
+
+			if (isStatusTrend) {
+				return {
+					...baseOptions,
+					chart: {
+						...baseOptions.chart,
+						toolbar: {
+							show: true,
+							tools: {
+								download: true,
+								selection: false,
+								zoom: false,
+								zoomin: false,
+								zoomout: false,
+								pan: false,
+								reset: false,
+							},
+						}, // Exact match to Code 1
+						zoom: { enabled: false }, // Exact match to Code 1
+					},
+					stroke: {
+						curve: 'stepline',
+						width: 2,
+						colors: ['#30b44a'],
+					},
+					fill: {
+						type: 'solid',
+						colors: ['#30b44a'],
+						opacity: 0.2,
+					},
+					colors: ['#30b44a'],
+					dataLabels: { enabled: false },
+					xaxis: {
+						type: 'datetime',
+						title: {
+							text: 'Time',
+							style: { color: ink.title, fontSize: '12px' },
+						},
+						labels: {
+							style: { colors: ink.label, fontSize: '11px' },
+							datetimeUTC: false,
+						},
+					},
+					yaxis: {
+						title: {
+							text: 'Status',
+							style: { color: ink.title, fontSize: '12px' },
+						},
+						min: -0.1,
+						max: 1.1,
+						tickAmount: 2,
+						labels: {
+							style: { colors: ink.label, fontSize: '11px' },
+							formatter: function (val) {
+								if (val >= 0.9) {
+									return 'Online';
+								}
+								if (val <= 0.1) {
+									return 'Offline';
+								}
+								return '';
+							},
+						},
+					},
+					markers: { size: 0 },
+					tooltip: {
+						...baseOptions.tooltip,
+						x: { format: 'dd MMM HH:mm' },
+						// Exact Tooltip Design from Code 1
+						custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+							const dataPoint =
+								w.globals.initialSeries[seriesIndex].data[dataPointIndex];
+							const date = new Date(dataPoint.x);
+							const formattedDate = date.toLocaleString();
+							const value = dataPoint.y;
+							const statusText = value === 1 ? 'Online' : 'Offline';
+							const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
+							return `<div style="padding:10px;background-color:white;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
                     <div style="font-weight:bold;margin-bottom:2px;color:#111;font-size:12px;">${chartTitle}</div>
                     <div style="font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;">${formattedDate}</div>
                     <div style="display:flex;align-items:center;">
@@ -938,56 +932,56 @@ const ModalContentForTrend = memo(({
                         <span style="font-weight:bold;color:${statusColor};margin-left:5px;font-size:12px;">${statusText}</span>
                     </div>
                 </div>`;
+						},
 					},
-				},
-			};
-		} else {
-			// Default logic for non-status trends
-			const chartCategories = chartData.map((item) => {
-				const timestamp =
-					item.start || item.timestamp || item.time || item.date;
-				if (!timestamp) {
-					return '';
-				}
-				return new Date(timestamp).toLocaleTimeString('en-US', {
-					hour: '2-digit',
-					minute: '2-digit',
-					hour12: true,
+				};
+			} else {
+				// Default logic for non-status trends
+				const chartCategories = chartData.map((item) => {
+					const timestamp =
+						item.start || item.timestamp || item.time || item.date;
+					if (!timestamp) {
+						return '';
+					}
+					return new Date(timestamp).toLocaleTimeString('en-US', {
+						hour: '2-digit',
+						minute: '2-digit',
+						hour12: true,
+					});
 				});
-			});
-			return {
-				...baseOptions,
-				stroke: { curve: 'smooth', width: 2 },
-				markers: { size: 0 },
-				xaxis: {
-					title: {
-						text: 'Time',
-						style: { color: ink.title, fontSize: '12px' },
+				return {
+					...baseOptions,
+					stroke: { curve: 'smooth', width: 2 },
+					markers: { size: 0 },
+					xaxis: {
+						title: {
+							text: 'Time',
+							style: { color: ink.title, fontSize: '12px' },
+						},
+						categories: chartCategories,
+						labels: {
+							style: { colors: ink.label, fontSize: '11px' },
+							rotate: -45,
+						},
+						tooltip: { enabled: false },
 					},
-					categories: chartCategories,
-					labels: {
-						style: { colors: ink.label, fontSize: '11px' },
-						rotate: -45,
+					yaxis: {
+						title: {
+							text: chartResponse?.unit || '',
+							style: { color: ink.title, fontSize: '12px' },
+						},
+						labels: {
+							style: { colors: ink.label, fontSize: '11px' },
+							formatter: (val) => formatChartValue(val),
+						},
 					},
-					tooltip: { enabled: false },
-				},
-				yaxis: {
-					title: {
-						text: chartResponse?.unit || '',
-						style: { color: ink.title, fontSize: '12px' },
-					},
-					labels: {
-						style: { colors: ink.label, fontSize: '11px' },
-						formatter: (val) => formatChartValue(val),
-					},
-				},
-				tooltip: {
-					...baseOptions.tooltip,
-					custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-						const label = w.globals.labels?.[dataPointIndex] || '';
-						const name = w.globals.seriesNames?.[seriesIndex] || '';
-						const value = series?.[seriesIndex]?.[dataPointIndex];
-						return `<div style="padding:10px;background-color:white;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+					tooltip: {
+						...baseOptions.tooltip,
+						custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+							const label = w.globals.labels?.[dataPointIndex] || '';
+							const name = w.globals.seriesNames?.[seriesIndex] || '';
+							const value = series?.[seriesIndex]?.[dataPointIndex];
+							return `<div style="padding:10px;background-color:white;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
                     <div style="font-weight:bold;margin-bottom:2px;color:#111;font-size:12px;">${chartTitle}</div>
                     <div style="font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;">${label}</div>
                     <div style="display:flex;align-items:center;">
@@ -999,61 +993,62 @@ const ModalContentForTrend = memo(({
 												}</span>
                     </div>
                 </div>`;
+						},
 					},
-				},
-			};
-		}
-	}, [isStatusTrend, chartData, chartResponse?.unit, slaveName, tabDesc]);
+				};
+			}
+		}, [isStatusTrend, chartData, chartResponse?.unit, slaveName, tabDesc]);
 
-	return (
-		<Box>
-			<Box width={{ xs: '100%', sm: 240 }} mb={2}>
-				<CustomSelect
-					label="Parameter"
-					value={tab}
-					size="small"
-					fullWidth
-					options={(trendOptions?.length
-						? trendOptions
-						: DEFAULT_TREND_OPTIONS
-					).map((option) => ({
-						value: option.value,
-						label: option.label,
-					}))}
-					onChange={(e) => handleTabChange(e.target.value)}
-				/>
-			</Box>
-
-			<Box
-				sx={{
-					bgcolor: 'surface.muted',
-					border: '1px solid',
-					borderColor: 'surface.mutedBorder',
-					borderRadius: '14px',
-					p: { xs: 1, sm: 2 },
-					width: '100%',
-					overflow: 'hidden',
-				}}
-			>
-				{chartLoading ? (
-					<Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-						<Loading />
-					</Box>
-				) : chartData.length ? (
-					<ReactApexChart
-						options={chartOptions}
-						series={chartSeries}
-						type={isStatusTrend ? 'area' : 'line'}
-						height={320}
-						width="100%"
+		return (
+			<Box>
+				<Box width={{ xs: '100%', sm: 240 }} mb={2}>
+					<CustomSelect
+						label="Parameter"
+						value={tab}
+						size="small"
+						fullWidth
+						options={(trendOptions?.length
+							? trendOptions
+							: DEFAULT_TREND_OPTIONS
+						).map((option) => ({
+							value: option.value,
+							label: option.label,
+						}))}
+						onChange={(e) => handleTabChange(e.target.value)}
 					/>
-				) : (
-					<NoDataFound message="No machine readings received yet — data appears once the device reports" />
-				)}
+				</Box>
+
+				<Box
+					sx={{
+						bgcolor: 'surface.muted',
+						border: '1px solid',
+						borderColor: 'surface.mutedBorder',
+						borderRadius: '14px',
+						p: { xs: 1, sm: 2 },
+						width: '100%',
+						overflow: 'hidden',
+					}}
+				>
+					{chartLoading ? (
+						<Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+							<Loading />
+						</Box>
+					) : chartData.length ? (
+						<ReactApexChart
+							options={chartOptions}
+							series={chartSeries}
+							type={isStatusTrend ? 'area' : 'line'}
+							height={320}
+							width="100%"
+						/>
+					) : (
+						<NoDataFound message="No machine readings received yet — data appears once the device reports" />
+					)}
+				</Box>
 			</Box>
-		</Box>
-	);
-});
+		);
+	}
+);
 ModalContentForTrend.displayName = 'ModalContentForTrend';
 
 const SpinningMachineList = () => {

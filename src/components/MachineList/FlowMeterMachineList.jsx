@@ -129,92 +129,91 @@ const handleDownload = (filteredMachines, selectedApp) => {
 	URL.revokeObjectURL(url);
 };
 
-const ModalContentForTrend = memo(({
-	handleTabChange,
-	tab,
-	slaveId,
-	parameters,
-}) => {
-	const [chartResponse, setChartResponse] = useState(null);
-	const [chartLoading, setChartLoading] = useState(true);
+const ModalContentForTrend = memo(
+	({ handleTabChange, tab, slaveId, parameters }) => {
+		const [chartResponse, setChartResponse] = useState(null);
+		const [chartLoading, setChartLoading] = useState(true);
 
-	const fetchTrendModalChartData = async (parameter) => {
-		if (!slaveId || !parameter) {
-			setChartResponse(null);
-			return;
-		}
-
-		try {
-			setChartLoading(true);
-			const res = await api.get(
-				API_URLS.FLOWMETER_MACHINE_LIST_TREND(slaveId, parameter)
-			);
-			if (res?.success) {
-				setChartResponse({
-					data: res?.data?.trends || [],
-				});
+		const fetchTrendModalChartData = async (parameter) => {
+			if (!slaveId || !parameter) {
+				setChartResponse(null);
+				return;
 			}
-		} catch (error) {
-			console.error('flow meter trend API failed:', error);
-			setChartResponse(null);
-		} finally {
-			setChartLoading(false);
-		}
-	};
 
-	useEffect(() => {
-		fetchTrendModalChartData(tab);
-	}, [tab, slaveId]);
+			try {
+				setChartLoading(true);
+				const res = await api.get(
+					API_URLS.FLOWMETER_MACHINE_LIST_TREND(slaveId, parameter)
+				);
+				if (res?.success) {
+					setChartResponse({
+						data: res?.data?.trends || [],
+					});
+				}
+			} catch (error) {
+				console.error('flow meter trend API failed:', error);
+				setChartResponse(null);
+			} finally {
+				setChartLoading(false);
+			}
+		};
 
-	const activeTab = parameters?.find((t) => t.value === tab);
+		useEffect(() => {
+			fetchTrendModalChartData(tab);
+		}, [tab, slaveId]);
 
-	return (
-		<>
-			<Box width={{ xs: '100%', sm: 200 }}>
-				<CustomSelect
-					label="Parameter"
-					value={tab}
-					size="small"
-					fullWidth
-					options={parameters}
-					onChange={(e) => {
-						const selected = parameters.find((t) => t.value === e.target.value);
-						if (!selected) {
-							return;
-						}
-						handleTabChange(selected.value, selected.desc);
-					}}
-				/>
-			</Box>
-			<Box height={355} mt={1} overflow="hidden">
-				{chartLoading ? (
-					<Loading />
-				) : chartResponse?.data?.length ? (
-					<ReactApexChart
-						options={getChartOptions('line', chartResponse.data, {
-							xLabel: 'Time',
-							yLabel: activeTab?.label || 'Value',
-							colors: [APP_ACCENT_COLOR.FLOWMETER],
-							categoryOpts: { key: 'timestamp', format: 'time' },
-							chartTitle: `${activeTab?.desc ? `${activeTab.desc} — ` : ''}${
-								activeTab?.label || 'Flow Meter'
-							} Trend`,
-						})}
-						series={getChartSeries(chartResponse.data, {
-							actual: activeTab?.label,
-							actualLabel: activeTab?.label,
-						})}
-						type="line"
-						height={350}
-						width="100%"
+		const activeTab = parameters?.find((t) => t.value === tab);
+
+		return (
+			<>
+				<Box width={{ xs: '100%', sm: 200 }}>
+					<CustomSelect
+						label="Parameter"
+						value={tab}
+						size="small"
+						fullWidth
+						options={parameters}
+						onChange={(e) => {
+							const selected = parameters.find(
+								(t) => t.value === e.target.value
+							);
+							if (!selected) {
+								return;
+							}
+							handleTabChange(selected.value, selected.desc);
+						}}
 					/>
-				) : (
-					<NoDataFound message="No machine readings received yet — data appears once the device reports" />
-				)}
-			</Box>
-		</>
-	);
-});
+				</Box>
+				<Box height={355} mt={1} overflow="hidden">
+					{chartLoading ? (
+						<Loading />
+					) : chartResponse?.data?.length ? (
+						<ReactApexChart
+							options={getChartOptions('line', chartResponse.data, {
+								xLabel: 'Time',
+								yLabel: activeTab?.label || 'Value',
+								colors: [APP_ACCENT_COLOR.FLOWMETER],
+								categoryOpts: { key: 'timestamp', format: 'time' },
+								chartTitle: `${activeTab?.desc ? `${activeTab.desc} — ` : ''}${
+									activeTab?.label || 'Flow Meter'
+								} Trend`,
+							})}
+							series={getChartSeries(chartResponse.data, {
+								actual: activeTab?.label,
+								actualLabel: activeTab?.label,
+							})}
+							type="line"
+							height={350}
+							width="100%"
+						/>
+					) : (
+						<NoDataFound message="No machine readings received yet — data appears once the device reports" />
+					)}
+				</Box>
+			</>
+		);
+	}
+);
 ModalContentForTrend.displayName = 'ModalContentForTrend';
 
 const FlowMeterMachineList = () => {

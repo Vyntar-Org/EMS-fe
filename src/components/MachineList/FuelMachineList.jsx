@@ -66,96 +66,101 @@ const handleDownload = (filteredMachines, selectedApp) => {
 	URL.revokeObjectURL(url);
 };
 
-const ModalContentForTrend = memo(({ handleTabChange, tab, slaveId, slaveName }) => {
-	const [chartResponse, setChartResponse] = useState(null);
-	const [chartLoading, setChartLoading] = useState(true);
-	const { parametersData } = useCommonData();
+const ModalContentForTrend = memo(
+	({ handleTabChange, tab, slaveId, slaveName }) => {
+		const [chartResponse, setChartResponse] = useState(null);
+		const [chartLoading, setChartLoading] = useState(true);
+		const { parametersData } = useCommonData();
 
-	const fetchTrendModalChartData = async (parameter) => {
-		if (!slaveId || !parameter) {
-			setChartResponse(null);
-			return;
-		}
-
-		try {
-			setChartLoading(true);
-			const res = await api.get(
-				API_URLS.FUEL_MACHINE_LIST_TREND(slaveId, parameter)
-			);
-			if (res?.success) {
-				setChartResponse({
-					data: res?.data?.data || [],
-					unit: res?.meta?.unit || '',
-				});
+		const fetchTrendModalChartData = async (parameter) => {
+			if (!slaveId || !parameter) {
+				setChartResponse(null);
+				return;
 			}
-		} catch (error) {
-			console.error('fuel trend API failed:', error);
-			setChartResponse(null);
-		} finally {
-			setChartLoading(false);
-		}
-	};
 
-	useEffect(() => {
-		fetchTrendModalChartData(tab);
-	}, [tab, slaveId]);
+			try {
+				setChartLoading(true);
+				const res = await api.get(
+					API_URLS.FUEL_MACHINE_LIST_TREND(slaveId, parameter)
+				);
+				if (res?.success) {
+					setChartResponse({
+						data: res?.data?.data || [],
+						unit: res?.meta?.unit || '',
+					});
+				}
+			} catch (error) {
+				console.error('fuel trend API failed:', error);
+				setChartResponse(null);
+			} finally {
+				setChartLoading(false);
+			}
+		};
 
-	const activeParam = parametersData?.find((p) => p.value === tab);
+		useEffect(() => {
+			fetchTrendModalChartData(tab);
+		}, [tab, slaveId]);
 
-	const chartOptions = getChartOptions('line', chartResponse?.data || [], {
-		xLabel: 'Time',
-		yLabel:
-			chartResponse?.unit || activeParam?.desc || activeParam?.label || 'Value',
-		colors: [APP_ACCENT_COLOR.FUEL],
-		categoryOpts: { key: 'timestamp', format: 'time' },
-		chartTitle: `${slaveName || 'Fuel Machine'} — ${
-			activeParam?.desc || activeParam?.label || 'Trend'
-		}`,
-	});
+		const activeParam = parametersData?.find((p) => p.value === tab);
 
-	const chartSeries = getChartSeries(chartResponse?.data || [], {
-		actual: 'value',
-		actualLabel: `${slaveName || 'Fuel'} (${chartResponse?.unit || ''})`,
-	});
+		const chartOptions = getChartOptions('line', chartResponse?.data || [], {
+			xLabel: 'Time',
+			yLabel:
+				chartResponse?.unit ||
+				activeParam?.desc ||
+				activeParam?.label ||
+				'Value',
+			colors: [APP_ACCENT_COLOR.FUEL],
+			categoryOpts: { key: 'timestamp', format: 'time' },
+			chartTitle: `${slaveName || 'Fuel Machine'} — ${
+				activeParam?.desc || activeParam?.label || 'Trend'
+			}`,
+		});
 
-	return (
-		<>
-			<Box width={{ xs: '100%', sm: 200 }}>
-				<CustomSelect
-					label="Parameter"
-					value={tab}
-					size="small"
-					fullWidth
-					options={parametersData}
-					onChange={(e) => {
-						const selected = parametersData.find(
-							(t) => t.value === e.target.value
-						);
-						if (!selected) {
-							return;
-						}
-						handleTabChange(selected.value, selected.desc);
-					}}
-				/>
-			</Box>
-			<Box height={355} mt={1}>
-				{chartLoading ? (
-					<Loading />
-				) : chartResponse?.data?.length ? (
-					<ReactApexChart
-						options={chartOptions}
-						series={chartSeries}
-						type="line"
-						height={350}
-						width="100%"
+		const chartSeries = getChartSeries(chartResponse?.data || [], {
+			actual: 'value',
+			actualLabel: `${slaveName || 'Fuel'} (${chartResponse?.unit || ''})`,
+		});
+
+		return (
+			<>
+				<Box width={{ xs: '100%', sm: 200 }}>
+					<CustomSelect
+						label="Parameter"
+						value={tab}
+						size="small"
+						fullWidth
+						options={parametersData}
+						onChange={(e) => {
+							const selected = parametersData.find(
+								(t) => t.value === e.target.value
+							);
+							if (!selected) {
+								return;
+							}
+							handleTabChange(selected.value, selected.desc);
+						}}
 					/>
-				) : (
-					<NoDataFound message="No machine readings received yet — data appears once the device reports" />
-				)}
-			</Box>
-		</>
-	);
-});
+				</Box>
+				<Box height={355} mt={1}>
+					{chartLoading ? (
+						<Loading />
+					) : chartResponse?.data?.length ? (
+						<ReactApexChart
+							options={chartOptions}
+							series={chartSeries}
+							type="line"
+							height={350}
+							width="100%"
+						/>
+					) : (
+						<NoDataFound message="No machine readings received yet — data appears once the device reports" />
+					)}
+				</Box>
+			</>
+		);
+	}
+);
 ModalContentForTrend.displayName = 'ModalContentForTrend';
 
 const FuelMachineList = () => {
