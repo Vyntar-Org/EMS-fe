@@ -1,28 +1,23 @@
-import { RestartAlt, Search } from '@mui/icons-material';
 import { Box, Button, Grid, Tooltip } from '@mui/material';
-import dayjs from 'dayjs';
-import { useMemo, useState } from 'react';
-
-import {
-	STP_LOG_CHIPS_CELL,
-	STP_LOG_COLUMN_MAPPING,
-} from '../../constants/stpLogs';
+import React, { useMemo, useState } from 'react';
 import { useCommonData } from '../../contexts/CommonDataContext';
-import { api } from '../../helpers/api';
-import { LogUrlBuilder } from '../../helpers/logs';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
-import { CustomTable } from '../common/CustomTable';
-import NoDataFound from '../common/errors/NoDataFound';
+import { RestartAlt, Search } from '@mui/icons-material';
 import { Loading } from '../common/Loading';
-import StatusChips from '../common/StatusChips';
+import NoDataFound from '../common/errors/NoDataFound';
+import { api } from '../../helpers/api';
+import { COMPRESSOR_LOG_COLUMN_MAPPING } from '../../constants/compressorLogs';
+import { CustomTable } from '../common/CustomTable';
+import dayjs from 'dayjs';
 import VyntarButtons from '../common/VyntarButtons';
+import { LogUrlBuilder } from '../../helpers/logs';
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 
-const LogsFilterHeader = ({
+const CompressorLogsFilterHeader = ({
 	slaveOptions,
-	// parameterOptions,
+	parameterOptions,
 	handleSearch,
 	handleReset,
 	payload,
@@ -30,7 +25,7 @@ const LogsFilterHeader = ({
 	tableLoading,
 }) => {
 	const downloadApiUrl = useMemo(() => {
-		return LogUrlBuilder('STP_LOGS_DATA').build({
+		return LogUrlBuilder('SPINNING_LOGS_DATA').build({
 			payload,
 			isDownload: true,
 		});
@@ -75,30 +70,6 @@ const LogsFilterHeader = ({
 					/>
 				</Grid>
 
-				{/* <Grid item xs={12} sm md lg={3}>
-					<CustomAutocomplete
-						multiple
-						options={parameterOptions}
-						onChange={(val) => handleFieldCh('parameters', val)}
-						value={payload?.parameters || []}
-						label="Select Parameters"
-						size="small"
-						sx={{
-							'& .MuiOutlinedInput-root': {
-								borderRadius: 2,
-
-								backgroundColor: 'surface.muted',
-
-								transition: '0.3s',
-
-								'&:hover': {
-									backgroundColor: 'background.paper',
-								},
-							},
-						}}
-					/>
-				</Grid> */}
-
 				<Grid item xs={12} md={5} lg={4}>
 					<CustomDatePicker
 						mode="datetimerangepicker"
@@ -112,8 +83,8 @@ const LogsFilterHeader = ({
 						<span>
 							<Button
 								variant="contained"
-								disabled={!payload?.slave_id || tableLoading}
 								onClick={() => handleSearch()}
+								disabled={!payload?.slave_id || tableLoading}
 								sx={{
 									width: 40,
 
@@ -192,23 +163,19 @@ const LogsFilterHeader = ({
 						apiUrl={downloadApiUrl}
 						label="Download Excel"
 						disableElevation
-						fileNamePrefix="stp_logs"
+						fileNamePrefix="spinning_logs"
 					/>
 				</Grid>
 			</Grid>
 		</Box>
 	);
 };
-const STPLogs = () => {
-	const {
-		slavesData,
-		// parametersData
-	} = useCommonData();
-	const [loading, setLoading] = useState(null);
+
+const SpinningLogs = () => {
+	const { slavesData, parametersData } = useCommonData();
+	const [loading, setLoading] = useState(false);
 	const [logsData, setLogsData] = useState(null);
-	const [payload, setPayload] = useState({
-		dateTime: getDefaultDateRange(),
-	});
+	const [payload, setPayload] = useState({ dateTime: getDefaultDateRange() });
 	const [apiPaginationParams, setApiPaginationParams] = useState({
 		limit: 50,
 		offset: 0,
@@ -232,10 +199,9 @@ const STPLogs = () => {
 			? ['timestamp', ...availableKeys.filter((k) => k !== 'timestamp')]
 			: availableKeys;
 
-		const columnDef = orderedKeys.map((c) => ({
+		return orderedKeys.map((c) => ({
 			accessorKey: c,
-			header: STP_LOG_COLUMN_MAPPING?.[c],
-			// size: c === 'timestamp' ? 150 : 130,
+			header: COMPRESSOR_LOG_COLUMN_MAPPING[c] ?? c,
 			cell: (info) => {
 				const value = info.getValue();
 
@@ -246,15 +212,9 @@ const STPLogs = () => {
 						: String(value);
 				}
 
-				if (STP_LOG_CHIPS_CELL.includes(c)) {
-					return <StatusChips value={String(value ?? '-')} />;
-				}
-
-				return String(value ?? '-');
+				return String(value ?? 'N/A');
 			},
 		}));
-
-		return columnDef;
 	}, [logsData]);
 
 	const handleSearch = async (paginationDetails = apiPaginationParams) => {
@@ -264,19 +224,19 @@ const STPLogs = () => {
 
 		setLoading(true);
 		try {
-			const newApiUrl = LogUrlBuilder('STP_LOGS_DATA').build({
+			const url = LogUrlBuilder('SPINNING_LOGS_DATA').build({
 				payload,
 				limit: paginationDetails.limit,
 				offset: paginationDetails.offset,
 				isDownload: false,
 			});
-			const res = await api.get(newApiUrl);
+			const res = await api.get(url);
 			if (res?.success) {
 				setLogsData(res?.data?.logs || []);
-				setBackendTotalRowsCount(res?.meta?.total || 0);
+				setBackendTotalRowsCount(res?.meta?.total ?? 0);
 			}
 		} catch (error) {
-			console.error(`API Error:`, error);
+			console.error('Compressor logs API error:', error);
 		} finally {
 			setLoading(false);
 		}
@@ -285,33 +245,23 @@ const STPLogs = () => {
 	const handleReset = () => {
 		setLogsData(null);
 		setBackendTotalRowsCount(0);
-		setApiPaginationParams({
-			limit: 50,
-			offset: 0,
-		});
+		setApiPaginationParams({ limit: 50, offset: 0 });
 	};
 
 	const handlePageChange = (event, newPageIndex) => {
-		setApiPaginationParams((prev) => ({
-			...prev,
-			offset: newPageIndex * prev.limit,
-		}));
-		handleSearch({
+		const nextParams = {
 			...apiPaginationParams,
 			offset: newPageIndex * apiPaginationParams.limit,
-		});
+		};
+		setApiPaginationParams(nextParams);
+		handleSearch(nextParams);
 	};
 
 	const handleRowsPerPageChange = (event) => {
 		const newLimit = parseInt(event.target.value, 10);
-		setApiPaginationParams({
-			limit: newLimit,
-			offset: 0,
-		});
-		handleSearch({
-			limit: newLimit,
-			offset: 0,
-		});
+		const nextParams = { limit: newLimit, offset: 0 };
+		setApiPaginationParams(nextParams);
+		handleSearch(nextParams);
 	};
 
 	const slaveOptions =
@@ -327,9 +277,9 @@ const STPLogs = () => {
 				},
 			}}
 		>
-			<LogsFilterHeader
+			<CompressorLogsFilterHeader
 				slaveOptions={slaveOptions}
-				// parameterOptions={parametersData}
+				parameterOptions={parametersData}
 				handleSearch={handleSearch}
 				handleReset={handleReset}
 				payload={payload}
@@ -354,6 +304,7 @@ const STPLogs = () => {
 					<CustomTable
 						data={logsData}
 						columns={logsColumns}
+						fillWidth
 						pageIndex={tablePageIndex}
 						pageSize={tablePageSize}
 						totalRowCount={backendTotalRowsCount}
@@ -366,4 +317,4 @@ const STPLogs = () => {
 	);
 };
 
-export default STPLogs;
+export default SpinningLogs;

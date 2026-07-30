@@ -7,6 +7,7 @@ import FireSafetyAnalytics from '../components/Analytics/FireSafetyAnalytics';
 import FlowMeterAnalytics from '../components/Analytics/FlowMeterAnalytics';
 import FuelAnalytics from '../components/Analytics/FuelAnalytics';
 import SolarAnalytics from '../components/Analytics/SolarAnalytics';
+import SpinningAnalytics from '../components/Analytics/SpinningAnalytics.jsx';
 import STPAnalytics from '../components/Analytics/STPAnalytics';
 import TemperatureAnalytics from '../components/Analytics/TemperatureAnalytics';
 import WaterAnalytics from '../components/Analytics/WaterAnalytics';
@@ -22,6 +23,7 @@ const ANALYTICS_CONFIG = {
 	FUEL: FuelAnalytics,
 	STP: STPAnalytics,
 	FLOWMETER: FlowMeterAnalytics,
+	SPINNING: SpinningAnalytics,
 };
 
 const Analytics = () => {

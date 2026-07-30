@@ -7,6 +7,7 @@ import FireSafetyMachineList from '../components/MachineList/FireSafetyMachineLi
 import FlowMeterMachineList from '../components/MachineList/FlowMeterMachineList';
 import FuelMachineList from '../components/MachineList/FuelMachineList';
 import SolarMachineList from '../components/MachineList/SolarMachineList';
+import SpinningMachineList from '../components/MachineList/SpinningMachineList.jsx';
 import STPMachineList from '../components/MachineList/STPMachineList';
 import TemperatureMachineList from '../components/MachineList/TemperatureMachineList';
 import WaterMachineList from '../components/MachineList/WaterMachineList';
@@ -22,6 +23,7 @@ const MACHINE_LIST_CONFIG = {
 	FUEL: FuelMachineList,
 	STP: STPMachineList,
 	FLOWMETER: FlowMeterMachineList,
+	SPINNING: SpinningMachineList,
 };
 
 const MachineList = () => {

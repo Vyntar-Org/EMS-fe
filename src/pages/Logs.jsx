@@ -7,6 +7,7 @@ import FireSafetyLogs from '../components/Logs/FireSafetyLogs';
 import FlowMeterLogs from '../components/Logs/FlowMeterLogs';
 import FuelLogs from '../components/Logs/FuelLogs';
 import SolarLogs from '../components/Logs/SolarLogs';
+import SpinningLogs from '../components/Logs/SpinningLogs.jsx';
 import STPLogs from '../components/Logs/STPLogs';
 import TemperatureLogs from '../components/Logs/TemperatureLogs';
 import WaterLogs from '../components/Logs/WaterLogs';
@@ -22,6 +23,7 @@ const LOGS_CONFIG = {
 	FUEL: FuelLogs,
 	STP: STPLogs,
 	FLOWMETER: FlowMeterLogs,
+	SPINNING: SpinningLogs,
 };
 
 const Logs = () => {

@@ -45,22 +45,23 @@ const EMS_LOGS = {
 		from_datetime,
 		to_datetime,
 		limit = 50,
-		offset = 0
+		offset = 0,
+		isDownload = false
 	) =>
-		`/admin/device-logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${from_datetime}&end_datetime=${to_datetime}&limit=${limit}&offset=${offset}`,
+		`/applications/energy/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${from_datetime}&end_datetime=${to_datetime}&limit=${limit}&offset=${offset}`,
 };
 
 const EMS_REPORTS = {
 	EMS_REPORTS_DATE_WISE_CONSUMPTION_DATA: (year, month) =>
-		`/reports/date-wise/consumption?month=${month}&year=${year}`,
+		`/applications/energy/daily-consumption-reports/?month=${month}&year=${year}`,
 	EMS_REPORTS_MONTH_WISE_CONSUMPTION_DATA: (year) =>
-		`/reports/month-wise/consumption?year=${year}`,
+		`/applications/energy/monthly-consumption-reports/?year=${year}`,
 	EMS_REPORTS_DATE_WISE_READING_DATA: (year, month) =>
-		`/reports/date-wise/reading?month=${month}&year=${year}`,
+		`/applications/energy/daily-reading-reports/?month=${month}&year=${year}`,
 	EMS_REPORTS_DATE_WISE_CONSUMPTION_COST_DATA: (year, month) =>
-		`/reports/date-wise/consumption-cost?month=${month}&year=${year}`,
+		`/applications/energy/daily-consumption-cost-reports/?month=${month}&year=${year}`,
 	EMS_REPORTS_MONTH_WISE_CONSUMPTION_COST_DATA: (year) =>
-		`/reports/month-wise/consumption-cost?year=${year}`,
+		`/applications/energy/monthly-consumption-cost-reports/?year=${year}`,
 };
 
 const TEMPERATURE_MACHINE_LIST = {
@@ -76,9 +77,10 @@ const TEMPERATURE_LOGS = {
 		start_datetime,
 		end_datetime,
 		limit = 50,
-		offset = 0
+		offset = 0,
+		isDownload = false
 	) =>
-		`/applications/temperature/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
+		`/applications/temperature/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
 const TEMPERATURE_ANALYTICS = {
@@ -120,9 +122,10 @@ const FIRE_SAFETY_LOGS = {
 		start_datetime,
 		end_datetime,
 		limit = 50,
-		offset = 0
+		offset = 0,
+		isDownload = false
 	) => {
-		return `/applications/fire-safety/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`;
+		return `/applications/fire-safety/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`;
 	},
 };
 
@@ -141,9 +144,10 @@ const COMPRESSOR_LOGS = {
 		start_datetime,
 		end_datetime,
 		limit = 50,
-		offset = 0
+		offset = 0,
+		isDownload = false
 	) => {
-		return `/applications/compressor/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`;
+		return `/applications/compressor/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`;
 	},
 };
 
@@ -157,6 +161,33 @@ const COMPRESSOR_ANALYTICS = {
 		`/applications/compressor/analytics/?slave_id=${slaveId}&parameters=${parameters}&from=${from_datetime}&to=${to_datetime}`,
 };
 
+const SPINNING_MACHINE_LIST = {
+	SPINNING_MACHINE_LIST_DATA: '/applications/spinning/machine-list/',
+	SPINNING_MACHINE_LIST_TREND: (slaveId, parameter, hours = 6) =>
+		`/applications/spinning/machine-list-trend/?slave_id=${slaveId}&parameter=${parameter}&hours=${hours}`,
+	SPINNING_DOWNTIME_HISTORY: (slaveId, hours = 48) =>
+		`/applications/spinning/downtime/history/?slave_id=${slaveId}&hours=${hours}`,
+};
+
+const SPINNING_LOGS = {
+	SPINNING_LOGS_DATA: (
+		slaveId,
+		parameters,
+		start_datetime,
+		end_datetime,
+		limit = 50,
+		offset = 0,
+		isDownload = false
+	) => {
+		return `/applications/spinning/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`;
+	},
+};
+
+const SPINNING_ANALYTICS = {
+	SPINNING_ANALYTICS_DATA: (slaveId, parameters, from_datetime, to_datetime) =>
+		`/applications/spinning/analytics/?slave_id=${slaveId}&parameters=${parameters}&from=${from_datetime}&to=${to_datetime}`,
+};
+
 const SOLAR_LOGS = {
 	SOLAR_LOGS_DATA: (
 		slaveId,
@@ -164,9 +195,10 @@ const SOLAR_LOGS = {
 		start_datetime,
 		end_datetime,
 		limit = 50,
-		offset = 0
+		offset = 0,
+		isDownload = false
 	) =>
-		`/applications/solar/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
+		`/applications/solar/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
 const SOLAR_ANALYTICS = {
@@ -198,9 +230,10 @@ const WATER_LOGS = {
 		start_datetime,
 		end_datetime,
 		limit = 50,
-		offset = 0
+		offset = 0,
+		isDownload = false
 	) =>
-		`/applications/water/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
+		`/applications/water/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
 const WATER_REPORTS = {
@@ -236,9 +269,10 @@ const FUEL_LOGS = {
 		start_datetime,
 		end_datetime,
 		limit = 50,
-		offset = 0
+		offset = 0,
+		isDownload = false
 	) =>
-		`/applications/water/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
+		`/applications/water/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
 const FUEL_REPORTS = {
@@ -276,13 +310,14 @@ const STP_ANALYTICS = {
 const STP_LOGS = {
 	STP_LOGS_DATA: (
 		slaveId,
-		// parameters,
+		parameters,
 		start_datetime,
 		end_datetime,
 		limit = 50,
-		offset = 0
+		offset = 0,
+		isDownload = false
 	) =>
-		`/applications/stp/logs/?slave_id=${slaveId}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
+		`/applications/stp/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
 const FLOWMETER_DASHBOARD = {
@@ -314,9 +349,10 @@ const FLOWMETER_LOGS = {
 		start_datetime,
 		end_datetime,
 		limit = 50,
-		offset = 0
+		offset = 0,
+		isDownload = false
 	) =>
-		`/applications/flowmeter/logs/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
+		`/applications/flowmeter/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
 const FLOWMETER_REPORTS = {
@@ -348,6 +384,9 @@ export const API_URLS = {
 	...COMPRESSOR_MACHINE_LIST,
 	...COMPRESSOR_LOGS,
 	...COMPRESSOR_ANALYTICS,
+	...SPINNING_MACHINE_LIST,
+	...SPINNING_LOGS,
+	...SPINNING_ANALYTICS,
 	...WATER_DASHBOARD,
 	...WATER_MACHINE_LIST,
 	...WATER_ANALYTICS,

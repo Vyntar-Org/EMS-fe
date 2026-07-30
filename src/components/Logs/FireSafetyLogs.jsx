@@ -1,7 +1,6 @@
 import { Box, Button, Grid, Tooltip } from '@mui/material';
 import React, { useMemo, useState } from 'react';
 import { useCommonData } from '../../contexts/CommonDataContext';
-import { API_URLS } from '../../helpers/apiUrls';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import { RestartAlt, Search } from '@mui/icons-material';
@@ -11,6 +10,8 @@ import { api } from '../../helpers/api';
 import { FIRE_SAFETY_LOG_COLUMN_MAPPING } from '../../constants/fireSafetyLogs';
 import { CustomTable } from '../common/CustomTable';
 import dayjs from 'dayjs';
+import VyntarButtons from '../common/VyntarButtons';
+import { LogUrlBuilder } from '../../helpers/logs';
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 
@@ -21,7 +22,15 @@ const FireSafetyLogsFilterHeader = ({
 	handleReset,
 	payload,
 	setPayload,
+	tableLoading,
 }) => {
+	const downloadApiUrl = useMemo(() => {
+		return LogUrlBuilder('FIRE_SAFETY_LOGS_DATA').build({
+			payload,
+			isDownload: true,
+		});
+	}, [payload]);
+
 	const handleFieldCh = (key, value) => {
 		setPayload((prev) => ({
 			...prev,
@@ -32,7 +41,7 @@ const FireSafetyLogsFilterHeader = ({
 	return (
 		<Box sx={{ pb: 1, borderBottom: '1px dashed', borderColor: 'divider' }}>
 			<Grid container gap={2} alignItems="center">
-				<Grid item xs={12} sm md lg={3}>
+				<Grid item xs={12} sm md={2.5} lg={2.2}>
 					<CustomAutocomplete
 						options={slaveOptions}
 						onChange={(val) => handleFieldCh('slave_id', val)}
@@ -52,7 +61,7 @@ const FireSafetyLogsFilterHeader = ({
 					/>
 				</Grid>
 
-				<Grid item xs={12} sm md lg={3}>
+				<Grid item xs={12} sm md={2.5} lg={2.2}>
 					<CustomAutocomplete
 						multiple
 						options={parameterOptions}
@@ -73,7 +82,7 @@ const FireSafetyLogsFilterHeader = ({
 					/>
 				</Grid>
 
-				<Grid item xs={12} md={4.5} lg>
+				<Grid item xs={12} md={5} lg={4}>
 					<CustomDatePicker
 						mode="datetimerangepicker"
 						onChange={(val) => handleFieldCh('dateTime', val)}
@@ -87,7 +96,7 @@ const FireSafetyLogsFilterHeader = ({
 							<Button
 								variant="contained"
 								onClick={() => handleSearch()}
-								disabled={!payload?.slave_id}
+								disabled={!payload?.slave_id || tableLoading}
 								sx={{
 									width: 40,
 									height: 40,
@@ -113,6 +122,7 @@ const FireSafetyLogsFilterHeader = ({
 						<span>
 							<Button
 								variant="contained"
+								disabled={tableLoading}
 								onClick={() => {
 									setPayload((prev) => ({
 										...(prev || {}),
@@ -141,6 +151,15 @@ const FireSafetyLogsFilterHeader = ({
 						</span>
 					</Tooltip>
 				</Grid>
+
+				<Grid item xs md="auto" display="flex" gap={2} ml="auto">
+					<VyntarButtons.Download
+						apiUrl={downloadApiUrl}
+						label="Download Excel"
+						disableElevation
+						fileNamePrefix="fire_safety_logs"
+					/>
+				</Grid>
 			</Grid>
 		</Box>
 	);
@@ -163,8 +182,9 @@ const FireSafetyLogs = () => {
 	const tablePageSize = apiPaginationParams.limit;
 
 	const logsColumns = useMemo(() => {
-		if (!logsData?.length) return [];
-
+		if (!logsData?.length) {
+			return [];
+		}
 		const availableKeys = Object.keys(logsData[0]);
 		// Timestamp is always the anchor column for a log row — pin it first
 		// regardless of whatever order the API happens to return keys in.
@@ -195,35 +215,18 @@ const FireSafetyLogs = () => {
 	}, [logsData]);
 
 	const handleSearch = async (paginationDetails = apiPaginationParams) => {
-		if (!payload?.slave_id) return;
+		if (!payload?.slave_id) {
+			return;
+		}
 
 		setLoading(true);
 		try {
-			const slaveId = payload.slave_id?.value ?? '';
-			const parameterValues = Array.isArray(payload?.parameters)
-				? payload.parameters
-						.map((p) => p?.value)
-						.filter(Boolean)
-						.join(',')
-				: '';
-
-			const startDateObj = payload?.dateTime?.[0];
-			const endDateObj = payload?.dateTime?.[1];
-			const formattedStart = startDateObj?.isValid?.()
-				? startDateObj.format('YYYY-MM-DD[T]HH:mm:ss')
-				: '';
-			const formattedEnd = endDateObj?.isValid?.()
-				? endDateObj.format('YYYY-MM-DD[T]HH:mm:ss')
-				: '';
-
-			const url = API_URLS.FIRE_SAFETY_LOGS_DATA(
-				slaveId,
-				parameterValues,
-				formattedStart,
-				formattedEnd,
-				paginationDetails.limit,
-				paginationDetails.offset
-			);
+			const url = LogUrlBuilder('FIRE_SAFETY_LOGS_DATA').build({
+				payload,
+				limit: paginationDetails.limit,
+				offset: paginationDetails.offset,
+				isDownload: false,
+			});
 
 			const res = await api.get(url);
 			if (res?.success) {
@@ -279,13 +282,15 @@ const FireSafetyLogs = () => {
 				handleReset={handleReset}
 				payload={payload}
 				setPayload={setPayload}
+				tableLoading={loading}
 			/>
 
 			<Box
 				height={{
-					xs: 'calc(100% - 216px)',
-					sm: 'calc(100% - 160px)',
-					md: 'calc(100% - 48px)',
+					xs: 'calc(100% - 219px)',
+					sm: 'calc(100% - 163px)',
+					md: 'calc(100% - 107px)',
+					lg: 'calc(100% - 51px)',
 				}}
 				pt={1}
 				overflow="auto"
