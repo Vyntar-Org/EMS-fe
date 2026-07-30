@@ -1,7 +1,7 @@
 import { DownloadForOffline } from '@mui/icons-material';
 import { Box, Grid, IconButton, Stack, Tooltip } from '@mui/material';
 import Papa from 'papaparse';
-import { useEffect, useState, useMemo } from 'react';
+import { memo, useEffect, useState, useMemo } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
 import { useApplications } from '../../contexts/ApplicationContext';
@@ -65,7 +65,7 @@ const handleDownload = (filteredMachines, selectedApp) => {
 	URL.revokeObjectURL(url);
 };
 
-const ModalContentForTrend = ({ slaveId, slaveName }) => {
+const ModalContentForTrend = memo(({ slaveId, slaveName }) => {
 	const [chartResponse, setChartResponse] = useState(null);
 	const [chartLoading, setChartLoading] = useState(true);
 
@@ -126,7 +126,8 @@ const ModalContentForTrend = ({ slaveId, slaveName }) => {
 			)}
 		</Box>
 	);
-};
+});
+ModalContentForTrend.displayName = 'ModalContentForTrend';
 
 const WaterMachineList = () => {
 	const { slavesData } = useCommonData();

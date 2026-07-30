@@ -18,7 +18,7 @@ import {
 	CircularProgress,
 } from '@mui/material';
 import Papa from 'papaparse';
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { memo, useEffect, useMemo, useState, useRef } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
 import { useApplications } from '../../contexts/ApplicationContext';
@@ -709,7 +709,7 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 	);
 };
 
-const ModalContentForTrend = ({
+const ModalContentForTrend = memo(({
 	handleTabChange,
 	tab,
 	tabDesc,
@@ -1053,7 +1053,8 @@ const ModalContentForTrend = ({
 			</Box>
 		</Box>
 	);
-};
+});
+ModalContentForTrend.displayName = 'ModalContentForTrend';
 
 const SpinningMachineList = () => {
 	const { slavesData } = useCommonData();

@@ -9,7 +9,7 @@ import {
 	Tooltip,
 } from '@mui/material';
 import Papa from 'papaparse';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
 import {
@@ -157,7 +157,7 @@ const handleDownload = (filteredMachines, selectedApp) => {
 	URL.revokeObjectURL(url);
 };
 
-const ModalContentForTrend = ({
+const ModalContentForTrend = memo(({
 	handleTabChange,
 	tab,
 	keyParam,
@@ -421,7 +421,8 @@ const ModalContentForTrend = ({
 			</Box>
 		</>
 	);
-};
+});
+ModalContentForTrend.displayName = 'ModalContentForTrend';
 
 const EnergyMachineList = () => {
 	const { slavesData } = useCommonData();

@@ -86,16 +86,11 @@ const EnergyDashboard = () => {
 
 			<Grid container spacing={1.5} sx={{ mt: 0 }} flex={1} minHeight={0}>
 				<Grid item xs={12} sm={12} md={5.4} height={{ md: '100%' }}>
-					<Grid container rowGap={1.5} height={{ md: '100%' }}>
+					<Grid container rowGap={1.5} height={{ md: 'calc(100% - 12px)' }}>
 						<Grid item xs={12} sm={12} height={{ xs: 300, md: '50%' }}>
 							<ENERGYConsumptionLastSixHours />
 						</Grid>
-						<Grid
-							item
-							xs={12}
-							sm={12}
-							height={{ xs: 300, md: 'calc(50% - 12px)' }}
-						>
+						<Grid item xs={12} sm={12} height={{ xs: 300, md: '50%' }}>
 							<ENERGYDemandIndicator slavesId={slavesId} />
 						</Grid>
 					</Grid>

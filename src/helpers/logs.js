@@ -36,6 +36,9 @@ export const LogUrlBuilder = (apiUrlName) => {
 			const { slaveId, parameterValues, formattedStart, formattedEnd } =
 				this.parsePayload(payload);
 
+			if (!slaveId) {
+				return '';
+			}
 			if (typeof API_URLS?.[apiUrlName] !== 'function') {
 				console.error(
 					`LogUrlBuilder: "${apiUrlName}" is not a valid function inside API_URLS.`

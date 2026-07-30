@@ -156,7 +156,7 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 				chartTitle: 'Peak Demand Indicator',
 			}),
 		},
-		grid: { show: false },
+		// grid: { show: false },
 	};
 
 	const series = [

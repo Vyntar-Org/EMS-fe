@@ -1,7 +1,7 @@
 import { DownloadForOffline } from '@mui/icons-material';
 import { Box, Grid, IconButton, Stack, Tooltip } from '@mui/material';
 import Papa from 'papaparse';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
 import { SOLAR_TREND_TAB_OPTIONS } from '../../constants/solarMachineList';
@@ -140,7 +140,7 @@ const handleDownload = (filteredMachines, selectedApp) => {
 	URL.revokeObjectURL(url);
 };
 
-const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
+const ModalContentForTrend = memo(({ handleTabChange, tab, slaveId, slaveName }) => {
 	const [chartResponse, setChartResponse] = useState(null);
 	const [chartLoading, setChartLoading] = useState(true);
 
@@ -231,7 +231,8 @@ const ModalContentForTrend = ({ handleTabChange, tab, slaveId, slaveName }) => {
 			</Box>
 		</>
 	);
-};
+});
+ModalContentForTrend.displayName = 'ModalContentForTrend';
 
 const SolarMachineList = () => {
 	const { slavesData } = useCommonData();

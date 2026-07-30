@@ -41,20 +41,27 @@ const PremiumModal = ({
 			: confirmText
 		: confirmText;
 
-	// Callers commonly close a modal by nulling out the same state that
-	// holds its (often chart-heavy) content, e.g.
-	// `{modalDetails?.isOpen ? <ChartModalContent /> : null}`. That unmounts
-	// the chart in the very same render as `open` flipping to false, so the
-	// expensive ApexCharts teardown blocks the close click instead of
-	// happening invisibly after the fade-out. Latching the last content
-	// while `open` was true keeps it mounted through the exit transition;
-	// `onExited` only then lets it go, once the dialog is already gone.
-	const [renderedChildren, setRenderedChildren] = useState(children);
+	// Heavy content (e.g. ApexCharts) is only rendered once `onEntered`
+	// fires, i.e. after the open transition has finished, so its
+	// synchronous chart draw never competes with the CSS animation for
+	// main-thread time and the open animation stays smooth. Once mounted,
+	// later content updates (e.g. switching a trend tab while the modal
+	// stays open) still flow through.
+	//
+	// On close, `shouldRenderContent` drops to `false` the instant `open`
+	// does, unmounting the heavy content immediately rather than keeping it
+	// in the DOM through the exit transition, so the closing dialog has
+	// nothing expensive left to paint/layout while it fades out.
+	// `renderedChildren` itself is only cleared on `onExited` so a
+	// fast re-open doesn't show a blank flash before content re-mounts.
+	const [renderedChildren, setRenderedChildren] = useState(null);
+	const [hasEntered, setHasEntered] = useState(false);
+	const shouldRenderContent = hasEntered && open;
 	useEffect(() => {
-		if (open) {
+		if (open && hasEntered) {
 			setRenderedChildren(children);
 		}
-	}, [open, children]);
+	}, [open, hasEntered, children]);
 
 	return (
 		<StyledDialog
@@ -62,7 +69,16 @@ const PremiumModal = ({
 			onClose={onClose}
 			maxWidth={isLogout ? 'xs' : 'sm'}
 			fullWidth
-			TransitionProps={{ onExited: () => setRenderedChildren(null) }}
+			TransitionProps={{
+				onEntered: () => {
+					setHasEntered(true);
+					setRenderedChildren(children);
+				},
+				onExited: () => {
+					setHasEntered(false);
+					setRenderedChildren(null);
+				},
+			}}
 		>
 			<DialogTitle
 				sx={{
@@ -102,12 +118,19 @@ const PremiumModal = ({
 					<IconButton
 						aria-label="close"
 						onClick={onClose}
+						disableRipple
+						disableFocusRipple
 						sx={{
 							position: isLogout ? 'absolute' : 'static',
 							right: isLogout ? 12 : 'auto',
 							top: isLogout ? 12 : 'auto',
 							color: 'text.secondary',
+							boxShadow: 'none',
+							outline: 'none',
 							'&:hover': { color: 'text.primary' },
+							'&:focus': { boxShadow: 'none', outline: 'none' },
+							'&:active': { boxShadow: 'none', outline: 'none' },
+							'&.Mui-focusVisible': { boxShadow: 'none', outline: 'none' },
 						}}
 					>
 						<Close />
@@ -123,7 +146,7 @@ const PremiumModal = ({
 					},
 				}}
 			>
-				{renderedChildren ? (
+				{shouldRenderContent && renderedChildren ? (
 					renderedChildren
 				) : (
 					<Box sx={{ textAlign: 'left', py: 0 }}>

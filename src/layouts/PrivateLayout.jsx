@@ -12,7 +12,7 @@ import { preloadAppImages } from '../helpers/preloadImages';
 export const PrivateLayout = () => {
 	const { user } = useAuth();
 	const [isMobileOpen, setIsMobileOpen] = useState(false);
-	const [isDesktopOpen, setIsDesktopOpen] = useState(false);
+	const [isDesktopOpen, setIsDesktopOpen] = useState(true);
 	const { applications, selectedApp, switchApp } = useApplications();
 	const navigate = useNavigate();
 	const location = useLocation();
