@@ -285,14 +285,14 @@ const WaterMachineList = () => {
 											lastUpdated={mc?.latest_ts}
 											metrics={[
 												{
-													label: 'Inlet Flowrate',
+													label: 'Totalizer',
+													value: `${Number(mc?.totalizer ?? 0).toFixed(2)} KLD`,
+												},
+												{
+													label: 'Rate of Flow',
 													value: `${Number(mc?.rate_of_flow ?? 0).toFixed(
 														2
 													)} m³/hr`,
-												},
-												{
-													label: 'Inlet Totalizer',
-													value: `${Number(mc?.totalizer ?? 0).toFixed(2)} m³`,
 												},
 											]}
 											today={`${Number(mc?.consumption ?? 0).toFixed(2)} KLD`}
