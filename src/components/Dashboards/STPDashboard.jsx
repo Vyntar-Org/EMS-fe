@@ -1,18 +1,14 @@
 import { Opacity, Recycling } from '@mui/icons-material';
 import { Box, Grid } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import { useEffect, useMemo, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
+import { useEffect, useState } from 'react';
 
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import {
-	buildPremiumTooltip,
 	formatChartValue,
 	getCategoricalColors,
-	getChartCategories,
-	getChartOptions,
 } from '../../helpers/chartConfig';
+import CustomApexChart from '../common/CustomApexChart';
 import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
@@ -80,7 +76,6 @@ const StatCard = ({ value, previousValue, accent, caption }) => (
 );
 
 const STPDashboard = () => {
-	const theme = useTheme();
 	const [overviewData, setOverviewData] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [historyTrends, setHistoryTrends] = useState(null);
@@ -99,10 +94,16 @@ const STPDashboard = () => {
 				setOverviewData(overviewRes?.data);
 			}
 			if (historicalTrendsRes?.success) {
-				setHistoryTrends(historicalTrendsRes?.data);
+				setHistoryTrends({
+					...historicalTrendsRes?.data,
+					meta: historicalTrendsRes?.meta,
+				});
 			}
 			if (waterComparisonRes?.success) {
-				setWaterComparison(waterComparisonRes?.data);
+				setWaterComparison({
+					...waterComparisonRes?.data,
+					meta: waterComparisonRes?.meta,
+				});
 			}
 		} catch (error) {
 			console.error('One of the API calls failed:', error);
@@ -129,108 +130,6 @@ const STPDashboard = () => {
 		lon: overviewData?.locations[0]?.longitude || 0,
 	};
 
-	// pH (0-14) plotted on the same linear axis as TDS (hundreds-thousands)
-	// renders as a flat line at the bottom — invisible next to TDS. Give pH
-	// its own axis (on a fixed 0-14 scale, the real definition of the pH
-	// scale, not a guessed range) while TDS/COD/BOD keep sharing one axis,
-	// since `getChartOptions` only supports a single shared y-axis.
-	const historyChartOptions = useMemo(() => {
-		const categories = getChartCategories(historyTrends?.categories);
-		const seriesNames = (historyTrends?.series || []).map((s) => s.name || '');
-		const colors = getCategoricalColors(seriesNames.length || 4);
-		const phIndex = seriesNames.findIndex(
-			(name) => name.toLowerCase() === 'ph'
-		);
-		// A rotated label per category is noise on a card-sized chart — cap
-		// how many actually render, evenly spaced, same as the shared
-		// dashboard/card charts (`MAX_XAXIS_LABELS` in chartConfig.js).
-		const maxLabels = 8;
-		const labelStep = Math.max(1, Math.ceil(categories.length / maxLabels));
-		const ink = {
-			title: theme.palette.text.secondary,
-			label: theme.palette.text.secondary,
-		};
-
-		return {
-			chart: {
-				type: 'line',
-				toolbar: {
-					show: true,
-					tools: {
-						download: true,
-						selection: false,
-						zoom: false,
-						zoomin: false,
-						zoomout: false,
-						pan: false,
-						reset: false,
-					},
-				},
-				zoom: { enabled: false },
-				animations: { enabled: true, speed: 400 },
-				dropShadow: { enabled: true, top: 6, left: 0, blur: 8, opacity: 0.16 },
-			},
-			colors,
-			stroke: { curve: 'smooth', width: 3, lineCap: 'round' },
-			markers: { size: 0, strokeWidth: 2, hover: { size: 6 } },
-			dataLabels: { enabled: false },
-			xaxis: {
-				categories,
-				labels: {
-					rotate: -45,
-					style: { colors: ink.label, fontSize: '11px' },
-					formatter: (val) => {
-						const idx = categories.indexOf(val);
-						return idx === -1 || idx % labelStep === 0 ? val : '';
-					},
-				},
-				axisBorder: { show: false },
-				axisTicks: { show: false },
-				tickAmount: Math.min(categories.length || 1, maxLabels),
-			},
-			yaxis: seriesNames.map((name, i) => {
-				const isPh = i === phIndex;
-				// Every series needs its own yaxis entry (array is matched to
-				// series by index) — only the first non-pH axis and the pH axis
-				// are actually shown, so TDS/COD/BOD visually share one scale.
-				return {
-					seriesName: isPh ? name : seriesNames[0],
-					show: i === 0 || isPh,
-					opposite: isPh,
-					min: isPh ? 0 : undefined,
-					max: isPh ? 14 : undefined,
-					title: {
-						text: isPh ? 'pH' : '',
-						style: { color: ink.title, fontWeight: 'bold' },
-					},
-					labels: {
-						style: { colors: ink.label },
-						formatter: (val) => formatChartValue(val),
-					},
-				};
-			}),
-			tooltip: {
-				shared: true,
-				intersect: false,
-				fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
-				custom: buildPremiumTooltip({ chartTitle: 'STP Water Quality Trend' }),
-			},
-			legend: {
-				show: true,
-				position: 'top',
-				horizontalAlign: 'center',
-				fontWeight: 600,
-				markers: { shape: 'circle', size: 6, offsetX: -2 },
-				itemMargin: { horizontal: 10 },
-			},
-			grid: {
-				borderColor: 'rgba(128, 145, 170, 0.18)',
-				yaxis: { lines: { show: true } },
-				xaxis: { lines: { show: false } },
-			},
-		};
-	}, [historyTrends, theme]);
-
 	return isLoading ? (
 		<STPDashboardSkeleton />
 	) : (
@@ -245,11 +144,11 @@ const STPDashboard = () => {
 				overflowY: 'auto',
 			}}
 		>
-			<Grid container spacing={1} height={{ md: '350px' }} flexShrink={0}>
+			<Grid container spacing={1.5} height={{ md: '350px' }} flexShrink={0}>
 				<Grid item xs={12} md={6} height={{ md: '100%' }}>
 					<Grid container height={{ md: '100%' }}>
 						<Grid item xs={12} height={{ md: '50%' }}>
-							<Grid container spacing={1} height={{ md: '100%' }}>
+							<Grid container spacing={1.5} height={{ md: '100%' }}>
 								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
 									<CustomCard
 										sx={{ textAlign: 'center' }}
@@ -296,13 +195,18 @@ const STPDashboard = () => {
 							</Grid>
 						</Grid>
 
-						<Grid item xs={12} mt={{ xs: 1, md: 0 }} height={{ md: '50%' }}>
+						<Grid
+							item
+							xs={12}
+							mt={{ xs: 1, md: 0 }}
+							height={{ xs: 400, sm: 200, md: '50%' }}
+						>
 							<CustomCard
 								title="Water Quality"
 								// titleIcon={<Science />}
 								accentColor={QUALITY_ACCENT}
 							>
-								<Grid container sx={{ height: '100%', width: '100%' }}>
+								<Grid container sx={{ width: '100%' }}>
 									{[
 										{ label: 'pH', key: 'ph', unit: 'mg/L' },
 										{ label: 'TDS', key: 'tds', unit: 'ppm' },
@@ -310,10 +214,12 @@ const STPDashboard = () => {
 										{ label: 'BOD', key: 'bod', unit: 'mg/L' },
 										{ label: 'TSS', key: 'tss', unit: 'mg/L' },
 									].map((item, ind) => {
+										const gaugeColor = getCategoricalColors(5)[ind];
 										return (
 											<Grid
 												item
-												xs={2.4}
+												xs={6}
+												sm
 												height="100%"
 												key={`fuel-radial-${ind + 1}`}
 												sx={{
@@ -322,26 +228,68 @@ const STPDashboard = () => {
 													minHeight: 0,
 												}}
 											>
-												<Box flex={1} minHeight={0}>
-													<ReactApexChart
-														options={getChartOptions('radialBar', [], {
-															labels: [item.label],
-															colors: [getCategoricalColors(5)[ind]],
-														})}
+												<Box flex={1} maxHeight={110}>
+													<CustomApexChart
 														series={[summaryData?.[item.key]?.value || 0]}
 														type="radialBar"
+														colors={[gaugeColor]}
 														height="100%"
-														width="100%"
+														showToolbar={false}
+														customOptions={{
+															chart: {
+																type: 'radialBar',
+																sparkline: { enabled: true },
+															},
+															plotOptions: {
+																radialBar: {
+																	startAngle: -90,
+																	endAngle: 90,
+																	hollow: {
+																		size: '60%',
+																		background: 'transparent',
+																	},
+																	track: {
+																		background: 'rgba(128, 145, 170, 0.2)',
+																		strokeWidth: '97%',
+																		margin: 4,
+																	},
+																	dataLabels: {
+																		name: {
+																			show: true,
+																			fontSize: '11px',
+																			offsetY: -8,
+																		},
+																		value: {
+																			show: true,
+																			fontSize: '14px',
+																			fontWeight: 700,
+																			// offsetY: -1,
+																			formatter: (val) =>
+																				formatChartValue(val) + ' ' + item.unit,
+																		},
+																	},
+																},
+															},
+															// Standard ApexCharts semi-gauge trick: a full circle's worth
+															// of vertical space is allocated even though only the top
+															// half is drawn — negative top padding pulls the chart up
+															// so the visible arc fills the box instead of leaving a
+															// blank gap below it.
+															grid: { padding: { top: -10, bottom: -10 } },
+															labels: [item.label],
+															legend: { show: false },
+															stroke: { lineCap: 'round' },
+														}}
 													/>
 												</Box>
-												<ResponsiveTextWrapper
+												{/* <ResponsiveTextWrapper
 													fontSize={{ xs: '10px', md: '12px' }}
 													color="text.secondary"
 													fontWeight={800}
 													flexShrink={0}
 													value={item.unit}
 													align="center"
-												/>
+												/> */}
 											</Grid>
 										);
 									})}
@@ -361,20 +309,24 @@ const STPDashboard = () => {
 				</Grid>
 			</Grid>
 
-			<Grid sx={{ mt: 0 }} container spacing={1} flex={1} minHeight={0}>
+			<Grid sx={{ mt: 0 }} container spacing={1.5} flex={1} minHeight={0}>
 				<Grid item xs={12} md={6} height={{ xs: 350, md: '100%' }}>
 					<CustomCard
 						title="Historical Trends"
 						accentColor={getCategoricalColors(1)[0]}
 					>
-						{historyTrends ? (
+						{historyTrends?.series?.length ? (
 							<Box height="100%" width="100%" overflow="hidden">
-								<ReactApexChart
-									options={historyChartOptions}
-									series={historyTrends?.series || []}
+								<CustomApexChart
+									series={historyTrends.series}
 									type="line"
+									colors={getCategoricalColors(
+										(historyTrends?.series || []).length || 4
+									)}
+									xAxesType="category"
 									height="100%"
-									width="100%"
+									title="STP Water Quality Trend"
+									meta={historyTrends?.meta}
 								/>
 							</Box>
 						) : (
@@ -387,18 +339,16 @@ const STPDashboard = () => {
 						title="Water Comparison"
 						accentColor={getCategoricalColors(3)[2]}
 					>
-						{waterComparison ? (
+						{waterComparison?.series?.length ? (
 							<Box height="100%" width="100%" overflow="hidden">
-								<ReactApexChart
-									options={getChartOptions('bar', waterComparison?.categories, {
-										colors: getCategoricalColors(4),
-										yLabel: 'KL',
-										chartTitle: 'Intake vs Treated Water Comparison',
-									})}
-									series={waterComparison?.series || []}
+								<CustomApexChart
+									series={waterComparison.series}
 									type="bar"
+									colors={getCategoricalColors(4)}
+									xAxesType="category"
 									height="100%"
-									width="100%"
+									title="Intake vs Treated Water Comparison"
+									meta={waterComparison?.meta}
 								/>
 							</Box>
 						) : (

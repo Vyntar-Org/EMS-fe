@@ -2,13 +2,13 @@ import { DownloadForOffline } from '@mui/icons-material';
 import { Box, Grid, IconButton, Stack, Tooltip } from '@mui/material';
 import Papa from 'papaparse';
 import { memo, useEffect, useState, useMemo } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import { useApplications } from '../../contexts/ApplicationContext';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { getChartOptions, getChartSeries } from '../../helpers/chartConfig';
+import { getChartSeries } from '../../helpers/chartConfig';
+import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -188,23 +188,18 @@ const ModalContentForTrend = memo(
 					{chartLoading ? (
 						<Loading />
 					) : chartResponse?.data?.length ? (
-						<ReactApexChart
-							options={getChartOptions('line', chartResponse.data, {
-								xLabel: 'Time',
-								yLabel: activeTab?.label || 'Value',
-								colors: [APP_ACCENT_COLOR.STP],
-								categoryOpts: { key: 'timestamp', format: 'time' },
-								chartTitle: `${activeTab?.desc ? `${activeTab.desc} — ` : ''}${
-									activeTab?.label || 'STP'
-								} Trend`,
-							})}
+						<CustomApexChart
 							series={getChartSeries(chartResponse.data, {
 								actual: activeTab?.label,
 								actualLabel: activeTab?.label,
 							})}
 							type="line"
+							colors={[APP_ACCENT_COLOR.STP]}
+							xAxesType="datetime"
 							height={350}
-							width="100%"
+							// title={`${activeTab?.desc ? `${activeTab.desc} — ` : ''}${
+							// 	activeTab?.label || 'STP'
+							// } Trend`}
 						/>
 					) : (
 						<NoDataFound message="No machine readings received yet — data appears once the device reports" />

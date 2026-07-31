@@ -10,7 +10,6 @@ import {
 import { alpha } from '@mui/material/styles';
 import dayjs from 'dayjs';
 import { memo, useCallback, useMemo, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import {
 	KEY_PARAMETER_OPTIONS_MAPPING,
@@ -19,12 +18,9 @@ import {
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import {
-	getAxisInk,
-	getCategoricalColors,
-	getTooltipInk,
-} from '../../helpers/chartConfig';
+import { getCategoricalColors } from '../../helpers/chartConfig';
 import { basePickerStyles } from '../../helpers/common';
+import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -95,138 +91,6 @@ const getProcessedChartData = (rawAnalytics, activeKeys, namePrefix = '') => {
 
 	return { series };
 };
-
-// Rebuilt only when `isMultiSeries` changes (memoized by callers) instead of
-// on every render — a fresh options object each render forces ApexCharts to
-// fully re-diff/re-render even when nothing on screen actually changed.
-const buildChartOptions = (isMultiSeries) => ({
-	chart: {
-		type: 'area',
-		height: 420,
-		toolbar: {
-			show: true,
-			tools: {
-				download: true,
-				selection: false,
-				zoom: false,
-				zoomin: false,
-				zoomout: false,
-				pan: false,
-				reset: false,
-			},
-		},
-		zoom: { enabled: false },
-		animations: { enabled: false },
-	},
-	stroke: {
-		width: 2,
-		curve: 'stepline',
-	},
-	fill: {
-		type: 'solid',
-		opacity: 0.2,
-	},
-	colors: CHART_COLORS,
-	dataLabels: { enabled: false },
-	xaxis: {
-		type: 'datetime',
-		title: {
-			text: 'Time',
-			style: { color: getAxisInk().title, fontSize: '12px' },
-		},
-		labels: {
-			style: { colors: getAxisInk().label, fontSize: '11px' },
-			datetimeUTC: false,
-		},
-	},
-	yaxis: {
-		title: {
-			text: 'Status',
-			style: { color: getAxisInk().title, fontSize: '12px' },
-		},
-		min: -0.1,
-		max: 1.1,
-		tickAmount: 2,
-		labels: {
-			style: { colors: getAxisInk().label, fontSize: '12px' },
-			formatter: function (val) {
-				if (val >= 0.9) {
-					return 'Online';
-				}
-				if (val <= 0.1) {
-					return 'Offline';
-				}
-				return '';
-			},
-		},
-	},
-	grid: {
-		borderColor: 'rgba(128, 145, 170, 0.18)',
-		xaxis: { lines: { show: false } },
-		yaxis: { lines: { show: true } },
-	},
-	tooltip: {
-		enabled: true,
-		shared: isMultiSeries,
-		custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-			const ink = getTooltipInk();
-			const allSeries = w.globals.initialSeries;
-			let tooltipHtml = '';
-			let timestamp = null;
-
-			const getStatusRow = (name, value) => {
-				const statusText = value === 1 ? 'Online' : 'Offline';
-				const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
-				return `
-                    <div style="display: flex; align-items: center; margin-top: 4px;">
-                      <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${statusColor}; margin-right: 8px;"></span>
-                      <span style="flex: 1; color: ${ink.secondary}; font-size: 12px;">${name}:</span>
-                      <span style="font-weight: bold; color: ${statusColor}; margin-left: 5px; font-size: 12px;">${statusText}</span>
-                    </div>
-                  `;
-			};
-
-			if (isMultiSeries) {
-				allSeries.forEach((s) => {
-					const point = s.data[dataPointIndex];
-					if (point) {
-						if (!timestamp) {
-							timestamp = point[0];
-						}
-						tooltipHtml += getStatusRow(s.name, point[1]);
-					}
-				});
-			} else {
-				const point = allSeries[seriesIndex].data[dataPointIndex];
-				if (point) {
-					timestamp = point[0];
-					tooltipHtml += getStatusRow(allSeries[seriesIndex].name, point[1]);
-				}
-			}
-
-			const formattedDate = timestamp
-				? dayjs(timestamp).format('DD/MM/YYYY hh:mm:ss A')
-				: 'N/A';
-
-			return `
-                  <div style="padding: 10px 12px; background-color: ${ink.surface}; border: 1px solid ${ink.border}; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.22);">
-                    <div style="font-weight: 700; margin-bottom: 6px; color: ${ink.primary}; font-size: 12px;">Compressor Status Trend</div>
-                    <div style="color: ${ink.secondary}; font-size: 11px; margin-bottom: 4px;">${formattedDate}</div>
-                    ${tooltipHtml}
-                  </div>
-                `;
-		},
-	},
-	legend: {
-		show: isMultiSeries,
-		position: 'top',
-		horizontalAlign: 'center',
-	},
-	markers: {
-		size: 0,
-		hover: { size: 5 },
-	},
-});
 
 const GlobalFiltersRow = memo(
 	({
@@ -432,12 +296,6 @@ const AnalyticsRow = memo(
 			[rawAnalytics, activeKeys]
 		);
 
-		const isMultiSeries = processedData.series.length > 1;
-		const chartOptions = useMemo(
-			() => buildChartOptions(isMultiSeries),
-			[isMultiSeries]
-		);
-
 		const filteredSlaveOptions = useMemo(() => {
 			const selectedDeviceIdsInOtherRows = Object.keys(payloads)
 				.filter((rowId) => Number(rowId) !== id)
@@ -535,12 +393,13 @@ const AnalyticsRow = memo(
 					) : !processedData.series.length ? (
 						<NoDataFound message="Select a device and parameters, then click Analyze to view insights" />
 					) : (
-						<ReactApexChart
-							options={chartOptions}
+						<CustomApexChart
 							series={processedData.series}
 							type="area"
+							colors={CHART_COLORS}
+							xAxesType="datetime"
 							height="100%"
-							width="100%"
+							// title="Compressor Status Trend"
 						/>
 					)}
 				</Box>
@@ -564,12 +423,6 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 						).series
 				),
 		[rows]
-	);
-
-	const isMultiSeries = mergedSeries.length > 1;
-	const chartOptions = useMemo(
-		() => buildChartOptions(isMultiSeries),
-		[isMultiSeries]
 	);
 
 	return (
@@ -638,12 +491,13 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 				) : !mergedSeries.length ? (
 					<NoDataFound message="Select devices and parameters, then click Analyze to view the merged comparison" />
 				) : (
-					<ReactApexChart
-						options={chartOptions}
+					<CustomApexChart
 						series={mergedSeries}
 						type="area"
+						colors={CHART_COLORS}
+						xAxesType="datetime"
 						height="100%"
-						width="100%"
+						// title="Compressor Status Trend"
 					/>
 				)}
 			</Box>

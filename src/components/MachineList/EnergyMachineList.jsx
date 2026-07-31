@@ -10,7 +10,6 @@ import {
 } from '@mui/material';
 import Papa from 'papaparse';
 import { memo, useEffect, useMemo, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import {
 	KEY_PARAMETER_OPTIONS,
@@ -20,8 +19,8 @@ import { useApplications } from '../../contexts/ApplicationContext';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { getChartOptions } from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
+import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -219,20 +218,14 @@ const ModalContentForTrend = memo(
 			return `${slaveName || 'Energy Machine'} — ${suffix || 'Trend'}`;
 		}, [slaveName, tab, keyParam]);
 
-		const chartOptions = getChartOptions('line', chartResponse?.data || [], {
-			xLabel: 'Time',
-			yLabel: chartResponse?.unit || 'Value',
-			colors: [
-				'#E34D4D',
-				'#F8C537',
-				'#4A90E2',
-				'#EF4444',
-				'#8B5CF6',
-				'#2563EB',
-			],
-			categoryOpts: { key: 'timestamp', format: 'time' },
-			chartTitle: trendChartTitle,
-		});
+		const chartColors = [
+			'#E34D4D',
+			'#F8C537',
+			'#4A90E2',
+			'#EF4444',
+			'#8B5CF6',
+			'#2563EB',
+		];
 
 		const getCurrentChartSeries = () => {
 			switch (tab) {
@@ -412,12 +405,13 @@ const ModalContentForTrend = memo(
 					) : chartLoading ? (
 						<Loading />
 					) : (
-						<ReactApexChart
-							options={chartOptions}
+						<CustomApexChart
 							series={chartSeries}
 							type="line"
+							colors={chartColors}
+							xAxesType="datetime"
 							height={350}
-							width="100%"
+							// title={trendChartTitle}
 						/>
 					)}
 				</Box>

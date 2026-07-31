@@ -2,14 +2,14 @@ import { DownloadForOffline } from '@mui/icons-material';
 import { Box, Grid, IconButton, Stack, Tooltip } from '@mui/material';
 import Papa from 'papaparse';
 import { memo, useEffect, useState, useMemo } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import { useApplications } from '../../contexts/ApplicationContext';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { getChartOptions, getChartSeries } from '../../helpers/chartConfig';
+import { getChartSeries } from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
+import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
@@ -96,13 +96,8 @@ const ModalContentForTrend = memo(({ slaveId, slaveName }) => {
 		fetchTrendModalChartData();
 	}, [slaveId]);
 
-	const chartOptions = getChartOptions('line', chartResponse?.data || [], {
-		xLabel: 'Time',
-		yLabel: chartResponse?.unit || 'Flow Rate',
-		colors: [APP_ACCENT_COLOR.WATER],
-		categoryOpts: { key: 'timestamp', format: 'time' },
-		chartTitle: `${slaveName || 'Water Machine'} Flow Rate Trend`,
-	});
+	const chartColors = [APP_ACCENT_COLOR.WATER];
+	const chartTitle = `${slaveName || 'Water Machine'} Flow Rate Trend`;
 
 	const chartSeries = getChartSeries(chartResponse?.data || [], {
 		actual: 'value',
@@ -114,12 +109,14 @@ const ModalContentForTrend = memo(({ slaveId, slaveName }) => {
 			{chartLoading ? (
 				<Loading />
 			) : chartResponse?.data?.length ? (
-				<ReactApexChart
-					options={chartOptions}
+				<CustomApexChart
 					series={chartSeries}
 					type="line"
+					colors={chartColors}
+					xAxesType="datetime"
 					height={350}
-					width="100%"
+					unit={chartResponse?.unit}
+					// title={chartTitle}
 				/>
 			) : (
 				<NoDataFound message="No machine readings received yet — data appears once the device reports" />

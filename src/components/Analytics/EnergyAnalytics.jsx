@@ -11,7 +11,6 @@ import {
 import { alpha, darken, lighten } from '@mui/material/styles';
 import dayjs from 'dayjs';
 import { memo, useCallback, useMemo, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import {
 	KEY_PARAMETER_OPTIONS_MAPPING,
@@ -21,16 +20,14 @@ import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import {
-	buildComparisonChartOptions,
-	buildPremiumTooltip,
 	formatChartValue,
-	getAxisInk,
 	getCategoricalColors,
 } from '../../helpers/chartConfig';
 import {
 	basePickerStyles,
 	downAnalyticsSampleData,
 } from '../../helpers/common';
+import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -329,120 +326,9 @@ const AnalyticsRow = memo(
 		const uniqueBgColor = UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
 		const accent = ROW_ACCENTS[index % ROW_ACCENTS.length];
 
-		const performanceChartOptions = useMemo(
-			() => ({
-				chart: {
-					type: 'line',
-					zoom: { enabled: false },
-					animations: {
-						enabled: false,
-					},
-					// Subtle lift under the line so it reads as a premium chart
-					// rather than a flat plot — cheap since animations are off.
-					dropShadow: {
-						enabled: true,
-						top: 4,
-						left: 0,
-						blur: 4,
-						opacity: 0.12,
-					},
-					toolbar: {
-						show: false,
-						tools: {
-							download: true,
-							selection: false,
-							zoom: false,
-							zoomin: false,
-							zoomout: false,
-							pan: false,
-							reset: false,
-						},
-					},
-					events: {
-						mouseMove: (_event, _chartContext, config) => {
-							if (config?.dataPointIndex >= 0) {
-								setHoveredPointIndex(config.dataPointIndex);
-							}
-						},
-						mouseLeave: () => {
-							setHoveredPointIndex(null);
-						},
-						click: (_event, _chartContext, config) => {
-							if (config?.dataPointIndex >= 0) {
-								setHoveredPointIndex(config.dataPointIndex);
-							}
-						},
-					},
-				},
-				dataLabels: { enabled: false },
-				markers: {
-					size: 0,
-					hover: { size: 5, sizeOffset: 3 },
-				},
-				stroke: { curve: 'smooth', width: 2 },
-				xaxis: {
-					categories: processedData.categories,
-					title: {
-						text: 'Time',
-						style: { color: getAxisInk().title, fontWeight: 'bold' },
-					},
-					labels: {
-						show: true,
-						rotate: 0,
-						rotateAlways: false,
-						style: {
-							fontSize: '12px',
-							fontWeight: 600,
-							colors: getAxisInk().label,
-							cssClass: 'apexcharts-xaxis-label',
-						},
-						maxHeight: 80,
-						hideOverlappingLabels: true,
-						offsetX: 0,
-						offsetY: 5,
-					},
-					type: 'category',
-					axisBorder: { show: false },
-					axisTicks: { show: false },
-					crosshairs: {
-						show: true,
-						width: 1,
-						opacity: 0.9,
-						stroke: { color: getAxisInk().label, width: 1, dashArray: 4 },
-					},
-					tooltip: { enabled: false },
-				},
-				yaxis: {
-					labels: {
-						formatter: (val) => (val !== null ? formatChartValue(val) : ''),
-						style: { fontSize: '11px', colors: getAxisInk().label },
-					},
-					title: { text: 'Value', style: { color: getAxisInk().title } },
-				},
-				tooltip: {
-					enabled: true,
-					shared: true,
-					intersect: false,
-					custom: buildPremiumTooltip({
-						chartTitle: `${
-							payload?.slave_id?.label || 'Device'
-						} — Energy Trend`,
-					}),
-				},
-				legend: { show: false },
-				grid: {
-					borderColor: 'rgba(128, 145, 170, 0.18)',
-					strokeDasharray: 0,
-					padding: { top: 0, right: 0, bottom: 0, left: 0 },
-				},
-				states: {
-					normal: { filter: { type: 'none' } },
-					hover: { filter: { type: 'none' } },
-					active: { filter: { type: 'none' } },
-				},
-			}),
-			[processedData.categories, payload?.slave_id?.label]
-		);
+		const performanceChartTitle = `${
+			payload?.slave_id?.label || 'Device'
+		} — Energy Trend`;
 
 		const deviceLabel = payload?.slave_id?.label || `Device Segment ${id}`;
 
@@ -532,12 +418,12 @@ const AnalyticsRow = memo(
 					) : !processedData.series.length ? (
 						<NoDataFound message="Select a device and parameters, then click Analyze to view insights" />
 					) : (
-						<ReactApexChart
-							options={performanceChartOptions}
+						<CustomApexChart
 							series={processedData.series}
 							type="line"
+							xAxesType="category"
 							height="100%"
-							width="100%"
+							// title={performanceChartTitle}
 						/>
 					)}
 				</Box>
@@ -659,7 +545,6 @@ const MergedAnalyticsRow = memo(({ rows }) => {
 	const rowsWithData = rowsWithProcessedData.filter(
 		(row) => row.processedData.series.length
 	);
-	const mergedCategories = rowsWithData[0]?.processedData.categories || [];
 	const mergedSeries = rowsWithData.flatMap((row) =>
 		row.processedData.series.map((series) => ({
 			...series,
@@ -667,15 +552,6 @@ const MergedAnalyticsRow = memo(({ rows }) => {
 		}))
 	);
 	const isAnyLoading = rows.some((row) => row.isLoading);
-
-	const chartOptions = useMemo(
-		() =>
-			buildComparisonChartOptions({
-				categories: mergedCategories,
-				chartTitle: 'Energy Consumption Trend',
-			}),
-		[mergedCategories]
-	);
 
 	return (
 		<Box
@@ -743,12 +619,12 @@ const MergedAnalyticsRow = memo(({ rows }) => {
 				) : !mergedSeries.length ? (
 					<NoDataFound message="Select devices and parameters, then click Analyze to view the merged comparison" />
 				) : (
-					<ReactApexChart
-						options={chartOptions}
+					<CustomApexChart
 						series={mergedSeries}
 						type="line"
+						xAxesType="category"
 						height="100%"
-						width="100%"
+						// title="Energy Consumption Trend"
 					/>
 				)}
 			</Box>

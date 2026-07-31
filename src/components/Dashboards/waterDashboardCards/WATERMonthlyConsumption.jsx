@@ -8,17 +8,12 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useEffect, useMemo, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import { useCommonData } from '../../../contexts/CommonDataContext';
 import { api } from '../../../helpers/api';
 import { API_URLS } from '../../../helpers/apiUrls';
-import {
-	CHART_COLORS,
-	DEFAULT_MAX_POINTS,
-	getChartOptions,
-	getChartSeries,
-} from '../../../helpers/chartConfig';
+import { CHART_COLORS, getChartSeries } from '../../../helpers/chartConfig';
+import CustomApexChart from '../../common/CustomApexChart';
 import { CustomAutocomplete } from '../../common/CustomAutocomplete';
 import CustomCard from '../../common/CustomCard';
 import { CustomInput } from '../../common/CustomInput';
@@ -204,23 +199,8 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
 						width={{ sm: 'calc(100% - 200px - 12px)' }}
 						overflow="hidden"
 					>
-						<ReactApexChart
+						<CustomApexChart
 							key={`chart-${mode}`}
-							options={getChartOptions(
-								mode === 1 ? 'bar' : 'line',
-								machineConsumption,
-								{
-									yLabel: 'Liters',
-									xLabel: 'Day',
-									colors: [CHART_COLORS.waterUsage, CHART_COLORS.secondary],
-									// No fixed `key` here on purpose — the API's date field
-									// name isn't guaranteed, and getChartCategories/autoFormat
-									// already searches common label fields (date, timestamp,
-									// label, ...) on each row automatically.
-									categoryOpts: { maxPoints: DEFAULT_MAX_POINTS },
-									chartTitle: 'Monthly Water Consumption',
-								}
-							)}
 							series={getChartSeries(machineConsumption, {
 								actual: 'consumption',
 								target: 'target',
@@ -228,8 +208,10 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
 								targetLabel: 'Target',
 							})}
 							type={mode === 1 ? 'bar' : 'line'}
+							colors={[CHART_COLORS.waterUsage, CHART_COLORS.secondary]}
+							xAxesType="category"
 							height="100%"
-							width="100%"
+							// title="Monthly Water Consumption"
 						/>
 					</Box>
 

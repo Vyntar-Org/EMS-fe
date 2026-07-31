@@ -8,7 +8,6 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import React, { useEffect, useMemo, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import { useCommonData } from '../../../contexts/CommonDataContext';
 import { api } from '../../../helpers/api';
@@ -16,9 +15,9 @@ import { API_URLS } from '../../../helpers/apiUrls';
 import {
 	CHART_COLORS,
 	downsample,
-	getChartOptions,
 	getChartSeries,
 } from '../../../helpers/chartConfig';
+import CustomApexChart from '../../common/CustomApexChart';
 import { CustomAutocomplete } from '../../common/CustomAutocomplete';
 import CustomCard from '../../common/CustomCard';
 import { CustomInput } from '../../common/CustomInput';
@@ -156,14 +155,6 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	const chartTitle =
 		mode === 2 ? `${slavesDisplayName} Energy` : 'Machine Power Consumption';
 
-	const chartOptions = getChartOptions(mode === 1 ? 'bar' : 'line', chartData, {
-		yLabel: 'kWh',
-		xLabel: 'Date',
-		colors: [CHART_COLORS.machinePower],
-		categoryOpts: { key: 'date', customFormat: 'MMM DD' },
-		chartTitle,
-	});
-
 	const series = getChartSeries(chartData, {
 		actual: 'value',
 		actualLabel: '(kWh)',
@@ -220,13 +211,14 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 						width={{ sm: 'calc(100% - 200px - 12px)' }}
 						overflow="hidden"
 					>
-						<ReactApexChart
+						<CustomApexChart
 							key={`chart-${mode}`}
-							options={chartOptions}
 							series={series}
 							type={mode === 1 ? 'bar' : 'line'}
+							colors={[CHART_COLORS.machinePower]}
+							xAxesType="category"
 							height="100%"
-							width="100%"
+							// title={chartTitle}
 						/>
 					</Box>
 

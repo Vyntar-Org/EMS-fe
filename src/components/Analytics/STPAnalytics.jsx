@@ -10,7 +10,6 @@ import {
 import { alpha } from '@mui/material/styles';
 import dayjs from 'dayjs';
 import { memo, useCallback, useMemo, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import { UNIQUE_PASTEL_BGS } from '../../constants/energyAnalytics';
 import { useCommonData } from '../../contexts/CommonDataContext';
@@ -18,10 +17,10 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import {
 	getCategoricalColors,
-	getChartOptions,
 	getChartSeries,
 } from '../../helpers/chartConfig';
 import { basePickerStyles } from '../../helpers/common';
+import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -47,27 +46,14 @@ const extractActiveKeys = (currentSelectedParams) =>
 		param.value ? param.value.split(',') : []
 	) || [];
 
-const buildRowChart = (rawAnalytics, activeKeys) => {
+const buildRowChart = (rawAnalytics) => {
 	if (!rawAnalytics?.length) {
-		return { options: null, series: [] };
+		return { series: [] };
 	}
 
 	const actualKey = Object.keys(rawAnalytics[0])[1];
 
 	return {
-		options: getChartOptions('line', rawAnalytics, {
-			chartTitle: 'STP Analytics Trend',
-			tooltipFixed: false,
-			xLabel: 'Time',
-			yLabel: 'Value',
-			colors: getCategoricalColors(8),
-			categoryOpts: {
-				key: 'timestamp',
-				format: 'datetime',
-				maxPoints: MAX_POINTS,
-			},
-			labels: activeKeys,
-		}),
 		series: getChartSeries(
 			rawAnalytics,
 			{ actual: actualKey, actualLabel: actualKey },
@@ -271,14 +257,9 @@ const AnalyticsRow = memo(
 		handleReset,
 		showCancel,
 	}) => {
-		const activeKeys = useMemo(
-			() => extractActiveKeys(currentSelectedParams),
-			[currentSelectedParams]
-		);
-
-		const { options: chartOptions, series: chartSeries } = useMemo(
-			() => buildRowChart(rawAnalytics, activeKeys),
-			[rawAnalytics, activeKeys]
+		const { series: chartSeries } = useMemo(
+			() => buildRowChart(rawAnalytics),
+			[rawAnalytics]
 		);
 
 		const filteredSlaveOptions = useMemo(() => {
@@ -380,12 +361,13 @@ const AnalyticsRow = memo(
 					) : !chartSeries.length ? (
 						<NoDataFound message="Select a device and parameters, then click Analyze to view insights" />
 					) : (
-						<ReactApexChart
-							options={chartOptions}
+						<CustomApexChart
 							series={chartSeries}
 							type="line"
+							colors={getCategoricalColors(8)}
+							xAxesType="datetime"
 							height="100%"
-							width="100%"
+							// title="STP Analytics Trend"
 						/>
 					)}
 				</Box>
@@ -396,26 +378,10 @@ const AnalyticsRow = memo(
 AnalyticsRow.displayName = 'AnalyticsRow';
 
 const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
-	const { mergedOptions, mergedSeries } = useMemo(() => {
+	const { mergedSeries } = useMemo(() => {
 		const rowsWithData = rows.filter((row) => row.rawAnalytics?.length);
-		const baseRow = rowsWithData[0];
 
 		return {
-			mergedOptions: baseRow
-				? getChartOptions('line', baseRow.rawAnalytics, {
-						chartTitle: 'STP Analytics Trend',
-						tooltipFixed: false,
-						xLabel: 'Time',
-						yLabel: 'Value',
-						colors: getCategoricalColors(8),
-						categoryOpts: {
-							key: 'timestamp',
-							format: 'datetime',
-							maxPoints: MAX_POINTS,
-						},
-						labels: baseRow.activeKeys,
-				  })
-				: null,
 			mergedSeries: rowsWithData.flatMap((row) => {
 				const actualKey = Object.keys(row.rawAnalytics[0])[1];
 				return getChartSeries(
@@ -496,12 +462,13 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 				) : !mergedSeries.length ? (
 					<NoDataFound message="Select devices and parameters, then click Analyze to view the merged comparison" />
 				) : (
-					<ReactApexChart
-						options={mergedOptions}
+					<CustomApexChart
 						series={mergedSeries}
 						type="line"
+						colors={getCategoricalColors(8)}
+						xAxesType="datetime"
 						height="100%"
-						width="100%"
+						// title="STP Analytics Trend"
 					/>
 				)}
 			</Box>

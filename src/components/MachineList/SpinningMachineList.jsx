@@ -18,15 +18,14 @@ import {
 	CircularProgress,
 } from '@mui/material';
 import Papa from 'papaparse';
-import { memo, useEffect, useMemo, useState, useRef } from 'react';
-import ReactApexChart from 'react-apexcharts';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 import { useApplications } from '../../contexts/ApplicationContext';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { formatChartValue, getAxisInk } from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
+import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -288,12 +287,6 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 	const [summary, setSummary] = useState(null);
 	const [windowRange, setWindowRange] = useState(null);
 
-	// Ref to access stoppages inside the tooltip function
-	const stoppagesRef = useRef([]);
-	useEffect(() => {
-		stoppagesRef.current = stoppages;
-	}, [stoppages]);
-
 	useEffect(() => {
 		if (open && machine) {
 			fetchData();
@@ -392,150 +385,9 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 		return [{ name: 'Connectivity', data: points }];
 	}, [stoppages, windowRange]);
 
-	// Chart Options - Mirroring Code 1 Design
-	const chartOptions = useMemo(() => {
-		const ink = getAxisInk();
-		const chartTitle = `${
-			machine?.name || machine?.slave_name || 'Compressor'
-		} Connectivity — Last ${hours} hrs`;
-
-		return {
-			chart: {
-				type: 'area',
-				height: 350,
-				toolbar: {
-					show: true,
-					tools: {
-						download: true,
-						selection: false,
-						zoom: false,
-						zoomin: false,
-						zoomout: false,
-						pan: false,
-						reset: false,
-					},
-				},
-				zoom: { enabled: false },
-				animations: { enabled: false, dynamicAnimation: { enabled: false } },
-				redrawOnParentResize: true,
-				redrawOnWindowResize: true,
-				dropShadow: {
-					enabled: true,
-					top: 3,
-					left: 0,
-					blur: 4,
-					opacity: 0.16,
-				},
-			},
-			stroke: {
-				curve: 'stepline',
-				width: 2,
-				colors: ['#30b44a'],
-			},
-			fill: {
-				type: 'solid',
-				colors: ['#30b44a'],
-				opacity: 0.2,
-			},
-			dataLabels: { enabled: false },
-			grid: {
-				borderColor: 'rgba(128, 145, 170, 0.18)',
-				strokeDashArray: 0,
-			},
-			xaxis: {
-				type: 'datetime',
-				title: { text: 'Time', style: { color: ink.title, fontSize: '12px' } },
-				labels: {
-					style: { colors: ink.label, fontSize: '11px' },
-					datetimeUTC: false,
-				},
-				min: windowRange?.from
-					? parseFlexibleDate(windowRange.from)
-					: undefined,
-				max: windowRange?.to ? parseFlexibleDate(windowRange.to) : undefined,
-			},
-			yaxis: {
-				title: {
-					text: 'Status',
-					style: { color: ink.title, fontSize: '12px' },
-				},
-				min: -0.1,
-				max: 1.1,
-				tickAmount: 2,
-				labels: {
-					style: { colors: ink.label, fontSize: '11px' },
-					formatter: function (val) {
-						if (val >= 0.9) {
-							return 'Online';
-						}
-						if (val <= 0.1) {
-							return 'Offline';
-						}
-						return '';
-					},
-				},
-			},
-			tooltip: {
-				enabled: true,
-				theme: 'light',
-				x: { format: 'dd MMM HH:mm' },
-				custom: function ({ seriesIndex, dataPointIndex, w }) {
-					const dataPoint =
-						w.globals.initialSeries[seriesIndex]?.data[dataPointIndex];
-					if (!dataPoint) {
-						return '';
-					}
-
-					const date = new Date(dataPoint.x);
-					const formattedDate = date.toLocaleString();
-					const value = dataPoint.y;
-					const statusText = value === 1 ? 'Online' : 'Offline';
-					const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
-
-					const currentStoppages = stoppagesRef.current;
-					let durationText = '';
-					let isOngoing = false;
-
-					if (value === 0) {
-						const ts = dataPoint.x;
-						// Find matching stoppage with tolerance
-						const match = currentStoppages.find((p) => {
-							const sTs = parseDowntimeDate(p.start_time);
-							return sTs !== null && Math.abs(sTs - ts) < 2000;
-						});
-						if (match) {
-							durationText = match.duration || '';
-							isOngoing = match.isOngoing || false;
-						}
-					}
-
-					return `<div style="padding:10px;background-color:white;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
-            <div style="font-weight:bold;margin-bottom:2px;color:#111;font-size:12px;">${chartTitle}</div>
-            <div style="font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;">${formattedDate}</div>
-            <div style="display:flex;align-items:center;">
-                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${statusColor};margin-right:8px;"></span>
-                <span style="flex:1;color:#333;font-size:12px;">Status:</span>
-                <span style="font-weight:bold;color:${statusColor};margin-left:5px;font-size:12px;">${statusText}</span>
-            </div>
-            ${
-							value === 0 && durationText
-								? `<div style="display:flex;align-items:center;margin-top:6px;padding-top:6px;border-top:1px solid #f0f0f0;">
-                <span style="flex:1;color:#333;font-size:12px;">Duration:</span>
-                <span style="font-weight:bold;color:#e34d4d;margin-left:5px;font-size:12px;">${durationText}</span>
-            </div>`
-								: ''
-						}
-            ${
-							isOngoing
-								? `<div style="margin-top:6px;text-align:right;"><span style="display:inline-block;font-size:9px;color:#e34d4d;font-weight:700;background:#fae8e8;padding:2px 8px;border-radius:4px;letter-spacing:0.5px;">● ONGOING</span></div>`
-								: ''
-						}
-        </div>`;
-				},
-			},
-			legend: { show: false },
-		};
-	}, [windowRange, machine, hours]);
+	const connectivityChartTitle = `${
+		machine?.name || machine?.slave_name || 'Compressor'
+	} Connectivity — Last ${hours} hrs`;
 
 	const handleTableDownload = () => {
 		const headers = ['#', 'Start Time', 'End Time', 'Duration'];
@@ -600,11 +452,13 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 					{activeTab === 0 && (
 						<Box sx={{ height: 350 }}>
 							{chartSeries[0]?.data?.length > 0 ? (
-								<ReactApexChart
-									options={chartOptions}
+								<CustomApexChart
 									series={chartSeries}
 									type="area"
+									colors={['#30b44a']}
+									xAxesType="datetime"
 									height={320}
+									// title={connectivityChartTitle}
 								/>
 							) : (
 								<NoDataFound message="No machine readings received yet — data appears once the device reports" />
@@ -808,196 +662,9 @@ const ModalContentForTrend = memo(
 			}
 		}, [chartData, isStatusTrend, tab, tabDesc]);
 
-		// ─── Applied Code 1 Design to Status Trend ───
-		const chartOptions = useMemo(() => {
-			const ink = getAxisInk();
-			const chartTitle = `${slaveName || 'Compressor'} — ${tabDesc || 'Trend'}`;
-			const baseOptions = {
-				chart: {
-					type: isStatusTrend ? 'area' : 'line',
-					toolbar: { show: !isStatusTrend },
-					zoom: { enabled: !isStatusTrend },
-					animations: {
-						enabled: false,
-						dynamicAnimation: {
-							enabled: false,
-						},
-					},
-					redrawOnParentResize: true,
-					redrawOnWindowResize: true,
-					dropShadow: {
-						enabled: true,
-						top: 3,
-						left: 0,
-						blur: 4,
-						opacity: 0.16,
-					},
-				},
-				grid: {
-					borderColor: 'rgba(128, 145, 170, 0.18)',
-					strokeDashArray: 0,
-					xaxis: { lines: { show: false } },
-					yaxis: { lines: { show: false } },
-				},
-				tooltip: {
-					enabled: true,
-					theme: 'light',
-					style: { fontSize: '12px' },
-				},
-				legend: { show: false },
-			};
-
-			if (isStatusTrend) {
-				return {
-					...baseOptions,
-					chart: {
-						...baseOptions.chart,
-						toolbar: {
-							show: true,
-							tools: {
-								download: true,
-								selection: false,
-								zoom: false,
-								zoomin: false,
-								zoomout: false,
-								pan: false,
-								reset: false,
-							},
-						}, // Exact match to Code 1
-						zoom: { enabled: false }, // Exact match to Code 1
-					},
-					stroke: {
-						curve: 'stepline',
-						width: 2,
-						colors: ['#30b44a'],
-					},
-					fill: {
-						type: 'solid',
-						colors: ['#30b44a'],
-						opacity: 0.2,
-					},
-					colors: ['#30b44a'],
-					dataLabels: { enabled: false },
-					xaxis: {
-						type: 'datetime',
-						title: {
-							text: 'Time',
-							style: { color: ink.title, fontSize: '12px' },
-						},
-						labels: {
-							style: { colors: ink.label, fontSize: '11px' },
-							datetimeUTC: false,
-						},
-					},
-					yaxis: {
-						title: {
-							text: 'Status',
-							style: { color: ink.title, fontSize: '12px' },
-						},
-						min: -0.1,
-						max: 1.1,
-						tickAmount: 2,
-						labels: {
-							style: { colors: ink.label, fontSize: '11px' },
-							formatter: function (val) {
-								if (val >= 0.9) {
-									return 'Online';
-								}
-								if (val <= 0.1) {
-									return 'Offline';
-								}
-								return '';
-							},
-						},
-					},
-					markers: { size: 0 },
-					tooltip: {
-						...baseOptions.tooltip,
-						x: { format: 'dd MMM HH:mm' },
-						// Exact Tooltip Design from Code 1
-						custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-							const dataPoint =
-								w.globals.initialSeries[seriesIndex].data[dataPointIndex];
-							const date = new Date(dataPoint.x);
-							const formattedDate = date.toLocaleString();
-							const value = dataPoint.y;
-							const statusText = value === 1 ? 'Online' : 'Offline';
-							const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
-							return `<div style="padding:10px;background-color:white;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
-                    <div style="font-weight:bold;margin-bottom:2px;color:#111;font-size:12px;">${chartTitle}</div>
-                    <div style="font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;">${formattedDate}</div>
-                    <div style="display:flex;align-items:center;">
-                        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${statusColor};margin-right:8px;"></span>
-                        <span style="flex:1;color:#333;font-size:12px;">Status:</span>
-                        <span style="font-weight:bold;color:${statusColor};margin-left:5px;font-size:12px;">${statusText}</span>
-                    </div>
-                </div>`;
-						},
-					},
-				};
-			} else {
-				// Default logic for non-status trends
-				const chartCategories = chartData.map((item) => {
-					const timestamp =
-						item.start || item.timestamp || item.time || item.date;
-					if (!timestamp) {
-						return '';
-					}
-					return new Date(timestamp).toLocaleTimeString('en-US', {
-						hour: '2-digit',
-						minute: '2-digit',
-						hour12: true,
-					});
-				});
-				return {
-					...baseOptions,
-					stroke: { curve: 'smooth', width: 2 },
-					markers: { size: 0 },
-					xaxis: {
-						title: {
-							text: 'Time',
-							style: { color: ink.title, fontSize: '12px' },
-						},
-						categories: chartCategories,
-						labels: {
-							style: { colors: ink.label, fontSize: '11px' },
-							rotate: -45,
-						},
-						tooltip: { enabled: false },
-					},
-					yaxis: {
-						title: {
-							text: chartResponse?.unit || '',
-							style: { color: ink.title, fontSize: '12px' },
-						},
-						labels: {
-							style: { colors: ink.label, fontSize: '11px' },
-							formatter: (val) => formatChartValue(val),
-						},
-					},
-					tooltip: {
-						...baseOptions.tooltip,
-						custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-							const label = w.globals.labels?.[dataPointIndex] || '';
-							const name = w.globals.seriesNames?.[seriesIndex] || '';
-							const value = series?.[seriesIndex]?.[dataPointIndex];
-							return `<div style="padding:10px;background-color:white;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
-                    <div style="font-weight:bold;margin-bottom:2px;color:#111;font-size:12px;">${chartTitle}</div>
-                    <div style="font-weight:bold;margin-bottom:8px;color:#333;font-size:12px;">${label}</div>
-                    <div style="display:flex;align-items:center;">
-                        <span style="flex:1;color:#333;font-size:12px;">${name}:</span>
-                        <span style="font-weight:bold;color:#111;margin-left:5px;font-size:12px;">${
-													value !== undefined ? formatChartValue(value) : 'N/A'
-												}${
-													chartResponse?.unit ? ` ${chartResponse.unit}` : ''
-												}</span>
-                    </div>
-                </div>`;
-						},
-					},
-				};
-			}
-		}, [isStatusTrend, chartData, chartResponse?.unit, slaveName, tabDesc]);
+		const trendChartTitle = `${slaveName || 'Compressor'} — ${
+			tabDesc || 'Trend'
+		}`;
 
 		return (
 			<Box>
@@ -1034,12 +701,14 @@ const ModalContentForTrend = memo(
 							<Loading />
 						</Box>
 					) : chartData.length ? (
-						<ReactApexChart
-							options={chartOptions}
+						<CustomApexChart
 							series={chartSeries}
 							type={isStatusTrend ? 'area' : 'line'}
+							colors={isStatusTrend ? ['#30b44a'] : undefined}
+							xAxesType={isStatusTrend ? 'datetime' : 'category'}
 							height={320}
-							width="100%"
+							unit={isStatusTrend ? '' : chartResponse?.unit}
+							// title={trendChartTitle}
 						/>
 					) : (
 						<NoDataFound message="No machine readings received yet — data appears once the device reports" />

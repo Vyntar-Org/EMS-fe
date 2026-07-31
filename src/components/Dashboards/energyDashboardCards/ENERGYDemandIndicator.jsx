@@ -1,16 +1,11 @@
 import { Box } from '@mui/material';
 import React, { useEffect, useMemo, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import { useCommonData } from '../../../contexts/CommonDataContext';
 import { api } from '../../../helpers/api';
 import { API_URLS } from '../../../helpers/apiUrls';
-import {
-	CHART_COLORS,
-	buildPremiumTooltip,
-	downsample,
-	formatChartValue,
-} from '../../../helpers/chartConfig';
+import { CHART_COLORS, downsample } from '../../../helpers/chartConfig';
+import CustomApexChart from '../../common/CustomApexChart';
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
 
@@ -69,96 +64,6 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 		return downsample(points);
 	}, [demandIndicator]);
 
-	const yAxisMax = useMemo(() => {
-		if (!seriesData.length) {
-			return 14;
-		}
-
-		const maxValue = Math.max(...seriesData.map((point) => point.y));
-		return maxValue <= 0 ? 14 : Math.ceil(maxValue * 1.2);
-	}, [seriesData]);
-
-	const options = {
-		chart: {
-			type: 'area',
-			toolbar: {
-				show: true,
-				tools: {
-					download: true,
-					selection: false,
-					zoom: false,
-					zoomin: false,
-					zoomout: false,
-					pan: false,
-					reset: false,
-				},
-			},
-			zoom: { enabled: false },
-			redrawOnParentResize: true,
-			redrawOnWindowResize: true,
-		},
-		dataLabels: { enabled: false },
-		colors: [CHART_COLORS.demand],
-		stroke: {
-			curve: 'smooth',
-			width: 3,
-			colors: [CHART_COLORS.demand],
-		},
-		markers: {
-			size: 0,
-			strokeColors: '#fff',
-			strokeWidth: 2,
-			hover: { size: 7 },
-		},
-		fill: {
-			type: 'gradient',
-			gradient: {
-				shadeIntensity: 1,
-				opacityFrom: 0.2,
-				opacityTo: 0,
-				stops: [0, 90, 100],
-			},
-		},
-		xaxis: {
-			type: 'datetime',
-			title: {
-				text: 'Time',
-				style: { color: CHART_COLORS.secondary, fontWeight: 'bold' },
-			},
-			labels: {
-				format: 'HH:mm',
-				datetimeUTC: false,
-				style: { colors: CHART_COLORS.secondary },
-			},
-			axisBorder: { show: false },
-			axisTicks: { show: false },
-		},
-		yaxis: {
-			min: 0,
-			max: yAxisMax,
-			tickAmount: 4,
-			title: {
-				text: 'Demand (kW)',
-				style: { color: CHART_COLORS.secondary, fontWeight: 'bold' },
-			},
-			labels: {
-				style: { colors: CHART_COLORS.secondary },
-				formatter: (val) => formatChartValue(val),
-			},
-		},
-		tooltip: {
-			shared: true,
-			intersect: false,
-			fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
-			custom: buildPremiumTooltip({
-				unit: 'kW',
-				titleFormat: 'HH:mm',
-				chartTitle: 'Peak Demand Indicator',
-			}),
-		},
-		// grid: { show: false },
-	};
-
 	const series = [
 		{
 			name: 'Peak Demand',
@@ -173,12 +78,13 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 		>
 			{demandIndicator && demandIndicator?.data?.length ? (
 				<Box height="100%" width="100%" overflow="hidden">
-					<ReactApexChart
-						options={options}
+					<CustomApexChart
 						series={series}
 						type="area"
+						colors={[CHART_COLORS.demand]}
+						xAxesType="datetime"
 						height="100%"
-						width="100%"
+						// title="Peak Demand Indicator"
 					/>
 				</Box>
 			) : (

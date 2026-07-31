@@ -4,14 +4,14 @@ const STPDashboardSkeleton = () => {
 	return (
 		<Box
 			sx={{
-				height: { md: 'calc(100vh - 64px - 8px)' },
+				height: '100%',
 			}}
 		>
-			<Grid container spacing={1} height={{ md: '350px' }}>
+			<Grid container spacing={1.5} height={{ md: '350px' }}>
 				<Grid item xs={12} md={6} height={{ md: '100%' }}>
 					<Grid container height={{ md: '100%' }}>
 						<Grid item xs={12} height={{ md: '50%' }}>
-							<Grid container spacing={1} height={{ md: '100%' }}>
+							<Grid container spacing={1.5} height={{ md: '100%' }}>
 								<Grid item xs={12} sm={6} height={{ xs: 156, md: '100%' }}>
 									<Skeleton
 										sx={{ borderRadius: '16px' }}
@@ -65,7 +65,7 @@ const STPDashboardSkeleton = () => {
 			<Grid
 				sx={{ mt: 0 }}
 				container
-				spacing={1}
+				spacing={1.5}
 				height={{ md: 'calc(100% - 350px)' }}
 			>
 				<Grid item xs={12} md={6} height={{ xs: 350, md: '100%' }}>

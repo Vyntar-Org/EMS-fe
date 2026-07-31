@@ -10,7 +10,6 @@ import {
 import { alpha } from '@mui/material/styles';
 import dayjs from 'dayjs';
 import { memo, useCallback, useMemo, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import {
 	KEY_PARAMETER_OPTIONS_MAPPING,
@@ -19,14 +18,12 @@ import {
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import {
-	buildComparisonChartOptions,
-	getCategoricalColors,
-} from '../../helpers/chartConfig';
+import { getCategoricalColors } from '../../helpers/chartConfig';
 import {
 	basePickerStyles,
 	downAnalyticsSampleData,
 } from '../../helpers/common';
+import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -296,15 +293,6 @@ const AnalyticsRow = memo(
 			[rawAnalytics, activeKeys]
 		);
 
-		const chartOptions = useMemo(
-			() =>
-				buildComparisonChartOptions({
-					categories: processedData.categories,
-					chartTitle: 'Fire Safety Sensor Trend',
-				}),
-			[processedData.categories]
-		);
-
 		const filteredSlaveOptions = useMemo(() => {
 			const selectedDeviceIdsInOtherRows = Object.keys(payloads)
 				.filter((rowId) => Number(rowId) !== id)
@@ -404,12 +392,12 @@ const AnalyticsRow = memo(
 					) : !processedData.series.length ? (
 						<NoDataFound message="Select a device and parameters, then click Analyze to view insights" />
 					) : (
-						<ReactApexChart
-							options={chartOptions}
+						<CustomApexChart
 							series={processedData.series}
 							type="line"
+							xAxesType="category"
 							height="100%"
-							width="100%"
+							// title="Fire Safety Sensor Trend"
 						/>
 					)}
 				</Box>
@@ -424,7 +412,7 @@ AnalyticsRow.displayName = 'AnalyticsRow';
 // per-row chart data in one place instead of recomputing it on every
 // keystroke anywhere on the page.
 const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
-	const { mergedCategories, mergedSeries } = useMemo(() => {
+	const { mergedSeries } = useMemo(() => {
 		const rowsWithData = rows
 			.map((row) => ({
 				...row,
@@ -433,7 +421,6 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 			.filter((row) => row.processedData.series.length);
 
 		return {
-			mergedCategories: rowsWithData[0]?.processedData.categories || [],
 			mergedSeries: rowsWithData.flatMap((row) =>
 				row.processedData.series.map((series) => ({
 					...series,
@@ -442,15 +429,6 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 			),
 		};
 	}, [rows]);
-
-	const chartOptions = useMemo(
-		() =>
-			buildComparisonChartOptions({
-				categories: mergedCategories,
-				chartTitle: 'Fire Safety Sensor Trend',
-			}),
-		[mergedCategories]
-	);
 
 	return (
 		<Box
@@ -518,12 +496,12 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 				) : !mergedSeries.length ? (
 					<NoDataFound message="Select devices and parameters, then click Analyze to view the merged comparison" />
 				) : (
-					<ReactApexChart
-						options={chartOptions}
+					<CustomApexChart
 						series={mergedSeries}
 						type="line"
+						xAxesType="category"
 						height="100%"
-						width="100%"
+						// title="Fire Safety Sensor Trend"
 					/>
 				)}
 			</Box>

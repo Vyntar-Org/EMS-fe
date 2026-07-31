@@ -1,14 +1,11 @@
 import { Input, Output } from '@mui/icons-material';
 import { Box, Grid } from '@mui/material';
 import { useEffect, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import {
-	getChartOptions,
-	getCategoricalColors,
-} from '../../helpers/chartConfig';
+import { getCategoricalColors } from '../../helpers/chartConfig';
+import CustomApexChart from '../common/CustomApexChart';
 import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
 import { MiniComparisonBars } from '../common/MachineCardBits';
@@ -192,20 +189,13 @@ const FlowMeterDashboard = () => {
 							>
 								{waterComparison ? (
 									<Box height="100%" width="100%" overflow="hidden">
-										<ReactApexChart
-											options={getChartOptions(
-												'bar',
-												waterComparison?.categories,
-												{
-													colors: getCategoricalColors(4),
-													yLabel: 'KL',
-													chartTitle: 'Inlet vs Outlet Water Comparison',
-												}
-											)}
+										<CustomApexChart
 											series={waterComparison?.series || []}
 											type="bar"
+											colors={getCategoricalColors(4)}
+											xAxesType="category"
 											height="100%"
-											width="100%"
+											// title="Inlet vs Outlet Water Comparison"
 										/>
 									</Box>
 								) : (

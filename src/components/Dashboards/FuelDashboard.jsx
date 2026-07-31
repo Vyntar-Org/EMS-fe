@@ -14,17 +14,12 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import React, { useEffect, useMemo, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import {
-	CHART_COLORS,
-	DEFAULT_MAX_POINTS,
-	getChartOptions,
-	getChartSeries,
-} from '../../helpers/chartConfig';
+import { CHART_COLORS, getChartSeries } from '../../helpers/chartConfig';
+import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import CustomCard from '../common/CustomCard';
 import { CustomInput } from '../common/CustomInput';
@@ -219,20 +214,15 @@ const FuelDashboard = () => {
 										sx={{ height: '100%', width: '100%' }}
 										justifyContent="center"
 									>
-										<ReactApexChart
+										<CustomApexChart
 											key="fuel-station-chart"
-											options={getChartOptions('donut', [], {
-												yLabel: 'Total',
-												labels: ['Online', 'Offline'],
-												colors: [CHART_COLORS.online, CHART_COLORS.offline],
-											})}
 											series={[
 												overviewData?.fuel_station?.online,
 												overviewData?.fuel_station?.offline,
 											]}
 											type="donut"
+											colors={[CHART_COLORS.online, CHART_COLORS.offline]}
 											height="100%"
-											width="100%"
 										/>
 									</Grid>
 								) : (
@@ -332,23 +322,8 @@ const FuelDashboard = () => {
 					>
 						{fuelConsumption && fuelConsumption?.length ? (
 							<Box height="100%" width="100%" overflow="hidden">
-								<ReactApexChart
+								<CustomApexChart
 									key={`chart-${mode}`}
-									options={getChartOptions(
-										mode === 1 ? 'bar' : 'line',
-										fuelConsumption,
-										{
-											yLabel: 'Liters',
-											xLabel: 'Day',
-											colors: [CHART_COLORS.fuelUsage, CHART_COLORS.secondary],
-											// No fixed `key` here on purpose — the API's date field
-											// name isn't guaranteed, and getChartCategories/autoFormat
-											// already searches common label fields (date, timestamp,
-											// label, ...) on each row automatically.
-											categoryOpts: { maxPoints: DEFAULT_MAX_POINTS },
-											chartTitle: 'Monthly Fuel Consumption',
-										}
-									)}
 									series={getChartSeries(fuelConsumption, {
 										actual: 'consumption',
 										target: 'target',
@@ -356,8 +331,10 @@ const FuelDashboard = () => {
 										targetLabel: 'Target',
 									})}
 									type={mode === 1 ? 'bar' : 'line'}
+									colors={[CHART_COLORS.fuelUsage, CHART_COLORS.secondary]}
+									xAxesType="category"
 									height="100%"
-									width="100%"
+									// title="Monthly Fuel Consumption"
 								/>
 							</Box>
 						) : (

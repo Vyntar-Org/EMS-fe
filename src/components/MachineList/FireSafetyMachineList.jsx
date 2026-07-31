@@ -2,15 +2,15 @@ import { DownloadForOffline } from '@mui/icons-material';
 import { Box, Grid, IconButton, Stack, Tooltip } from '@mui/material';
 import Papa from 'papaparse';
 import { memo, useEffect, useMemo, useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
 
 import { FIRE_SAFETY_TREND_TAB_OPTIONS } from '../../constants/fireSafetyMachineList';
 import { useApplications } from '../../contexts/ApplicationContext';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { getChartOptions, getChartSeries } from '../../helpers/chartConfig';
+import { getChartSeries } from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
+import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -172,15 +172,10 @@ const ModalContentForTrend = memo(
 
 		const activeTab = FIRE_SAFETY_TREND_TAB_OPTIONS.find((t) => t.tab === tab);
 
-		const chartOptions = getChartOptions('line', chartResponse?.data || [], {
-			xLabel: 'Time',
-			yLabel: chartResponse?.unit || activeTab?.label || 'Value',
-			colors: [APP_ACCENT_COLOR['FIRE-SAFETY']],
-			categoryOpts: { key: 'timestamp', format: 'time' },
-			chartTitle: `${slaveName || 'Fire Safety'} — ${
-				activeTab?.label || 'Trend'
-			}`,
-		});
+		const chartColors = [APP_ACCENT_COLOR['FIRE-SAFETY']];
+		const chartTitle = `${slaveName || 'Fire Safety'} — ${
+			activeTab?.label || 'Trend'
+		}`;
 
 		const chartSeries = getChartSeries(chartResponse?.data || [], {
 			actual: 'value',
@@ -216,12 +211,14 @@ const ModalContentForTrend = memo(
 					{chartLoading ? (
 						<Loading />
 					) : chartResponse?.data?.length ? (
-						<ReactApexChart
-							options={chartOptions}
+						<CustomApexChart
 							series={chartSeries}
 							type="line"
+							colors={chartColors}
+							xAxesType="datetime"
 							height={350}
-							width="100%"
+							unit={chartResponse?.unit}
+							// title={chartTitle}
 						/>
 					) : (
 						<NoDataFound message="No machine readings received yet — data appears once the device reports" />
