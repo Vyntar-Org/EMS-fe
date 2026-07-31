@@ -69,8 +69,12 @@ const TOOLTIP_CSS = `
 `;
 
 const ensureTooltipStylesInjected = () => {
-	if (typeof document === 'undefined') {return;}
-	if (document.getElementById(TOOLTIP_STYLE_ID)) {return;}
+	if (typeof document === 'undefined') {
+		return;
+	}
+	if (document.getElementById(TOOLTIP_STYLE_ID)) {
+		return;
+	}
 	const style = document.createElement('style');
 	style.id = TOOLTIP_STYLE_ID;
 	style.textContent = TOOLTIP_CSS;
@@ -82,7 +86,9 @@ ensureTooltipStylesInjected();
 // Rounds to a max of 2 decimals and strips insignificant trailing zeros.
 const roundTrim = (val) => {
 	const num = Number(val);
-	if (val === undefined || val === null || Number.isNaN(num)) {return '-';}
+	if (val === undefined || val === null || Number.isNaN(num)) {
+		return '-';
+	}
 	const rounded = Math.round(num * 100) / 100;
 	return Number.isInteger(rounded)
 		? String(rounded)
@@ -92,12 +98,27 @@ const roundTrim = (val) => {
 const escapeHtml = (str) =>
 	String(str).replace(
 		/[&<>"']/g,
-		(c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+		(c) =>
+			({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
+				c
+			]
 	);
 
 const WEEKDAY_NAMES = new Set([
-	'sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat',
-	'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
+	'sun',
+	'mon',
+	'tue',
+	'wed',
+	'thu',
+	'fri',
+	'sat',
+	'sunday',
+	'monday',
+	'tuesday',
+	'wednesday',
+	'thursday',
+	'friday',
+	'saturday',
 ]);
 
 const MIN_PLAUSIBLE_YEAR = 2000;
@@ -111,16 +132,23 @@ const TIME_ONLY_RE = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/;
 // validity alone isn't enough — the plausible-year guard rejects it instead
 // of formatting it.
 const smartParseDate = (val) => {
-	if (val === undefined || val === null || val === '') {return null;}
+	if (val === undefined || val === null || val === '') {
+		return null;
+	}
 	const str = typeof val === 'string' ? val.trim() : null;
-	if (str && WEEKDAY_NAMES.has(str.toLowerCase())) {return null;}
+	if (str && WEEKDAY_NAMES.has(str.toLowerCase())) {
+		return null;
+	}
 
 	let parsed;
 	const timeOnlyMatch = str?.match(TIME_ONLY_RE);
 	if (typeof val === 'number' || (str && /^\d+$/.test(str))) {
 		const num = Number(val);
 		// 10-or-fewer-digit numbers are unix seconds; 13-digit are unix ms.
-		parsed = String(Math.trunc(Math.abs(num))).length <= 10 ? dayjs.unix(num) : dayjs(num);
+		parsed =
+			String(Math.trunc(Math.abs(num))).length <= 10
+				? dayjs.unix(num)
+				: dayjs(num);
 	} else if (timeOnlyMatch) {
 		const [, hh, mm, ss] = timeOnlyMatch;
 		parsed = dayjs()
@@ -132,9 +160,13 @@ const smartParseDate = (val) => {
 		parsed = dayjs(val);
 	}
 
-	if (!parsed.isValid()) {return null;}
+	if (!parsed.isValid()) {
+		return null;
+	}
 	const year = parsed.year();
-	if (year < MIN_PLAUSIBLE_YEAR || year > MAX_PLAUSIBLE_YEAR) {return null;}
+	if (year < MIN_PLAUSIBLE_YEAR || year > MAX_PLAUSIBLE_YEAR) {
+		return null;
+	}
 	return parsed;
 };
 
@@ -143,7 +175,9 @@ const MAX_RENDER_POINTS = 500;
 // Defensive downsample: even if the caller already thinned its data, this
 // stops any accidental oversized array from ever reaching ApexCharts.
 const downsampleSeries = (series, pointCount) => {
-	if (pointCount <= MAX_RENDER_POINTS) {return series;}
+	if (pointCount <= MAX_RENDER_POINTS) {
+		return series;
+	}
 	const stride = Math.ceil(pointCount / MAX_RENDER_POINTS);
 	return series.map((s) => ({
 		...s,
@@ -183,7 +217,9 @@ const CustomApexChart = ({
 	const formatValue = useCallback(
 		(val) => {
 			const rounded = roundTrim(val);
-			return resolvedUnit && rounded !== '-' ? `${rounded} ${resolvedUnit}` : rounded;
+			return resolvedUnit && rounded !== '-'
+				? `${rounded} ${resolvedUnit}`
+				: rounded;
 		},
 		[resolvedUnit]
 	);
@@ -192,7 +228,9 @@ const CustomApexChart = ({
 
 	const buildTooltip = useCallback(
 		({ series: s, seriesIndex, dataPointIndex, w }) => {
-			const xVal = w.globals.seriesX?.[seriesIndex]?.[dataPointIndex] ?? w.globals.labels?.[dataPointIndex];
+			const xVal =
+				w.globals.seriesX?.[seriesIndex]?.[dataPointIndex] ??
+				w.globals.labels?.[dataPointIndex];
 
 			let dateHtml = '';
 			const parsed = smartParseDate(xVal);
@@ -209,9 +247,15 @@ const CustomApexChart = ({
 			const rows = (w.globals.seriesNames || [])
 				.map((name, idx) => {
 					const raw = s[idx]?.[dataPointIndex];
-					if (raw === undefined || raw === null) {return '';}
+					if (raw === undefined || raw === null) {
+						return '';
+					}
 					const color = w.globals.colors?.[idx] || '#637381';
-					return `<div class="capx-tooltip-row"><span class="capx-tooltip-dot" style="background:${color}"></span><span class="capx-tooltip-name">${escapeHtml(name)}</span><span class="capx-tooltip-value">${formatValue(raw)}</span></div>`;
+					return `<div class="capx-tooltip-row"><span class="capx-tooltip-dot" style="background:${color}"></span><span class="capx-tooltip-name">${escapeHtml(
+						name
+					)}</span><span class="capx-tooltip-value">${formatValue(
+						raw
+					)}</span></div>`;
 				})
 				.join('');
 
@@ -277,7 +321,7 @@ const CustomApexChart = ({
 								opacityFrom: 0.45,
 								opacityTo: 0.05,
 								stops: [0, 90, 100],
-							}
+						  }
 						: undefined,
 			},
 			tooltip: {
@@ -335,7 +379,14 @@ const CustomApexChart = ({
 		]
 	);
 
-	return <ReactApexChart height={height} options={baseOptions} series={renderSeries} type={type} />;
+	return (
+		<ReactApexChart
+			height={height}
+			options={baseOptions}
+			series={renderSeries}
+			type={type}
+		/>
+	);
 };
 
 export default memo(CustomApexChart);
