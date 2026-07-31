@@ -14,4 +14,9 @@ export const TEMPERATURE_TREND_TAB_OPTIONS = [
 		label: 'Battery',
 		tabDesc: 'Last 6 hours Battery data',
 	},
+	{
+		tab: 'pressure',
+		label: 'Pressure',
+		tabDesc: 'Last 6 hours Pressure data',
+	},
 ];

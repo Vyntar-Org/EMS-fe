@@ -136,7 +136,11 @@ const buildBody = (body, options) => {
 // in try/catch, and letting it 401 into `logoutToLogin()`'s hard
 // `window.location.href` redirect used to race with the app's own SPA
 // `navigate('/login')`, showing up as the page reloading twice.
-const AUTH_ENDPOINTS = [API_URLS.LOGIN, API_URLS.REFRESH, API_URLS.LOGOUT];
+const AUTH_ENDPOINTS = [
+	API_URLS.LOGIN,
+	API_URLS.REFRESH,
+	// API_URLS.LOGOUT
+];
 
 const executeFetch = (endpoint, options, token) => {
 	const headers = {

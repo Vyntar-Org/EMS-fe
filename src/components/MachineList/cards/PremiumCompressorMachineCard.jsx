@@ -11,6 +11,8 @@ import {
 import { APP_ACCENT_COLOR } from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
+import { useLocation } from 'react-router-dom';
+import { getAppCodeFromPath } from '../../../helpers/pageMapping';
 
 // Shared "bounded panel" look for the two stoppage tables below — a
 // surface-muted rounded box (same treatment `MachineMetricPanel` and the
@@ -87,7 +89,11 @@ const PremiumCompressorMachineCard = ({
 	previous24Duration,
 	onStoppageClick,
 	onOpenTrend,
+	idle: isIdle,
+	alert: isAlert,
 }) => {
+	const location = useLocation();
+	const appCode = getAppCodeFromPath(location.pathname);
 	const isOnline = status?.toLowerCase() === 'online';
 
 	return (
@@ -144,6 +150,83 @@ const PremiumCompressorMachineCard = ({
 					</Box>
 				) : null}
 			</Stack>
+			{appCode === 'COMPRESSOR' && (
+				<Stack
+					direction="row"
+					spacing={2}
+					alignItems="center"
+					flexWrap="nowrap"
+					mb={1.25}
+					width="100%"
+					minWidth={0}
+					sx={{ overflow: 'hidden' }}
+					justifyContent="space-between"
+				>
+					{/* Idle Indicator */}
+					<Stack
+						direction="row"
+						spacing={0.75}
+						alignItems="center"
+						flexShrink={0}
+					>
+						<ResponsiveTextWrapper
+							value="Idle:"
+							fontWeight="bold"
+							color="text.primary"
+							fontSize="13px"
+						/>
+						<Box
+							sx={{
+								bgcolor: isIdle
+									? 'rgba(237,108,2,0.12)'
+									: 'rgba(145,158,171,0.12)', // Orange tint if idle, soft gray if active
+								borderRadius: '999px',
+								px: 1.25,
+								py: 0.25,
+							}}
+						>
+							<ResponsiveTextWrapper
+								value={isIdle ? 'YES' : 'NO'}
+								color={isIdle ? 'warning.main' : 'text.secondary'}
+								fontWeight="bold"
+								fontSize="11px"
+							/>
+						</Box>
+					</Stack>
+
+					{/* Alert Indicator */}
+					<Stack
+						direction="row"
+						spacing={0.75}
+						alignItems="center"
+						flexShrink={0}
+					>
+						<ResponsiveTextWrapper
+							value="Alert:"
+							fontWeight="bold"
+							color="text.primary"
+							fontSize="13px"
+						/>
+						<Box
+							sx={{
+								bgcolor: isAlert
+									? 'rgba(244,67,54,0.12)'
+									: 'rgba(76,175,80,0.12)', // Red tint if triggered, green if clear
+								borderRadius: '999px',
+								px: 1.25,
+								py: 0.25,
+							}}
+						>
+							<ResponsiveTextWrapper
+								value={isAlert ? 'TRIGGERED' : 'CLEAR'}
+								color={isAlert ? 'error.main' : 'success.main'}
+								fontWeight="bold"
+								fontSize="11px"
+							/>
+						</Box>
+					</Stack>
+				</Stack>
+			)}
 
 			<Box mb={1.25} width="100%">
 				<Box mb={0.5}>

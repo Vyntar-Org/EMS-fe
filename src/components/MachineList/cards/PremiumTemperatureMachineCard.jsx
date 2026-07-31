@@ -23,6 +23,7 @@ const PremiumTemperatureMachineCard = ({
 	slaveId,
 	trendUrl,
 	onOpenTrend,
+	pressure,
 }) => {
 	const tempStatus = getTemperatureStatus(temperature);
 
@@ -44,6 +45,10 @@ const PremiumTemperatureMachineCard = ({
 					},
 					{ label: 'Humidity', value: `${Number(humidity ?? 0).toFixed(1)} %` },
 					{ label: 'Battery', value: `${Number(battery ?? 0).toFixed(2)} V` },
+					{
+						label: 'Pressure',
+						value: `${Number(pressure ?? 0).toFixed(2)} Pa`,
+					},
 				]}
 			/>
 			{tempStatus && (

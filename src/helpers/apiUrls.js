@@ -46,9 +46,10 @@ const EMS_LOGS = {
 		to_datetime,
 		limit = 50,
 		offset = 0,
-		isDownload = false
+		isDownload = false,
+		fileType = 'xlsx'
 	) =>
-		`/applications/energy/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${from_datetime}&end_datetime=${to_datetime}&limit=${limit}&offset=${offset}`,
+		`/applications/energy/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${from_datetime}&end_datetime=${to_datetime}&limit=${limit}&offset=${offset}&file_type=${fileType}`,
 };
 
 const EMS_REPORTS = {

@@ -333,6 +333,7 @@ const TemperatureMachineList = () => {
 											title={mc?.name || ''}
 											status={mc?.status}
 											temperature={mc?.temperature}
+											pressure={mc?.pressure}
 											humidity={mc?.humidity}
 											battery={mc?.battery}
 											lastUpdated={mc?.last_updated}

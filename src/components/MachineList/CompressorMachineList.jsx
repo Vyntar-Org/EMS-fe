@@ -1231,6 +1231,10 @@ const CompressorMachineList = () => {
 										machine?.stoppage_duration_24hrs ??
 										'N/A';
 
+									const idle = machine?.idle > 0;
+
+									const alert = machine?.alert > 0;
+
 									return (
 										<Grid
 											item
@@ -1258,6 +1262,8 @@ const CompressorMachineList = () => {
 													handleStoppageClick(machine, hours)
 												}
 												onOpenTrend={() => handleOpenModal(machine)}
+												idle={idle}
+												alert={alert}
 											/>
 										</Grid>
 									);

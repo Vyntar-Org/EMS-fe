@@ -212,6 +212,65 @@ const CompressorLogs = () => {
 						: String(value);
 				}
 
+				if (c === 'idle') {
+					const isIdle = Boolean(
+						value === true ||
+							String(value).toLowerCase() === 'true' ||
+							value > 0
+					);
+					return (
+						<Box
+							component="span"
+							sx={{
+								display: 'inline-block',
+								bgcolor: isIdle
+									? 'rgba(237,108,2,0.12)'
+									: 'rgba(145,158,171,0.12)',
+								borderRadius: '999px',
+								px: 1.5,
+								py: 0.25,
+								fontSize: '11px',
+								fontWeight: 'bold',
+								color: isIdle ? 'warning.main' : 'text.secondary',
+								textAlign: 'center',
+								minWidth: 45,
+							}}
+						>
+							{isIdle ? 'YES' : 'NO'}
+						</Box>
+					);
+				}
+
+				// 3. 🟢 Handle Alert Status Column
+				if (c === 'alert') {
+					const isAlert = Boolean(
+						value === true ||
+							String(value).toLowerCase() === 'true' ||
+							value > 0
+					);
+					return (
+						<Box
+							component="span"
+							sx={{
+								display: 'inline-block',
+								bgcolor: isAlert
+									? 'rgba(244,67,54,0.12)'
+									: 'rgba(76,175,80,0.12)',
+								borderRadius: '999px',
+								px: 1.5,
+								py: 0.25,
+								fontSize: '11px',
+								fontWeight: 'bold',
+								color: isAlert ? 'error.main' : 'success.main',
+								textAlign: 'center',
+								minWidth: 80,
+							}}
+						>
+							{isAlert ? 'TRIGGERED' : 'CLEAR'}
+						</Box>
+					);
+				}
+
 				return String(value ?? 'N/A');
 			},
 		}));
