@@ -262,6 +262,13 @@ DeviceFilterRow.displayName = 'DeviceFilterRow';
 // state change unrelated to this row (global date picker, another row's
 // device pick, adding a new empty row) no longer re-runs its chart math or
 // forces ApexCharts to re-render this row's SVG.
+// Per-chart canvas height cap — the compact grid relies on every row
+// having the same predictable height so N comparison rows tile into a
+// dense 2-column matrix instead of each stretching to fill leftover
+// vertical space (which is what forced the old full-height stack to
+// scroll for anything beyond a single row).
+const CHART_CANVAS_HEIGHT = 350;
+
 const AnalyticsRow = memo(
 	({
 		id,
@@ -270,8 +277,8 @@ const AnalyticsRow = memo(
 		currentSelectedParams,
 		isLoading,
 		payload,
-		payloads,
 		slaveOptions,
+		usedDeviceIds,
 		parametersData,
 		handleFieldChange,
 		handleSearch,
@@ -288,15 +295,15 @@ const AnalyticsRow = memo(
 			[rawAnalytics, activeKeys]
 		);
 
-		const filteredSlaveOptions = useMemo(() => {
-			const selectedDeviceIdsInOtherRows = Object.keys(payloads)
-				.filter((rowId) => Number(rowId) !== id)
-				.map((rowId) => payloads[rowId]?.slave_id?.value)
-				.filter(Boolean);
-			return slaveOptions.filter(
-				(option) => !selectedDeviceIdsInOtherRows.includes(option.value)
-			);
-		}, [payloads, id, slaveOptions]);
+		const filteredSlaveOptions = useMemo(
+			() =>
+				slaveOptions.filter(
+					(option) =>
+						!usedDeviceIds.includes(option.value) ||
+						payload?.slave_id?.value === option.value
+				),
+			[slaveOptions, usedDeviceIds, payload?.slave_id?.value]
+		);
 
 		const uniqueBgColor = UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
 		const accent = ROW_ACCENTS[index % ROW_ACCENTS.length];
@@ -305,7 +312,6 @@ const AnalyticsRow = memo(
 		return (
 			<Box
 				sx={{
-					height: '100%',
 					display: 'flex',
 					flexDirection: 'column',
 					p: 1.25,
@@ -381,7 +387,7 @@ const AnalyticsRow = memo(
 					parameterOptions={parametersData}
 				/>
 
-				<Box flex={1} minHeight={0}>
+				<Box height={CHART_CANVAS_HEIGHT}>
 					{isLoading ? (
 						<Loading />
 					) : !processedData.series.length ? (
@@ -391,8 +397,8 @@ const AnalyticsRow = memo(
 							series={processedData.series}
 							type="line"
 							xAxesType="category"
-							height="100%"
-							// title="Solar Generation Trend"
+							categories={processedData.categories}
+							height={CHART_CANVAS_HEIGHT}
 						/>
 					)}
 				</Box>
@@ -407,7 +413,7 @@ AnalyticsRow.displayName = 'AnalyticsRow';
 // per-row chart data in one place instead of recomputing it on every
 // keystroke anywhere on the page.
 const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
-	const { mergedSeries } = useMemo(() => {
+	const { mergedSeries, mergedCategories } = useMemo(() => {
 		const rowsWithData = rows
 			.map((row) => ({
 				...row,
@@ -422,13 +428,22 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 					name: `${row.deviceLabel} - ${series.name}`,
 				}))
 			),
+			// Rows may span different ranges/point counts — the longest row's
+			// categories give the best-effort shared axis labeling.
+			mergedCategories: rowsWithData.reduce(
+				(longest, row) =>
+					row.processedData.categories.length > longest.length
+						? row.processedData.categories
+						: longest,
+				[]
+			),
 		};
 	}, [rows]);
 
 	return (
 		<Box
 			sx={{
-				height: '100%',
+				gridColumn: '1 / -1',
 				display: 'flex',
 				flexDirection: 'column',
 				p: 1.25,
@@ -485,7 +500,7 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 				{rows.map((row) => row.deviceLabel).join(' merged ')}
 			</Typography>
 
-			<Box flex={1} minHeight={0}>
+			<Box height={CHART_CANVAS_HEIGHT}>
 				{isAnyLoading ? (
 					<Loading />
 				) : !mergedSeries.length ? (
@@ -495,8 +510,8 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 						series={mergedSeries}
 						type="line"
 						xAxesType="category"
-						height="100%"
-						// title="Solar Generation Trend"
+						categories={mergedCategories}
+						height={CHART_CANVAS_HEIGHT}
 					/>
 				)}
 			</Box>
@@ -615,6 +630,33 @@ const SolarAnalytics = () => {
 		[slavesData]
 	);
 
+	// Stable across renders unless payloads actually changes — passing this
+	// (instead of the raw `payloads` map) into AnalyticsRow means each row's
+	// memo() only breaks when a real relevant change happens, not on every
+	// keystroke/click anywhere else in the screen.
+	const usedDeviceIds = useMemo(
+		() =>
+			Object.values(payloads)
+				.map((p) => p?.slave_id?.value)
+				.filter(Boolean),
+		[payloads]
+	);
+
+	// Stable reference for MergedAnalyticsRow's `rows` prop — an inline
+	// rowIds.map(...) literal rebuilds a new array (and row objects) every
+	// render, defeating both this component's memo() and its own internal
+	// useMemo.
+	const mergedRows = useMemo(
+		() =>
+			rowIds.map((id) => ({
+				id,
+				rawAnalytics: analyticsDataMap[id],
+				activeKeys: extractActiveKeys(selectedParamsMap[id]),
+				deviceLabel: payloads[id]?.slave_id?.label || `Device Segment ${id}`,
+			})),
+		[rowIds, analyticsDataMap, selectedParamsMap, payloads]
+	);
+
 	return (
 		<Box
 			sx={{
@@ -637,19 +679,14 @@ const SolarAnalytics = () => {
 				minHeight={0}
 				pt={1}
 				overflow="auto"
-				display="flex"
-				flexDirection="column"
-				gap={1}
+				display="grid"
+				gridTemplateColumns="1fr"
+				alignItems="start"
+				gap={1.25}
 			>
 				{mergeCompare ? (
 					<MergedAnalyticsRow
-						rows={rowIds.map((id) => ({
-							id,
-							rawAnalytics: analyticsDataMap[id],
-							activeKeys: extractActiveKeys(selectedParamsMap[id]),
-							deviceLabel:
-								payloads[id]?.slave_id?.label || `Device Segment ${id}`,
-						}))}
+						rows={mergedRows}
 						isAnyLoading={rowIds.some((id) => loadingMap[id])}
 					/>
 				) : (
@@ -662,8 +699,8 @@ const SolarAnalytics = () => {
 							currentSelectedParams={selectedParamsMap[id]}
 							isLoading={loadingMap[id]}
 							payload={payloads[id]}
-							payloads={payloads}
 							slaveOptions={slaveOptions}
+							usedDeviceIds={usedDeviceIds}
 							parametersData={parametersData}
 							handleFieldChange={handleFieldChange}
 							handleSearch={handleSearch}

@@ -211,7 +211,6 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
 							colors={[CHART_COLORS.waterUsage, CHART_COLORS.secondary]}
 							xAxesType="category"
 							height="100%"
-							// title="Monthly Water Consumption"
 						/>
 					</Box>
 

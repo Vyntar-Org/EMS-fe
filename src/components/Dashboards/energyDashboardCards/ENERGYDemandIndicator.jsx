@@ -84,7 +84,6 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 						colors={[CHART_COLORS.demand]}
 						xAxesType="datetime"
 						height="100%"
-						// title="Peak Demand Indicator"
 					/>
 				</Box>
 			) : (

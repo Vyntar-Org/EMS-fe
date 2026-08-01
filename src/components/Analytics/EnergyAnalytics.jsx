@@ -272,6 +272,13 @@ const DeviceFilterRow = memo(
 );
 DeviceFilterRow.displayName = 'DeviceFilterRow';
 
+// Per-chart canvas height cap — the compact grid relies on every row
+// having the same predictable height so N comparison rows tile into a
+// dense 2-column matrix instead of each stretching to fill leftover
+// vertical space (which is what forced the old full-height stack to
+// scroll for anything beyond a single row).
+const CHART_CANVAS_HEIGHT = 350;
+
 const AnalyticsRow = memo(
 	({
 		id,
@@ -280,7 +287,8 @@ const AnalyticsRow = memo(
 		currentSelectedParams,
 		isLoading,
 		payload,
-		filteredSlaveOptions,
+		slaveOptions,
+		usedDeviceIds,
 		parametersData,
 		handleFieldChange,
 		handleSearch,
@@ -291,10 +299,30 @@ const AnalyticsRow = memo(
 		const isDark = theme.palette.mode === 'dark';
 		const [hoveredPointIndex, setHoveredPointIndex] = useState(null);
 
-		const activeKeys =
-			currentSelectedParams?.flatMap((param) =>
-				param.value ? param.value.split(',') : []
-			) || [];
+		// Computed from already-stable parent refs (slaveOptions/usedDeviceIds
+		// are themselves useMemo'd), so this only changes when something that
+		// actually affects THIS row changes — not on every keystroke/click
+		// anywhere else on the screen. Building this array in the parent
+		// instead (a fresh reference every parent render) is what previously
+		// defeated this component's memo() and forced every row's chart to
+		// re-render on any unrelated click.
+		const filteredSlaveOptions = useMemo(
+			() =>
+				slaveOptions.filter(
+					(option) =>
+						!usedDeviceIds.includes(option.value) ||
+						payload?.slave_id?.value === option.value
+				),
+			[slaveOptions, usedDeviceIds, payload?.slave_id?.value]
+		);
+
+		const activeKeys = useMemo(
+			() =>
+				currentSelectedParams?.flatMap((param) =>
+					param.value ? param.value.split(',') : []
+				) || [],
+			[currentSelectedParams]
+		);
 
 		const processedData = useMemo(
 			() => getProcessedChartData(rawAnalytics, activeKeys),
@@ -326,17 +354,12 @@ const AnalyticsRow = memo(
 		const uniqueBgColor = UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
 		const accent = ROW_ACCENTS[index % ROW_ACCENTS.length];
 
-		const performanceChartTitle = `${
-			payload?.slave_id?.label || 'Device'
-		} — Energy Trend`;
-
 		const deviceLabel = payload?.slave_id?.label || `Device Segment ${id}`;
 
 		return (
 			<Box
 				key={id}
 				sx={{
-					height: '100%',
 					display: 'flex',
 					flexDirection: 'column',
 					p: 1.25,
@@ -412,7 +435,7 @@ const AnalyticsRow = memo(
 					parameterOptions={parametersData}
 				/>
 
-				<Box flex={1} minHeight={0}>
+				<Box height={CHART_CANVAS_HEIGHT}>
 					{isLoading ? (
 						<Loading />
 					) : !processedData.series.length ? (
@@ -422,13 +445,13 @@ const AnalyticsRow = memo(
 							series={processedData.series}
 							type="line"
 							xAxesType="category"
-							height="100%"
-							// title={performanceChartTitle}
+							categories={processedData.categories}
+							height={CHART_CANVAS_HEIGHT}
 						/>
 					)}
 				</Box>
 
-				{hoveredData && (
+				{/* {hoveredData && (
 					<Box
 						sx={{
 							mt: 2,
@@ -524,7 +547,7 @@ const AnalyticsRow = memo(
 							})}
 						</Box>
 					</Box>
-				)}
+				)} */}
 			</Box>
 		);
 	}
@@ -536,27 +559,48 @@ AnalyticsRow.displayName = 'AnalyticsRow';
 // per-row data processing, just concatenated into a single series list
 // (each series prefixed with its device label) on a shared category axis.
 const MergedAnalyticsRow = memo(({ rows }) => {
-	const rowsWithProcessedData = rows.map((row) => ({
-		...row,
-		deviceLabel: row.payload?.slave_id?.label || `Device Segment ${row.id}`,
-		processedData: getProcessedChartData(row.rawAnalytics, row.activeKeys),
-	}));
+	// Downsampling + series/category merging across every comparison row is
+	// real work (each row's own LTTB pass plus the flatMap/reduce over all
+	// of them) — keeping it in useMemo means it only reruns when `rows`
+	// itself actually changes, not on every render this component happens
+	// to take part in.
+	const { mergedSeries, mergedCategories, isAnyLoading } = useMemo(() => {
+		const rowsWithProcessedData = rows.map((row) => ({
+			...row,
+			deviceLabel: row.payload?.slave_id?.label || `Device Segment ${row.id}`,
+			processedData: getProcessedChartData(row.rawAnalytics, row.activeKeys),
+		}));
 
-	const rowsWithData = rowsWithProcessedData.filter(
-		(row) => row.processedData.series.length
-	);
-	const mergedSeries = rowsWithData.flatMap((row) =>
-		row.processedData.series.map((series) => ({
-			...series,
-			name: `${row.deviceLabel} - ${series.name}`,
-		}))
-	);
-	const isAnyLoading = rows.some((row) => row.isLoading);
+		const rowsWithData = rowsWithProcessedData.filter(
+			(row) => row.processedData.series.length
+		);
+		const series = rowsWithData.flatMap((row) =>
+			row.processedData.series.map((s) => ({
+				...s,
+				name: `${row.deviceLabel} - ${s.name}`,
+			}))
+		);
+		// Rows may span different ranges/point counts — the longest row's
+		// categories give the best-effort shared axis labeling.
+		const categories = rowsWithData.reduce(
+			(longest, row) =>
+				row.processedData.categories.length > longest.length
+					? row.processedData.categories
+					: longest,
+			[]
+		);
+
+		return {
+			mergedSeries: series,
+			mergedCategories: categories,
+			isAnyLoading: rows.some((row) => row.isLoading),
+		};
+	}, [rows]);
 
 	return (
 		<Box
 			sx={{
-				height: '100%',
+				gridColumn: '1 / -1',
 				display: 'flex',
 				flexDirection: 'column',
 				p: 1.25,
@@ -613,7 +657,7 @@ const MergedAnalyticsRow = memo(({ rows }) => {
 				{rows.map((row) => row.deviceLabel).join(' merged ')}
 			</Typography>
 
-			<Box flex={1} minHeight={0}>
+			<Box height={CHART_CANVAS_HEIGHT}>
 				{isAnyLoading ? (
 					<Loading />
 				) : !mergedSeries.length ? (
@@ -623,8 +667,8 @@ const MergedAnalyticsRow = memo(({ rows }) => {
 						series={mergedSeries}
 						type="line"
 						xAxesType="category"
-						height="100%"
-						// title="Energy Consumption Trend"
+						categories={mergedCategories}
+						height={CHART_CANVAS_HEIGHT}
 					/>
 				)}
 			</Box>
@@ -754,6 +798,30 @@ const EnergyAnalytics = () => {
 		[payloads]
 	);
 
+	// Stable reference for MergedAnalyticsRow's `rows` prop — without this,
+	// a plain inline `rowIds.map(...)` literal rebuilds a new array (and new
+	// row objects) on every render, which defeats both this component's own
+	// memo() and the useMemo inside MergedAnalyticsRow that depends on it.
+	const mergedRows = useMemo(
+		() =>
+			rowIds.map((id) => {
+				const currentSelectedParams = selectedParamsMap[id];
+				const activeKeys =
+					currentSelectedParams?.flatMap((param) =>
+						param.value ? param.value.split(',') : []
+					) || [];
+
+				return {
+					id,
+					rawAnalytics: analyticsDataMap[id],
+					activeKeys,
+					isLoading: loadingMap[id],
+					payload: payloads[id],
+				};
+			}),
+		[rowIds, selectedParamsMap, analyticsDataMap, loadingMap, payloads]
+	);
+
 	return (
 		<Box
 			sx={{
@@ -776,60 +844,32 @@ const EnergyAnalytics = () => {
 				minHeight={0}
 				pt={1}
 				overflow="auto"
-				display="flex"
-				flexDirection="column"
-				gap={1}
+				display="grid"
+				gridTemplateColumns={{ xs: '1fr' }}
+				alignItems="start"
+				gap={1.25}
 			>
 				{mergeCompare ? (
-					<MergedAnalyticsRow
-						rows={rowIds.map((id) => {
-							const currentSelectedParams = selectedParamsMap[id];
-							const activeKeys =
-								currentSelectedParams?.flatMap((param) =>
-									param.value ? param.value.split(',') : []
-								) || [];
-							const filteredSlaveOptions = slaveOptions.filter(
-								(option) =>
-									!usedDeviceIds.includes(option.value) ||
-									payloads[id]?.slave_id?.value === option.value
-							);
-
-							return {
-								id,
-								rawAnalytics: analyticsDataMap[id],
-								activeKeys,
-								isLoading: loadingMap[id],
-								payload: payloads[id],
-								filteredSlaveOptions,
-							};
-						})}
-					/>
+					<MergedAnalyticsRow rows={mergedRows} />
 				) : (
-					rowIds.map((id, index) => {
-						const filteredSlaveOptions = slaveOptions.filter(
-							(option) =>
-								!usedDeviceIds.includes(option.value) ||
-								payloads[id]?.slave_id?.value === option.value
-						);
-
-						return (
-							<AnalyticsRow
-								key={id}
-								id={id}
-								index={index}
-								rawAnalytics={analyticsDataMap[id]}
-								currentSelectedParams={selectedParamsMap[id]}
-								isLoading={loadingMap[id]}
-								payload={payloads[id]}
-								filteredSlaveOptions={filteredSlaveOptions}
-								parametersData={parametersData}
-								handleFieldChange={handleFieldChange}
-								handleSearch={handleSearch}
-								handleReset={handleReset}
-								rowIds={rowIds}
-							/>
-						);
-					})
+					rowIds.map((id, index) => (
+						<AnalyticsRow
+							key={id}
+							id={id}
+							index={index}
+							rawAnalytics={analyticsDataMap[id]}
+							currentSelectedParams={selectedParamsMap[id]}
+							isLoading={loadingMap[id]}
+							payload={payloads[id]}
+							slaveOptions={slaveOptions}
+							usedDeviceIds={usedDeviceIds}
+							parametersData={parametersData}
+							handleFieldChange={handleFieldChange}
+							handleSearch={handleSearch}
+							handleReset={handleReset}
+							rowIds={rowIds}
+						/>
+					))
 				)}
 			</Box>
 		</Box>

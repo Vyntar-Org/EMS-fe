@@ -1,3 +1,5 @@
+import { detectTimeField, smartParseDate } from './dateParse';
+
 // Chart series palettes per theme mode. Light keeps the original brand
 // colors; dark swaps to vivid tones that stay visible on navy surfaces.
 // (Axis/legend/grid text is themed globally via CSS in main.jsx.)
@@ -138,19 +140,67 @@ export const getChartSeries = (
 			? includeTarget
 			: sampledArr.some((item) => item?.[target] !== undefined);
 
+	// Only builds [x, y] tuples when every row resolves a real, plausible
+	// timestamp — otherwise a caller passing xAxesType="datetime" would
+	// render points around epoch 0, and a partial mix of tuples/plain
+	// values would break ApexCharts outright. CustomApexChart's
+	// hasExplicitXValues() falls back to 'category' when this returns
+	// plain values, so leaving x off entirely is always safe.
+	const detectedField = detectTimeField(sampledArr);
+	const timestamps = detectedField
+		? sampledArr.map((item) => smartParseDate(item?.[detectedField]))
+		: null;
+	const timeField = timestamps?.every(Boolean) ? detectedField : null;
+
+	const toPoint = (item, field, index) => {
+		const y = item?.[field] ?? 0;
+		if (!timeField) {
+			return y;
+		}
+		return [timestamps[index].valueOf(), y];
+	};
+
 	const series = [
 		{
 			name: actualLabel,
-			data: sampledArr.map((item) => item?.[actual] ?? 0),
+			data: sampledArr.map((item, i) => toPoint(item, actual, i)),
 		},
 	];
 
 	if (hasTarget) {
 		series.push({
 			name: targetLabel,
-			data: sampledArr.map((item) => item?.[target] ?? 0),
+			data: sampledArr.map((item, i) => toPoint(item, target, i)),
 		});
 	}
 
 	return series;
+};
+
+/**
+ * Same x-detection guarantee as getChartSeries, but for callers that need
+ * more than one field name per series (e.g. per-tab voltage/current phases)
+ * instead of a single actual/target pair.
+ * @param {Array}  data      - raw API data array
+ * @param {Array}  seriesDefs - [{ name, field, color }]
+ * @param {number} maxPoints - downsample limit for large data
+ */
+export const buildPointSeries = (data, seriesDefs, maxPoints = DEFAULT_MAX_POINTS) => {
+	const sampled = downsample(data, maxPoints);
+	const sampledArr = Array.isArray(sampled) ? sampled : [];
+
+	const detectedField = detectTimeField(sampledArr);
+	const timestamps = detectedField
+		? sampledArr.map((item) => smartParseDate(item?.[detectedField]))
+		: null;
+	const timeField = timestamps?.every(Boolean) ? detectedField : null;
+
+	return seriesDefs.map(({ name, field, color }) => ({
+		name,
+		color,
+		data: sampledArr.map((item, i) => {
+			const y = item?.[field] ?? 0;
+			return timeField ? [timestamps[i].valueOf(), y] : y;
+		}),
+	}));
 };

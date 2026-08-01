@@ -19,6 +19,7 @@ import { useApplications } from '../../contexts/ApplicationContext';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
+import { buildPointSeries } from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
 import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
@@ -210,14 +211,6 @@ const ModalContentForTrend = memo(
 			}
 		}, [tab]);
 
-		const trendChartTitle = useMemo(() => {
-			const paramLabel =
-				KEY_PARAMETER_OPTIONS.find((k) => k.value === keyParam)?.label ||
-				keyParam;
-			const suffix = tab === 'KEY_PARAMETERS' ? paramLabel : 'Active Power';
-			return `${slaveName || 'Energy Machine'} — ${suffix || 'Trend'}`;
-		}, [slaveName, tab, keyParam]);
-
 		const chartColors = [
 			'#E34D4D',
 			'#F8C537',
@@ -228,71 +221,48 @@ const ModalContentForTrend = memo(
 		];
 
 		const getCurrentChartSeries = () => {
+			const data = chartResponse?.data || [];
 			switch (tab) {
 				case 'ACTIVE_POWER':
-					return [
+					return buildPointSeries(data, [
 						{
 							name: `${slaveName} Active Power`,
-							data: chartResponse?.data?.map((item) => item.value),
+							field: 'value',
 							color: APP_ACCENT_COLOR.ENERGY,
 						},
-					];
+					]);
 				case 'KEY_PARAMETERS':
 					switch (keyParam) {
 						case 'voltage':
-							return [
-								{
-									name: 'R-Voltage',
-									data: chartResponse?.data?.map((item) => item.rv),
-									color: '#E34D4D',
-								},
-								{
-									name: 'Y-Voltage',
-									data: chartResponse?.data?.map((item) => item.yv),
-									color: '#F8C537',
-								},
-								{
-									name: 'B-Voltage',
-									data: chartResponse?.data?.map((item) => item.bv),
-									color: '#4A90E2',
-								},
-							];
+							return buildPointSeries(data, [
+								{ name: 'R-Voltage', field: 'rv', color: '#E34D4D' },
+								{ name: 'Y-Voltage', field: 'yv', color: '#F8C537' },
+								{ name: 'B-Voltage', field: 'bv', color: '#4A90E2' },
+							]);
 						case 'current':
-							return [
-								{
-									name: 'R-Current',
-									data: chartResponse?.data?.map((item) => item.i_r),
-									color: '#E34D4D',
-								},
-								{
-									name: 'Y-Current',
-									data: chartResponse?.data?.map((item) => item.i_y),
-									color: '#F8C537',
-								},
-								{
-									name: 'B-Current',
-									data: chartResponse?.data?.map((item) => item.i_b),
-									color: '#4A90E2',
-								},
-							];
+							return buildPointSeries(data, [
+								{ name: 'R-Current', field: 'i_r', color: '#E34D4D' },
+								{ name: 'Y-Current', field: 'i_y', color: '#F8C537' },
+								{ name: 'B-Current', field: 'i_b', color: '#4A90E2' },
+							]);
 
 						case 'pf':
-							return [
+							return buildPointSeries(data, [
 								{
 									name: `${slaveName} Power Factor`,
-									data: chartResponse?.data?.map((item) => item.value),
+									field: 'value',
 									color: '#E34D4D',
 								},
-							];
+							]);
 
 						case 'frequency':
-							return [
+							return buildPointSeries(data, [
 								{
 									name: `${slaveName} Frequency`,
-									data: chartResponse?.data?.map((item) => item.value),
+									field: 'value',
 									color: '#E34D4D',
 								},
-							];
+							]);
 					}
 					break;
 				default:
@@ -411,7 +381,6 @@ const ModalContentForTrend = memo(
 							colors={chartColors}
 							xAxesType="datetime"
 							height={350}
-							// title={trendChartTitle}
 						/>
 					)}
 				</Box>

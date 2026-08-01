@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react';
+import { LinearProgress } from '@mui/material';
+import { Suspense, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 
 import { useApplications } from '../contexts/ApplicationContext';
@@ -10,6 +11,22 @@ import Unauthorized from '../pages/Unauthorized.jsx';
 
 import { routesConfig } from './config';
 import { ProtectedRoute } from './ProtectedRoute';
+
+// Suspense fallback for lazy-loaded page chunks — a slim top bar instead of
+// a full loader that blanks out the main container, since pages already
+// have their own in-container loading UI for actual data fetches.
+const RouteLoadingBar = () => (
+	<LinearProgress
+		sx={{
+			position: 'fixed',
+			top: 0,
+			left: 0,
+			right: 0,
+			height: 3,
+			zIndex: (t) => t.zIndex.modal + 1,
+		}}
+	/>
+);
 
 // Renders whichever page a `/:appCode/:pageCode` URL asks for. This used to
 // be N separately-registered <Route> elements, one per (app, page) pair,
@@ -35,7 +52,9 @@ const DynamicAppPage = () => {
 
 	return (
 		<ProtectedRoute appCode={normalizedAppCode} pageCode={normalizedPageCode}>
-			<Component />
+			<Suspense fallback={<RouteLoadingBar />}>
+				<Component />
+			</Suspense>
 		</ProtectedRoute>
 	);
 };

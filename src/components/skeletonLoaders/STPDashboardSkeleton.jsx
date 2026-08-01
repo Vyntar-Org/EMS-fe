@@ -1,18 +1,14 @@
-import { Box, Grid, Skeleton } from '@mui/material';
+import { Grid, Skeleton } from '@mui/material';
 
 const STPDashboardSkeleton = () => {
 	return (
-		<Box
-			sx={{
-				height: '100%',
-			}}
-		>
-			<Grid container spacing={1.5} height={{ md: '350px' }}>
+		<>
+			<Grid container spacing={1.5} height={{ md: '400px' }}>
 				<Grid item xs={12} md={6} height={{ md: '100%' }}>
 					<Grid container height={{ md: '100%' }}>
-						<Grid item xs={12} height={{ md: '50%' }}>
+						<Grid item xs={12} height={{ md: '55%' }}>
 							<Grid container spacing={1.5} height={{ md: '100%' }}>
-								<Grid item xs={12} sm={6} height={{ xs: 156, md: '100%' }}>
+								<Grid item xs={12} sm={6} height={{ xs: 210, md: '100%' }}>
 									<Skeleton
 										sx={{ borderRadius: '16px' }}
 										animation="wave"
@@ -22,7 +18,7 @@ const STPDashboardSkeleton = () => {
 									/>
 								</Grid>
 
-								<Grid item xs={12} sm={6} height={{ xs: 156, md: '100%' }}>
+								<Grid item xs={12} sm={6} height={{ xs: 210, md: '100%' }}>
 									<Skeleton
 										sx={{ borderRadius: '16px' }}
 										animation="wave"
@@ -37,8 +33,8 @@ const STPDashboardSkeleton = () => {
 						<Grid
 							item
 							xs={12}
-							mt={{ xs: 1, md: 0 }}
-							height={{ xs: 176, md: '50%' }}
+							mt={{ xs: 1.5, md: 0 }}
+							height={{ xs: 400, sm: 200, md: '45%' }}
 						>
 							<Skeleton
 								sx={{ borderRadius: '16px' }}
@@ -66,9 +62,9 @@ const STPDashboardSkeleton = () => {
 				sx={{ mt: 0 }}
 				container
 				spacing={1.5}
-				height={{ md: 'calc(100% - 350px)' }}
+				height={{ md: 'calc(100% - 340px)' }}
 			>
-				<Grid item xs={12} md={6} height={{ xs: 350, md: '100%' }}>
+				<Grid item xs={12} md={6} height={{ xs: 400, md: '100%' }}>
 					<Skeleton
 						sx={{ borderRadius: '16px' }}
 						animation="wave"
@@ -77,7 +73,7 @@ const STPDashboardSkeleton = () => {
 						height="100%"
 					/>
 				</Grid>
-				<Grid item xs={12} md={6} height={{ xs: 350, md: '100%' }}>
+				<Grid item xs={12} md={6} height={{ xs: 400, md: '100%' }}>
 					<Skeleton
 						sx={{ borderRadius: '16px' }}
 						animation="wave"
@@ -87,7 +83,7 @@ const STPDashboardSkeleton = () => {
 					/>
 				</Grid>
 			</Grid>
-		</Box>
+		</>
 	);
 };
 

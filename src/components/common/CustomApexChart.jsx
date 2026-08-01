@@ -1,11 +1,9 @@
+import { Box } from '@mui/material';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import utc from 'dayjs/plugin/utc';
 import { memo, useCallback, useMemo } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
-dayjs.extend(utc);
-dayjs.extend(relativeTime);
+import { smartParseDate } from '../../helpers/dateParse';
 
 const TOOLTIP_STYLE_ID = 'capx-tooltip-styles';
 
@@ -104,71 +102,14 @@ const escapeHtml = (str) =>
 			]
 	);
 
-const WEEKDAY_NAMES = new Set([
-	'sun',
-	'mon',
-	'tue',
-	'wed',
-	'thu',
-	'fri',
-	'sat',
-	'sunday',
-	'monday',
-	'tuesday',
-	'wednesday',
-	'thursday',
-	'friday',
-	'saturday',
-]);
-
-const MIN_PLAUSIBLE_YEAR = 2000;
-const MAX_PLAUSIBLE_YEAR = 2100;
-const TIME_ONLY_RE = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/;
-
-// Auto-detects unix-seconds vs unix-ms vs ISO/date strings vs bare HH:mm:ss
-// time strings, and only accepts the result if it lands in a real-world year
-// range. This is what actually prevents the "1970 bug": a raw category index
-// like `5` is technically a valid dayjs input (parsed as an epoch offset), so
-// validity alone isn't enough — the plausible-year guard rejects it instead
-// of formatting it.
-const smartParseDate = (val) => {
-	if (val === undefined || val === null || val === '') {
-		return null;
-	}
-	const str = typeof val === 'string' ? val.trim() : null;
-	if (str && WEEKDAY_NAMES.has(str.toLowerCase())) {
-		return null;
-	}
-
-	let parsed;
-	const timeOnlyMatch = str?.match(TIME_ONLY_RE);
-	if (typeof val === 'number' || (str && /^\d+$/.test(str))) {
-		const num = Number(val);
-		// 10-or-fewer-digit numbers are unix seconds; 13-digit are unix ms.
-		parsed =
-			String(Math.trunc(Math.abs(num))).length <= 10
-				? dayjs.unix(num)
-				: dayjs(num);
-	} else if (timeOnlyMatch) {
-		const [, hh, mm, ss] = timeOnlyMatch;
-		parsed = dayjs()
-			.hour(Number(hh))
-			.minute(Number(mm))
-			.second(Number(ss || 0))
-			.millisecond(0);
-	} else {
-		parsed = dayjs(val);
-	}
-
-	if (!parsed.isValid()) {
-		return null;
-	}
-	const year = parsed.year();
-	if (year < MIN_PLAUSIBLE_YEAR || year > MAX_PLAUSIBLE_YEAR) {
-		return null;
-	}
-	return parsed;
-};
+// Above this many series, ApexCharts' native bottom legend wraps into
+// several rows and eats into the fixed chart-canvas height budget (a
+// multi-device merged comparison can easily hit 30-40+ series) — squashing
+// the actual plot down to a sliver. Past the threshold we turn the native
+// legend off and render our own capped, independently-scrollable one below
+// the plot instead, so the canvas always gets its full share of the height.
+const LEGEND_WINDOW_THRESHOLD = 5;
+const CUSTOM_LEGEND_HEIGHT = 60;
 
 const MAX_RENDER_POINTS = 500;
 
@@ -185,11 +126,94 @@ const downsampleSeries = (series, pointCount) => {
 	}));
 };
 
+const WEEKDAY_LABELS = [
+	'Sunday',
+	'Monday',
+	'Tuesday',
+	'Wednesday',
+	'Thursday',
+	'Friday',
+	'Saturday',
+];
+
+// dayjs format strings per requested label granularity — the tooltip always
+// shows full IST/UTC precision regardless, this only controls how terse the
+// axis ticks themselves are.
+const GRANULARITY_FORMATS = {
+	date: 'DD MMM YYYY',
+	time: 'hh:mm:ss A',
+	datetime: 'DD MMM, hh:mm A',
+	day: 'ddd',
+	hour: 'hh A',
+	minute: 'hh:mm A',
+	second: 'hh:mm:ss A',
+};
+
+// Renders one axis tick at the requested granularity. Handles the shapes
+// actually seen across the app's charts: real timestamps (ms/ISO/unix-sec,
+// via smartParseDate), a bare day-of-week index (0-6), a bare hour-of-day
+// index (0-23), or an already-human label (weekday name, category string)
+// that isn't a parseable date at all.
+const formatByGranularity = (rawVal, granularity) => {
+	if (rawVal === undefined || rawVal === null || rawVal === '') {
+		return '';
+	}
+
+	if (
+		granularity === 'day' &&
+		typeof rawVal === 'number' &&
+		rawVal >= 0 &&
+		rawVal <= 6
+	) {
+		return WEEKDAY_LABELS[rawVal].slice(0, 3);
+	}
+
+	if (
+		granularity === 'hour' &&
+		typeof rawVal === 'number' &&
+		rawVal >= 0 &&
+		rawVal <= 23
+	) {
+		return dayjs().hour(rawVal).minute(0).second(0).format('hh A');
+	}
+
+	const parsed = smartParseDate(rawVal);
+	if (parsed) {
+		return parsed.format(GRANULARITY_FORMATS[granularity] || GRANULARITY_FORMATS.datetime);
+	}
+
+	if (granularity === 'day' && typeof rawVal === 'string') {
+		return rawVal.charAt(0).toUpperCase() + rawVal.slice(1);
+	}
+
+	return String(rawVal);
+};
+
+// A real datetime axis needs [x, y] tuples or {x, y} points. If a caller
+// requests 'datetime' but the series is actually plain y-values (index
+// implicit), trusting it verbatim renders the "1970 bug" — every point
+// scales against epoch-ms 0,1,2… This checks the actual shape so the axis
+// falls back to 'category' instead of silently rendering bogus dates.
+const hasExplicitXValues = (series) => {
+	const firstPoint = series.find((s) => s?.data?.length)?.data?.[0];
+	if (firstPoint === undefined) {
+		return false;
+	}
+	return (
+		Array.isArray(firstPoint) ||
+		(typeof firstPoint === 'object' &&
+			firstPoint !== null &&
+			'x' in firstPoint)
+	);
+};
+
 const CustomApexChart = ({
 	type = 'line',
 	series = [],
 	colors = ['#1976d2', '#2e7d32', '#ed6c02'],
 	xAxesType = 'category', // 'datetime' or 'category'
+	categories = null, // explicit category labels for xAxesType="category"
+	granularity = null, // axis tick precision: 'date' | 'time' | 'datetime' | 'day' | 'hour' | 'minute' | 'second'
 	height = 350,
 	title = '',
 	unit = '',
@@ -211,6 +235,20 @@ const CustomApexChart = ({
 		[series, pointCount]
 	);
 
+	const effectiveXAxesType = useMemo(
+		() =>
+			xAxesType === 'datetime' && !hasExplicitXValues(renderSeries)
+				? 'category'
+				: xAxesType,
+		[xAxesType, renderSeries]
+	);
+
+	const useCustomLegend = renderSeries.length > LEGEND_WINDOW_THRESHOLD;
+	const chartHeight =
+		useCustomLegend && typeof height === 'number'
+			? Math.max(height - CUSTOM_LEGEND_HEIGHT, 120)
+			: height;
+
 	// Large datasets skip animation entirely to avoid frame drops.
 	const animationsEnabled = pointCount <= 150;
 
@@ -225,6 +263,11 @@ const CustomApexChart = ({
 	);
 
 	const yLabelFormatter = useCallback((val) => formatValue(val), [formatValue]);
+
+	const xLabelFormatter = useCallback(
+		(val) => formatByGranularity(val, granularity),
+		[granularity]
+	);
 
 	const buildTooltip = useCallback(
 		({ series: s, seriesIndex, dataPointIndex, w }) => {
@@ -268,7 +311,7 @@ const CustomApexChart = ({
 		() => ({
 			chart: {
 				type,
-				height,
+				height: chartHeight,
 				toolbar: {
 					show: showToolbar,
 					tools: {
@@ -296,6 +339,9 @@ const CustomApexChart = ({
 				lineCap: 'round',
 				width: type === 'line' ? 3 : type === 'area' ? 2.5 : 0,
 			},
+			...(type === 'bar'
+				? { plotOptions: { bar: { borderRadius: 6, borderRadiusApplication: 'end' } } }
+				: {}),
 			grid: {
 				show: true,
 				borderColor: 'rgba(145, 158, 171, 0.16)',
@@ -304,9 +350,9 @@ const CustomApexChart = ({
 			},
 			dataLabels: { enabled: false },
 			legend: {
-				show: true,
-				position: 'top',
-				horizontalAlign: 'right',
+				show: !useCustomLegend,
+				position: 'bottom',
+				horizontalAlign: 'left',
 				fontSize: '13px',
 				fontWeight: 500,
 				markers: { radius: 12, width: 10, height: 10 },
@@ -338,13 +384,17 @@ const CustomApexChart = ({
 				custom: buildTooltip,
 			},
 			xaxis: {
-				type: xAxesType,
+				type: effectiveXAxesType,
+				...(effectiveXAxesType === 'category' && categories
+					? { categories }
+					: {}),
 				tickAmount: Math.min(tickAmount, Math.max(pointCount - 1, 1)),
 				labels: {
 					style: { colors: '#637381', fontSize: '12px' },
 					rotate: 0,
 					hideOverlappingLabels: true,
 					trim: true,
+					...(granularity ? { formatter: xLabelFormatter } : {}),
 				},
 				axisBorder: { show: false },
 				axisTicks: { show: false },
@@ -366,8 +416,12 @@ const CustomApexChart = ({
 		[
 			type,
 			colors,
-			xAxesType,
-			height,
+			effectiveXAxesType,
+			categories,
+			granularity,
+			xLabelFormatter,
+			chartHeight,
+			useCustomLegend,
 			resolvedTitle,
 			tickAmount,
 			showToolbar,
@@ -379,13 +433,101 @@ const CustomApexChart = ({
 		]
 	);
 
+	const legendItems = useMemo(
+		() =>
+			useCustomLegend
+				? renderSeries.map((s, idx) => ({
+						key: `${s?.name || 'series'}-${idx}`,
+						name: s?.name || `Series ${idx + 1}`,
+						color: colors[idx % colors.length] || '#637381',
+				  }))
+				: [],
+		[useCustomLegend, renderSeries, colors]
+	);
+
 	return (
-		<ReactApexChart
-			height={height}
-			options={baseOptions}
-			series={renderSeries}
-			type={type}
-		/>
+		<Box
+			sx={{
+				display: 'flex',
+				flexDirection: 'column',
+				height,
+				width: '100%',
+				// Hard boundary: if chart + legend content ever exceeds the fixed
+				// `height` (e.g. a percentage-height caller combined with the
+				// custom legend), this clips cleanly instead of the legend
+				// spilling past this box into whatever renders after it in the
+				// DOM — the "bleeding into the card below" failure mode.
+				overflow: 'hidden',
+			}}
+		>
+			<Box sx={{ flex: useCustomLegend ? '0 0 auto' : 1, minHeight: 0 }}>
+				<ReactApexChart
+					height={chartHeight}
+					options={baseOptions}
+					series={renderSeries}
+					type={type}
+				/>
+			</Box>
+
+			{useCustomLegend && (
+				<Box
+					sx={{
+						flexShrink: 0,
+						height: CUSTOM_LEGEND_HEIGHT,
+						overflowY: 'auto',
+						display: 'flex',
+						flexWrap: 'wrap',
+						alignContent: 'flex-start',
+						gap: '4px 12px',
+						px: 0.5,
+						pt: 0.5,
+						// Solid, theme-aware background + its own stacking context so
+						// legend text never visually blends with content behind or
+						// adjacent to it (the "transparent bleeding" failure mode).
+						position: 'relative',
+						zIndex: 10,
+						bgcolor: 'background.paper',
+						borderTop: '1px solid',
+						borderColor: 'divider',
+					}}
+				>
+					{legendItems.map((item) => (
+						<Box
+							key={item.key}
+							sx={{
+								display: 'flex',
+								alignItems: 'center',
+								gap: 0.5,
+								minWidth: 0,
+							}}
+						>
+							<Box
+								sx={{
+									width: 8,
+									height: 8,
+									borderRadius: '50%',
+									bgcolor: item.color,
+									flexShrink: 0,
+								}}
+							/>
+							<Box
+								component="span"
+								sx={{
+									fontSize: '11px',
+									color: 'text.secondary',
+									whiteSpace: 'nowrap',
+									overflow: 'hidden',
+									textOverflow: 'ellipsis',
+									maxWidth: 160,
+								}}
+							>
+								{item.name}
+							</Box>
+						</Box>
+					))}
+				</Box>
+			)}
+		</Box>
 	);
 };
 

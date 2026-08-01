@@ -195,7 +195,6 @@ const FlowMeterDashboard = () => {
 											colors={getCategoricalColors(4)}
 											xAxesType="category"
 											height="100%"
-											// title="Inlet vs Outlet Water Comparison"
 										/>
 									</Box>
 								) : (

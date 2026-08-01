@@ -77,7 +77,7 @@ const StyledCard = styled(Card)(({ theme, accentcolor }) => {
 		// 	pointerEvents: 'none',
 		// 	transition: 'transform 0.4s ease',
 		// },
-		border: '2px solid #fff',
+		border: `2px solid ${alpha(accent, isDark ? 0.34 : 0)}`,
 		'&:hover': {
 			// transform: 'translateY(-3px)',
 

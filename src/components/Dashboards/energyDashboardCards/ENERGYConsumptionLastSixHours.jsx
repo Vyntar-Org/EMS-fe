@@ -57,7 +57,6 @@ const ENERGYConsumptionLastSixHours = () => {
 						colors={[CHART_COLORS.consumption6h]}
 						xAxesType="category"
 						height="100%"
-						// title="Energy Consumption (Last 6 Hours)"
 					/>
 				</Box>
 			) : (

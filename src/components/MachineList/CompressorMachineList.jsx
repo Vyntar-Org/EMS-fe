@@ -385,10 +385,6 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 		return [{ name: 'Connectivity', data: points }];
 	}, [stoppages, windowRange]);
 
-	const connectivityChartTitle = `${
-		machine?.name || machine?.slave_name || 'Compressor'
-	} Connectivity — Last ${hours} hrs`;
-
 	const handleTableDownload = () => {
 		const headers = ['#', 'Start Time', 'End Time', 'Duration'];
 		const rows = stoppages.map((item, index) => [
@@ -458,7 +454,6 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 									colors={['#30b44a']}
 									xAxesType="datetime"
 									height={320}
-									// title={connectivityChartTitle}
 								/>
 							) : (
 								<NoDataFound message="No machine readings received yet — data appears once the device reports" />
@@ -564,7 +559,7 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 };
 
 const ModalContentForTrend = memo(
-	({ handleTabChange, tab, tabDesc, slaveId, slaveName, trendOptions }) => {
+	({ handleTabChange, tab, tabDesc, slaveId, trendOptions }) => {
 		const [chartResponse, setChartResponse] = useState(null);
 		const [chartLoading, setChartLoading] = useState(true);
 		const [downtimeHistory, setDowntimeHistory] = useState(null);
@@ -662,10 +657,6 @@ const ModalContentForTrend = memo(
 			}
 		}, [chartData, isStatusTrend, tab, tabDesc]);
 
-		const trendChartTitle = `${slaveName || 'Compressor'} — ${
-			tabDesc || 'Trend'
-		}`;
-
 		return (
 			<Box>
 				<Box width={{ xs: '100%', sm: 240 }} mb={2}>
@@ -708,7 +699,6 @@ const ModalContentForTrend = memo(
 							xAxesType={isStatusTrend ? 'datetime' : 'category'}
 							height={320}
 							unit={isStatusTrend ? '' : chartResponse?.unit}
-							// title={trendChartTitle}
 						/>
 					) : (
 						<NoDataFound message="No machine readings received yet — data appears once the device reports" />
@@ -963,9 +953,6 @@ const CompressorMachineList = () => {
 						tab={modalDetails?.tab}
 						tabDesc={modalDetails?.tabDesc}
 						slaveId={modalDetails?.data?.slave_id || modalDetails?.data?.id}
-						slaveName={
-							modalDetails?.data?.name || modalDetails?.data?.device_uid
-						}
 						trendOptions={trendOptions}
 					/>
 				) : null}

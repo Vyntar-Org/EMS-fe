@@ -1,5 +1,6 @@
-import { Opacity, Recycling } from '@mui/icons-material';
-import { Box, Grid } from '@mui/material';
+import { Insights, LocationOn, Opacity, Recycling } from '@mui/icons-material';
+import { Box, Divider, Grid } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 
 import { api } from '../../helpers/api';
@@ -8,6 +9,7 @@ import {
 	formatChartValue,
 	getCategoricalColors,
 } from '../../helpers/chartConfig';
+import CardFooterAnalytics from '../common/CardFooterAnalytics';
 import CustomApexChart from '../common/CustomApexChart';
 import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -25,53 +27,132 @@ const QUALITY_ACCENT = PALETTE[6];
 
 // No hero "Total" value — just Today's and Yesterday's values side by side
 // (Today on the left, Yesterday on the right), each under its own label,
-// with a small caption (e.g. "(Waste Water)"/"(Out)") under the value.
+// with a small caption (e.g. "(Waste Water)"/"(Out)") under the value, plus
+// a compact analytics footer (sparkline + % change) below.
 const StatCard = ({ value, previousValue, accent, caption }) => (
 	<Box
 		sx={{
 			height: '100%',
 			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			gap: { xs: 3, md: 4 },
+			flexDirection: 'column',
+			// justifyContent: 'center',
 			width: '100%',
 			minWidth: 0,
-			px: 1,
 		}}
 	>
-		{[
-			{ label: 'Today', value },
-			{ label: 'Yesterday', value: previousValue },
-		].map((item) => (
-			<Box key={item.label} sx={{ textAlign: 'center' }}>
-				<ResponsiveTextWrapper
-					color="text.secondary"
-					fontWeight={700}
-					fontSize={{ xs: '10.5px', md: '12px' }}
-					value={item.label}
-					align="center"
-					sx={{ textTransform: 'uppercase', letterSpacing: '0.3px' }}
-				/>
-				<ResponsiveTextWrapper
-					fontSize={{ xs: '18px', sm: '21px', md: '23px' }}
-					fontWeight={800}
-					value={`${formatChartValue(item.value) || 0} KL`}
-					align="center"
-					color={accent}
-					sx={{ lineHeight: 1.1 }}
-				/>
-				{caption ? (
-					<ResponsiveTextWrapper
-						color="text.secondary"
-						fontWeight={500}
-						fontSize={{ xs: '9px', md: '10px' }}
-						value={`(${caption})`}
-						align="center"
-						sx={{ lineHeight: 1.2, mt: 0.25 }}
-					/>
-				) : null}
-			</Box>
-		))}
+		<Box
+			sx={{
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'space-between',
+				gap: { xs: 2.5, md: 3.5 },
+				width: '100%',
+				minWidth: 0,
+				px: 4,
+			}}
+		>
+			{[
+				{ label: 'Today', value },
+				{ label: 'Yesterday', value: previousValue },
+			].map((item) => (
+				<Box
+					key={item.label}
+					sx={{
+						display: 'flex',
+						alignItems: 'center',
+						gap: { xs: 2.5, md: 3.5 },
+						width: '100%',
+					}}
+				>
+					{/* {idx === 1 && (
+						<Divider
+							orientation="vertical"
+							flexItem
+							sx={{ borderStyle: 'dashed', borderColor: alpha(accent, 0.28) }}
+						/>
+					)} */}
+					<Box width="100%" textAlign={'center'}>
+						<ResponsiveTextWrapper
+							color="text.primary"
+							fontWeight={700}
+							fontSize={{ xs: '10.5px', md: '14px' }}
+							value={item.label}
+							// align={idx === 0 ? 'left' : 'right'}
+							sx={{ textTransform: 'uppercase', letterSpacing: '0.3px' }}
+						/>
+
+						<Box width={100} textAlign="center" mx="auto">
+							<ResponsiveTextWrapper
+								fontSize="16px"
+								fontWeight={800}
+								value={`${formatChartValue(item.value) || 0} KL`}
+								// align={idx === 0 ? 'left' : 'right'}
+								color={accent}
+								sx={{ lineHeight: 1.1 }}
+								my={0.5}
+							/>
+						</Box>
+
+						{caption ? (
+							<ResponsiveTextWrapper
+								color="text.secondary"
+								fontWeight={500}
+								fontSize={{ xs: '9px', md: '10px' }}
+								value={`(${caption})`}
+								// align={idx === 0 ? 'left' : 'right'}
+								sx={{ lineHeight: 1.2 }}
+							/>
+						) : null}
+					</Box>
+				</Box>
+			))}
+		</Box>
+		<Box
+			sx={{
+				position: 'relative',
+				width: '100%',
+				mt: 1,
+				px: 4,
+			}}
+		>
+			<Divider
+				sx={{
+					borderColor: alpha(accent, 0.22),
+					borderBottomWidth: 1.5,
+				}}
+			/>
+			<Box
+				sx={{
+					position: 'absolute',
+					left: '50%',
+					top: -80, // Adjust height above divider
+					transform: 'translateX(-50%)',
+					width: 2,
+					height: 80,
+					borderRadius: 999,
+					bgcolor: alpha(accent, 0.5),
+				}}
+			/>
+			<Box
+				sx={{
+					position: 'absolute',
+					left: '50%',
+					top: '50%',
+					transform: 'translate(-50%, -50%)',
+					width: 12,
+					height: 12,
+					borderRadius: '50%',
+					bgcolor: accent,
+					border: '3px solid white',
+					boxShadow: `0 2px 10px ${alpha(accent, 0.35)}`,
+				}}
+			/>
+		</Box>
+		<CardFooterAnalytics
+			value={value}
+			previousValue={previousValue}
+			accent={accent}
+		/>
 	</Box>
 );
 
@@ -144,16 +225,16 @@ const STPDashboard = () => {
 				overflowY: 'auto',
 			}}
 		>
-			<Grid container spacing={1.5} height={{ md: '350px' }} flexShrink={0}>
+			<Grid container spacing={1.5} height={{ md: '400px' }} flexShrink={0}>
 				<Grid item xs={12} md={6} height={{ md: '100%' }}>
 					<Grid container height={{ md: '100%' }}>
-						<Grid item xs={12} height={{ md: '50%' }}>
+						<Grid item xs={12} height={{ md: '55%' }}>
 							<Grid container spacing={1.5} height={{ md: '100%' }}>
-								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
+								<Grid item xs={12} sm={6} height={{ xs: 210, md: '100%' }}>
 									<CustomCard
-										sx={{ textAlign: 'center' }}
 										title="Intake Total"
 										titleIcon={<Opacity />}
+										// icon={<Insights />}
 										accentColor={INTAKE_ACCENT}
 									>
 										{summaryData?.intake_total ? (
@@ -171,11 +252,11 @@ const STPDashboard = () => {
 									</CustomCard>
 								</Grid>
 
-								<Grid item xs={12} sm={6} height={{ md: '100%' }}>
+								<Grid item xs={12} sm={6} height={{ xs: 210, md: '100%' }}>
 									<CustomCard
-										sx={{ textAlign: 'center' }}
 										title="Treated Water"
 										titleIcon={<Recycling />}
+										// icon={<Insights />}
 										accentColor={TREATED_ACCENT}
 									>
 										{summaryData?.treated_water ? (
@@ -198,8 +279,8 @@ const STPDashboard = () => {
 						<Grid
 							item
 							xs={12}
-							mt={{ xs: 1, md: 0 }}
-							height={{ xs: 400, sm: 200, md: '50%' }}
+							mt={{ xs: 1.5, md: 0 }}
+							height={{ xs: 400, sm: 200, md: '45%' }}
 						>
 							<CustomCard
 								title="Water Quality"
@@ -279,6 +360,7 @@ const STPDashboard = () => {
 															labels: [item.label],
 															legend: { show: false },
 															stroke: { lineCap: 'round' },
+															tooltip: { enabled: false },
 														}}
 													/>
 												</Box>
@@ -299,8 +381,8 @@ const STPDashboard = () => {
 					</Grid>
 				</Grid>
 
-				<Grid item xs height={{ xs: 350, md: '100%' }}>
-					<CustomCard title="Site Location Map">
+				<Grid item xs height={{ xs: 400, md: '100%' }}>
+					<CustomCard title="Site Location Map" titleIcon={<LocationOn />}>
 						<SiteLocationMap
 							center={[location.lat, location.lon]}
 							title="Weather Station + Solar PV Site"
@@ -310,7 +392,7 @@ const STPDashboard = () => {
 			</Grid>
 
 			<Grid sx={{ mt: 0 }} container spacing={1.5} flex={1} minHeight={0}>
-				<Grid item xs={12} md={6} height={{ xs: 350, md: '100%' }}>
+				<Grid item xs={12} md={6} height={{ xs: 400, md: '100%' }}>
 					<CustomCard
 						title="Historical Trends"
 						accentColor={getCategoricalColors(1)[0]}
@@ -325,7 +407,6 @@ const STPDashboard = () => {
 									)}
 									xAxesType="category"
 									height="100%"
-									title="STP Water Quality Trend"
 									meta={historyTrends?.meta}
 								/>
 							</Box>
@@ -334,7 +415,7 @@ const STPDashboard = () => {
 						)}
 					</CustomCard>
 				</Grid>
-				<Grid item xs={12} md={6} height={{ xs: 350, md: '100%' }}>
+				<Grid item xs={12} md={6} height={{ xs: 400, md: '100%' }}>
 					<CustomCard
 						title="Water Comparison"
 						accentColor={getCategoricalColors(3)[2]}
@@ -347,7 +428,6 @@ const STPDashboard = () => {
 									colors={getCategoricalColors(4)}
 									xAxesType="category"
 									height="100%"
-									title="Intake vs Treated Water Comparison"
 									meta={waterComparison?.meta}
 								/>
 							</Box>

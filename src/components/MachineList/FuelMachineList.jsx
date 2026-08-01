@@ -101,12 +101,7 @@ const ModalContentForTrend = memo(
 			fetchTrendModalChartData(tab);
 		}, [tab, slaveId]);
 
-		const activeParam = parametersData?.find((p) => p.value === tab);
-
 		const chartColors = [APP_ACCENT_COLOR.FUEL];
-		const chartTitle = `${slaveName || 'Fuel Machine'} — ${
-			activeParam?.desc || activeParam?.label || 'Trend'
-		}`;
 
 		const chartSeries = getChartSeries(chartResponse?.data || [], {
 			actual: 'value',
@@ -144,7 +139,6 @@ const ModalContentForTrend = memo(
 							xAxesType="datetime"
 							height={350}
 							unit={chartResponse?.unit}
-							// title={chartTitle}
 						/>
 					) : (
 						<NoDataFound message="No machine readings received yet — data appears once the device reports" />

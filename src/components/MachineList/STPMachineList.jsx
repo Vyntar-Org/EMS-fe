@@ -197,9 +197,6 @@ const ModalContentForTrend = memo(
 							colors={[APP_ACCENT_COLOR.STP]}
 							xAxesType="datetime"
 							height={350}
-							// title={`${activeTab?.desc ? `${activeTab.desc} — ` : ''}${
-							// 	activeTab?.label || 'STP'
-							// } Trend`}
 						/>
 					) : (
 						<NoDataFound message="No machine readings received yet — data appears once the device reports" />

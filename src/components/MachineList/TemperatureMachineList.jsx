@@ -173,9 +173,6 @@ const ModalContentForTrend = memo(
 		const activeTab = TEMPERATURE_TREND_TAB_OPTIONS.find((t) => t.tab === tab);
 
 		const chartColors = [APP_ACCENT_COLOR.TEMPERATURE];
-		const chartTitle = `${slaveName || 'Temperature Machine'} — ${
-			activeTab?.label || 'Trend'
-		}`;
 
 		const chartSeries = getChartSeries(chartResponse?.data || [], {
 			actual: 'value',
@@ -218,7 +215,6 @@ const ModalContentForTrend = memo(
 							xAxesType="datetime"
 							height={350}
 							unit={chartResponse?.unit}
-							// title={chartTitle}
 						/>
 					) : (
 						<NoDataFound message="No machine readings received yet — data appears once the device reports" />

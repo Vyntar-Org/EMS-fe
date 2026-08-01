@@ -216,9 +216,8 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 							series={series}
 							type={mode === 1 ? 'bar' : 'line'}
 							colors={[CHART_COLORS.machinePower]}
-							xAxesType="category"
+							xAxesType="datetime"
 							height="100%"
-							// title={chartTitle}
 						/>
 					</Box>
 

@@ -177,9 +177,6 @@ const ModalContentForTrend = memo(
 		const activeTab = SOLAR_TREND_TAB_OPTIONS.find((t) => t.tab === tab);
 
 		const chartColors = [APP_ACCENT_COLOR.SOLAR];
-		const chartTitle = `${slaveName || 'Solar Machine'} — ${
-			activeTab?.label || 'Trend'
-		}`;
 
 		const chartSeries = getChartSeries(chartResponse?.data || [], {
 			actual: 'value',
@@ -221,7 +218,6 @@ const ModalContentForTrend = memo(
 							xAxesType="datetime"
 							height={350}
 							unit={chartResponse?.unit}
-							// title={chartTitle}
 						/>
 					) : (
 						<NoDataFound message="No machine readings received yet — data appears once the device reports" />

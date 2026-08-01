@@ -334,7 +334,6 @@ const FuelDashboard = () => {
 									colors={[CHART_COLORS.fuelUsage, CHART_COLORS.secondary]}
 									xAxesType="category"
 									height="100%"
-									// title="Monthly Fuel Consumption"
 								/>
 							</Box>
 						) : (

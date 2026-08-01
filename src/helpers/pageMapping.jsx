@@ -1,19 +1,20 @@
-import Analytics from '../pages/Analytics';
-import Dashboard from '../pages/Dashboard';
-import Logs from '../pages/Logs';
-import MachineList from '../pages/MachineList';
-import Reports from '../pages/Reports';
-import Settings from '../pages/Settings';
+import { lazy } from 'react';
+
 import Unauthorized from '../pages/Unauthorized';
 
-// Map page codes to components
+// Code-split per page — these eagerly imported together (Analytics,
+// Dashboard, MachineList, Reports, Logs, Settings) were the entire reason
+// the main bundle hit ~2.4MB in one chunk, forcing the browser to parse all
+// of them up front regardless of which single page a user actually opens.
+// Unauthorized stays eager: it's the immediate fallback target whenever a
+// route/permission check fails and must never itself wait on a lazy chunk.
 export const pageComponentMap = {
-	DASHBOARD: Dashboard,
-	MACHINE_LIST: MachineList,
-	REPORTS: Reports,
-	LOGS: Logs,
-	ANALYTICS: Analytics,
-	SETTINGS: Settings,
+	DASHBOARD: lazy(() => import('../pages/Dashboard')),
+	MACHINE_LIST: lazy(() => import('../pages/MachineList')),
+	REPORTS: lazy(() => import('../pages/Reports')),
+	LOGS: lazy(() => import('../pages/Logs')),
+	ANALYTICS: lazy(() => import('../pages/Analytics')),
+	SETTINGS: lazy(() => import('../pages/Settings')),
 	UNAUTHORIZED: Unauthorized,
 };
 

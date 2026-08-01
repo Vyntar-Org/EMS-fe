@@ -97,7 +97,6 @@ const ModalContentForTrend = memo(({ slaveId, slaveName }) => {
 	}, [slaveId]);
 
 	const chartColors = [APP_ACCENT_COLOR.WATER];
-	const chartTitle = `${slaveName || 'Water Machine'} Flow Rate Trend`;
 
 	const chartSeries = getChartSeries(chartResponse?.data || [], {
 		actual: 'value',
@@ -116,7 +115,6 @@ const ModalContentForTrend = memo(({ slaveId, slaveName }) => {
 					xAxesType="datetime"
 					height={350}
 					unit={chartResponse?.unit}
-					// title={chartTitle}
 				/>
 			) : (
 				<NoDataFound message="No machine readings received yet — data appears once the device reports" />
