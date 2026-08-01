@@ -179,7 +179,9 @@ const formatByGranularity = (rawVal, granularity) => {
 
 	const parsed = smartParseDate(rawVal);
 	if (parsed) {
-		return parsed.format(GRANULARITY_FORMATS[granularity] || GRANULARITY_FORMATS.datetime);
+		return parsed.format(
+			GRANULARITY_FORMATS[granularity] || GRANULARITY_FORMATS.datetime
+		);
 	}
 
 	if (granularity === 'day' && typeof rawVal === 'string') {
@@ -201,9 +203,7 @@ const hasExplicitXValues = (series) => {
 	}
 	return (
 		Array.isArray(firstPoint) ||
-		(typeof firstPoint === 'object' &&
-			firstPoint !== null &&
-			'x' in firstPoint)
+		(typeof firstPoint === 'object' && firstPoint !== null && 'x' in firstPoint)
 	);
 };
 
@@ -340,7 +340,11 @@ const CustomApexChart = ({
 				width: type === 'line' ? 3 : type === 'area' ? 2.5 : 0,
 			},
 			...(type === 'bar'
-				? { plotOptions: { bar: { borderRadius: 6, borderRadiusApplication: 'end' } } }
+				? {
+						plotOptions: {
+							bar: { borderRadius: 6, borderRadiusApplication: 'end' },
+						},
+				  }
 				: {}),
 			grid: {
 				show: true,

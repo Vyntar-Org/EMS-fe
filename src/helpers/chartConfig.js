@@ -185,7 +185,11 @@ export const getChartSeries = (
  * @param {Array}  seriesDefs - [{ name, field, color }]
  * @param {number} maxPoints - downsample limit for large data
  */
-export const buildPointSeries = (data, seriesDefs, maxPoints = DEFAULT_MAX_POINTS) => {
+export const buildPointSeries = (
+	data,
+	seriesDefs,
+	maxPoints = DEFAULT_MAX_POINTS
+) => {
 	const sampled = downsample(data, maxPoints);
 	const sampledArr = Array.isArray(sampled) ? sampled : [];
 
