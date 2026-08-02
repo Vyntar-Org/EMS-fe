@@ -34,7 +34,7 @@ const STPDashboardSkeleton = () => {
 							item
 							xs={12}
 							mt={{ xs: 1.5, md: 0 }}
-							height={{ xs: 400, sm: 200, md: '45%' }}
+							height={{ xs: 400, sm: 170, md: '45%' }}
 						>
 							<Skeleton
 								sx={{ borderRadius: '16px' }}

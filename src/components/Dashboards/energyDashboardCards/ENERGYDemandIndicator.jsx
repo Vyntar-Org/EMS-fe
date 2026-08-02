@@ -84,6 +84,7 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 						colors={[CHART_COLORS.demand]}
 						xAxesType="datetime"
 						height="100%"
+						minimal={true}
 					/>
 				</Box>
 			) : (

@@ -209,7 +209,7 @@ const WATERMonthlyConsumption = ({ slavesId, setSlavesId }) => {
 							})}
 							type={mode === 1 ? 'bar' : 'line'}
 							colors={[CHART_COLORS.waterUsage, CHART_COLORS.secondary]}
-							xAxesType="category"
+							xAxesType="datetime"
 							height="100%"
 						/>
 					</Box>

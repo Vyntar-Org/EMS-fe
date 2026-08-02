@@ -12,61 +12,13 @@ import { MiniComparisonBars } from '../common/MachineCardBits';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
 import SiteLocationMap from '../common/SiteLocationMap';
 import FlowMeterDashboardSkeleton from '../skeletonLoaders/FlowMeterDashboardSkeleton';
+import StatCardForTodayYesterday from '../common/MetricCards/StatCardForTodayYesterday';
 
 // Distinct, topic-matched accents reused deterministically from the same
 // colorblind-safe categorical palette used by the comparison chart below.
 const PALETTE = getCategoricalColors(8);
 const INLET_ACCENT = PALETTE[0];
 const OUTLET_ACCENT = PALETTE[2];
-
-// Hero value (Total) + a real today-vs-yesterday comparison, instead of two
-// equal-weight side-by-side stat blocks — matches the KPI-tile hierarchy
-// used on the Water dashboard, and reads clearer in the same tight space.
-const StatCard = ({ label, value, previousValue, accent }) => (
-	<Box
-		sx={{
-			height: '100%',
-			display: 'flex',
-			flexDirection: 'column',
-			alignItems: 'center',
-			justifyContent: 'center',
-			gap: { xs: 0.5, md: 0.75 },
-			width: '100%',
-			minWidth: 0,
-			px: 1,
-		}}
-	>
-		<ResponsiveTextWrapper
-			color="text.secondary"
-			fontWeight={700}
-			fontSize={{ xs: '10.5px', md: '12px' }}
-			value={label}
-			align="center"
-			sx={{ textTransform: 'uppercase', letterSpacing: '0.3px' }}
-		/>
-
-		<ResponsiveTextWrapper
-			fontSize={{ xs: '20px', sm: '24px', md: '27px' }}
-			fontWeight={800}
-			value={`${value?.toLocaleString() || 0} KL`}
-			align="center"
-			color={accent}
-			sx={{ lineHeight: 1.1 }}
-		/>
-
-		{previousValue !== undefined ? (
-			<Box width="100%" maxWidth={180}>
-				<MiniComparisonBars
-					todayValue={value}
-					yesterdayValue={previousValue}
-					color={accent}
-					height={18}
-					unit="KL"
-				/>
-			</Box>
-		) : null}
-	</Box>
-);
 
 const FlowMeterDashboard = () => {
 	const [overviewData, setOverviewData] = useState(null);
@@ -139,8 +91,8 @@ const FlowMeterDashboard = () => {
 										accentColor={INLET_ACCENT}
 									>
 										{summaryData?.inlet_water ? (
-											<StatCard
-												label="Total (Waste Water)"
+											<StatCardForTodayYesterday
+												caption="(Waste Water)"
 												value={summaryData?.inlet_water?.value || 0}
 												previousValue={
 													summaryData?.inlet_water?.previous_value || 0
@@ -161,8 +113,8 @@ const FlowMeterDashboard = () => {
 										accentColor={OUTLET_ACCENT}
 									>
 										{summaryData?.outlet_water ? (
-											<StatCard
-												label="Total (Out)"
+											<StatCardForTodayYesterday
+												caption="Out"
 												value={summaryData?.outlet_water?.value || 0}
 												previousValue={
 													summaryData?.outlet_water?.previous_value || 0

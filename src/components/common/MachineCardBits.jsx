@@ -820,6 +820,73 @@ export const MiniSparkline = ({
 	);
 };
 
+// The bar counterpart to `SparklineGraphic` — same curated trend-shape data,
+// rendered as a gradient-filled column run instead of a line. Renders
+// nothing without at least 2 real points, same as the line version.
+const BarSparklineGraphic = ({ data, color }) => {
+	const accent = color || 'primary.main';
+	const points = (data || []).filter(
+		(v) => typeof v === 'number' && !Number.isNaN(v)
+	);
+
+	if (points.length < 2) {
+		return null;
+	}
+
+	const min = Math.min(...points);
+	const max = Math.max(...points);
+	const range = max - min || 1;
+	const lastIndex = points.length - 1;
+
+	return (
+		<Stack
+			direction="row"
+			alignItems="flex-end"
+			justifyContent="space-between"
+			gap="3px"
+			sx={{ width: '100%', height: '100%' }}
+		>
+			{points.map((v, i) => {
+				const heightPct = Math.max(12, ((v - min) / range) * 100);
+				const isLast = i === lastIndex;
+				return (
+					<Box
+						// eslint-disable-next-line react/no-array-index-key
+						key={i}
+						sx={{
+							flex: 1,
+							minWidth: 2,
+							height: `${heightPct}%`,
+							borderRadius: '3px 3px 0 0',
+							background: `linear-gradient(180deg, ${alpha(
+								accent,
+								isLast ? 1 : 0.7
+							)} 0%, ${alpha(accent, isLast ? 0.55 : 0.22)} 100%)`,
+							transition: 'height 0.4s ease',
+						}}
+					/>
+				);
+			})}
+		</Stack>
+	);
+};
+
+/**
+ * Bar-chart counterpart to `MiniSparkline` — same curated trend-shape input
+ * and footprint, rendered as a premium gradient column run instead of a
+ * line+area. For KPI tile footers that want a bar read rather than a line.
+ */
+export const MiniBarSparkline = ({
+	data = [],
+	color,
+	width = 56,
+	height = 28,
+}) => (
+	<Box sx={{ width, height, flexShrink: 0 }}>
+		<BarSparklineGraphic data={data} color={color} />
+	</Box>
+);
+
 /**
  * Cold→hot gradient scale gauge — a different "small chart" shape from
  * `MachineRatioDonut`, used by apps whose most meaningful reading is a

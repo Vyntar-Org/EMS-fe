@@ -2,7 +2,7 @@ import { TrendingDown, TrendingFlat, TrendingUp } from '@mui/icons-material';
 import { Box, Divider, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
-import { MiniSparkline } from './MachineCardBits';
+import { MiniBarSparkline, MiniSparkline } from './MachineCardBits';
 
 // Curated decorative curves — the footer only ever has two real numbers
 // (today/yesterday), which draws as a flat, unappealing 2-point line. These
@@ -52,6 +52,8 @@ const CardFooterAnalytics = ({
 	previousValue,
 	accent,
 	comparisonLabel = 'vs Yesterday',
+	variant = 'line', // 'line' | 'bar'
+	// if true, the footer is rendered on a full-width analytics card rather than a KPI card
 }) => {
 	const current = Number(value) || 0;
 	const previous = Number(previousValue) || 0;
@@ -85,12 +87,21 @@ const CardFooterAnalytics = ({
 			}}
 		>
 			<Box sx={{ flex: 1, minWidth: 48, height: 28, flexShrink: 0 }}>
-				<MiniSparkline
-					data={getSparklineData(percentChange, hasComparison)}
-					color={accent}
-					width="100%"
-					height={28}
-				/>
+				{variant === 'bar' ? (
+					<MiniBarSparkline
+						data={getSparklineData(percentChange, hasComparison)}
+						color={accent}
+						width="100%"
+						height={28}
+					/>
+				) : (
+					<MiniSparkline
+						data={getSparklineData(percentChange, hasComparison)}
+						color={accent}
+						width="100%"
+						height={28}
+					/>
+				)}
 			</Box>
 
 			<Divider

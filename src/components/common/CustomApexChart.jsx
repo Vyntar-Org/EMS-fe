@@ -220,6 +220,7 @@ const CustomApexChart = ({
 	meta = null, // optional API meta envelope: { unit, title }
 	tickAmount = 6,
 	showToolbar = true,
+	minimal = false, // strips background grid + intermediate ticks down to baseline X/Y axes with only start/end labels
 	customOptions = {}, // Only for absolute emergency overrides
 }) => {
 	const resolvedUnit = unit || meta?.unit || '';
@@ -347,10 +348,15 @@ const CustomApexChart = ({
 				  }
 				: {}),
 			grid: {
-				show: true,
+				show: !minimal,
 				borderColor: 'rgba(145, 158, 171, 0.16)',
 				strokeDashArray: 4,
-				padding: { top: 10, right: 20, bottom: 10, left: 10 },
+				// Minimal mode renders only 2 edge labels per axis, so they need
+				// extra clearance from the plot bounds or they clip against the
+				// chart container.
+				padding: minimal
+					? { top: 10, right: 24, bottom: 10, left: 24 }
+					: { top: 10, right: 20, bottom: 10, left: 10 },
 			},
 			dataLabels: { enabled: false },
 			legend: {
@@ -392,23 +398,35 @@ const CustomApexChart = ({
 				...(effectiveXAxesType === 'category' && categories
 					? { categories }
 					: {}),
-				tickAmount: Math.min(tickAmount, Math.max(pointCount - 1, 1)),
+				// tickAmount: 1 is ApexCharts' mechanism for "show only the start
+				// and end tick" on category/datetime/numeric axes alike.
+				tickAmount: minimal
+					? 1
+					: Math.min(tickAmount, Math.max(pointCount - 1, 1)),
 				labels: {
 					style: { colors: '#637381', fontSize: '12px' },
 					rotate: 0,
 					hideOverlappingLabels: true,
-					trim: true,
+					trim: !minimal,
 					...(granularity ? { formatter: xLabelFormatter } : {}),
 				},
-				axisBorder: { show: false },
+				axisBorder: {
+					show: minimal,
+					color: 'rgba(145, 158, 171, 0.32)',
+				},
 				axisTicks: { show: false },
 			},
 			yaxis: {
-				tickAmount: 5,
+				tickAmount: minimal ? 1 : 5,
 				labels: {
 					style: { colors: '#637381', fontSize: '12px' },
 					formatter: yLabelFormatter,
 				},
+				axisBorder: {
+					show: minimal,
+					color: 'rgba(145, 158, 171, 0.32)',
+				},
+				axisTicks: { show: false },
 			},
 			title: {
 				text: resolvedTitle,
@@ -434,6 +452,7 @@ const CustomApexChart = ({
 			buildTooltip,
 			yLabelFormatter,
 			customOptions,
+			minimal,
 		]
 	);
 
