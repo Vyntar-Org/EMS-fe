@@ -21,6 +21,7 @@ import { API_URLS } from '../../helpers/apiUrls';
 import { getCategoricalColors } from '../../helpers/chartConfig';
 import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
+import CompactSecondaryMetricCard from '../common/MetricCards/CompactSecondaryMetricCard';
 import StatCardForTodayYesterdayBar from '../common/MetricCards/StatCardForTodayYesterdayBar';
 import StatCardLiveCount from '../common/MetricCards/StatCardLiveCount';
 import WaterDashboardSkeleton from '../skeletonLoaders/WaterDashboardSkeleton';
@@ -37,22 +38,10 @@ const CARD_META = {
 	raw_water_inlet: { icon: Waves, color: PALETTE[0] },
 	raw_water_outlet: { icon: Opacity, color: PALETTE[2] },
 	filter_water_outlet: { icon: FilterAlt, color: PALETTE[6] },
-	drinking_ro: {
-		// icon: LocalDrink,
-		color: PALETTE[5],
-	},
-	water_positivity: {
-		// icon: TrendingUp,
-		color: PALETTE[3],
-	},
-	sewage_inlet: {
-		// icon: Plumbing,
-		color: PALETTE[1],
-	},
-	sewage_outlet: {
-		// icon: Recycling,
-		color: PALETTE[4],
-	},
+	drinking_ro: { icon: LocalDrink, color: PALETTE[5] },
+	water_positivity: { icon: TrendingUp, color: PALETTE[3] },
+	sewage_inlet: { icon: Plumbing, color: PALETTE[1] },
+	sewage_outlet: { icon: Recycling, color: PALETTE[4] },
 	total_stations: { icon: DeviceHub, color: '#64748B' },
 };
 
@@ -70,23 +59,30 @@ const WaterKpiCard = ({
 	yesterdayVal,
 	asOf,
 	isAnalyticsCard = true,
+	variant = 'hero', // 'hero' (big Today/Yesterday tile) | 'compact' (bullet-bar tile)
 }) => {
 	const { icon: Icon, color } = CARD_META[metricKey] || {
 		icon: null,
 		color: null,
 	};
 	const isLiveCount = metricKey === 'total_stations';
+	const isCompact = variant === 'compact';
 	const unit = UNIT_OVERRIDES[metricKey] || 'KL';
 
 	return (
 		<CustomCard
-			title={title}
-			titleIcon={Icon && <Icon />}
+			// The compact variant renders its own icon+title header (a much
+			// smaller footprint than CustomCard's default 50px icon chip), so
+			// it deliberately skips CustomCard's title slot rather than
+			// reusing it — that's the whole point of it looking different
+			// from the hero KPI tiles instead of being a smaller copy of them.
+			title={isCompact ? undefined : title}
+			titleIcon={!isCompact && Icon && <Icon />}
 			accentColor={color}
 			// KPI content is sized to fit its card exactly — an inner scrollbar
-			// here would only ever mean a layout bug, so it's turned off rather
-			// than papered over.
-			// childrenOtherProps={{ sx: { overflow: 'visible' } }}
+			// here would only ever mean a layout bug, so it's clipped rather
+			// than left scrollable.
+			childrenOtherProps={{ sx: { overflow: 'hidden' } }}
 		>
 			{hasData ? (
 				isLiveCount ? (
@@ -95,6 +91,15 @@ const WaterKpiCard = ({
 						label="Connected Stations"
 						accent={color}
 						asOf={asOf}
+					/>
+				) : isCompact ? (
+					<CompactSecondaryMetricCard
+						title={title}
+						icon={Icon}
+						value={value || 0}
+						previousValue={yesterdayVal || 0}
+						unit={unit}
+						accent={color}
 					/>
 				) : (
 					<StatCardForTodayYesterdayBar
@@ -167,15 +172,16 @@ const WaterDashboard = () => {
 				// that's taller than the viewport on small screens is simply
 				// unreachable instead of scrollable.
 				overflowY: 'auto',
+				// rowGap: 2.5,
 			}}
 		>
 			<Grid
 				container
 				spacing={1.5}
-				height={{ xs: 'auto', md: 200 }}
+				height={{ xs: 'auto', md: 215 }}
 				flexShrink={0}
 			>
-				<Grid item xs={12} sm={6} md={3}>
+				<Grid item xs={12} sm={6} md={3} height={{ md: '100%' }}>
 					<WaterKpiCard
 						metricKey="raw_water_inlet"
 						title="Raw Water Inlet"
@@ -185,7 +191,7 @@ const WaterDashboard = () => {
 						asOf={asOf}
 					/>
 				</Grid>
-				<Grid item xs={12} sm={6} md={3}>
+				<Grid item xs={12} sm={6} md={3} height={{ md: '100%' }}>
 					<WaterKpiCard
 						metricKey="raw_water_outlet"
 						title="Raw Water Outlet"
@@ -195,7 +201,7 @@ const WaterDashboard = () => {
 						asOf={asOf}
 					/>
 				</Grid>
-				<Grid item xs={12} sm={6} md={3}>
+				<Grid item xs={12} sm={6} md={3} height={{ md: '100%' }}>
 					<WaterKpiCard
 						metricKey="filter_water_outlet"
 						title="Filter Water Outlet"
@@ -205,7 +211,7 @@ const WaterDashboard = () => {
 						asOf={asOf}
 					/>
 				</Grid>
-				<Grid item xs={12} sm={6} md={3}>
+				<Grid item xs={12} sm={6} md={3} height={{ md: '100%' }}>
 					<WaterKpiCard
 						metricKey="total_stations"
 						title="Total Stations"
@@ -216,53 +222,53 @@ const WaterDashboard = () => {
 				</Grid>
 			</Grid>
 
-			<Grid container sx={{ mt: 0 }} flex={1} minHeight={0}>
+			<Grid container spacing={1.5} sx={{ mt: 0 }} flex={1} minHeight={0}>
 				<Grid item xs={12} sm={12} md={3} height={{ md: '100%' }}>
 					<Grid
 						container
-						// rowGap={{ md: 1.5 }}
-						// spacing={{ xs: 1.5 }}
-						height={{ md: '100%' }}
+						rowGap={{ md: 1.5 }}
+						spacing={{ xs: 1.5, md: 0 }}
+						height={{ md: 'calc(100% - 36px)' }}
 					>
-						<Grid item xs={12} sm={6} md={12} height={{ xs: 210, md: '25%' }}>
+						<Grid item xs={6} sm={3} md={12} height={{ xs: 120, md: '25%' }}>
 							<WaterKpiCard
 								metricKey="sewage_inlet"
 								title="Sewage Inlet"
 								hasData={Boolean(overviewData?.sewage_inlet)}
 								value={overviewData?.sewage_inlet?.current || 0}
 								yesterdayVal={overviewData?.sewage_inlet?.previous || 0}
-								isAnalyticsCard={false}
+								variant="compact"
 							/>
 						</Grid>
-						<Grid item xs={12} sm={6} md={12} height={{ xs: 210, md: '25%' }}>
+						<Grid item xs={6} sm={3} md={12} height={{ xs: 120, md: '25%' }}>
 							<WaterKpiCard
 								metricKey="sewage_outlet"
 								title="Sewage Outlet"
 								hasData={Boolean(overviewData?.sewage_outlet)}
 								value={overviewData?.sewage_outlet?.current || 0}
 								yesterdayVal={overviewData?.sewage_outlet?.previous || 0}
-								isAnalyticsCard={false}
+								variant="compact"
 							/>
 						</Grid>
 
-						<Grid item xs={12} sm={6} md={12} height={{ xs: 210, md: '25%' }}>
+						<Grid item xs={6} sm={3} md={12} height={{ xs: 120, md: '25%' }}>
 							<WaterKpiCard
 								metricKey="drinking_ro"
 								title="Drinking RO"
 								hasData={Boolean(overviewData?.drinking_ro)}
 								value={overviewData?.drinking_ro?.current || 0}
 								yesterdayVal={overviewData?.drinking_ro?.previous || 0}
-								isAnalyticsCard={false}
+								variant="compact"
 							/>
 						</Grid>
-						<Grid item xs={12} sm={6} md={12} height={{ xs: 210, md: '25%' }}>
+						<Grid item xs={6} sm={3} md={12} height={{ xs: 120, md: '25%' }}>
 							<WaterKpiCard
 								metricKey="water_positivity"
 								title="Water Positivity"
 								hasData={Boolean(overviewData?.water_positivity)}
 								value={overviewData?.water_positivity?.current || 0}
 								yesterdayVal={overviewData?.water_positivity?.previous || 0}
-								isAnalyticsCard={false}
+								variant="compact"
 							/>
 						</Grid>
 					</Grid>

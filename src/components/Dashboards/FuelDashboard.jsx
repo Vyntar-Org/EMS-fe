@@ -199,9 +199,9 @@ const FuelDashboard = () => {
 				overflowY: 'auto',
 			}}
 		>
-			<Grid container spacing={1} flex={1} minHeight={0}>
+			<Grid container spacing={1.5} flex={1} minHeight={0}>
 				<Grid item xs={12} md={4} height={{ md: '100%' }}>
-					<Grid container rowGap={1} height={{ md: 'calc(100% - 8px)' }}>
+					<Grid container rowGap={1.5} height={{ md: 'calc(100% - 12px)' }}>
 						<Grid item xs={12} height={{ xs: 250, md: '40%' }}>
 							<CustomCard
 								title="Fuel Station"
@@ -332,7 +332,7 @@ const FuelDashboard = () => {
 									})}
 									type={mode === 1 ? 'bar' : 'line'}
 									colors={[CHART_COLORS.fuelUsage, CHART_COLORS.secondary]}
-									xAxesType="category"
+									xAxesType="datetime"
 									height="100%"
 								/>
 							</Box>
