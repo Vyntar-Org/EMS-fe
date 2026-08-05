@@ -84,6 +84,10 @@ const TEMPERATURE_LOGS = {
 		`/applications/temperature/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
+const TEMPERATURE_PARAMETERS = {
+	TEMPERATURE_PARAMETERS_DATA: '/applications/temperature/parameters/',
+};
+
 const TEMPERATURE_ANALYTICS = {
 	TEMPERATURE_ANALYTICS_DATA: (
 		slaveId,
@@ -373,6 +377,7 @@ export const API_URLS = {
 	...EMS_ANALYTICS,
 	...TEMPERATURE_MACHINE_LIST,
 	...TEMPERATURE_LOGS,
+	...TEMPERATURE_PARAMETERS,
 	...TEMPERATURE_ANALYTICS,
 	...EMS_LOGS,
 	...EMS_REPORTS,
