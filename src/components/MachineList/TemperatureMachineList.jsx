@@ -206,7 +206,10 @@ const ModalContentForTrend = memo(
 								return;
 							}
 							fetchTrendModalChartData(selected.value);
-							handleTabChange(selected.value, `Last 6 hours ${selected.label} data`);
+							handleTabChange(
+								selected.value,
+								`Last 6 hours ${selected.label} data`
+							);
 						}}
 					/>
 				</Box>
@@ -328,7 +331,10 @@ const TemperatureMachineList = () => {
 						) : filteredMachines?.length ? (
 							<Grid container rowGap={1} columnSpacing={1}>
 								{filteredMachines.map((mc) => {
-									const availableParams = getAvailableParams(mc, parametersData);
+									const availableParams = getAvailableParams(
+										mc,
+										parametersData
+									);
 									return (
 										<Grid
 											item
@@ -354,7 +360,7 @@ const TemperatureMachineList = () => {
 														? API_URLS.TEMPERATURE_MACHINE_LIST_TREND(
 																getMachineSlaveId(mc),
 																availableParams[0].value
-															)
+														  )
 														: undefined
 												}
 												onOpenTrend={() => handleOpenModal(mc)}
