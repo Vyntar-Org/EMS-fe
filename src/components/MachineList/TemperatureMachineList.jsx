@@ -4,7 +4,6 @@ import Papa from 'papaparse';
 import { memo, useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
-import { TEMPERATURE_TREND_TAB_OPTIONS } from '../../constants/temperatureMachineList';
 import { useApplications } from '../../contexts/ApplicationContext';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
@@ -137,7 +136,7 @@ const handleDownload = (filteredMachines, selectedApp) => {
 };
 
 const ModalContentForTrend = memo(
-	({ handleTabChange, tab, slaveId, slaveName }) => {
+	({ handleTabChange, tab, slaveId, slaveName, availableParams }) => {
 		const [chartResponse, setChartResponse] = useState(null);
 		const [chartLoading, setChartLoading] = useState(true);
 
@@ -170,21 +169,21 @@ const ModalContentForTrend = memo(
 			fetchTrendModalChartData(tab);
 		}, [slaveId]);
 
-		const activeTab = TEMPERATURE_TREND_TAB_OPTIONS.find((t) => t.tab === tab);
+		const activeParam = availableParams.find((p) => p.value === tab);
 
 		const chartOptions = getChartOptions('line', chartResponse?.data || [], {
 			xLabel: 'Time',
-			yLabel: chartResponse?.unit || activeTab?.label || 'Value',
+			yLabel: chartResponse?.unit || activeParam?.label || 'Value',
 			colors: [APP_ACCENT_COLOR.TEMPERATURE],
 			categoryOpts: { key: 'timestamp', format: 'time' },
 			chartTitle: `${slaveName || 'Temperature Machine'} — ${
-				activeTab?.label || 'Trend'
+				activeParam?.label || 'Trend'
 			}`,
 		});
 
 		const chartSeries = getChartSeries(chartResponse?.data || [], {
 			actual: 'value',
-			actualLabel: `${slaveName || ''} ${activeTab?.label || ''}`.trim(),
+			actualLabel: `${slaveName || ''} ${activeParam?.label || ''}`.trim(),
 		});
 
 		return (
@@ -195,19 +194,19 @@ const ModalContentForTrend = memo(
 						value={tab}
 						size="small"
 						fullWidth
-						options={TEMPERATURE_TREND_TAB_OPTIONS.map((option) => ({
-							value: option.tab,
+						options={availableParams.map((option) => ({
+							value: option.value,
 							label: option.label,
 						}))}
 						onChange={(e) => {
-							const selected = TEMPERATURE_TREND_TAB_OPTIONS.find(
-								(t) => t.tab === e.target.value
+							const selected = availableParams.find(
+								(t) => t.value === e.target.value
 							);
 							if (!selected) {
 								return;
 							}
-							fetchTrendModalChartData(selected.tab);
-							handleTabChange(selected.tab, selected.tabDesc);
+							fetchTrendModalChartData(selected.value);
+							handleTabChange(selected.value, `Last 6 hours ${selected.label} data`);
 						}}
 					/>
 				</Box>
@@ -233,8 +232,13 @@ const ModalContentForTrend = memo(
 );
 ModalContentForTrend.displayName = 'ModalContentForTrend';
 
+const getAvailableParams = (machine, parametersData) =>
+	(parametersData || []).filter(
+		(p) => machine?.[p.value] !== undefined && machine?.[p.value] !== null
+	);
+
 const TemperatureMachineList = () => {
-	const { slavesData } = useCommonData();
+	const { slavesData, parametersData } = useCommonData();
 	const { selectedApp } = useApplications();
 	const [machineListData, setMachineListData] = useState(null);
 	const [slavesId, setSlavesId] = useState(null);
@@ -261,11 +265,14 @@ const TemperatureMachineList = () => {
 	};
 
 	const handleOpenModal = (item) => {
+		const availableParams = getAvailableParams(item, parametersData);
+		const defaultParam = availableParams[0];
 		setModalDetails({
 			isOpen: true,
 			data: item,
-			tab: 'temperature',
-			tabDesc: 'Last 6 hours Temperature data',
+			availableParams,
+			tab: defaultParam?.value,
+			tabDesc: defaultParam ? `Last 6 hours ${defaultParam.label} data` : '',
 		});
 	};
 
@@ -320,32 +327,41 @@ const TemperatureMachineList = () => {
 							<TemperatureMachineListSkeleton />
 						) : filteredMachines?.length ? (
 							<Grid container rowGap={1} columnSpacing={1}>
-								{filteredMachines.map((mc) => (
-									<Grid
-										item
-										xs={12}
-										sm={6}
-										md={4}
-										lg={3}
-										key={`temperature-machine-${mc.id}`}
-									>
-										<PremiumTemperatureMachineCard
-											title={mc?.name || ''}
-											status={mc?.status}
-											temperature={mc?.temperature}
-											pressure={mc?.pressure}
-											humidity={mc?.humidity}
-											battery={mc?.battery}
-											lastUpdated={mc?.last_updated}
-											slaveId={getMachineSlaveId(mc)}
-											trendUrl={API_URLS.TEMPERATURE_MACHINE_LIST_TREND(
-												getMachineSlaveId(mc),
-												TEMPERATURE_TREND_TAB_OPTIONS[0].tab
-											)}
-											onOpenTrend={() => handleOpenModal(mc)}
-										/>
-									</Grid>
-								))}
+								{filteredMachines.map((mc) => {
+									const availableParams = getAvailableParams(mc, parametersData);
+									return (
+										<Grid
+											item
+											xs={12}
+											sm={6}
+											md={4}
+											lg={3}
+											key={`temperature-machine-${mc.id}`}
+										>
+											<PremiumTemperatureMachineCard
+												title={mc?.name || ''}
+												status={mc?.status}
+												temperature={mc?.temperature}
+												metrics={availableParams.map((p) => ({
+													label: p.label,
+													value: mc?.[p.value],
+													unit: p.unit,
+												}))}
+												lastUpdated={mc?.last_updated}
+												slaveId={getMachineSlaveId(mc)}
+												trendUrl={
+													availableParams[0]
+														? API_URLS.TEMPERATURE_MACHINE_LIST_TREND(
+																getMachineSlaveId(mc),
+																availableParams[0].value
+															)
+														: undefined
+												}
+												onOpenTrend={() => handleOpenModal(mc)}
+											/>
+										</Grid>
+									);
+								})}
 							</Grid>
 						) : (
 							<NoDataFound message="No machine readings received yet — data appears once the device reports" />
@@ -367,6 +383,7 @@ const TemperatureMachineList = () => {
 						tab={modalDetails?.tab}
 						slaveId={getMachineSlaveId(modalDetails?.data)}
 						slaveName={modalDetails?.data?.name}
+						availableParams={modalDetails?.availableParams || []}
 					/>
 				) : null}
 			</PremiumModal>
