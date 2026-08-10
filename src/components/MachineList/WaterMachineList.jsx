@@ -100,7 +100,7 @@ const ModalContentForTrend = memo(({ slaveId, slaveName }) => {
 		xLabel: 'Time',
 		yLabel: chartResponse?.unit || 'Flow Rate',
 		colors: [APP_ACCENT_COLOR.WATER],
-		categoryOpts: { key: 'timestamp', format: 'time' },
+		categoryOpts: { key: 'timestamp', format: 'datetime' },
 		chartTitle: `${slaveName || 'Water Machine'} Flow Rate Trend`,
 	});
 

@@ -176,7 +176,7 @@ const ModalContentForTrend = memo(
 			xLabel: 'Time',
 			yLabel: chartResponse?.unit || activeTab?.label || 'Value',
 			colors: [APP_ACCENT_COLOR['FIRE-SAFETY']],
-			categoryOpts: { key: 'timestamp', format: 'time' },
+			categoryOpts: { key: 'timestamp', format: 'datetime' },
 			chartTitle: `${slaveName || 'Fire Safety'} — ${
 				activeTab?.label || 'Trend'
 			}`,

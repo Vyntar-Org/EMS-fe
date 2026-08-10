@@ -230,7 +230,7 @@ const ModalContentForTrend = memo(
 				'#8B5CF6',
 				'#2563EB',
 			],
-			categoryOpts: { key: 'timestamp', format: 'time' },
+			categoryOpts: { key: 'timestamp', format: 'datetime' },
 			chartTitle: trendChartTitle,
 		});
 

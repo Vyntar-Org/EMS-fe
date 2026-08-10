@@ -6,9 +6,8 @@ import {
 	FormControlLabel,
 	Grid,
 	Typography,
-	useTheme,
 } from '@mui/material';
-import { alpha, darken, lighten } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
 import dayjs from 'dayjs';
 import { memo, useCallback, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
@@ -43,21 +42,6 @@ const ROW_ACCENTS = getCategoricalColors(6);
 // Distinct from any single row's accent — signals "this combines every row"
 // rather than belonging to one of them.
 const MERGE_ACCENT = getCategoricalColors(7)[6];
-
-const CHIP_COLORS = [
-	'#3b82f6',
-	'#ef4444',
-	'#f59e0b',
-	'#10b981',
-	'#8b5cf6',
-	'#06b6d4',
-	'#ec4899',
-	'#14b8a6',
-	'#f97316',
-	'#6366f1',
-	'#84cc16',
-	'#0ea5e9',
-];
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 
@@ -290,10 +274,6 @@ const AnalyticsRow = memo(
 		handleReset,
 		rowIds,
 	}) => {
-		const theme = useTheme();
-		const isDark = theme.palette.mode === 'dark';
-		const [hoveredPointIndex, setHoveredPointIndex] = useState(null);
-
 		const activeKeys =
 			currentSelectedParams?.flatMap((param) =>
 				param.value ? param.value.split(',') : []
@@ -303,28 +283,6 @@ const AnalyticsRow = memo(
 			() => getProcessedChartData(rawAnalytics, activeKeys),
 			[rawAnalytics, activeKeys]
 		);
-
-		const hoveredData = useMemo(() => {
-			if (!rawAnalytics?.data?.length) {
-				return null;
-			}
-			const pointIndex =
-				hoveredPointIndex !== null
-					? hoveredPointIndex
-					: rawAnalytics.data.length - 1;
-			const dataPoint = rawAnalytics.data[pointIndex];
-			if (!dataPoint) {
-				return null;
-			}
-			return {
-				timestamp: dataPoint.timestamp,
-				values: activeKeys.map((key) => ({
-					key,
-					name: KEY_PARAMETER_OPTIONS_MAPPING[key] || key,
-					value: dataPoint[key],
-				})),
-			};
-		}, [hoveredPointIndex, rawAnalytics, activeKeys]);
 
 		const uniqueBgColor = UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
 		const accent = ROW_ACCENTS[index % ROW_ACCENTS.length];
@@ -356,21 +314,6 @@ const AnalyticsRow = memo(
 							zoomout: false,
 							pan: false,
 							reset: false,
-						},
-					},
-					events: {
-						mouseMove: (_event, _chartContext, config) => {
-							if (config?.dataPointIndex >= 0) {
-								setHoveredPointIndex(config.dataPointIndex);
-							}
-						},
-						mouseLeave: () => {
-							setHoveredPointIndex(null);
-						},
-						click: (_event, _chartContext, config) => {
-							if (config?.dataPointIndex >= 0) {
-								setHoveredPointIndex(config.dataPointIndex);
-							}
 						},
 					},
 				},
@@ -541,104 +484,6 @@ const AnalyticsRow = memo(
 						/>
 					)}
 				</Box>
-
-				{hoveredData && (
-					<Box
-						sx={{
-							mt: 2,
-							p: 1.5,
-							bgcolor: 'transparent',
-						}}
-					>
-						<Typography
-							variant="body2"
-							sx={{
-								mb: 1.5,
-								fontWeight: 600,
-								color: 'text.secondary',
-								fontSize: '12px',
-								letterSpacing: '0.5px',
-							}}
-						>
-							{dayjs(hoveredData.timestamp).format('DD MMM HH:mm')}
-							{hoveredPointIndex === null && ' · LATEST'}
-						</Typography>
-
-						<Box
-							sx={{
-								display: 'flex',
-								flexWrap: 'wrap',
-								gap: 1.5,
-							}}
-						>
-							{hoveredData.values.map((item, idx) => {
-								const base = CHIP_COLORS[idx % CHIP_COLORS.length];
-								const chipBg = alpha(base, isDark ? 0.22 : 0.12);
-								const chipBorder = alpha(base, isDark ? 0.4 : 0.25);
-								const chipText = isDark
-									? lighten(base, 0.35)
-									: darken(base, 0.25);
-
-								return (
-									<Box
-										key={item.key}
-										sx={{
-											display: 'flex',
-											alignItems: 'center',
-											gap: 1,
-											p: '6px 12px',
-											bgcolor: chipBg,
-											border: '1px solid',
-											borderColor: chipBorder,
-											borderRadius: '20px',
-											whiteSpace: 'nowrap',
-											transition: 'all 0.2s ease',
-											'&:hover': {
-												bgcolor: alpha(base, isDark ? 0.3 : 0.18),
-											},
-										}}
-									>
-										<Box
-											sx={{
-												width: 6,
-												height: 6,
-												borderRadius: '50%',
-												backgroundColor: base,
-												flexShrink: 0,
-												boxShadow: `0 0 8px ${alpha(base, 0.5)}`,
-											}}
-										/>
-										<Typography
-											variant="caption"
-											sx={{
-												color: 'text.secondary',
-												fontSize: '11px',
-												fontWeight: 500,
-											}}
-										>
-											{item.name}
-										</Typography>
-										<Typography
-											variant="caption"
-											sx={{
-												color: chipText,
-												fontSize: '11px',
-												fontWeight: 700,
-												ml: 0.5,
-											}}
-										>
-											{item.value !== null && item.value !== undefined
-												? typeof item.value === 'number'
-													? formatChartValue(item.value)
-													: item.value
-												: '—'}
-										</Typography>
-									</Box>
-								);
-							})}
-						</Box>
-					</Box>
-				)}
 			</Box>
 		);
 	}

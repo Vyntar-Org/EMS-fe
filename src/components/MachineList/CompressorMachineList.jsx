@@ -17,6 +17,7 @@ import {
 	TableContainer,
 	CircularProgress,
 } from '@mui/material';
+import dayjs from 'dayjs';
 import Papa from 'papaparse';
 import React, { memo, useEffect, useMemo, useState, useRef } from 'react';
 import ReactApexChart from 'react-apexcharts';
@@ -486,8 +487,9 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 						return '';
 					}
 
-					const date = new Date(dataPoint.x);
-					const formattedDate = date.toLocaleString();
+					const formattedDate = dayjs(dataPoint.x).format(
+						'DD MMM YYYY, hh:mm:ss A'
+					);
 					const value = dataPoint.y;
 					const statusText = value === 1 ? 'Online' : 'Offline';
 					const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
@@ -918,8 +920,9 @@ const ModalContentForTrend = memo(
 						custom: function ({ series, seriesIndex, dataPointIndex, w }) {
 							const dataPoint =
 								w.globals.initialSeries[seriesIndex].data[dataPointIndex];
-							const date = new Date(dataPoint.x);
-							const formattedDate = date.toLocaleString();
+							const formattedDate = dayjs(dataPoint.x).format(
+								'DD MMM YYYY, hh:mm:ss A'
+							);
 							const value = dataPoint.y;
 							const statusText = value === 1 ? 'Online' : 'Offline';
 							const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
@@ -943,11 +946,7 @@ const ModalContentForTrend = memo(
 					if (!timestamp) {
 						return '';
 					}
-					return new Date(timestamp).toLocaleTimeString('en-US', {
-						hour: '2-digit',
-						minute: '2-digit',
-						hour12: true,
-					});
+					return dayjs(timestamp).format('DD MMM, hh:mm A');
 				});
 				return {
 					...baseOptions,

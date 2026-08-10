@@ -180,7 +180,7 @@ const ModalContentForTrend = memo(
 			xLabel: 'Time',
 			yLabel: chartResponse?.unit || activeTab?.label || 'Value',
 			colors: [APP_ACCENT_COLOR.SOLAR],
-			categoryOpts: { key: 'timestamp', format: 'time' },
+			categoryOpts: { key: 'timestamp', format: 'datetime' },
 			chartTitle: `${slaveName || 'Solar Machine'} — ${
 				activeTab?.label || 'Trend'
 			}`,

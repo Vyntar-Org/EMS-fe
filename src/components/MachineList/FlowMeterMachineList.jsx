@@ -193,7 +193,7 @@ const ModalContentForTrend = memo(
 								xLabel: 'Time',
 								yLabel: activeTab?.label || 'Value',
 								colors: [APP_ACCENT_COLOR.FLOWMETER],
-								categoryOpts: { key: 'timestamp', format: 'time' },
+								categoryOpts: { key: 'timestamp', format: 'datetime' },
 								chartTitle: `${activeTab?.desc ? `${activeTab.desc} — ` : ''}${
 									activeTab?.label || 'Flow Meter'
 								} Trend`,

@@ -111,7 +111,7 @@ const ModalContentForTrend = memo(
 				activeParam?.label ||
 				'Value',
 			colors: [APP_ACCENT_COLOR.FUEL],
-			categoryOpts: { key: 'timestamp', format: 'time' },
+			categoryOpts: { key: 'timestamp', format: 'datetime' },
 			chartTitle: `${slaveName || 'Fuel Machine'} — ${
 				activeParam?.desc || activeParam?.label || 'Trend'
 			}`,

@@ -152,7 +152,6 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 			fixed: { enabled: true, position: 'topRight', offsetX: 0, offsetY: 0 },
 			custom: buildPremiumTooltip({
 				unit: 'kW',
-				titleFormat: 'HH:mm',
 				chartTitle: 'Peak Demand Indicator',
 			}),
 		},
