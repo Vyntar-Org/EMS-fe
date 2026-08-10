@@ -920,7 +920,9 @@ const ModalContentForTrend = memo(
 						custom: function ({ series, seriesIndex, dataPointIndex, w }) {
 							const dataPoint =
 								w.globals.initialSeries[seriesIndex].data[dataPointIndex];
-							const formattedDate = dayjs(dataPoint.x).format('DD MMM YYYY, hh:mm:ss A');
+							const formattedDate = dayjs(dataPoint.x).format(
+								'DD MMM YYYY, hh:mm:ss A'
+							);
 							const value = dataPoint.y;
 							const statusText = value === 1 ? 'Online' : 'Offline';
 							const statusColor = value === 1 ? '#30b44a' : '#e34d4d';
