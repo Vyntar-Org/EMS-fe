@@ -1,6 +1,14 @@
-import { Box } from '@mui/material';
+import {
+	Box,
+	ToggleButtonGroup,
+	ToggleButton,
+	Grow,
+	Fade,
+} from '@mui/material';
 import React, { useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import BarChartIcon from '@mui/icons-material/BarChart';
 
 import { useCommonData } from '../../../contexts/CommonDataContext';
 import { api } from '../../../helpers/api';
@@ -13,10 +21,12 @@ import {
 } from '../../../helpers/chartConfig';
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
+import { BarChart, SsidChart } from '@mui/icons-material';
 
 const ENERGYDemandIndicator = ({ slavesId }) => {
 	const { slavesData } = useCommonData();
 	const [demandIndicator, setDemandIndicator] = useState(null);
+	const [chartType, setChartType] = useState('line');
 
 	const slavesDisplayName = useMemo(() => {
 		if (!slavesData) {
@@ -78,7 +88,7 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 		return maxValue <= 0 ? 14 : Math.ceil(maxValue * 1.2);
 	}, [seriesData]);
 
-	const options = {
+	const baseOptions = {
 		chart: {
 			type: 'area',
 			toolbar: {
@@ -158,6 +168,25 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 		// grid: { show: false },
 	};
 
+	// If user selects 'bar', adjust a few props for bar rendering while
+	// preserving the colors/tooltip/axis styling the component currently uses.
+	const options =
+		chartType === 'bar'
+			? {
+					...baseOptions,
+					chart: { ...baseOptions.chart, type: 'bar' },
+					plotOptions: {
+						bar: { borderRadius: 6, columnWidth: '60%' },
+					},
+					fill: {
+						type: 'gradient',
+						gradient: { shadeIntensity: 1, opacityFrom: 1, opacityTo: 0.85 },
+					},
+					stroke: { show: false, width: 0 },
+					markers: { size: 0 },
+			  }
+			: baseOptions;
+
 	const series = [
 		{
 			name: 'Peak Demand',
@@ -165,21 +194,62 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 		},
 	];
 
+	const handleChartTypeChange = (_e, val) => {
+		if (val) {
+			setChartType(val);
+		}
+	};
+
+	const chartToggle = (
+		<ToggleButtonGroup
+			value={chartType}
+			exclusive
+			onChange={handleChartTypeChange}
+			size="small"
+			aria-label="chart type"
+			sx={{
+				height: '28px',
+				bgcolor: 'background.paper',
+				border: '1px solid',
+				borderColor: 'divider',
+				'& .MuiToggleButton-root': {
+					border: 'none',
+					color: 'text.secondary',
+				},
+				'& .MuiToggleButton-root.Mui-selected': {
+					bgcolor: CHART_COLORS.demand,
+					color: '#FFFFFF',
+					'&:hover': { bgcolor: CHART_COLORS.demand },
+				},
+			}}
+		>
+			<ToggleButton value="line" aria-label="line">
+				<SsidChart fontSize="small" />
+			</ToggleButton>
+			<ToggleButton value="bar" aria-label="bar">
+				<BarChart fontSize="small" />
+			</ToggleButton>
+		</ToggleButtonGroup>
+	);
+
 	return (
 		<CustomCard
 			title={`Demand Indicator ${slavesDisplayName}`}
 			accentColor={CHART_COLORS.demand}
+			icon={chartToggle}
 		>
 			{demandIndicator && demandIndicator?.data?.length ? (
-				<Box height="100%" width="100%" overflow="hidden">
-					<ReactApexChart
-						options={options}
-						series={series}
-						type="area"
-						height="100%"
-						width="100%"
-					/>
-				</Box>
+				<Fade in key={chartType} timeout={300}>
+					<Box height="100%" width="100%" overflow="hidden">
+						<ReactApexChart
+							options={options}
+							series={series}
+							type={chartType === 'bar' ? 'bar' : 'area'}
+							height="100%"
+							width="100%"
+						/>
+					</Box>
+				</Fade>
 			) : (
 				<NoDataFound message="Waiting for live device data — readings appear automatically" />
 			)}

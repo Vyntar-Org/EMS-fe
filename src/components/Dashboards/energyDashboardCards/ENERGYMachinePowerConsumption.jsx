@@ -1,6 +1,7 @@
 import { BarChart, Search, SsidChart, Bolt } from '@mui/icons-material';
 import {
 	Box,
+	Fade,
 	Grid,
 	InputAdornment,
 	ToggleButton,
@@ -154,7 +155,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	);
 
 	const chartTitle =
-		mode === 2 ? `${slavesDisplayName} Energy` : 'Machine Power Consumption';
+		mode === 2 ? `${slavesDisplayName} Energy` : 'Power Consumption';
 
 	const chartOptions = getChartOptions(mode === 1 ? 'bar' : 'line', chartData, {
 		yLabel: 'kWh',
@@ -214,21 +215,23 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 					flexDirection={{ xs: 'column-reverse', sm: 'row' }}
 					height="100%"
 				>
-					<Box
-						// flex={1}
-						height="100%"
-						width={{ sm: 'calc(100% - 200px - 12px)' }}
-						overflow="hidden"
-					>
-						<ReactApexChart
-							key={`chart-${mode}`}
-							options={chartOptions}
-							series={series}
-							type={mode === 1 ? 'bar' : 'line'}
+					<Fade in key={mode === 1 ? 'bar' : 'line'} timeout={300}>
+						<Box
+							// flex={1}
 							height="100%"
-							width="100%"
-						/>
-					</Box>
+							width={{ sm: 'calc(100% - 200px - 12px)' }}
+							overflow="hidden"
+						>
+							<ReactApexChart
+								key={`chart-${mode}`}
+								options={chartOptions}
+								series={series}
+								type={mode === 1 ? 'bar' : 'line'}
+								height="100%"
+								width="100%"
+							/>
+						</Box>
+					</Fade>
 
 					<Box
 						width={{ sm: '200px' }}
