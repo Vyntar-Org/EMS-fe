@@ -901,6 +901,7 @@ export const CustomProgressBar = ({
 	icon: Icon, // Pass any MUI Icon component here (e.g., icon={SettingsIcon})
 	iconColor,
 	unit = '%',
+	hideValue = false,
 }) => {
 	const clampedValue = Math.max(0, Math.min(100, Number(value) || 0));
 	const activeIconColor = iconColor || color;
@@ -986,18 +987,20 @@ export const CustomProgressBar = ({
 					</Box>
 
 					{/* Right Percentage Label */}
-					<Box maxWidth="50px" minWidth="36px">
-						<ResponsiveTextWrapper
-							value={`${Math.round(clampedValue)}${unit}`}
-							sx={{
-								fontSize: '13px',
-								fontWeight: 700,
-								color: color,
-								textAlign: 'right',
-								whiteSpace: 'nowrap',
-							}}
-						/>
-					</Box>
+					{hideValue ? null : (
+						<Box maxWidth="50px" minWidth="36px">
+							<ResponsiveTextWrapper
+								value={`${Math.round(clampedValue)}${unit}`}
+								sx={{
+									fontSize: '13px',
+									fontWeight: 700,
+									color: color,
+									textAlign: 'right',
+									whiteSpace: 'nowrap',
+								}}
+							/>
+						</Box>
+					)}
 				</Stack>
 			</Stack>
 		</Stack>

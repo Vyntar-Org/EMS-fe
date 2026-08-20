@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Box, useTheme } from '@mui/material';
@@ -8,6 +8,7 @@ import { useApplications } from '../contexts/ApplicationContext';
 import { getPagePath, pageComponentMap } from '../helpers/pageMapping';
 import { layoutBackgroundSx } from '../helpers/layoutImages';
 import { preloadAppImages } from '../helpers/preloadImages';
+import { useIdleAutoCycle } from '../hooks/useIdleAutoCycle.js';
 
 export const PrivateLayout = () => {
 	const { user } = useAuth();
@@ -27,7 +28,7 @@ export const PrivateLayout = () => {
 		);
 	}, [applications, user]);
 
-	const handleAppChange = (event, newAppCode) => {
+	const changeApplication = useCallback((newAppCode) => {
 		switchApp(newAppCode);
 		const app = applications.find((a) => a.code === newAppCode);
 		if (app) {
@@ -39,7 +40,20 @@ export const PrivateLayout = () => {
 			const path = getPagePath(defaultPage, newAppCode);
 			navigate(path);
 		}
-	};
+	}, [applications, navigate, switchApp]);
+
+	const handleAppChange = useCallback(
+		(_event, newAppCode) => changeApplication(newAppCode),
+		[changeApplication]
+	);
+
+	useIdleAutoCycle({
+		apps: applications.map((app) => app.code),
+		activeApp: selectedApp,
+		onAppChange: changeApplication,
+		idleTimeoutMs: 30_000,
+		cycleIntervalMs: 12_000,
+	});
 
 	// If not authenticated, redirect to login
 	if (!user) {

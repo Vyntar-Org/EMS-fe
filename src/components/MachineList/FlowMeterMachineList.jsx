@@ -366,12 +366,12 @@ const FlowMeterMachineList = () => {
 													mc?.metrics?.find(
 														(v) => v?.metric_key === 'today_consumption'
 													)?.value || 0
-												} KG`}
+												} kg`}
 												mtd={`${
 													mc?.metrics?.find(
 														(v) => v?.metric_key === 'mtd_consumption'
 													)?.value || 0
-												} KG`}
+												} kg`}
 												todayValue={
 													mc?.metrics?.find(
 														(v) => v?.metric_key === 'today_consumption'

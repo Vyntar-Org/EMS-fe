@@ -17,6 +17,7 @@ const EMS_DASHBOARD = {
 	EMS_DASHBOARD_MACHINE_CONSUMPTION:
 		'/applications/energy/dashboard-energy-chart/',
 	EMS_DASHBOARD_DEMAND_INDICATOR: '/applications/energy/peak-demand-trend/',
+	EMS_DASHBOARD_LOAD_BALANCE: '/applications/energy/load-balance/',
 };
 
 const EMS_MACHINE_LIST = {

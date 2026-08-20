@@ -47,6 +47,30 @@ const PremiumMachineCard = ({
 						accent,
 						t.palette.mode === 'dark' ? 0.22 : 0.11
 					)} 0%, ${t.palette.background.paper} 58%)`,
+				transition: (t) =>
+					t.transitions.create(
+						['transform', 'background-color', 'border-color', 'box-shadow'],
+						{
+							duration: t.transitions.duration.short,
+							easing: t.transitions.easing.easeInOut,
+						}
+					),
+
+				'&:hover': {
+					transform: 'translateY(-4px)',
+
+					background: (t) =>
+						`linear-gradient(155deg, ${alpha(
+							accent,
+							t.palette.mode === 'dark' ? 0.28 : 0.16
+						)} 0%, ${t.palette.background.paper} 58%)`,
+
+					boxShadow: (t) =>
+						`0 8px 24px ${alpha(
+							accent,
+							t.palette.mode === 'dark' ? 0.25 : 0.15
+						)}`,
+				},
 			}}
 		>
 			<Stack
@@ -96,7 +120,6 @@ const PremiumMachineCard = ({
 					}}
 				/>
 			</Stack>
-
 			<Divider
 				sx={{
 					my: 1,
@@ -104,9 +127,7 @@ const PremiumMachineCard = ({
 						alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16),
 				}}
 			/>
-
 			<Box width="100%">{children}</Box>
-
 			{todayMtd && (
 				<>
 					<Divider
@@ -155,9 +176,7 @@ const PremiumMachineCard = ({
 					</Stack>
 				</>
 			)}
-
 			<Box flex={1} />
-
 			{footer !== null && (
 				<>
 					<Divider
