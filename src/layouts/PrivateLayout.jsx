@@ -28,19 +28,22 @@ export const PrivateLayout = () => {
 		);
 	}, [applications, user]);
 
-	const changeApplication = useCallback((newAppCode) => {
-		switchApp(newAppCode);
-		const app = applications.find((a) => a.code === newAppCode);
-		if (app) {
-			const defaultPage =
-				app.default_landing_page ||
-				app.pages?.find((pageCode) => pageComponentMap[pageCode]) ||
-				app.pages?.[0] ||
-				'DASHBOARD';
-			const path = getPagePath(defaultPage, newAppCode);
-			navigate(path);
-		}
-	}, [applications, navigate, switchApp]);
+	const changeApplication = useCallback(
+		(newAppCode) => {
+			switchApp(newAppCode);
+			const app = applications.find((a) => a.code === newAppCode);
+			if (app) {
+				const defaultPage =
+					app.default_landing_page ||
+					app.pages?.find((pageCode) => pageComponentMap[pageCode]) ||
+					app.pages?.[0] ||
+					'DASHBOARD';
+				const path = getPagePath(defaultPage, newAppCode);
+				navigate(path);
+			}
+		},
+		[applications, navigate, switchApp]
+	);
 
 	const handleAppChange = useCallback(
 		(_event, newAppCode) => changeApplication(newAppCode),

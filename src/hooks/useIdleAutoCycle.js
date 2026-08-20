@@ -107,4 +107,3 @@ export function useIdleAutoCycle({
 
 	return { isIdle, resetIdleTimer };
 }
-
