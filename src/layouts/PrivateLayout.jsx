@@ -14,7 +14,7 @@ import { useIdleAutoCycle } from '../hooks/useIdleAutoCycle.js';
 export const PrivateLayout = () => {
 	const { user } = useAuth();
 	const [isMobileOpen, setIsMobileOpen] = useState(false);
-	const [isDesktopOpen, setIsDesktopOpen] = useState(true);
+	const [isDesktopOpen, setIsDesktopOpen] = useState(false);
 	const [isAutoSwitching, setIsAutoSwitching] = useState(false);
 	const { applications, selectedApp, switchApp } = useApplications();
 	const navigate = useNavigate();
