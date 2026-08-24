@@ -68,10 +68,10 @@ const EnergyDashboard = () => {
 			}}
 		>
 			<Grid container spacing={1.5} height={{ md: '230px' }} flexShrink={0}>
-				<Grid item xs={12} sm={4} md={2.2} height={{ md: '100%' }}>
+				<Grid item xs={12} sm={6} md={2.1} height={{ md: '100%' }}>
 					<ENERGYDevices data={overviewData?.devices} />
 				</Grid>
-				<Grid item xs={12} sm={8} md={3.2} height={{ md: '100%' }}>
+				<Grid item xs={12} sm={6} md={3.3} height={{ md: '100%' }}>
 					<ENERGYConsumption data={overviewData?.energy_consumption} />
 				</Grid>
 				{/* <Grid item xs={12} sm={4} md={2.3} height={{ md: '100%' }}>
@@ -80,10 +80,10 @@ const EnergyDashboard = () => {
 				<Grid item xs={12} sm={4} md={2.3} height={{ md: '100%' }}>
 				</Grid> */}
 
-				<Grid item xs={12} sm={6} md={4.1} height={{ md: '100%' }}>
+				<Grid item xs={12} sm={6} md={3.6} height={{ md: '100%' }}>
 					<ENERGYEnerAndCarbon data={overviewData?.ener_tree} />
 				</Grid>
-				<Grid item xs={12} sm={6} md={2.5} height={{ md: '100%' }}>
+				<Grid item xs={12} sm={6} md={3} height={{ md: '100%' }}>
 					<ENERGYLoadBalance slavesId={slavesId} />
 				</Grid>
 			</Grid>

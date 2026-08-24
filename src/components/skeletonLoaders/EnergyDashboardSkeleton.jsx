@@ -13,7 +13,7 @@ const EnergyDashboardSkeleton = () => {
 				spacing={1.5}
 				height={{ xs: '450px', sm: '350px', md: '230px' }}
 			>
-				<Grid item s={12} sm={4} md={2.2}>
+				<Grid item s={12} sm={6} md={2.1}>
 					<Skeleton
 						sx={{ borderRadius: '16px' }}
 						animation="wave"
@@ -22,7 +22,7 @@ const EnergyDashboardSkeleton = () => {
 						height="100%"
 					/>
 				</Grid>
-				<Grid item xs={12} sm={8} md={3.2}>
+				<Grid item xs={12} sm={6} md={3.3}>
 					<Skeleton
 						sx={{ borderRadius: '16px' }}
 						animation="wave"
@@ -49,7 +49,7 @@ const EnergyDashboardSkeleton = () => {
 						height="100%"
 					/>
 				</Grid> */}
-				<Grid item xs={12} sm={6} md={4.1}>
+				<Grid item xs={12} sm={6} md={3.6}>
 					<Skeleton
 						sx={{ borderRadius: '16px' }}
 						animation="wave"
@@ -58,7 +58,7 @@ const EnergyDashboardSkeleton = () => {
 						height="100%"
 					/>
 				</Grid>
-				<Grid item xs={12} sm={6} md={2.5}>
+				<Grid item xs={12} sm={6} md={3}>
 					<Skeleton
 						sx={{ borderRadius: '16px' }}
 						animation="wave"

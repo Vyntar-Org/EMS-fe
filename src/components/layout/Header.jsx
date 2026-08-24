@@ -5,11 +5,14 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
+import PauseRoundedIcon from '@mui/icons-material/PauseRounded';
+import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import SensorsIcon from '@mui/icons-material/Sensors';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import {
 	AppBar,
 	Toolbar,
+	Tooltip,
 	Box,
 	Tabs,
 	Tab,
@@ -32,7 +35,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useThemeMode } from '../../contexts/ThemeModeContext';
 import { layoutBackgroundSx } from '../../helpers/layoutImages';
 import { getPagePath } from '../../helpers/pageMapping.jsx';
-import { APP_ACCENT_COLOR, APP_ICONS } from '../common/MachineCardBits';
+import { APP_ICONS } from '../common/MachineCardBits';
 import PremiumModal from '../common/PremiumModal';
 
 const menuItemSx = {
@@ -51,6 +54,8 @@ export const Header = ({
 	setIsDesktopOpen,
 	isDesktopOpen,
 	handleAppChange,
+	isAutoSwitching,
+	onToggleAutoSwitch,
 }) => {
 	const { user, logout } = useAuth();
 	const { applications, selectedApp } = useApplications();
@@ -335,6 +340,75 @@ export const Header = ({
 								})}
 							</Tabs>
 						</Box>
+					)}
+
+					{applications.length > 1 && (
+						<Tooltip
+							title={
+								isAutoSwitching ? 'Pause app switching' : 'Play app switching'
+							}
+							arrow
+							placement="bottom"
+						>
+							<IconButton
+								onClick={onToggleAutoSwitch}
+								aria-label={
+									isAutoSwitching
+										? 'Pause automatic app switching'
+										: 'Play automatic app switching'
+								}
+								sx={{
+									mr: 1,
+									width: 40,
+									height: 40,
+									color: isAutoSwitching ? '#FFFFFF' : 'primary.main',
+									background: isAutoSwitching
+										? `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`
+										: `linear-gradient(135deg, ${alpha(
+												theme.palette.secondary.main,
+												0.2
+										  )} 0%, ${alpha(
+												theme.palette.background.paper,
+												0.96
+										  )} 70%)`,
+									border: '1.5px solid',
+									borderColor: 'secondary.main',
+									boxShadow: isAutoSwitching
+										? `inset 0 1px 0 ${alpha(
+												'#FFFFFF',
+												0.24
+										  )}, 0 0 0 2px ${alpha(
+												theme.palette.secondary.main,
+												0.16
+										  )}, 0 5px 16px ${alpha(theme.palette.primary.main, 0.4)}`
+										: `inset 0 1px 0 ${alpha(
+												'#FFFFFF',
+												0.8
+										  )}, 0 0 0 2px ${alpha(
+												theme.palette.secondary.main,
+												0.12
+										  )}, 0 4px 14px ${alpha(
+												theme.palette.secondary.main,
+												0.2
+										  )}`,
+									transition: 'all 0.2s ease',
+									'&:hover': {
+										transform: 'translateY(-1px)',
+										borderColor: 'secondary.dark',
+										boxShadow: `0 0 0 3px ${alpha(
+											theme.palette.secondary.main,
+											0.2
+										)}, 0 7px 18px ${alpha(theme.palette.primary.main, 0.28)}`,
+									},
+								}}
+							>
+								{isAutoSwitching ? (
+									<PauseRoundedIcon />
+								) : (
+									<PlayArrowRoundedIcon />
+								)}
+							</IconButton>
+						</Tooltip>
 					)}
 
 					{/* Premium user profile pill */}

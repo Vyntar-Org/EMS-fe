@@ -1,12 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { Box, useTheme } from '@mui/material';
+import { useCallback, useEffect, useState } from 'react';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+
 import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
 import { useApplications } from '../contexts/ApplicationContext';
-import { getPagePath, pageComponentMap } from '../helpers/pageMapping';
+import { useAuth } from '../contexts/AuthContext';
 import { layoutBackgroundSx } from '../helpers/layoutImages';
+import { getPagePath, pageComponentMap } from '../helpers/pageMapping';
 import { preloadAppImages } from '../helpers/preloadImages';
 import { useIdleAutoCycle } from '../hooks/useIdleAutoCycle.js';
 
@@ -14,6 +15,7 @@ export const PrivateLayout = () => {
 	const { user } = useAuth();
 	const [isMobileOpen, setIsMobileOpen] = useState(false);
 	const [isDesktopOpen, setIsDesktopOpen] = useState(true);
+	const [isAutoSwitching, setIsAutoSwitching] = useState(false);
 	const { applications, selectedApp, switchApp } = useApplications();
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -54,7 +56,7 @@ export const PrivateLayout = () => {
 		apps: applications.map((app) => app.code),
 		activeApp: selectedApp,
 		onAppChange: changeApplication,
-		idleTimeoutMs: 30_000,
+		enabled: isAutoSwitching,
 		cycleIntervalMs: 12_000,
 	});
 
@@ -89,6 +91,8 @@ export const PrivateLayout = () => {
 					setIsDesktopOpen={setIsDesktopOpen}
 					isDesktopOpen={isDesktopOpen}
 					handleAppChange={handleAppChange}
+					isAutoSwitching={isAutoSwitching}
+					onToggleAutoSwitch={() => setIsAutoSwitching((value) => !value)}
 				/>
 				<Box
 					component="main"

@@ -1,92 +1,90 @@
-import { Balance, BarChart, SsidChart } from '@mui/icons-material';
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import CustomCard from '../../common/CustomCard';
-import NoDataFound from '../../common/errors/NoDataFound';
+import { Balance } from '@mui/icons-material';
 import {
 	Box,
-	Divider,
 	Grid,
 	ToggleButton,
 	ToggleButtonGroup,
 	Tooltip,
 	Typography,
 } from '@mui/material';
-import {
-	CustomProgressBar,
-	MachineRatioDonut,
-	MiniGaugeArc,
-} from '../../common/MachineCardBits';
-import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
-import { API_URLS } from '../../../helpers/apiUrls';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+
 import { api } from '../../../helpers/api';
+import { API_URLS } from '../../../helpers/apiUrls';
+import CustomCard from '../../common/CustomCard';
+import NoDataFound from '../../common/errors/NoDataFound';
 
 const ACCENT = '#4A3AA7';
 
 const UNITS = [
-	{ value: 'A', label: 'A', title: 'Current (Amperes)' },
-	{ value: 'V', label: 'V', title: 'Voltage (Volts)' },
+	{ value: 'A', label: 'Current', title: 'Current (Amperes)' },
+	{ value: 'V', label: 'Voltage', title: 'Voltage (Volts)' },
 ];
 
-const MetricBlock = memo(
-	({ label, value, unit, showDivider, trackColor, color }) => (
-		<Grid
-			item
-			xs={12}
-			sx={{
-				display: 'flex',
-				position: 'relative',
-				alignItems: 'center',
-				justifyContent: 'space-between',
-			}}
+const PhaseMetric = memo(({ label, value, unit, color }) => (
+	<Box
+		sx={{
+			minWidth: 0,
+			p: 0.75,
+			borderRadius: 2,
+			border: '1px solid',
+			borderColor: 'divider',
+			bgcolor: 'background.paper',
+			boxShadow: '0 3px 10px rgba(15, 35, 62, 0.06)',
+			textAlign: 'center',
+			position: 'relative',
+			overflow: 'hidden',
+			'&::after': {
+				content: '""',
+				position: 'absolute',
+				left: 7,
+				right: 7,
+				bottom: 0,
+				height: 3,
+				borderRadius: '3px 3px 0 0',
+				bgcolor: color,
+			},
+		}}
+	>
+		<Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+			<Box
+				sx={{
+					width: 20,
+					height: 20,
+					borderRadius: '50%',
+					display: 'grid',
+					placeItems: 'center',
+					bgcolor: color,
+					color: '#fff',
+					fontSize: 11,
+					fontWeight: 800,
+				}}
+			>
+				{label.slice(-1)}
+			</Box>
+			<Typography
+				noWrap
+				fontSize="10px"
+				color="text.secondary"
+				fontWeight={600}
+			>
+				{label}
+			</Typography>
+		</Box>
+		<Typography
+			noWrap
+			mt={0.25}
+			fontSize="14px"
+			fontWeight={800}
+			color="text.primary"
 		>
-			<Box>
-				<ResponsiveTextWrapper
-					variant="caption"
-					color="text.primary"
-					fontWeight={700}
-					textTransform="uppercase"
-					fontSize={{ xs: '9.5px' }}
-					value={label}
-				/>
-			</Box>
-			<Box width="88%" display="flex" alignItems="center" gap={1}>
-				<Box width="calc(100% - 40px)">
-					<CustomProgressBar
-						trackColor={trackColor}
-						color={color}
-						value={value ?? 0}
-						unit={unit || ''}
-						hideValue
-					/>
-				</Box>
+			{value ?? 0}
+			{unit}
+		</Typography>
+	</Box>
+));
 
-				<Box width="40px" textAlign="right">
-					<ResponsiveTextWrapper
-						variant="caption"
-						color={color}
-						fontWeight={1000}
-						textTransform="uppercase"
-						fontSize={{ xs: '9.5px' }}
-						value={`${value} ${unit}`}
-					/>
-				</Box>
-			</Box>
-			{showDivider && (
-				<Divider
-					sx={{
-						borderStyle: 'dashed',
-						height: '1px',
-						width: '100%',
-						position: 'absolute',
-						bottom: 0,
-					}}
-				/>
-			)}
-		</Grid>
-	)
-);
-
-MetricBlock.displayName = 'MetricBlock';
+PhaseMetric.displayName = 'PhaseMetric';
 
 const ENERGYLoadBalance = ({ slavesId }) => {
 	const [loadBalanceData, setLoadBalanceData] = useState(null);
@@ -120,6 +118,7 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 				size="small"
 				aria-label="load type"
 				sx={{
+					width: '100%',
 					height: '28px',
 					bgcolor: 'background.paper',
 					border: '1px solid',
@@ -127,6 +126,10 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 					'& .MuiToggleButton-root': {
 						border: 'none',
 						color: 'text.secondary',
+						flex: 1,
+						px: 1.25,
+						fontSize: '11px',
+						fontWeight: 700,
 					},
 					'& .MuiToggleButton-root.Mui-selected': {
 						bgcolor: ACCENT,
@@ -156,16 +159,24 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 
 		return isCurrent
 			? {
-					one: { value: target?.ir, unit, label: 'IR' },
-					two: { value: target?.iy, unit, label: 'IY' },
-					three: { value: target?.ib, unit, label: 'IB' },
-					overall: { value: target?.lbi, unit, label: 'LBI' },
+					one: { value: target?.ir, unit, label: 'Phase R' },
+					two: { value: target?.iy, unit, label: 'Phase Y' },
+					three: { value: target?.ib, unit, label: 'Phase B' },
+					overall: {
+						value: target?.lbi,
+						unit: '%',
+						label: 'Current imbalance',
+					},
 			  }
 			: {
-					one: { value: target?.rv, unit, label: 'RV' },
-					two: { value: target?.yv, unit, label: 'YV' },
-					three: { value: target?.bv, unit, label: 'BV' },
-					overall: { value: target?.volt_ub, unit, label: 'Volt UB' },
+					one: { value: target?.rv, unit, label: 'Phase R' },
+					two: { value: target?.yv, unit, label: 'Phase Y' },
+					three: { value: target?.bv, unit, label: 'Phase B' },
+					overall: {
+						value: target?.volt_ub,
+						unit: '%',
+						label: 'Voltage imbalance',
+					},
 			  };
 	}, [loadType, loadBalanceData]);
 
@@ -174,7 +185,6 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 			titleIcon={<Balance />}
 			title="Load Balance"
 			accentColor={ACCENT}
-			icon={loadToggle}
 		>
 			{loadBalanceData ? (
 				<Box
@@ -183,62 +193,79 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 						display: 'flex',
 						flexDirection: 'column',
 						justifyContent: 'space-between',
+						gap: 0.75,
 					}}
 				>
-					<Grid container sx={{ width: '100%' }} alignItems="center" rowGap={1}>
-						<MetricBlock
-							label={dataMapper?.one?.label}
-							value={dataMapper?.one?.value}
-							unit={dataMapper?.one?.unit}
-							color="#D60000"
-							trackColor="#FCA5A5"
-						/>
-						<MetricBlock
-							label={dataMapper?.two?.label}
-							value={dataMapper?.two?.value}
-							unit={dataMapper?.two?.unit}
-							color="#F59E0B"
-							trackColor="#FEF3C7"
-						/>
-						<MetricBlock
-							label={dataMapper?.three?.label}
-							value={dataMapper?.three?.value}
-							unit={dataMapper?.three?.unit}
-							color="#0059FF"
-							trackColor="#BFDBFE"
-							// showDivider
-						/>
-					</Grid>
-					<Divider
-						sx={{
-							borderStyle: 'dashed',
-						}}
-					/>
-
+					{loadToggle}
 					<Box
-						display="flex"
-						alignItems="center"
-						justifyContent="space-between"
-						width="100%"
+						sx={{
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'space-between',
+							gap: 1,
+							px: 1,
+							borderRadius: 2.5,
+							border: '1px solid',
+							borderColor: 'divider',
+							background: (theme) =>
+								theme.palette.mode === 'dark'
+									? 'linear-gradient(135deg, rgba(74,58,167,0.22), rgba(74,58,167,0.06))'
+									: 'linear-gradient(135deg, rgba(74,58,167,0.10), rgba(74,58,167,0.02))',
+						}}
 					>
-						<ResponsiveTextWrapper
-							color="text.primary"
-							fontWeight={700}
-							fontSize="14px"
-							textTransform="uppercase"
-							value={dataMapper?.overall?.label}
-						/>
-
-						<Box>
-							<MachineRatioDonut
+						<Box minWidth={0}>
+							{/* <Typography
+								noWrap
+								fontSize="11px"
+								fontWeight={700}
+								color="text.secondary"
+							>
+								{dataMapper.overall.label}
+							</Typography> */}
+							<Typography
+								noWrap
+								fontSize={{ xs: '24px', }}
+								lineHeight={1.05}
+								fontWeight={900}
 								color={ACCENT}
-								percent={Number(dataMapper?.overall?.value || 0)}
-							/>
+							>
+								{dataMapper.overall.value ?? 0}
+								<Typography component="span" fontSize="13px" fontWeight={800}>
+									{dataMapper.overall.unit}
+								</Typography>
+							</Typography>
+						</Box>
+
+						<Box
+							sx={{
+								my:0.5,
+								width: 30,
+								height: 30,
+								borderRadius: '50%',
+								display: 'grid',
+								placeItems: 'center',
+								bgcolor: ACCENT,
+								color: '#fff',
+								fontSize: 14,
+								fontWeight: 900,
+								boxShadow: '0 5px 14px rgba(74,58,167,0.28)',
+							}}
+						>
+							{loadType}
 						</Box>
 					</Box>
-					{/* <Box px={0.25} pb={0.5}>
-						<MiniGaugeArc percent={lbi} color={ACCENT} label="Current LBI" />
-					</Box> */}
+
+					<Grid container spacing={0.75}>
+						<Grid item xs={4}>
+							<PhaseMetric {...dataMapper.one} color="#2563EB" />
+						</Grid>
+						<Grid item xs={4}>
+							<PhaseMetric {...dataMapper.two} color="#16A34A" />
+						</Grid>
+						<Grid item xs={4}>
+							<PhaseMetric {...dataMapper.three} color="#F59E0B" />
+						</Grid>
+					</Grid>
 				</Box>
 			) : (
 				<NoDataFound message="Waiting for live device loadBalanceData — readings appear automatically" />

@@ -32,8 +32,9 @@ const ENERGYEnerAndCarbon = ({ data }) => {
 		showDivider,
 		enerUnit,
 		carbonUnit,
+		showCarbonLabel,
 		icon: Icon,
-		iconColor,
+		iconColor,percent
 	}) => (
 		<Grid
 			item
@@ -102,16 +103,15 @@ const ENERGYEnerAndCarbon = ({ data }) => {
 					px={1.5}
 				>
 					<ResponsiveTextWrapper
-						fontSize={{ xs: '12px', sm: '13px' }}
-						// color={iconColor}
-						fontWeight={600}
-						value="Ener Tree"
+						fontSize={{ xs: '12px', sm: '13px', md: '15px' }}
+						color={iconColor}
+						fontWeight={800}
+						value={enerValue?.toLocaleString() || 0}
 					/>
-
 					<CustomProgressBar
 						// trackColor="#fff"
 						color={iconColor}
-						value={enerValue}
+						value={percent}
 						// unit={enerUnit}
 					/>
 				</Box>
@@ -133,12 +133,13 @@ const ENERGYEnerAndCarbon = ({ data }) => {
 					// p={0.2}
 					px={1.5}
 				>
-					<ResponsiveTextWrapper
+					{/* <ResponsiveTextWrapper
 						fontSize={{ xs: '12px', sm: '13px' }}
 						// color={iconColor}
 						fontWeight={600}
-						value="Carbon Footprints"
-					/>
+						value="Carbon Trading"
+						sx={{ my: 0.5, visibility: showCarbonLabel ? 'visible' : 'hidden' }}
+					/> */}
 
 					<ResponsiveTextWrapper
 						fontSize={{ xs: '12px', sm: '13px', md: '15px' }}
@@ -201,9 +202,25 @@ const ENERGYEnerAndCarbon = ({ data }) => {
 			titleIcon={<NaturePeople />}
 			title="Ener & Carbon"
 			accentColor={ACCENT}
-			subtitle={`Export: ${data?.export?.value || 0} ${
-				data?.export?.unit || ''
-			}`}
+			sx={{
+				'& .MuiCardContent-root > .MuiBox-root:first-of-type': {
+					alignItems: 'center',
+				},
+			}}
+			subtitle='Export '
+			icon={
+				<ResponsiveTextWrapper
+					value={[
+						// 'Export:',
+						data?.export?.value || 0,
+						data?.export?.unit || '',
+					].join(' ')}
+					color="text.primary"
+					letterSpacing="0.2px"
+					fontWeight={700}
+					ml={0.5}
+				/>
+			}
 		>
 			{data ? (
 				<Box
@@ -220,9 +237,11 @@ const ENERGYEnerAndCarbon = ({ data }) => {
 							label="Main"
 							showDivider
 							enerValue={data?.main?.value || 0}
+							percent={data?.main?.percent || 0}
 							carbonValue={data?.main?.carbon || 0}
 							enerUnit={data?.unit || ''}
 							carbonUnit={data?.carbon_unit || ''}
+							showCarbonLabel
 							icon={ElectricalServices}
 							iconColor="#2563EB"
 						/>
@@ -231,6 +250,7 @@ const ENERGYEnerAndCarbon = ({ data }) => {
 							label="Backup"
 							enerValue={data?.backup?.value || 0}
 							carbonValue={data?.backup?.carbon || 0}
+							percent={data?.backup?.percent || 0}
 							showDivider
 							enerUnit={data?.unit || ''}
 							carbonUnit={data?.carbon_unit || ''}
@@ -241,6 +261,7 @@ const ENERGYEnerAndCarbon = ({ data }) => {
 							label="Green"
 							enerValue={data?.green?.value || 0}
 							carbonValue={data?.green?.carbon || 0}
+							percent={data?.green?.percent || 0}
 							enerUnit={data?.unit || ''}
 							carbonUnit={data?.carbon_unit || ''}
 							icon={EnergySavingsLeaf}
