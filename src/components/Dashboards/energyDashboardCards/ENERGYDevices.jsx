@@ -15,7 +15,6 @@ const ACCENT = '#2563EB';
 
 const TotalDevices = ({ value }) => (
 	<>
-	
 		<Stack spacing={0.1} minWidth={66}>
 			<Typography
 				variant="caption"

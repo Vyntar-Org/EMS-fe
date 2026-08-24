@@ -34,7 +34,8 @@ const ENERGYEnerAndCarbon = ({ data }) => {
 		carbonUnit,
 		showCarbonLabel,
 		icon: Icon,
-		iconColor,percent
+		iconColor,
+		percent,
 	}) => (
 		<Grid
 			item
@@ -207,7 +208,7 @@ const ENERGYEnerAndCarbon = ({ data }) => {
 					alignItems: 'center',
 				},
 			}}
-			subtitle='Export '
+			subtitle="Export "
 			icon={
 				<ResponsiveTextWrapper
 					value={[

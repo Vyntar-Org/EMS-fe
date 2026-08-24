@@ -224,7 +224,7 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 							</Typography> */}
 							<Typography
 								noWrap
-								fontSize={{ xs: '24px', }}
+								fontSize={{ xs: '24px' }}
 								lineHeight={1.05}
 								fontWeight={900}
 								color={ACCENT}
@@ -238,7 +238,7 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 
 						<Box
 							sx={{
-								my:0.5,
+								my: 0.5,
 								width: 30,
 								height: 30,
 								borderRadius: '50%',
