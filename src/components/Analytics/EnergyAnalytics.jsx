@@ -18,10 +18,7 @@ import {
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import {
-	formatChartValue,
-	getCategoricalColors,
-} from '../../helpers/chartConfig';
+import { getCategoricalColors } from '../../helpers/chartConfig';
 import {
 	basePickerStyles,
 	downAnalyticsSampleData,
@@ -279,10 +276,6 @@ const AnalyticsRow = memo(
 		handleReset,
 		rowIds,
 	}) => {
-		const theme = useTheme();
-		const isDark = theme.palette.mode === 'dark';
-		const [hoveredPointIndex, setHoveredPointIndex] = useState(null);
-
 		// Computed from already-stable parent refs (slaveOptions/usedDeviceIds
 		// are themselves useMemo'd), so this only changes when something that
 		// actually affects THIS row changes — not on every keystroke/click
