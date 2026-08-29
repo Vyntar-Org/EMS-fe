@@ -1,5 +1,7 @@
 import dayjs from 'dayjs';
 
+import { formatNumber } from './formatters';
+
 export const formatTimestamp = (tsString) => {
 	if (!tsString) {
 		return '';
@@ -170,9 +172,7 @@ export const transformDynamicDataToDailyMatrix = (
 				size: isFullDate ? 110 : 100,
 				cell: (info) => {
 					const val = info.getValue();
-					return val !== undefined && val !== null
-						? Number(val).toFixed(2)
-						: '0.00';
+					return formatNumber(val, 2, { fallback: '0' });
 				},
 			};
 		}),
@@ -192,7 +192,7 @@ export const transformDynamicDataToDailyMatrix = (
 				const itemValue = item?.[valueKey];
 
 				if (itemDate && itemDate in row) {
-					row[itemDate] = parseFloat(Number(itemValue || 0).toFixed(2));
+					row[itemDate] = Number(formatNumber(itemValue, 2, { fallback: '0' }));
 				}
 			});
 		}

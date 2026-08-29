@@ -278,7 +278,7 @@ export const MachineRatioDonut = ({ percent = 0, color, label, caption }) => {
 					<Typography
 						sx={{ fontSize: '11px', fontWeight: 800, color: 'text.primary' }}
 					>
-						{Math.round(clamped)}%
+						{formatChartValue(clamped)}%
 					</Typography>
 				</Box>
 			</Box>
@@ -968,6 +968,7 @@ export const CustomProgressBar = ({
 	icon: Icon, // Pass any MUI Icon component here (e.g., icon={SettingsIcon})
 	iconColor,
 	unit = '%',
+	hideValue = false,
 }) => {
 	const clampedValue = Math.max(0, Math.min(100, Number(value) || 0));
 	const activeIconColor = iconColor || color;
@@ -1053,18 +1054,20 @@ export const CustomProgressBar = ({
 					</Box>
 
 					{/* Right Percentage Label */}
-					<Box maxWidth="50px" minWidth="36px">
-						<ResponsiveTextWrapper
-							value={`${Math.round(clampedValue)}${unit}`}
-							sx={{
-								fontSize: '13px',
-								fontWeight: 700,
-								color: color,
-								textAlign: 'right',
-								whiteSpace: 'nowrap',
-							}}
-						/>
-					</Box>
+					{hideValue ? null : (
+						<Box maxWidth="50px" minWidth="36px">
+							<ResponsiveTextWrapper
+								value={`${formatChartValue(clampedValue)}${unit}`}
+								sx={{
+									fontSize: '13px',
+									fontWeight: 700,
+									color: color,
+									textAlign: 'right',
+									whiteSpace: 'nowrap',
+								}}
+							/>
+						</Box>
+					)}
 				</Stack>
 			</Stack>
 		</Stack>

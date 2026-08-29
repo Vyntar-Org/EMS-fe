@@ -8,6 +8,7 @@ import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { getChartSeries } from '../../helpers/chartConfig';
+import { formatNumber } from '../../helpers/formatters';
 import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
@@ -96,7 +97,9 @@ const handleDownload = (filteredMachines, selectedApp) => {
 	const rows = filteredMachines.map((card) => {
 		const metricMap = {};
 		card.metrics?.forEach((m) => {
-			metricMap[m.label] = `${m.value ?? ''} ${m.unit || ''}`.trim();
+			metricMap[m.label] = `${formatNumber(m.value, 2, { fallback: '' })} ${
+				m.unit || ''
+			}`.trim();
 		});
 
 		return [

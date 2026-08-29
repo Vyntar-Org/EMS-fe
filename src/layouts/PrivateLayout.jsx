@@ -1,18 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { Box, useTheme } from '@mui/material';
+import { useCallback, useEffect, useState } from 'react';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+
 import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
 import { useApplications } from '../contexts/ApplicationContext';
-import { getPagePath, pageComponentMap } from '../helpers/pageMapping';
+import { useAuth } from '../contexts/AuthContext';
 import { layoutBackgroundSx } from '../helpers/layoutImages';
+import { getPagePath, pageComponentMap } from '../helpers/pageMapping';
 import { preloadAppImages } from '../helpers/preloadImages';
+import { useIdleAutoCycle } from '../hooks/useIdleAutoCycle.js';
 
 export const PrivateLayout = () => {
 	const { user } = useAuth();
 	const [isMobileOpen, setIsMobileOpen] = useState(false);
-	const [isDesktopOpen, setIsDesktopOpen] = useState(true);
+	const [isDesktopOpen, setIsDesktopOpen] = useState(false);
+	const [isAutoSwitching, setIsAutoSwitching] = useState(false);
 	const { applications, selectedApp, switchApp } = useApplications();
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -27,19 +30,35 @@ export const PrivateLayout = () => {
 		);
 	}, [applications, user]);
 
-	const handleAppChange = (event, newAppCode) => {
-		switchApp(newAppCode);
-		const app = applications.find((a) => a.code === newAppCode);
-		if (app) {
-			const defaultPage =
-				app.default_landing_page ||
-				app.pages?.find((pageCode) => pageComponentMap[pageCode]) ||
-				app.pages?.[0] ||
-				'DASHBOARD';
-			const path = getPagePath(defaultPage, newAppCode);
-			navigate(path);
-		}
-	};
+	const changeApplication = useCallback(
+		(newAppCode) => {
+			switchApp(newAppCode);
+			const app = applications.find((a) => a.code === newAppCode);
+			if (app) {
+				const defaultPage =
+					app.default_landing_page ||
+					app.pages?.find((pageCode) => pageComponentMap[pageCode]) ||
+					app.pages?.[0] ||
+					'DASHBOARD';
+				const path = getPagePath(defaultPage, newAppCode);
+				navigate(path);
+			}
+		},
+		[applications, navigate, switchApp]
+	);
+
+	const handleAppChange = useCallback(
+		(_event, newAppCode) => changeApplication(newAppCode),
+		[changeApplication]
+	);
+
+	useIdleAutoCycle({
+		apps: applications.map((app) => app.code),
+		activeApp: selectedApp,
+		onAppChange: changeApplication,
+		enabled: isAutoSwitching,
+		cycleIntervalMs: 12_000,
+	});
 
 	// If not authenticated, redirect to login
 	if (!user) {
@@ -72,6 +91,8 @@ export const PrivateLayout = () => {
 					setIsDesktopOpen={setIsDesktopOpen}
 					isDesktopOpen={isDesktopOpen}
 					handleAppChange={handleAppChange}
+					isAutoSwitching={isAutoSwitching}
+					onToggleAutoSwitch={() => setIsAutoSwitching((value) => !value)}
 				/>
 				<Box
 					component="main"

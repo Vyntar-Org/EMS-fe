@@ -6,6 +6,7 @@ import {
 	MachineTemperatureGauge,
 } from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
+import { formatNumber } from '../../../helpers/formatters';
 
 /**
  * Dedicated premium card for the Solar (solar water heater) machine list:
@@ -41,20 +42,25 @@ const PremiumSolarMachineCard = ({
 				rows={[
 					{
 						label: 'Instant Flow',
-						value: `${Number(instantFlow ?? 0).toFixed(3)} m³/hr`,
+						value: `${formatNumber(instantFlow, 2, { fallback: '0' })} m³/hr`,
 					},
 					{
 						label: 'Flow Temperature',
-						value: `${Number(flowTemperature ?? 0).toFixed(2)} °C`,
+						value: `${formatNumber(flowTemperature, 2, { fallback: '0' })} °C`,
 					},
-					{ label: 'Pressure', value: Number(pressure ?? 0).toFixed(2) },
+					{
+						label: 'Pressure',
+						value: formatNumber(pressure, 2, { fallback: '0' }),
+					},
 					{
 						label: 'Inlet Temperature',
-						value: `${Number(inletTemperature ?? 0).toFixed(2)} °C`,
+						value: `${formatNumber(inletTemperature, 2, { fallback: '0' })} °C`,
 					},
 					{
 						label: 'Outlet Temperature',
-						value: `${Number(outletTemperature ?? 0).toFixed(2)} °C`,
+						value: `${formatNumber(outletTemperature, 2, {
+							fallback: '0',
+						})} °C`,
 					},
 				]}
 			/>

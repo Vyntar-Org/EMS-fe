@@ -1,5 +1,6 @@
 import { MachineMetricPanel } from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
+import { formatNumber } from '../../../helpers/formatters';
 
 /**
  * Dedicated premium card for the Fuel machine list: gas-can icon, Rate of
@@ -24,8 +25,8 @@ const PremiumFuelMachineCard = ({
 		status={status}
 		lastUpdated={lastUpdated}
 		todayMtd={{
-			todayValue: `${Number(consumption ?? 0).toFixed(2)} KLD`,
-			mtdValue: `${Number(mtd ?? 0).toFixed(2)} KLD`,
+			todayValue: `${formatNumber(consumption, 2, { fallback: '0' })} KLD`,
+			mtdValue: `${formatNumber(mtd, 2, { fallback: '0' })} KLD`,
 		}}
 		trend={slaveId ? { url: trendUrl } : null}
 		onOpenTrend={onOpenTrend}
@@ -34,11 +35,11 @@ const PremiumFuelMachineCard = ({
 			rows={[
 				{
 					label: 'Rate of Flow',
-					value: `${Number(rateOfFlow ?? 0).toFixed(2)} m³/h`,
+					value: `${formatNumber(rateOfFlow, 2, { fallback: '0' })} m³/h`,
 				},
 				{
 					label: 'Totalizer',
-					value: `${Number(totalizer ?? 0).toFixed(1)} m³`,
+					value: `${formatNumber(totalizer, 2, { fallback: '0' })} m³`,
 				},
 			]}
 		/>

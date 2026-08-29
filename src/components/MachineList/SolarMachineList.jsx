@@ -10,6 +10,7 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { getChartSeries } from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
+import { formatNumber } from '../../helpers/formatters';
 import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
@@ -109,11 +110,11 @@ const handleDownload = (filteredMachines, selectedApp) => {
 		machine.device_uid || 'N/A',
 		machine.slave_index ?? 'N/A',
 		machine.status || 'N/A',
-		Number(machine.inlet_temperature ?? 0).toFixed(2),
-		Number(machine.outlet_temperature ?? 0).toFixed(2),
-		Number(machine.flow_temperature ?? 0).toFixed(2),
-		Number(machine.instant_flow ?? 0).toFixed(3),
-		Number(machine.pressure ?? 0).toFixed(2),
+		formatNumber(machine.inlet_temperature, 2, { fallback: '0' }),
+		formatNumber(machine.outlet_temperature, 2, { fallback: '0' }),
+		formatNumber(machine.flow_temperature, 2, { fallback: '0' }),
+		formatNumber(machine.instant_flow, 2, { fallback: '0' }),
+		formatNumber(machine.pressure, 2, { fallback: '0' }),
 		machine.last_updated ? formatTimestamp(machine.last_updated) : 'N/A',
 	]);
 

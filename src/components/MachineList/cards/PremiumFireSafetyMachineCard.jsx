@@ -6,6 +6,7 @@ import {
 	MachineTemperatureGauge,
 } from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
+import { formatNumber } from '../../../helpers/formatters';
 
 /**
  * Dedicated premium card for the Fire Safety machine list: flame icon,
@@ -37,11 +38,11 @@ const PremiumFireSafetyMachineCard = ({
 				rows={[
 					{
 						label: 'Temperature',
-						value: `${Number(temperature ?? 0).toFixed(2)} °C`,
+						value: `${formatNumber(temperature, 2, { fallback: '0' })} °C`,
 					},
 					{
 						label: 'Water Level',
-						value: `${Number(waterLevel ?? 0).toFixed(2)} m`,
+						value: `${formatNumber(waterLevel, 2, { fallback: '0' })} m`,
 					},
 				]}
 			/>

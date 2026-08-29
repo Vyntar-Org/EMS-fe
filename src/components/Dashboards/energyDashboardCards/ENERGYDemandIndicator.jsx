@@ -1,5 +1,6 @@
-import { Box } from '@mui/material';
-import React, { useEffect, useMemo, useState } from 'react';
+import { BarChart, SsidChart } from '@mui/icons-material';
+import { Box, Fade, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useCommonData } from '../../../contexts/CommonDataContext';
 import { api } from '../../../helpers/api';
@@ -12,6 +13,7 @@ import NoDataFound from '../../common/errors/NoDataFound';
 const ENERGYDemandIndicator = ({ slavesId }) => {
 	const { slavesData } = useCommonData();
 	const [demandIndicator, setDemandIndicator] = useState(null);
+	const [chartType, setChartType] = useState('line');
 
 	const slavesDisplayName = useMemo(() => {
 		if (!slavesData) {
@@ -64,6 +66,15 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 		return downsample(points);
 	}, [demandIndicator]);
 
+	const yAxisMax = useMemo(() => {
+		if (!seriesData.length) {
+			return 14;
+		}
+
+		const maxValue = Math.max(...seriesData.map((point) => point.y));
+		return maxValue <= 0 ? 14 : Math.ceil(maxValue * 1.2);
+	}, [seriesData]);
+
 	const series = [
 		{
 			name: 'Peak Demand',
@@ -71,22 +82,68 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 		},
 	];
 
+	const handleChartTypeChange = (_e, val) => {
+		if (val) {
+			setChartType(val);
+		}
+	};
+
+	const chartToggle = (
+		<ToggleButtonGroup
+			value={chartType}
+			exclusive
+			onChange={handleChartTypeChange}
+			size="small"
+			aria-label="chart type"
+			sx={{
+				height: '28px',
+				bgcolor: 'background.paper',
+				border: '1px solid',
+				borderColor: 'divider',
+				'& .MuiToggleButton-root': {
+					border: 'none',
+					color: 'text.secondary',
+				},
+				'& .MuiToggleButton-root.Mui-selected': {
+					bgcolor: CHART_COLORS.demand,
+					color: '#FFFFFF',
+					'&:hover': { bgcolor: CHART_COLORS.demand },
+				},
+			}}
+		>
+			<ToggleButton value="line" aria-label="line">
+				<SsidChart fontSize="small" />
+			</ToggleButton>
+			<ToggleButton value="bar" aria-label="bar">
+				<BarChart fontSize="small" />
+			</ToggleButton>
+		</ToggleButtonGroup>
+	);
+
 	return (
 		<CustomCard
 			title={`Demand Indicator ${slavesDisplayName}`}
 			accentColor={CHART_COLORS.demand}
+			icon={chartToggle}
 		>
 			{demandIndicator && demandIndicator?.data?.length ? (
-				<Box height="100%" width="100%" overflow="hidden">
-					<CustomApexChart
-						series={series}
-						type="area"
-						colors={[CHART_COLORS.demand]}
-						xAxesType="datetime"
-						height="100%"
-						minimal={true}
-					/>
-				</Box>
+				<Fade in key={chartType} timeout={300}>
+					<Box height="100%" width="100%" overflow="hidden">
+						<CustomApexChart
+							key={chartType}
+							series={series}
+							type={chartType === 'bar' ? 'bar' : 'area'}
+							colors={[CHART_COLORS.demand]}
+							xAxesType="datetime"
+							granularity="time"
+							unit="kW"
+							tickAmount={4}
+							showToolbar={false}
+							customOptions={{ yaxis: { min: 0, max: yAxisMax } }}
+							height="100%"
+						/>
+					</Box>
+				</Fade>
 			) : (
 				<NoDataFound message="Waiting for live device data — readings appear automatically" />
 			)}

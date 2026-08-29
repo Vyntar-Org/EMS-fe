@@ -5,6 +5,7 @@ import NoDataFound from '../../common/errors/NoDataFound';
 import { Box, Divider, Grid } from '@mui/material';
 import { MiniColumnChart } from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
+import { formatNumber } from '../../../helpers/formatters';
 
 const ACCENT = '#1BAF7A';
 const MAIN_COLOR = '#2563EB';
@@ -38,7 +39,7 @@ const ENERGYCarbonFootprints = ({ data }) => {
 					fontSize={{ xs: '12px', sm: '13px', md: '15px' }}
 					color={ACCENT}
 					fontWeight={800}
-					value={value?.toLocaleString() || 0}
+					value={formatNumber(value, 2, { fallback: '0', useGrouping: true })}
 				/>
 				<ResponsiveTextWrapper
 					mt={0.5}

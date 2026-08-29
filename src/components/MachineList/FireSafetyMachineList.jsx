@@ -10,6 +10,7 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { getChartSeries } from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
+import { formatNumber } from '../../helpers/formatters';
 import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
@@ -106,8 +107,8 @@ const handleDownload = (filteredMachines, selectedApp) => {
 		machine.device_uid || 'N/A',
 		machine.slave_index ?? 'N/A',
 		machine.status || 'N/A',
-		Number(machine.temperature ?? 0).toFixed(2),
-		Number(machine.water_level ?? 0).toFixed(2),
+		formatNumber(machine.temperature, 2, { fallback: '0' }),
+		formatNumber(machine.water_level, 2, { fallback: '0' }),
 		machine.last_updated ? formatTimestamp(machine.last_updated) : 'N/A',
 	]);
 

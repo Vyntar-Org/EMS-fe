@@ -1,6 +1,7 @@
 import { BarChart, Search, SsidChart, Bolt } from '@mui/icons-material';
 import {
 	Box,
+	Fade,
 	Grid,
 	InputAdornment,
 	ToggleButton,
@@ -153,7 +154,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	);
 
 	const chartTitle =
-		mode === 2 ? `${slavesDisplayName} Energy` : 'Machine Power Consumption';
+		mode === 2 ? `${slavesDisplayName} Energy` : 'Power Consumption';
 
 	const series = getChartSeries(chartData, {
 		actual: 'value',

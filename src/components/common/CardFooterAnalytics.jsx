@@ -3,6 +3,7 @@ import { Box, Divider, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 import { MiniBarSparkline, MiniSparkline } from './MachineCardBits';
+import { formatNumber } from '../../helpers/formatters';
 
 // Curated decorative curves — the footer only ever has two real numbers
 // (today/yesterday), which draws as a flat, unappealing 2-point line. These
@@ -146,7 +147,7 @@ const CardFooterAnalytics = ({
 					}}
 				>
 					{hasComparison
-						? `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(1)}%`
+						? `${percentChange >= 0 ? '+' : ''}${formatNumber(percentChange)}%`
 						: '—'}{' '}
 					<Typography
 						component="span"

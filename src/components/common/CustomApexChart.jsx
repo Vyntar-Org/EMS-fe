@@ -4,6 +4,7 @@ import { memo, useCallback, useMemo } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
 import { smartParseDate } from '../../helpers/dateParse';
+import { formatNumber } from '../../helpers/formatters';
 
 const TOOLTIP_STYLE_ID = 'capx-tooltip-styles';
 
@@ -81,17 +82,7 @@ const ensureTooltipStylesInjected = () => {
 
 ensureTooltipStylesInjected();
 
-// Rounds to a max of 2 decimals and strips insignificant trailing zeros.
-const roundTrim = (val) => {
-	const num = Number(val);
-	if (val === undefined || val === null || Number.isNaN(num)) {
-		return '-';
-	}
-	const rounded = Math.round(num * 100) / 100;
-	return Number.isInteger(rounded)
-		? String(rounded)
-		: String(rounded.toFixed(2)).replace(/0+$/, '').replace(/\.$/, '');
-};
+const roundTrim = (val) => formatNumber(val);
 
 const escapeHtml = (str) =>
 	String(str).replace(
@@ -403,37 +394,45 @@ const CustomApexChart = ({
 				tickAmount: minimal
 					? 1
 					: Math.min(tickAmount, Math.max(pointCount - 1, 1)),
+				axisBorder: {
+					show: minimal,
+					color: 'rgba(145, 158, 171, 0.32)',
+				},
+				axisTicks: { show: false },
+				...customOptions?.xaxis,
 				labels: {
 					style: { colors: '#637381', fontSize: '12px' },
 					rotate: 0,
 					hideOverlappingLabels: true,
 					trim: !minimal,
 					...(granularity ? { formatter: xLabelFormatter } : {}),
+					...customOptions?.xaxis?.labels,
 				},
-				axisBorder: {
-					show: minimal,
-					color: 'rgba(145, 158, 171, 0.32)',
-				},
-				axisTicks: { show: false },
 			},
 			yaxis: {
 				tickAmount: minimal ? 1 : 5,
-				labels: {
-					style: { colors: '#637381', fontSize: '12px' },
-					formatter: yLabelFormatter,
-				},
 				axisBorder: {
 					show: minimal,
 					color: 'rgba(145, 158, 171, 0.32)',
 				},
 				axisTicks: { show: false },
+				...customOptions?.yaxis,
+				labels: {
+					style: { colors: '#637381', fontSize: '12px' },
+					formatter: yLabelFormatter,
+					...customOptions?.yaxis?.labels,
+				},
 			},
 			title: {
 				text: resolvedTitle,
 				align: 'left',
 				style: { fontSize: '16px', fontWeight: 600, color: '#212b36' },
 			},
-			...customOptions,
+			...Object.fromEntries(
+				Object.entries(customOptions).filter(
+					([key]) => key !== 'xaxis' && key !== 'yaxis'
+				)
+			),
 		}),
 		[
 			type,

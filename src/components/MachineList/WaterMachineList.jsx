@@ -9,6 +9,7 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { getChartSeries } from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
+import { formatNumber } from '../../helpers/formatters';
 import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -36,10 +37,10 @@ const handleDownload = (filteredMachines, selectedApp) => {
 		machine.mtd || 'N/A',
 		machine.slave_index ?? 'N/A',
 		machine.status || 'N/A',
-		Number(machine.consumption ?? 0).toFixed(2),
-		Number(machine.rate_of_flow ?? 0).toFixed(2),
+		formatNumber(machine.consumption, 2, { fallback: '0' }),
+		formatNumber(machine.rate_of_flow, 2, { fallback: '0' }),
 		machine.latest_ts ? formatTimestamp(machine.latest_ts) : 'N/A',
-		Number(machine.totalizer ?? 0).toFixed(2),
+		formatNumber(machine.totalizer, 2, { fallback: '0' }),
 	]);
 
 	const csvContent = Papa.unparse({
@@ -282,17 +283,21 @@ const WaterMachineList = () => {
 											metrics={[
 												{
 													label: 'Totalizer',
-													value: `${Number(mc?.totalizer ?? 0).toFixed(2)} KLD`,
+													value: `${formatNumber(mc?.totalizer, 2, {
+														fallback: '0',
+													})} KLD`,
 												},
 												{
 													label: 'Rate of Flow',
-													value: `${Number(mc?.rate_of_flow ?? 0).toFixed(
-														2
-													)} m³/hr`,
+													value: `${formatNumber(mc?.rate_of_flow, 2, {
+														fallback: '0',
+													})} m³/hr`,
 												},
 											]}
-											today={`${Number(mc?.consumption ?? 0).toFixed(2)} KLD`}
-											mtd={`${Number(mc?.mtd ?? 0).toFixed(2)} KLD`}
+											today={`${formatNumber(mc?.consumption, 2, {
+												fallback: '0',
+											})} KLD`}
+											mtd={`${formatNumber(mc?.mtd, 2, { fallback: '0' })} KLD`}
 											consumption={mc?.consumption}
 											mtdValue={mc?.mtd}
 											slaveId={mc?.slave_id}

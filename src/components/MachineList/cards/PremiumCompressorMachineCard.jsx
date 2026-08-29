@@ -1,80 +1,70 @@
 import {
-	Box,
-	Stack,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
-} from '@mui/material';
+	AccessTimeRounded,
+	CalendarMonthRounded,
+	ChevronRightRounded,
+	CompressRounded,
+	HistoryRounded,
+	InsightsRounded,
+	PlayArrowRounded,
+	QueryStatsRounded,
+	StopRounded,
+	TimerOutlined,
+	WifiOffRounded,
+	WifiRounded,
+} from '@mui/icons-material';
+import { Box, Button, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 
-import { APP_ACCENT_COLOR } from '../../common/MachineCardBits';
-import PremiumMachineCard from '../../common/PremiumMachineCard';
+import { formatTimestamp } from '../../../helpers/common';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
-import { useLocation } from 'react-router-dom';
-import { getAppCodeFromPath } from '../../../helpers/pageMapping';
 
-// Shared "bounded panel" look for the two stoppage tables below — a
-// surface-muted rounded box (same treatment `MachineMetricPanel` and the
-// FlowCard table use elsewhere) so each section reads as one clearly
-// separated, understandable block instead of bare table rows floating on
-// the card background.
-const tablePanelSx = {
-	bgcolor: 'surface.muted',
-	border: '1px solid',
-	borderColor: 'surface.mutedBorder',
-	borderRadius: '14px',
-	width: '100%',
-	overflow: 'hidden',
-};
+const GREEN = '#16A34A';
+const RED = '#EF3340';
 
-const headerCellSx = {
-	fontWeight: 'bold',
-	border: 0,
-	p: 0.75,
-	width: '33.34%',
-};
+const shown = (value) =>
+	value === null || value === undefined || value === '' || value === 'N/A'
+		? '-'
+		: value;
 
-const bodyCellSx = {
-	border: 0,
-	p: 0.75,
-	width: '33.34%',
-};
-
-const StoppageCount = ({ count, onClick }) => (
+const SoftIcon = ({ children, color, size = 34 }) => (
 	<Box
-		component="span"
-		onClick={() => count > 0 && onClick()}
 		sx={{
-			display: 'inline-flex',
-			maxWidth: '100%',
-			cursor: count > 0 ? 'pointer' : 'default',
-			'&:hover': count > 0 ? { textDecoration: 'underline' } : {},
+			width: size,
+			height: size,
+			borderRadius: '50%',
+			display: 'grid',
+			placeItems: 'center',
+			flexShrink: 0,
+			color,
+			bgcolor: alpha(color, 0.1),
+			'& svg': { fontSize: size * 0.58 },
 		}}
 	>
-		<ResponsiveTextWrapper
-			value={String(count ?? 0)}
-			fontWeight={700}
-			fontSize="13px"
-			color={count > 0 ? APP_ACCENT_COLOR.COMPRESSOR : 'text.primary'}
-			sx={{ textAlign: 'center' }}
-		/>
+		{children}
 	</Box>
 );
 
-/**
- * Dedicated premium card for the Compressor machine list: gear icon, title +
- * status pill, timestamp, a Current Status line, a stoppage-ratio analytics
- * donut (8hr share of 24hr stoppages), the Last Stoppage table, the
- * Stoppages History table (clickable counts open the downtime-history
- * modal), and the TREND action last. Every piece of text — headers,
- * values, the status line — goes through `ResponsiveTextWrapper` so long
- * device names, timestamps, or durations truncate cleanly (with a tooltip
- * for the full value) instead of overflowing or wrapping the card apart at
- * narrow widths, and every wrapper sits in a `width: 100%` / `minWidth: 0`
- * container so that truncation is computed off the card's real rendered
- * width rather than guessed pixel values.
- */
+const PeriodHeading = ({ icon, children }) => (
+	<Stack
+		direction="row"
+		alignItems="center"
+		justifyContent="center"
+		spacing={0.4}
+		minWidth={0}
+		sx={{ color: '#365B8C', '& svg': { fontSize: 17 } }}
+	>
+		{icon}
+		<Typography
+			fontSize="8.5px"
+			fontWeight={700}
+			lineHeight={1.15}
+			textAlign="center"
+		>
+			{children}
+		</Typography>
+	</Stack>
+);
+
 const PremiumCompressorMachineCard = ({
 	title,
 	status,
@@ -89,291 +79,449 @@ const PremiumCompressorMachineCard = ({
 	previous24Duration,
 	onStoppageClick,
 	onOpenTrend,
-	idle: isIdle,
-	alert: isAlert,
 }) => {
-	const location = useLocation();
-	const appCode = getAppCodeFromPath(location.pathname);
 	const isOnline = status?.toLowerCase() === 'online';
+	const statusColor = isOnline ? GREEN : RED;
+	const statusLabel = isOnline ? 'ONLINE' : 'OFFLINE';
 
 	return (
-		<PremiumMachineCard
-			app="COMPRESSOR"
-			title={title}
-			status={status}
-			lastUpdated={lastUpdated}
-			onOpenTrend={onOpenTrend}
+		<Box
+			sx={{
+				height: '100%',
+				p: 1,
+				borderRadius: '20px',
+				border: '1px solid',
+				borderColor: (t) => alpha(t.palette.primary.main, 0.11),
+				bgcolor: 'background.paper',
+				boxShadow: '0 12px 35px rgba(37,69,111,.10)',
+				display: 'flex',
+				flexDirection: 'column',
+				gap: 0.85,
+				transition: (t) =>
+					t.transitions.create(['transform', 'box-shadow', 'border-color'], {
+						duration: t.transitions.duration.short,
+					}),
+				'&:hover': {
+					transform: 'translateY(-4px)',
+					boxShadow: `0 16px 34px ${alpha(statusColor, 0.18)}`,
+					borderColor: alpha(statusColor, 0.28),
+				},
+			}}
 		>
-			<Stack
-				direction="row"
-				spacing={1}
-				alignItems="center"
-				flexWrap="nowrap"
-				mb={1.25}
-				width="100%"
-				minWidth={0}
-				sx={{ overflow: 'hidden' }}
+			<Box
+				sx={{
+					position: 'relative',
+					overflow: 'hidden',
+					minHeight: 104,
+					borderRadius: '15px',
+					border: `1px solid ${alpha(statusColor, 0.42)}`,
+					background: `linear-gradient(120deg, ${alpha(
+						statusColor,
+						0.16
+					)}, ${alpha(statusColor, 0.04)} 72%)`,
+					boxShadow: `0 7px 18px ${alpha(statusColor, 0.12)}`,
+					'&::after': {
+						content: '""',
+						position: 'absolute',
+						right: -35,
+						bottom: -48,
+						width: 190,
+						height: 100,
+						borderRadius: '50%',
+						background: `radial-gradient(circle, ${alpha(
+							statusColor,
+							0.2
+						)} 1px, transparent 1.5px)`,
+						backgroundSize: '9px 9px',
+						transform: 'rotate(-12deg)',
+					},
+				}}
 			>
-				<Box flexShrink={0} minWidth={0}>
-					<ResponsiveTextWrapper
-						value="Current Status:"
-						fontWeight="bold"
-						color="text.primary"
-						fontSize="13px"
-					/>
-				</Box>
-				<Box
-					flexShrink={0}
-					sx={{
-						bgcolor: isOnline ? 'rgba(76,175,80,0.12)' : 'rgba(244,67,54,0.12)',
-						borderRadius: '999px',
-						px: 1.5,
-						py: 0.25,
-						maxWidth: '100%',
-					}}
-				>
-					<ResponsiveTextWrapper
-						value={status?.toUpperCase()}
-						color={isOnline ? 'success.main' : 'error.main'}
-						fontWeight="bold"
-						fontSize="11px"
-					/>
-				</Box>
-				{statusFrom ? (
-					<Box minWidth={0} flex={1}>
-						<ResponsiveTextWrapper
-							value={`from ${statusFrom}`}
-							color="text.secondary"
-							fontSize="11px"
-							fontWeight="bold"
-						/>
-					</Box>
-				) : null}
-			</Stack>
-			{appCode === 'COMPRESSOR' && (
 				<Stack
 					direction="row"
-					spacing={2}
 					alignItems="center"
-					flexWrap="nowrap"
-					mb={1.25}
-					width="100%"
-					minWidth={0}
-					sx={{ overflow: 'hidden' }}
-					justifyContent="space-between"
+					spacing={1}
+					height="100%"
+					p={1.05}
 				>
-					{/* Idle Indicator */}
-					<Stack
-						direction="row"
-						spacing={0.75}
-						alignItems="center"
-						flexShrink={0}
+					<Box
+						sx={{
+							width: 56,
+							height: 56,
+							borderRadius: '50%',
+							display: 'grid',
+							placeItems: 'center',
+							flexShrink: 0,
+							color: '#35B879',
+							bgcolor: 'background.paper',
+							border: '3px solid rgba(255,255,255,.85)',
+							boxShadow: '0 7px 16px rgba(28,48,76,.16)',
+							'& svg': { fontSize: 30 },
+						}}
 					>
+						<CompressRounded />
+					</Box>
+					<Box minWidth={0} flex={1} zIndex={1} pt={2}>
 						<ResponsiveTextWrapper
-							value="Idle:"
-							fontWeight="bold"
-							color="text.primary"
-							fontSize="13px"
-						/>
-						<Box
+							value={title}
+							fontSize="16px"
+							fontWeight={800}
+							color="#0B2043"
+							lineHeight={1.15}
 							sx={{
-								bgcolor: isIdle
-									? 'rgba(237,108,2,0.12)'
-									: 'rgba(145,158,171,0.12)', // Orange tint if idle, soft gray if active
-								borderRadius: '999px',
-								px: 1.25,
-								py: 0.25,
+								whiteSpace: 'normal',
+								overflow: 'visible',
+								wordBreak: 'break-word',
 							}}
-						>
-							<ResponsiveTextWrapper
-								value={isIdle ? 'YES' : 'NO'}
-								color={isIdle ? 'warning.main' : 'text.secondary'}
-								fontWeight="bold"
-								fontSize="11px"
-							/>
-						</Box>
-					</Stack>
-
-					{/* Alert Indicator */}
-					<Stack
-						direction="row"
-						spacing={0.75}
-						alignItems="center"
-						flexShrink={0}
-					>
-						<ResponsiveTextWrapper
-							value="Alert:"
-							fontWeight="bold"
-							color="text.primary"
-							fontSize="13px"
 						/>
-						<Box
-							sx={{
-								bgcolor: isAlert
-									? 'rgba(244,67,54,0.12)'
-									: 'rgba(76,175,80,0.12)', // Red tint if triggered, green if clear
-								borderRadius: '999px',
-								px: 1.25,
-								py: 0.25,
-							}}
+						<Stack
+							direction="row"
+							alignItems="center"
+							spacing={0.5}
+							mt={0.45}
+							color="#50627D"
 						>
+							<CalendarMonthRounded sx={{ fontSize: 17 }} />
 							<ResponsiveTextWrapper
-								value={isAlert ? 'TRIGGERED' : 'CLEAR'}
-								color={isAlert ? 'error.main' : 'success.main'}
-								fontWeight="bold"
+								value={formatTimestamp(lastUpdated) || '-'}
 								fontSize="11px"
+								fontWeight={500}
+								sx={{ whiteSpace: 'normal', lineHeight: 1.15 }}
 							/>
-						</Box>
-					</Stack>
+						</Stack>
+					</Box>
 				</Stack>
-			)}
+				<Stack
+					direction="row"
+					alignItems="center"
+					spacing={0.6}
+					sx={{
+						position: 'absolute',
+						top: 9,
+						right: 9,
+						px: 0.8,
+						py: 0.35,
+						borderRadius: '999px',
+						color: statusColor,
+						bgcolor: alpha(statusColor, 0.07),
+						border: `1px solid ${alpha(statusColor, 0.35)}`,
+					}}
+				>
+					<Box width={9} height={9} borderRadius="50%" bgcolor={statusColor} />
+					<Typography fontSize="10px" fontWeight={800}>
+						{statusLabel}
+					</Typography>
+				</Stack>
+			</Box>
 
-			<Box mb={1.25} width="100%">
-				<Box mb={0.5}>
-					<ResponsiveTextWrapper
-						value="Last Stoppage"
-						fontWeight="bold"
-						fontSize="13px"
-					/>
-				</Box>
-				<Box sx={tablePanelSx}>
-					<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
-						<TableHead>
-							<TableRow>
-								<TableCell sx={headerCellSx}>
-									<ResponsiveTextWrapper value="Start Time" fontSize="12px" />
-								</TableCell>
-								<TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
-									<ResponsiveTextWrapper
-										value="End Time"
-										fontSize="12px"
-										sx={{ textAlign: 'center' }}
-									/>
-								</TableCell>
-								<TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
-									<ResponsiveTextWrapper
-										value="Duration"
-										fontSize="12px"
-										sx={{ textAlign: 'center' }}
-									/>
-								</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							<TableRow>
-								<TableCell sx={bodyCellSx}>
-									<ResponsiveTextWrapper
-										value={lastStoppageStart || '-'}
-										fontSize="11.5px"
-										color="text.primary"
-									/>
-								</TableCell>
-								<TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-									<ResponsiveTextWrapper
-										value={lastStoppageEnd || '-'}
-										fontSize="11.5px"
-										color="text.primary"
-										sx={{ textAlign: 'center' }}
-									/>
-								</TableCell>
-								<TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-									<ResponsiveTextWrapper
-										value={lastStoppageDuration || '-'}
-										fontSize="11.5px"
-										color="text.primary"
-										fontWeight={600}
-										sx={{ textAlign: 'center' }}
-									/>
-								</TableCell>
-							</TableRow>
-						</TableBody>
-					</Table>
+			<Box
+				sx={{
+					display: 'grid',
+					gridTemplateColumns: '1.1fr .9fr',
+					alignItems: 'center',
+					minHeight: 52,
+					px: 0.8,
+					borderRadius: '12px',
+					border: '1px solid',
+					borderColor: 'divider',
+					boxShadow: '0 5px 14px rgba(37,69,111,.07)',
+				}}
+			>
+				<Stack direction="row" alignItems="center" spacing={0.8} minWidth={0}>
+					<SoftIcon color={statusColor} size={29}>
+						{isOnline ? <WifiRounded /> : <WifiOffRounded />}
+					</SoftIcon>
+					<Box minWidth={0}>
+						<Typography fontSize="10px" color="text.secondary">
+							Current Status
+						</Typography>
+						<Typography
+							noWrap
+							fontSize="12px"
+							fontWeight={800}
+							color={statusColor}
+						>
+							{statusLabel}
+						</Typography>
+					</Box>
+				</Stack>
+				<Stack
+					direction="row"
+					alignItems="center"
+					spacing={0.7}
+					minWidth={0}
+					sx={{ pl: 1, borderLeft: '1px solid', borderColor: 'divider' }}
+				>
+					<SoftIcon color="#496789" size={29}>
+						<HistoryRounded />
+					</SoftIcon>
+					<Box minWidth={0}>
+						<Typography fontSize="9.5px" color="text.secondary">
+							Since
+						</Typography>
+						<ResponsiveTextWrapper
+							value={statusFrom || '-'}
+							fontSize="10.5px"
+							fontWeight={600}
+							sx={{
+								whiteSpace: 'normal',
+								lineHeight: 1.15,
+								overflow: 'visible',
+							}}
+						/>
+					</Box>
+				</Stack>
+			</Box>
+
+			<Box>
+				<Stack
+					direction="row"
+					justifyContent="space-between"
+					alignItems="center"
+					mb={0.5}
+				>
+					<Stack direction="row" alignItems="center" spacing={0.7}>
+						<Box width={3} height={17} borderRadius={2} bgcolor={statusColor} />
+						<Typography fontSize="12.5px" fontWeight={800} color="#102746">
+							Last Stoppage
+						</Typography>
+					</Stack>
+					<Button
+						onClick={() => onStoppageClick?.(24)}
+						startIcon={<CalendarMonthRounded />}
+						endIcon={<ChevronRightRounded />}
+						sx={{
+							p: 0,
+							minWidth: 0,
+							color: '#169B52',
+							fontSize: 10,
+							textTransform: 'none',
+						}}
+					>
+						View History
+					</Button>
+				</Stack>
+				<Box
+					sx={{
+						display: 'grid',
+						gridTemplateColumns: '1.05fr 1.2fr .75fr',
+						border: '1px solid',
+						borderColor: 'divider',
+						borderRadius: '12px',
+						p: 0.7,
+						boxShadow: '0 5px 14px rgba(37,69,111,.06)',
+					}}
+				>
+					{[
+						[
+							'START TIME',
+							lastStoppageStart,
+							<PlayArrowRounded key="start" />,
+							'#20A66A',
+						],
+						['END TIME', lastStoppageEnd, <StopRounded key="end" />, '#EF3340'],
+						[
+							'DURATION',
+							lastStoppageDuration,
+							<AccessTimeRounded key="duration" />,
+							'#D91D32',
+						],
+					].map(([label, value, icon, color], index) => (
+						<Box
+							key={label}
+							minWidth={0}
+							px={0.6}
+							sx={{
+								borderLeft: index ? '1px solid' : 'none',
+								borderColor: 'divider',
+							}}
+						>
+							<Typography
+								textAlign="center"
+								fontSize="8px"
+								fontWeight={800}
+								color="text.secondary"
+							>
+								{label}
+							</Typography>
+							<Stack
+								direction="row"
+								alignItems="center"
+								justifyContent="center"
+								spacing={0.4}
+								mt={0.55}
+								minWidth={0}
+							>
+								{icon ? (
+									<SoftIcon color={color} size={23}>
+										{icon}
+									</SoftIcon>
+								) : null}
+								<ResponsiveTextWrapper
+									value={shown(value)}
+									fontSize="9.5px"
+									fontWeight={700}
+									sx={{
+										textAlign: 'center',
+										whiteSpace: 'normal',
+										overflow: 'visible',
+										wordBreak: 'break-word',
+									}}
+								/>
+							</Stack>
+						</Box>
+					))}
 				</Box>
 			</Box>
 
-			<Box width="100%">
-				<Box sx={tablePanelSx}>
-					<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
-						<TableHead>
-							<TableRow>
-								<TableCell sx={headerCellSx}>
-									<ResponsiveTextWrapper
-										value="Stoppages History"
-										fontSize="12px"
-									/>
-								</TableCell>
-								<TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
-									<ResponsiveTextWrapper
-										value="Previous 8hrs"
-										fontSize="12px"
-										sx={{ textAlign: 'center' }}
-									/>
-								</TableCell>
-								<TableCell sx={{ ...headerCellSx, textAlign: 'center' }}>
-									<ResponsiveTextWrapper
-										value="Previous 24hrs"
-										fontSize="12px"
-										sx={{ textAlign: 'center' }}
-									/>
-								</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							<TableRow>
-								<TableCell sx={bodyCellSx}>
-									<ResponsiveTextWrapper
-										value="No. of Stoppages"
-										fontSize="11.5px"
-										fontWeight={600}
-									/>
-								</TableCell>
-								<TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-									<Stack alignItems="center">
-										<StoppageCount
-											count={previous8Count}
-											onClick={() => onStoppageClick(8)}
-										/>
-									</Stack>
-								</TableCell>
-								<TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-									<Stack alignItems="center">
-										<StoppageCount
-											count={previous24Count}
-											onClick={() => onStoppageClick(24)}
-										/>
-									</Stack>
-								</TableCell>
-							</TableRow>
-							<TableRow>
-								<TableCell sx={bodyCellSx}>
-									<ResponsiveTextWrapper
-										value="Stoppage Duration"
-										fontSize="11.5px"
-										fontWeight={600}
-									/>
-								</TableCell>
-								<TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-									<ResponsiveTextWrapper
-										value={previous8Duration || '-'}
-										fontSize="11.5px"
-										color="text.primary"
-										sx={{ textAlign: 'center' }}
-									/>
-								</TableCell>
-								<TableCell sx={{ ...bodyCellSx, textAlign: 'center' }}>
-									<ResponsiveTextWrapper
-										value={previous24Duration || '-'}
-										fontSize="11.5px"
-										color="text.primary"
-										sx={{ textAlign: 'center' }}
-									/>
-								</TableCell>
-							</TableRow>
-						</TableBody>
-					</Table>
+			<Box
+				sx={{
+					border: '1px solid',
+					borderColor: 'divider',
+					borderRadius: '12px',
+					p: 0.75,
+					boxShadow: '0 5px 14px rgba(37,69,111,.06)',
+				}}
+			>
+				<Box
+					display="grid"
+					gridTemplateColumns="1fr .78fr .78fr"
+					alignItems="center"
+					mb={0.55}
+				>
+					<Stack
+						direction="row"
+						alignItems="center"
+						spacing={0.55}
+						minWidth={0}
+					>
+						<QueryStatsRounded sx={{ color: '#6577E8', fontSize: 18 }} />
+						<Typography fontSize="10px" fontWeight={800} lineHeight={1.1}>
+							Stoppages History
+						</Typography>
+					</Stack>
+					<PeriodHeading icon={<HistoryRounded />}>
+						Previous 8 hrs
+					</PeriodHeading>
+					<PeriodHeading icon={<CalendarMonthRounded />}>
+						Previous 24 hrs
+					</PeriodHeading>
+				</Box>
+				<Box
+					sx={{
+						border: '1px solid',
+						borderColor: 'divider',
+						borderRadius: '10px',
+						px: 0.65,
+					}}
+				>
+					{[
+						[
+							'No. of Stoppages',
+							previous8Count ?? 0,
+							previous24Count ?? 0,
+							false,
+						],
+						[
+							'Stoppage Duration',
+							shown(previous8Duration),
+							shown(previous24Duration),
+							true,
+						],
+					].map(([label, first, second, duration], row) => (
+						<Box
+							key={label}
+							sx={{
+								display: 'grid',
+								gridTemplateColumns: '1fr .78fr .78fr',
+								alignItems: 'center',
+								minHeight: 40,
+								borderTop: row ? '1px dashed' : 'none',
+								borderColor: 'divider',
+							}}
+						>
+							<Typography fontSize="9.5px" fontWeight={650} lineHeight={1.15}>
+								{label}
+							</Typography>
+							{[first, second].map((cell, index) => (
+								<Box
+									key={index}
+									textAlign="center"
+									sx={{ borderLeft: '1px solid', borderColor: 'divider' }}
+								>
+									{duration ? (
+										<Stack
+											direction="row"
+											alignItems="center"
+											justifyContent="center"
+											spacing={0.35}
+										>
+											<TimerOutlined sx={{ color: '#2874C6', fontSize: 15 }} />
+											<Typography
+												fontSize="8.5px"
+												fontWeight={650}
+												lineHeight={1.1}
+											>
+												{cell}
+											</Typography>
+										</Stack>
+									) : (
+										<Box
+											component="button"
+											onClick={() =>
+												Number(cell) > 0 && onStoppageClick?.(index ? 24 : 8)
+											}
+											sx={{
+												border: 0,
+												borderRadius: '8px',
+												px: 1.1,
+												py: 0.2,
+												bgcolor: alpha(GREEN, 0.11),
+												color: '#16894F',
+												font: 'inherit',
+												fontSize: 15,
+												fontWeight: 800,
+												cursor: Number(cell) > 0 ? 'pointer' : 'default',
+											}}
+										>
+											{cell}
+										</Box>
+									)}
+								</Box>
+							))}
+						</Box>
+					))}
 				</Box>
 			</Box>
-		</PremiumMachineCard>
+
+			<Box flex={1} />
+			<Button
+				onClick={onOpenTrend}
+				fullWidth
+				variant="contained"
+				startIcon={<InsightsRounded />}
+				endIcon={<ChevronRightRounded />}
+				sx={{
+					minHeight: 36,
+					borderRadius: '10px',
+					fontSize: 12.5,
+					fontWeight: 800,
+					background: isOnline
+						? 'linear-gradient(105deg,#16A34A 0%,#22C55E 100%)'
+						: 'linear-gradient(105deg,#F23857 0%,#FF5A24 100%)',
+					boxShadow: `0 6px 14px ${alpha(statusColor, 0.22)}`,
+					'& .MuiButton-startIcon svg': { fontSize: 18 },
+					'& .MuiButton-endIcon': { position: 'absolute', right: 14 },
+					'&:hover': {
+						background: isOnline
+							? 'linear-gradient(105deg,#138A3F 0%,#1DAA50 100%)'
+							: 'linear-gradient(105deg,#DB2947 0%,#E84B19 100%)',
+					},
+				}}
+			>
+				TREND
+			</Button>
+		</Box>
 	);
 };
 

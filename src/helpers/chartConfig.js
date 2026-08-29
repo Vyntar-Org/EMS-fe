@@ -1,4 +1,5 @@
 import { detectTimeField, smartParseDate } from './dateParse';
+import { formatNumber } from './formatters';
 
 // Chart series palettes per theme mode. Light keeps the original brand
 // colors; dark swaps to vivid tones that stay visible on navy surfaces.
@@ -105,12 +106,7 @@ export const downsample = (data, maxPoints = DEFAULT_MAX_POINTS) => {
 // displayed (tooltip rows, donut/radial labels, axis ticks), and drop a
 // trailing ".00" so whole numbers stay clean.
 export const formatChartValue = (val) => {
-	const num = Number(val);
-	if (!Number.isFinite(num)) {
-		return val;
-	}
-	const rounded = Math.round(num * 100) / 100;
-	return rounded % 1 === 0 ? String(rounded) : rounded.toFixed(2);
+	return formatNumber(val, 2);
 };
 
 /**

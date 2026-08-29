@@ -6,24 +6,23 @@ import {
 	MachineTemperatureGauge,
 } from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
+import { formatNumber } from '../../../helpers/formatters';
 
 /**
  * Dedicated premium card for the Temperature machine list: thermostat icon,
- * title + status pill, timestamp, a Temperature/Humidity/Battery metric
- * panel tinted by the current temperature band, a cold→hot scale gauge, and
- * the TREND action last.
+ * title + status pill, timestamp, a metric panel built from whichever
+ * parameters the backend actually returned for this device, a cold→hot
+ * scale gauge, and the TREND action last.
  */
 const PremiumTemperatureMachineCard = ({
 	title,
 	status,
 	temperature,
-	humidity,
-	battery,
+	metrics,
 	lastUpdated,
 	slaveId,
 	trendUrl,
 	onOpenTrend,
-	pressure,
 }) => {
 	const tempStatus = getTemperatureStatus(temperature);
 
@@ -38,18 +37,12 @@ const PremiumTemperatureMachineCard = ({
 			onOpenTrend={onOpenTrend}
 		>
 			<MachineMetricPanel
-				rows={[
-					{
-						label: 'Temperature',
-						value: `${Number(temperature ?? 0).toFixed(2)} °C`,
-					},
-					{ label: 'Humidity', value: `${Number(humidity ?? 0).toFixed(1)} %` },
-					{ label: 'Battery', value: `${Number(battery ?? 0).toFixed(2)} V` },
-					{
-						label: 'Pressure',
-						value: `${Number(pressure ?? 0).toFixed(2)} Pa`,
-					},
-				]}
+				rows={(metrics || []).map(({ label, value, unit }) => ({
+					label,
+					value: `${formatNumber(value, 2, { fallback: '0' })}${
+						unit ? ` ${unit}` : ''
+					}`,
+				}))}
 			/>
 			{tempStatus && (
 				<Box mt={1.25}>

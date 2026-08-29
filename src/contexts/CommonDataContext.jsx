@@ -5,11 +5,13 @@ import React, {
 	useMemo,
 	useState,
 } from 'react';
+import { PARAMETER_OPTIONS } from '../constants/parameterOptions';
+import { TEMPERATURE_PARAMETER_OPTIONS } from '../constants/temperatureLogs';
 import { api } from '../helpers/api';
 import { API_URLS } from '../helpers/apiUrls';
-import { useAuth } from './AuthContext';
+
 import { useApplications } from './ApplicationContext';
-import { PARAMETER_OPTIONS } from '../constants/parameterOptions';
+import { useAuth } from './AuthContext';
 
 const CommonDataContext = createContext();
 
@@ -18,6 +20,8 @@ export const CommonDataContextProvider = ({ children }) => {
 	const { selectedApp } = useApplications();
 
 	const [slavesData, setSlavesData] = useState(null);
+	const [temperatureParametersData, setTemperatureParametersData] =
+		useState(null);
 
 	// const fetchData = async (currSelectedApp) => {
 	//   try {
@@ -72,14 +76,46 @@ export const CommonDataContextProvider = ({ children }) => {
 		}
 	};
 
-	const parametersData = useMemo(
-		() => (selectedApp ? PARAMETER_OPTIONS?.[selectedApp] || [] : []),
-		[selectedApp]
-	);
+	const fetchTemperatureParameters = async () => {
+		try {
+			const res = await api.get(API_URLS.TEMPERATURE_PARAMETERS_DATA);
+
+			if (res?.success) {
+				setTemperatureParametersData(
+					res?.data?.parameters || TEMPERATURE_PARAMETER_OPTIONS
+				);
+			} else {
+				setTemperatureParametersData(TEMPERATURE_PARAMETER_OPTIONS);
+			}
+		} catch (error) {
+			console.error('Failed to fetch temperature parameters:', error);
+			setTemperatureParametersData(TEMPERATURE_PARAMETER_OPTIONS);
+		}
+	};
+
+	const parametersData = useMemo(() => {
+		if (!selectedApp) {
+			return [];
+		}
+		if (selectedApp === 'TEMPERATURE') {
+			return (
+				temperatureParametersData?.map((param) => ({
+					...param,
+					label: param.display_name,
+					value: param.parameter,
+				})) || []
+			);
+		}
+		return PARAMETER_OPTIONS?.[selectedApp] || [];
+	}, [selectedApp, temperatureParametersData]);
 
 	useEffect(() => {
 		if ((user, selectedApp)) {
 			fetchData(selectedApp);
+
+			if (selectedApp === 'TEMPERATURE') {
+				fetchTemperatureParameters();
+			}
 		}
 	}, [user, selectedApp]);
 

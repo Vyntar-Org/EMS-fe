@@ -12,6 +12,7 @@ import { CustomTable } from '../common/CustomTable';
 import dayjs from 'dayjs';
 import VyntarButtons from '../common/VyntarButtons';
 import { LogUrlBuilder } from '../../helpers/logs';
+import { formatNumber } from '../../helpers/formatters';
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 
@@ -206,7 +207,7 @@ const FireSafetyLogs = () => {
 				}
 
 				if (typeof value === 'number') {
-					return value.toFixed(3);
+					return formatNumber(value);
 				}
 
 				return String(value ?? '-');

@@ -21,6 +21,7 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { buildPointSeries } from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
+import { formatNumber } from '../../helpers/formatters';
 import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomSelect } from '../common/CustomSelect';
@@ -119,17 +120,17 @@ const handleDownload = (filteredMachines, selectedApp) => {
 			machine.name || 'N/A',
 			machine.slave_id || 'N/A',
 			isOnline ? 'Online' : 'Offline',
-			Number(latest.rv || 0).toFixed(2),
-			Number(latest.yv || 0).toFixed(2),
-			Number(latest.bv || 0).toFixed(2),
-			Number(latest.ir || 0).toFixed(1),
-			Number(latest.iy || 0).toFixed(1),
-			Number(latest.ib || 0).toFixed(1),
-			Number(latest.actpr_t || 0).toFixed(2),
-			Number(latest.pf_t || 0).toFixed(2),
-			Number(latest.fq || 0).toFixed(2),
-			Number(energy.today || 0).toFixed(1),
-			Number(energy.mtd || 0).toFixed(1),
+			formatNumber(latest.rv, 2, { fallback: '0' }),
+			formatNumber(latest.yv, 2, { fallback: '0' }),
+			formatNumber(latest.bv, 2, { fallback: '0' }),
+			formatNumber(latest.ir, 2, { fallback: '0' }),
+			formatNumber(latest.iy, 2, { fallback: '0' }),
+			formatNumber(latest.ib, 2, { fallback: '0' }),
+			formatNumber(latest.actpr_t, 2, { fallback: '0' }),
+			formatNumber(latest.pf_t, 2, { fallback: '0' }),
+			formatNumber(latest.fq, 2, { fallback: '0' }),
+			formatNumber(energy.today, 2, { fallback: '0' }),
+			formatNumber(energy.mtd, 2, { fallback: '0' }),
 			latest.last_ts ? formatTimestamp(latest.last_ts) : 'N/A',
 		];
 	});

@@ -10,6 +10,7 @@ import {
 
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
+import { formatNumber } from '../../../helpers/formatters';
 
 // 3-phase R/Y/B voltage+current table — unique to Energy, kept as its own
 // dedicated visual rather than folded into the generic metric panel.
@@ -92,14 +93,14 @@ const PhaseTable = ({
 							<ResponsiveTextWrapper
 								fontSize="13px"
 								fontWeight={500}
-								value={Number(row.v ?? 0).toFixed(2)}
+								value={formatNumber(row.v, 2, { fallback: '0' })}
 							/>
 						</TableCell>
 						<TableCell align="right" sx={{ border: 0, py: 0.5, width: '30%' }}>
 							<ResponsiveTextWrapper
 								fontSize="13px"
 								fontWeight={500}
-								value={Number(row.a ?? 0).toFixed(1)}
+								value={formatNumber(row.a, 2, { fallback: '0' })}
 							/>
 						</TableCell>
 					</TableRow>
@@ -179,7 +180,7 @@ const PremiumEnergyMachineCard = ({
 			</Box>
 			<Box flexShrink={0}>
 				<ResponsiveTextWrapper
-					value={`${Number(total ?? 0).toFixed(1)} kWh`}
+					value={`${formatNumber(total, 2, { fallback: '0' })} kWh`}
 					fontSize="16px"
 					color="text.primary"
 					fontWeight={700}
@@ -195,9 +196,18 @@ const PremiumEnergyMachineCard = ({
 			phaseBA={phaseBA}
 		/>
 		<Grid container spacing={1} mt={0.25} mb={1.25}>
-			<StatCell label="Active power" value={`${activePower} kW`} />
-			<StatCell label="Power factor" value={`${powerFactor} PF`} />
-			<StatCell label="Frequency" value={`${frequency} Hz`} />
+			<StatCell
+				label="Active power"
+				value={`${formatNumber(activePower, 2, { fallback: '0' })} kW`}
+			/>
+			<StatCell
+				label="Power factor"
+				value={`${formatNumber(powerFactor, 2, { fallback: '0' })} PF`}
+			/>
+			<StatCell
+				label="Frequency"
+				value={`${formatNumber(frequency, 2, { fallback: '0' })} Hz`}
+			/>
 		</Grid>
 	</PremiumMachineCard>
 );

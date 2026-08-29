@@ -2,6 +2,8 @@
 import { Tooltip, Typography } from '@mui/material';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 
+import { formatNumber } from '../../helpers/formatters';
+
 const ResponsiveTextWrapper = ({
 	value,
 	charLimit = null,
@@ -13,10 +15,17 @@ const ResponsiveTextWrapper = ({
 	const [isEllipsed, setIsEllipsed] = useState(false);
 
 	const displayValue = useMemo(() => {
-		if (charLimit !== null && value?.length > charLimit) {
-			return `${value.substring(0, charLimit)}...`;
+		const normalizedValue =
+			typeof value === 'number' ||
+			(typeof value === 'string' &&
+				value.trim() !== '' &&
+				Number.isFinite(Number(value)))
+				? formatNumber(value)
+				: value;
+		if (charLimit !== null && normalizedValue?.length > charLimit) {
+			return `${normalizedValue.substring(0, charLimit)}...`;
 		}
-		return value;
+		return normalizedValue;
 	}, [value, charLimit]);
 
 	useEffect(() => {

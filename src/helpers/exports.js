@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 
 import { triggerFileDownload } from './common';
+import { formatNumber } from './formatters';
 
 export const exportToCSV = (tableData, tableColumns, filename = 'Report') => {
 	if (!tableData?.length) {
@@ -14,7 +15,7 @@ export const exportToCSV = (tableData, tableColumns, filename = 'Report') => {
 	const csvRows = tableData.map((row) =>
 		tableColumns.map((col) => {
 			const val = row[col.accessorKey];
-			return typeof val === 'number' ? val.toFixed(2) : val ?? '';
+			return typeof val === 'number' ? formatNumber(val) : val ?? '';
 		})
 	);
 
@@ -56,7 +57,7 @@ export const exportToPDF = (
 		const pdfRows = tableData.map((row) =>
 			currentViewColumns.map((col) => {
 				const val = row[col.accessorKey];
-				return typeof val === 'number' ? val.toFixed(2) : val ?? '';
+				return typeof val === 'number' ? formatNumber(val) : val ?? '';
 			})
 		);
 

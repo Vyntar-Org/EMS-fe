@@ -8,6 +8,7 @@ import {
 	MiniSparkline,
 } from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
+import { formatNumber } from '../../../helpers/formatters';
 
 const ACCENT = '#EDA100';
 
@@ -38,7 +39,7 @@ const ENERGYConsumption = ({ data }) => {
 					color={ACCENT}
 					fontWeight={800}
 					mt={1.5}
-					value={value?.toLocaleString() || 0}
+					value={formatNumber(value, 2, { fallback: '0', useGrouping: true })}
 				/>
 
 				<ResponsiveTextWrapper
@@ -63,8 +64,14 @@ const ENERGYConsumption = ({ data }) => {
 					borderRadius={1}
 					mt={2.5}
 					fontSize={{ xs: '11px', md: '13px' }}
-					value={`₹ ${cost?.toLocaleString() || 0}`}
-					tooltipValue={`COST = ₹ ${cost?.toLocaleString() || 0}`}
+					value={`₹ ${formatNumber(cost, 2, {
+						fallback: '0',
+						useGrouping: true,
+					})}`}
+					tooltipValue={`COST = ₹ ${formatNumber(cost, 2, {
+						fallback: '0',
+						useGrouping: true,
+					})}`}
 				/>
 			</Box>
 

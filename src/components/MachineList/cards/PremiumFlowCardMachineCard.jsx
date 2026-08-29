@@ -10,6 +10,7 @@ import {
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 import StatusChips from '../../common/StatusChips';
+import { formatNumber } from '../../../helpers/formatters';
 
 // Two-column collection-tank readout (Water Level / Motor Status per tank) —
 // unique to the STP/FlowMeter TANK_CARD variant.
@@ -213,7 +214,7 @@ const PremiumFlowCardMachineCard = ({
 											fontSize="13.5px"
 											color="text.primary"
 											fontWeight={700}
-											value={Number(row?.value ?? 0).toFixed(2)}
+											value={formatNumber(row?.value, 2, { fallback: '0' })}
 										/>
 									</TableCell>
 								</TableRow>

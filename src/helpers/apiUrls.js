@@ -17,6 +17,7 @@ const EMS_DASHBOARD = {
 	EMS_DASHBOARD_MACHINE_CONSUMPTION:
 		'/applications/energy/dashboard-energy-chart/',
 	EMS_DASHBOARD_DEMAND_INDICATOR: '/applications/energy/peak-demand-trend/',
+	EMS_DASHBOARD_LOAD_BALANCE: '/applications/energy/load-balance/',
 };
 
 const EMS_MACHINE_LIST = {
@@ -82,6 +83,10 @@ const TEMPERATURE_LOGS = {
 		isDownload = false
 	) =>
 		`/applications/temperature/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
+};
+
+const TEMPERATURE_PARAMETERS = {
+	TEMPERATURE_PARAMETERS_DATA: '/applications/temperature/parameters/',
 };
 
 const TEMPERATURE_ANALYTICS = {
@@ -373,6 +378,7 @@ export const API_URLS = {
 	...EMS_ANALYTICS,
 	...TEMPERATURE_MACHINE_LIST,
 	...TEMPERATURE_LOGS,
+	...TEMPERATURE_PARAMETERS,
 	...TEMPERATURE_ANALYTICS,
 	...EMS_LOGS,
 	...EMS_REPORTS,

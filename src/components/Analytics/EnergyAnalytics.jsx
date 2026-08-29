@@ -6,9 +6,8 @@ import {
 	FormControlLabel,
 	Grid,
 	Typography,
-	useTheme,
 } from '@mui/material';
-import { alpha, darken, lighten } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
 import dayjs from 'dayjs';
 import { memo, useCallback, useMemo, useState } from 'react';
 
@@ -40,21 +39,6 @@ const ROW_ACCENTS = getCategoricalColors(6);
 // Distinct from any single row's accent — signals "this combines every row"
 // rather than belonging to one of them.
 const MERGE_ACCENT = getCategoricalColors(7)[6];
-
-const CHIP_COLORS = [
-	'#3b82f6',
-	'#ef4444',
-	'#f59e0b',
-	'#10b981',
-	'#8b5cf6',
-	'#06b6d4',
-	'#ec4899',
-	'#14b8a6',
-	'#f97316',
-	'#6366f1',
-	'#84cc16',
-	'#0ea5e9',
-];
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 
@@ -328,28 +312,6 @@ const AnalyticsRow = memo(
 			() => getProcessedChartData(rawAnalytics, activeKeys),
 			[rawAnalytics, activeKeys]
 		);
-
-		const hoveredData = useMemo(() => {
-			if (!rawAnalytics?.data?.length) {
-				return null;
-			}
-			const pointIndex =
-				hoveredPointIndex !== null
-					? hoveredPointIndex
-					: rawAnalytics.data.length - 1;
-			const dataPoint = rawAnalytics.data[pointIndex];
-			if (!dataPoint) {
-				return null;
-			}
-			return {
-				timestamp: dataPoint.timestamp,
-				values: activeKeys.map((key) => ({
-					key,
-					name: KEY_PARAMETER_OPTIONS_MAPPING[key] || key,
-					value: dataPoint[key],
-				})),
-			};
-		}, [hoveredPointIndex, rawAnalytics, activeKeys]);
 
 		const uniqueBgColor = UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
 		const accent = ROW_ACCENTS[index % ROW_ACCENTS.length];
