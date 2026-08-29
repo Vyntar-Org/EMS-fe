@@ -114,6 +114,7 @@ const CustomCard = ({
 	// isPremium = false,
 	accentColor,
 	titleIcon,
+	headerAction,
 	childrenOtherProps = {},
 	disableContentPadding = false,
 	...props
@@ -217,6 +218,7 @@ const CustomCard = ({
 								{subtitle}
 							</Typography>
 						)}
+						{headerAction && <Box flexShrink={0}>{headerAction}</Box>}
 						{icon && <Box flexShrink={0}>{icon}</Box>}
 					</Box>
 				)}

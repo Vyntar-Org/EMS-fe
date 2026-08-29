@@ -1,10 +1,9 @@
-import { Balance } from '@mui/icons-material';
+import { Balance, CheckCircle, Error, Warning } from '@mui/icons-material';
 import {
 	Box,
 	Grid,
 	ToggleButton,
 	ToggleButtonGroup,
-	Tooltip,
 	Typography,
 } from '@mui/material';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
@@ -16,12 +15,30 @@ import NoDataFound from '../../common/errors/NoDataFound';
 
 const ACCENT = '#4A3AA7';
 
-const UNITS = [
-	{ value: 'A', label: 'Current', title: 'Current (Amperes)' },
-	{ value: 'V', label: 'Voltage', title: 'Voltage (Volts)' },
-];
+const PHASE_COLORS = {
+	R: '#E53935',
+	Y: '#FBC02D',
+	B: '#1E88E5',
+};
 
-const PhaseMetric = memo(({ label, value, unit, color }) => (
+const THRESHOLDS = {
+	V: {
+		normal: 1,
+		warning: 2,
+		normalText: '≤1%',
+		warningText: '>1% to 2%',
+		criticalText: '>2%',
+	},
+	A: {
+		normal: 6,
+		warning: 10,
+		normalText: '≤5–6%',
+		warningText: '>6% to 10%',
+		criticalText: '>10%',
+	},
+};
+
+const PhaseMetric = memo(({ phase, value, unit, color }) => (
 	<Box
 		sx={{
 			minWidth: 0,
@@ -49,8 +66,10 @@ const PhaseMetric = memo(({ label, value, unit, color }) => (
 		<Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
 			<Box
 				sx={{
-					width: 20,
-					height: 20,
+					// width: 20,
+					width: 16,
+					// height: 14,
+					height: 16,
 					borderRadius: '50%',
 					display: 'grid',
 					placeItems: 'center',
@@ -60,7 +79,7 @@ const PhaseMetric = memo(({ label, value, unit, color }) => (
 					fontWeight: 800,
 				}}
 			>
-				{label.slice(-1)}
+				{phase}
 			</Box>
 			<Typography
 				noWrap
@@ -68,7 +87,7 @@ const PhaseMetric = memo(({ label, value, unit, color }) => (
 				color="text.secondary"
 				fontWeight={600}
 			>
-				{label}
+				Phase {phase}
 			</Typography>
 		</Box>
 		<Typography
@@ -85,6 +104,141 @@ const PhaseMetric = memo(({ label, value, unit, color }) => (
 ));
 
 PhaseMetric.displayName = 'PhaseMetric';
+
+const ThresholdBar = memo(({ value, type }) => {
+	const threshold = THRESHOLDS[type];
+	const rawValue = Number.parseFloat(value);
+	// The API already returns the calculated imbalance percentage. Use it as-is
+	// for both the displayed reading and threshold classification.
+	const imbalanceValue = Number.isFinite(rawValue) ? rawValue : 0;
+	const displayValue = Number(imbalanceValue.toFixed(2));
+
+	const status =
+		imbalanceValue <= threshold.normal
+			? {
+					label: 'Normal',
+					color: '#16A34A',
+					Icon: CheckCircle,
+					markerPosition: 16.67,
+			  }
+			: imbalanceValue <= threshold.warning
+			  ? {
+						label: 'Warning',
+						color: '#F59E0B',
+						Icon: Warning,
+						markerPosition: 50,
+			    }
+			  : {
+						label: 'Critical',
+						color: '#DC2626',
+						Icon: Error,
+						markerPosition: 83.33,
+			    };
+	const { Icon } = status;
+
+	return (
+		<Box>
+			<Box display="flex" alignItems="flex-end" justifyContent="space-between">
+				<Box>
+					{/* <Typography fontSize="9px" fontWeight={700} color="text.secondary">
+						{type === 'A' ? 'Current' : 'Voltage'} unbalance
+					</Typography> */}
+					<Typography
+						fontSize="23px"
+						lineHeight={1}
+						fontWeight={900}
+						color={status.color}
+					>
+						{displayValue}
+						<Typography component="span" fontSize="12px" fontWeight={800}>
+							%
+						</Typography>
+					</Typography>
+				</Box>
+				<Box
+					sx={{
+						display: 'flex',
+						alignItems: 'center',
+						gap: 0.4,
+						px: 0.8,
+						py: 0.35,
+						borderRadius: 5,
+						color: status.color,
+						bgcolor: `${status.color}14`,
+						border: `1px solid ${status.color}35`,
+					}}
+				>
+					<Icon
+						sx={{
+							fontSize: '13px !important',
+							p: '0 !important',
+							bgcolor: 'transparent !important',
+							boxShadow: 'none !important',
+						}}
+					/>
+					<Typography fontSize="9px" fontWeight={800}>
+						{status.label}
+					</Typography>
+				</Box>
+			</Box>
+
+			<Box mt={0.65} position="relative" pt={0.7}>
+				<Box
+					sx={{
+						position: 'absolute',
+						left: `calc(${status.markerPosition}% - 1px)`,
+						top: 0,
+						width: 2,
+						height: 13,
+						bgcolor: 'text.primary',
+						borderRadius: 1,
+						zIndex: 1,
+					}}
+				/>
+				<Box
+					display="flex"
+					height={7}
+					borderRadius={4}
+					overflow="hidden"
+					boxShadow="inset 0 1px 2px rgba(0,0,0,.18)"
+				>
+					<Box bgcolor="#16A34A" flex={1} />
+					<Box bgcolor="#F59E0B" flex={1} />
+					<Box bgcolor="#DC2626" flex={1} />
+				</Box>
+			</Box>
+
+			<Box display="flex" justifyContent="space-between" gap={0.5} mt={0.35}>
+				{[
+					['#16A34A', `Normal ${threshold.normalText}`],
+					['#F59E0B', `Warning ${threshold.warningText}`],
+					['#DC2626', `Critical ${threshold.criticalText}`],
+				].map(([color, label]) => (
+					<Box
+						key={label}
+						display="flex"
+						alignItems="center"
+						gap={0.3}
+						minWidth={0}
+					>
+						<Box
+							width={6}
+							height={6}
+							borderRadius="50%"
+							bgcolor={color}
+							flexShrink={0}
+						/>
+						<Typography noWrap fontSize="7.5px" color="text.secondary">
+							{label}
+						</Typography>
+					</Box>
+				))}
+			</Box>
+		</Box>
+	);
+});
+
+ThresholdBar.displayName = 'ThresholdBar';
 
 const ENERGYLoadBalance = ({ slavesId }) => {
 	const [loadBalanceData, setLoadBalanceData] = useState(null);
@@ -118,8 +272,8 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 				size="small"
 				aria-label="load type"
 				sx={{
-					width: '100%',
-					height: '28px',
+					width: 126,
+					height: '27px',
 					bgcolor: 'background.paper',
 					border: '1px solid',
 					borderColor: 'divider',
@@ -127,8 +281,8 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 						border: 'none',
 						color: 'text.secondary',
 						flex: 1,
-						px: 1.25,
-						fontSize: '11px',
+						px: 0.75,
+						fontSize: '9px',
 						fontWeight: 700,
 					},
 					'& .MuiToggleButton-root.Mui-selected': {
@@ -138,13 +292,12 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 					},
 				}}
 			>
-				{UNITS.map(({ value, label, title }) => (
-					<Tooltip key={value} title={title} arrow placement="top">
-						<ToggleButton value={value} aria-label={title}>
-							{label}
-						</ToggleButton>
-					</Tooltip>
-				))}
+				<ToggleButton value="A" aria-label="Current (Amperes)">
+					Current
+				</ToggleButton>
+				<ToggleButton value="V" aria-label="Voltage (Volts)">
+					Voltage
+				</ToggleButton>
 			</ToggleButtonGroup>
 		),
 		[loadType]
@@ -159,9 +312,9 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 
 		return isCurrent
 			? {
-					one: { value: target?.ir, unit, label: 'Phase R' },
-					two: { value: target?.iy, unit, label: 'Phase Y' },
-					three: { value: target?.ib, unit, label: 'Phase B' },
+					one: { value: target?.ir, unit, phase: 'R' },
+					two: { value: target?.iy, unit, phase: 'Y' },
+					three: { value: target?.ib, unit, phase: 'B' },
 					overall: {
 						value: target?.lbi,
 						unit: '%',
@@ -169,9 +322,9 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 					},
 			  }
 			: {
-					one: { value: target?.rv, unit, label: 'Phase R' },
-					two: { value: target?.yv, unit, label: 'Phase Y' },
-					three: { value: target?.bv, unit, label: 'Phase B' },
+					one: { value: target?.rv, unit, phase: 'R' },
+					two: { value: target?.yv, unit, phase: 'Y' },
+					three: { value: target?.bv, unit, phase: 'B' },
 					overall: {
 						value: target?.volt_ub,
 						unit: '%',
@@ -185,6 +338,7 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 			titleIcon={<Balance />}
 			title="Load Balance"
 			accentColor={ACCENT}
+			headerAction={loadToggle}
 		>
 			{loadBalanceData ? (
 				<Box
@@ -193,77 +347,34 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 						display: 'flex',
 						flexDirection: 'column',
 						justifyContent: 'space-between',
-						gap: 0.75,
+						gap: 0.6,
 					}}
 				>
-					{loadToggle}
 					<Box
 						sx={{
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'space-between',
-							gap: 1,
 							px: 1,
-							borderRadius: 2.5,
+							py: 0.65,
+							borderRadius: 1,
 							border: '1px solid',
 							borderColor: 'divider',
-							background: (theme) =>
-								theme.palette.mode === 'dark'
-									? 'linear-gradient(135deg, rgba(74,58,167,0.22), rgba(74,58,167,0.06))'
-									: 'linear-gradient(135deg, rgba(74,58,167,0.10), rgba(74,58,167,0.02))',
+							// background: (theme) =>
+							// 	theme.palette.mode === 'dark'
+							// 		? 'linear-gradient(135deg, rgba(74,58,167,0.22), rgba(74,58,167,0.06))'
+							// 		: 'linear-gradient(135deg, rgba(74,58,167,0.10), rgba(74,58,167,0.02))',
 						}}
 					>
-						<Box minWidth={0}>
-							{/* <Typography
-								noWrap
-								fontSize="11px"
-								fontWeight={700}
-								color="text.secondary"
-							>
-								{dataMapper.overall.label}
-							</Typography> */}
-							<Typography
-								noWrap
-								fontSize={{ xs: '24px' }}
-								lineHeight={1.05}
-								fontWeight={900}
-								color={ACCENT}
-							>
-								{dataMapper.overall.value ?? 0}
-								<Typography component="span" fontSize="13px" fontWeight={800}>
-									{dataMapper.overall.unit}
-								</Typography>
-							</Typography>
-						</Box>
-
-						<Box
-							sx={{
-								my: 0.5,
-								width: 30,
-								height: 30,
-								borderRadius: '50%',
-								display: 'grid',
-								placeItems: 'center',
-								bgcolor: ACCENT,
-								color: '#fff',
-								fontSize: 14,
-								fontWeight: 900,
-								boxShadow: '0 5px 14px rgba(74,58,167,0.28)',
-							}}
-						>
-							{loadType}
-						</Box>
+						<ThresholdBar value={dataMapper.overall.value} type={loadType} />
 					</Box>
 
 					<Grid container spacing={0.75}>
 						<Grid item xs={4}>
-							<PhaseMetric {...dataMapper.one} color="#2563EB" />
+							<PhaseMetric {...dataMapper.one} color={PHASE_COLORS.R} />
 						</Grid>
 						<Grid item xs={4}>
-							<PhaseMetric {...dataMapper.two} color="#16A34A" />
+							<PhaseMetric {...dataMapper.two} color={PHASE_COLORS.Y} />
 						</Grid>
 						<Grid item xs={4}>
-							<PhaseMetric {...dataMapper.three} color="#F59E0B" />
+							<PhaseMetric {...dataMapper.three} color={PHASE_COLORS.B} />
 						</Grid>
 					</Grid>
 				</Box>
