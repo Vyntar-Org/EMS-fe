@@ -424,9 +424,25 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 			title={`${machine?.name || machine?.slave_name} — Last ${hours} hrs`}
 			confirmText={null}
 			cancelText={null}
+			type="chart"
 		>
-			<Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-				<Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)}>
+			<Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 1 }}>
+				<Tabs
+					sx={{
+						minHeight: 32,
+						'& .MuiTab-root': {
+							minHeight: 32,
+							minWidth: 'auto',
+							px: 1.5,
+							py: 0.5,
+							fontSize: '0.75rem',
+							fontWeight: 600,
+							textTransform: 'none',
+						},
+					}}
+					value={activeTab}
+					onChange={(e, v) => setActiveTab(v)}
+				>
 					<Tab
 						icon={<BarChart sx={{ fontSize: 18 }} />}
 						iconPosition="start"
@@ -447,14 +463,16 @@ const StoppageHistoryModal = ({ open, onClose, machine, hours }) => {
 			) : (
 				<>
 					{activeTab === 0 && (
-						<Box sx={{ height: 350 }}>
+						<Box
+							sx={{ height: { xs: 320, sm: 'min(500px, calc(80vh - 150px))' } }}
+						>
 							{chartSeries[0]?.data?.length > 0 ? (
 								<CustomApexChart
 									series={chartSeries}
 									type="area"
 									colors={['#30b44a']}
 									xAxesType="datetime"
-									height={320}
+									height="100%"
 								/>
 							) : (
 								<NoDataFound message="No machine readings received yet — data appears once the device reports" />
@@ -660,7 +678,7 @@ const ModalContentForTrend = memo(
 
 		return (
 			<Box>
-				<Box width={{ xs: '100%', sm: 240 }} mb={2}>
+				<Box width={{ xs: '100%', sm: 240 }} mb={1} ml="auto">
 					<CustomSelect
 						label="Parameter"
 						value={tab}
@@ -684,6 +702,7 @@ const ModalContentForTrend = memo(
 						borderColor: 'surface.mutedBorder',
 						borderRadius: '14px',
 						p: { xs: 1, sm: 2 },
+						height: { xs: 320, sm: 'min(500px, calc(80vh - 150px))' },
 						width: '100%',
 						overflow: 'hidden',
 					}}
@@ -698,7 +717,7 @@ const ModalContentForTrend = memo(
 							type={isStatusTrend ? 'area' : 'line'}
 							colors={isStatusTrend ? ['#30b44a'] : undefined}
 							xAxesType={isStatusTrend ? 'datetime' : 'category'}
-							height={320}
+							height="100%"
 							unit={isStatusTrend ? '' : chartResponse?.unit}
 						/>
 					) : (
@@ -812,7 +831,7 @@ const SpinningMachineList = () => {
 						{isLoading ? (
 							<Loading />
 						) : filteredMachines?.length ? (
-							<Grid container rowGap={1} columnSpacing={1}>
+							<Grid container rowGap={0.5} columnSpacing={0.5}>
 								{filteredMachines.map((machine) => {
 									const latest = machine?.latest || {};
 									const rawStatus =
@@ -898,6 +917,7 @@ const SpinningMachineList = () => {
 											sm={6}
 											md={4}
 											lg={3}
+											sx={{ display: 'flex', minWidth: 0 }}
 											key={`compressor-machine-${
 												machine?.slave_id || machine?.id
 											}`}
@@ -941,6 +961,7 @@ const SpinningMachineList = () => {
 				} - ${modalDetails?.tabDesc || 'Trend'}`}
 				confirmText={null}
 				cancelText={null}
+				type="chart"
 			>
 				{modalDetails?.isOpen ? (
 					<ModalContentForTrend

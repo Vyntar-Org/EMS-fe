@@ -88,6 +88,10 @@ const PremiumCompressorMachineCard = ({
 		<Box
 			sx={{
 				height: '100%',
+				width: '100%',
+				maxWidth: '100%',
+				boxSizing: 'border-box',
+				minHeight: 430,
 				p: 1,
 				borderRadius: '20px',
 				border: '1px solid',
@@ -169,9 +173,9 @@ const PremiumCompressorMachineCard = ({
 							color="#0B2043"
 							lineHeight={1.15}
 							sx={{
-								whiteSpace: 'normal',
-								overflow: 'visible',
-								wordBreak: 'break-word',
+								whiteSpace: 'nowrap',
+								overflow: 'hidden',
+								textOverflow: 'ellipsis',
 							}}
 						/>
 						<Stack

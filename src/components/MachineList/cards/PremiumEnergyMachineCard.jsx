@@ -1,4 +1,9 @@
 import {
+	ElectricMeterRounded,
+	ShowChartRounded,
+	SpeedRounded,
+} from '@mui/icons-material';
+import {
 	Box,
 	Grid,
 	Table,
@@ -7,6 +12,7 @@ import {
 	TableHead,
 	TableRow,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
@@ -24,21 +30,31 @@ const PhaseTable = ({
 }) => (
 	<Box
 		sx={{
-			bgcolor: 'surface.muted',
 			border: '1px solid',
-			borderColor: 'surface.mutedBorder',
-			borderRadius: '14px',
-			mb: 1,
+			borderColor: 'divider',
+			borderRadius: '12px',
+			mb: 0.6,
 			width: '100%',
+			boxShadow: '0 5px 14px rgba(37,69,111,.06)',
+			overflow: 'hidden',
+			bgcolor: 'background.paper',
+			'& .MuiTableCell-root': { bgcolor: 'background.paper' },
 		}}
 	>
 		<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
 			<TableHead>
 				<TableRow>
-					<TableCell sx={{ fontWeight: 'bold', border: 0, width: '40%' }}>
+					<TableCell
+						sx={{
+							fontWeight: 'bold',
+							border: 0,
+							width: '40%',
+							bgcolor: (t) => alpha(t.palette.primary.main, 0.035),
+						}}
+					>
 						<ResponsiveTextWrapper
-							fontSize="13px"
-							fontWeight="bold"
+							fontSize="9.5px"
+							fontWeight={600}
 							value="Phase"
 						/>
 					</TableCell>
@@ -47,9 +63,9 @@ const PhaseTable = ({
 						sx={{ fontWeight: 'bold', border: 0, width: '30%' }}
 					>
 						<ResponsiveTextWrapper
-							fontSize="13px"
+							fontSize="9.5px"
 							fontWeight="bold"
-							value="V"
+							value="V (Voltage)"
 						/>
 					</TableCell>
 					<TableCell
@@ -57,9 +73,9 @@ const PhaseTable = ({
 						sx={{ fontWeight: 'bold', border: 0, width: '30%' }}
 					>
 						<ResponsiveTextWrapper
-							fontSize="13px"
+							fontSize="9.5px"
 							fontWeight="bold"
-							value="A"
+							value="A (Current)"
 						/>
 					</TableCell>
 				</TableRow>
@@ -71,35 +87,43 @@ const PhaseTable = ({
 					{ name: 'Phase B', v: phaseBV, a: phaseBA, color: '#1976d2' },
 				].map((row) => (
 					<TableRow key={row.name}>
-						<TableCell sx={{ border: 0, py: 0.5, width: '40%' }}>
+						<TableCell sx={{ py: 0.55, width: '40%', borderColor: 'divider' }}>
 							<Box sx={{ display: 'flex', alignItems: 'center' }}>
 								<Box
 									sx={{
-										width: 10,
-										height: 10,
+										width: 9,
+										height: 9,
 										borderRadius: '50%',
 										bgcolor: row.color,
 										mr: 1,
 									}}
 								/>
 								<ResponsiveTextWrapper
-									fontSize="13px"
-									fontWeight={500}
+									fontSize="10.5px"
+									fontWeight={700}
 									value={row.name}
 								/>
 							</Box>
 						</TableCell>
-						<TableCell align="right" sx={{ border: 0, py: 0.5, width: '30%' }}>
+						<TableCell
+							align="right"
+							sx={{ py: 0.55, width: '30%', borderColor: 'divider' }}
+						>
 							<ResponsiveTextWrapper
-								fontSize="13px"
-								fontWeight={500}
+								fontSize="10.5px"
+								fontWeight={700}
+								color={row.color}
 								value={formatNumber(row.v, 2, { fallback: '0' })}
 							/>
 						</TableCell>
-						<TableCell align="right" sx={{ border: 0, py: 0.5, width: '30%' }}>
+						<TableCell
+							align="right"
+							sx={{ py: 0.55, width: '30%', borderColor: 'divider' }}
+						>
 							<ResponsiveTextWrapper
-								fontSize="13px"
-								fontWeight={500}
+								fontSize="10.5px"
+								fontWeight={700}
+								color={row.color}
 								value={formatNumber(row.a, 2, { fallback: '0' })}
 							/>
 						</TableCell>
@@ -110,24 +134,66 @@ const PhaseTable = ({
 	</Box>
 );
 
-const StatCell = ({ label, value }) => (
-	<Grid item xs={4} minWidth={0}>
-		<Box minWidth={0}>
-			<ResponsiveTextWrapper
-				value={label}
-				fontSize="11.5px"
-				color="text.secondary"
-				fontWeight={500}
-			/>
-			<ResponsiveTextWrapper
-				value={value}
-				fontSize="14px"
-				color="text.primary"
-				fontWeight={700}
-			/>
-		</Box>
-	</Grid>
-);
+const STAT_ICONS = [ShowChartRounded, ElectricMeterRounded, SpeedRounded];
+const STAT_COLORS = ['#16A085', '#805AD5', '#2589D8'];
+
+const StatCell = ({ label, value, index }) => {
+	const Icon = STAT_ICONS[index];
+	const color = STAT_COLORS[index];
+	return (
+		<Grid item xs={4} minWidth={0}>
+			<Box
+				minWidth={0}
+				sx={{
+					minHeight: 58,
+					p: 0.6,
+					border: '1px solid',
+					borderColor: 'divider',
+					borderRadius: '12px',
+					boxShadow: '0 5px 14px rgba(37,69,111,.06)',
+					display: 'flex',
+					alignItems: 'center',
+					gap: 0.5,
+				}}
+			>
+				<Box
+					sx={{
+						width: 28,
+						height: 28,
+						borderRadius: '50%',
+						display: 'grid',
+						placeItems: 'center',
+						flexShrink: 0,
+						color,
+						bgcolor: alpha(color, 0.12),
+						'& svg': { fontSize: 17 },
+					}}
+				>
+					<Icon />
+				</Box>
+				<Box minWidth={0}>
+					<ResponsiveTextWrapper
+						value={label}
+						fontSize="9.5px"
+						color="text.secondary"
+						fontWeight={500}
+					/>
+					<ResponsiveTextWrapper
+						value={value}
+						fontSize="12px"
+						color="text.primary"
+						fontWeight={800}
+						sx={{
+							whiteSpace: 'nowrap',
+							overflow: 'hidden',
+							textOverflow: 'ellipsis',
+						}}
+					/>
+				</Box>
+			</Box>
+		</Grid>
+	);
+};
 
 /**
  * Dedicated premium card for the Energy machine list: bolt icon, title +
@@ -167,15 +233,16 @@ const PremiumEnergyMachineCard = ({
 			display="flex"
 			justifyContent="space-between"
 			alignItems="baseline"
-			mb={1}
+			my={0.25}
 			gap={1}
+			sx={{ borderLeft: '3px solid #E5485D', pl: 1 }}
 		>
 			<Box minWidth={0} flex={1}>
 				<ResponsiveTextWrapper
 					value="Total Energy"
-					fontSize="12px"
+					fontSize="12.5px"
 					color="text.secondary"
-					fontWeight={500}
+					fontWeight={600}
 				/>
 			</Box>
 			<Box flexShrink={0}>
@@ -195,16 +262,19 @@ const PremiumEnergyMachineCard = ({
 			phaseBV={phaseBV}
 			phaseBA={phaseBA}
 		/>
-		<Grid container spacing={1} mt={0.25} mb={1.25}>
+		<Grid container spacing={0.6} mt={0.1} mb={0.6}>
 			<StatCell
+				index={0}
 				label="Active power"
 				value={`${formatNumber(activePower, 2, { fallback: '0' })} kW`}
 			/>
 			<StatCell
+				index={1}
 				label="Power factor"
 				value={`${formatNumber(powerFactor, 2, { fallback: '0' })} PF`}
 			/>
 			<StatCell
+				index={2}
 				label="Frequency"
 				value={`${formatNumber(frequency, 2, { fallback: '0' })} Hz`}
 			/>

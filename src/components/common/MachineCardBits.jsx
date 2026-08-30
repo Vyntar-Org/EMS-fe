@@ -188,48 +188,72 @@ export const AnimatedMachineAvatar = ({ app, isOnline = true }) => {
 export const MachineMetricPanel = ({ rows = [] }) => (
 	<Box
 		sx={{
-			bgcolor: 'surface.muted',
-			border: '1px solid',
-			borderColor: 'surface.mutedBorder',
-			borderRadius: '14px',
-			p: 1.25,
+			display: 'grid',
+			gridTemplateColumns: {
+				xs: 'repeat(2, minmax(0, 1fr))',
+				sm: `repeat(${Math.min(Math.max(rows.length, 1), 3)}, minmax(0, 1fr))`,
+			},
+			gap: 0.6,
 			width: '100%',
 		}}
 	>
-		<Stack
-			divider={
-				<Divider sx={{ my: 0.75, borderColor: 'surface.mutedBorder' }} />
-			}
-		>
-			{rows.map((row) => (
-				<Stack
-					key={row.label}
-					direction="row"
-					justifyContent="space-between"
-					alignItems="center"
-					width="100%"
-					gap={1}
-				>
-					<Box minWidth={0} flex={1}>
-						<ResponsiveTextWrapper
-							value={row.label}
-							fontSize="13.5px"
-							color="text.secondary"
-							fontWeight={500}
-						/>
-					</Box>
-					<Box flexShrink={0} maxWidth="55%" minWidth={0}>
-						<ResponsiveTextWrapper
-							value={row.value}
-							fontSize="14.5px"
-							color="text.primary"
-							fontWeight={700}
-							sx={{ textAlign: 'right' }}
-						/>
-					</Box>
-				</Stack>
-			))}
-		</Stack>
+		{rows.map((row, index) => (
+			<Box
+				key={row.label}
+				minWidth={0}
+				sx={{
+					minHeight: 52,
+					p: 0.7,
+					border: '1px solid',
+					borderColor: 'divider',
+					borderRadius: '12px',
+					bgcolor: 'background.paper',
+					boxShadow: '0 5px 14px rgba(37,69,111,.06)',
+					display: 'flex',
+					flexDirection: 'column',
+					justifyContent: 'center',
+					position: 'relative',
+					overflow: 'hidden',
+					'&::before': {
+						content: '""',
+						position: 'absolute',
+						left: 0,
+						top: 9,
+						bottom: 9,
+						width: 3,
+						borderRadius: '0 4px 4px 0',
+						bgcolor: ['#16A085', '#805AD5', '#2589D8', '#F59E0B', '#E5485D'][
+							index % 5
+						],
+					},
+				}}
+			>
+				<ResponsiveTextWrapper
+					value={row.label}
+					fontSize="9.5px"
+					color="text.secondary"
+					fontWeight={500}
+					lineHeight={1.15}
+					sx={{
+						whiteSpace: 'nowrap',
+						overflow: 'hidden',
+						textOverflow: 'ellipsis',
+					}}
+				/>
+				<ResponsiveTextWrapper
+					value={row.value}
+					fontSize="12px"
+					color="text.primary"
+					fontWeight={800}
+					lineHeight={1.15}
+					sx={{
+						whiteSpace: 'nowrap',
+						overflow: 'hidden',
+						textOverflow: 'ellipsis',
+					}}
+				/>
+			</Box>
+		))}
 	</Box>
 );
 

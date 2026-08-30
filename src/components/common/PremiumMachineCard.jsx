@@ -1,21 +1,20 @@
-import { Insights } from '@mui/icons-material';
-import { Box, Button, Chip, Divider, Stack } from '@mui/material';
+import {
+	CalendarMonthRounded,
+	ChevronRightRounded,
+	InsightsRounded,
+} from '@mui/icons-material';
+import { Box, Button, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 import { formatTimestamp } from '../../helpers/common';
-
-import { AnimatedMachineAvatar, APP_ACCENT_COLOR } from './MachineCardBits';
+import {
+	AnimatedMachineAvatar,
+	APP_ACCENT_COLOR,
+	MiniSparkline,
+} from './MachineCardBits';
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 
-/**
- * Shared premium shell for machine-list cards: an app-themed icon on a
- * colorful accent wash, title + status pill, timestamp, an optional
- * Today/MTD stat row, and a TREND button always last — separated by clean
- * dividers. Each app's own metric content is passed as `children` so every
- * app keeps its own dedicated data layout while sharing the same chrome.
- * This component makes no network calls of its own — trend data lives in
- * one place: the modal opened by the TREND button.
- */
+/** Shared shell matching the Compressor / Spinning machine-list card. */
 const PremiumMachineCard = ({
 	app,
 	title,
@@ -28,197 +27,260 @@ const PremiumMachineCard = ({
 	children,
 }) => {
 	const isOnline = status?.toLowerCase() === 'online';
-	const accent =
-		accentColor || (isOnline ? APP_ACCENT_COLOR[app] : null) || '#DC2626';
+	const statusColor = isOnline ? '#16A34A' : '#EF3340';
+	const statusLabel = isOnline ? 'ONLINE' : 'OFFLINE';
+	const accent = accentColor || APP_ACCENT_COLOR[app] || statusColor;
 
 	return (
 		<Box
 			sx={{
 				height: '100%',
+				width: '100%',
+				maxWidth: '100%',
+				boxSizing: 'border-box',
+				p: 1,
+				borderRadius: '20px',
+				border: '1px solid',
+				borderColor: (t) => alpha(t.palette.primary.main, 0.11),
+				bgcolor: 'background.paper',
+				boxShadow: '0 12px 35px rgba(37,69,111,.10)',
 				display: 'flex',
 				flexDirection: 'column',
-				p: 1.5,
-				borderRadius: '20px',
-				border: '2px solid',
-				borderColor: (t) =>
-					alpha(accent, t.palette.mode === 'dark' ? 0.36 : 0.24),
-				background: (t) =>
-					`linear-gradient(155deg, ${alpha(
-						accent,
-						t.palette.mode === 'dark' ? 0.22 : 0.11
-					)} 0%, ${t.palette.background.paper} 58%)`,
+				minHeight: 360,
+				gap: 0.6,
+				minWidth: 0,
 				transition: (t) =>
-					t.transitions.create(
-						['transform', 'background-color', 'border-color', 'box-shadow'],
-						{
-							duration: t.transitions.duration.short,
-							easing: t.transitions.easing.easeInOut,
-						}
-					),
-
+					t.transitions.create(['transform', 'box-shadow', 'border-color'], {
+						duration: t.transitions.duration.short,
+					}),
 				'&:hover': {
 					transform: 'translateY(-4px)',
-
-					background: (t) =>
-						`linear-gradient(155deg, ${alpha(
-							accent,
-							t.palette.mode === 'dark' ? 0.28 : 0.16
-						)} 0%, ${t.palette.background.paper} 58%)`,
-
-					boxShadow: (t) =>
-						`0 8px 24px ${alpha(
-							accent,
-							t.palette.mode === 'dark' ? 0.25 : 0.15
-						)}`,
+					boxShadow: `0 16px 34px ${alpha(statusColor, 0.18)}`,
+					borderColor: alpha(statusColor, 0.28),
 				},
 			}}
 		>
-			<Stack
-				direction="row"
-				justifyContent="space-between"
-				alignItems="flex-start"
-				gap={1}
+			<Box
+				sx={{
+					position: 'relative',
+					overflow: 'hidden',
+					minHeight: 104,
+					borderRadius: '15px',
+					border: `1px solid ${alpha(statusColor, 0.42)}`,
+					background: `linear-gradient(120deg, ${alpha(
+						statusColor,
+						0.16
+					)}, ${alpha(statusColor, 0.04)} 72%)`,
+					boxShadow: `0 7px 18px ${alpha(statusColor, 0.12)}`,
+					'&::after': {
+						content: '""',
+						position: 'absolute',
+						right: -35,
+						bottom: -48,
+						width: 190,
+						height: 100,
+						borderRadius: '50%',
+						background: `radial-gradient(circle, ${alpha(
+							statusColor,
+							0.2
+						)} 1px, transparent 1.5px)`,
+						backgroundSize: '9px 9px',
+						transform: 'rotate(-12deg)',
+					},
+				}}
 			>
 				<Stack
 					direction="row"
 					alignItems="center"
-					gap={1.25}
-					minWidth={0}
-					flex={1}
+					spacing={1}
+					height="100%"
+					p={1.05}
 				>
-					<AnimatedMachineAvatar app={app} isOnline={isOnline} />
-					<Box minWidth={0} flex={1}>
+					<Box
+						sx={{
+							width: 56,
+							height: 56,
+							borderRadius: '50%',
+							display: 'grid',
+							placeItems: 'center',
+							flexShrink: 0,
+							bgcolor: 'background.paper',
+							border: '3px solid rgba(255,255,255,.85)',
+							boxShadow: '0 7px 16px rgba(28,48,76,.16)',
+							'& .MuiAvatar-root': {
+								width: 50,
+								height: 50,
+								color: accent,
+								bgcolor: 'transparent',
+								background: 'transparent',
+								boxShadow: 'none',
+							},
+						}}
+					>
+						<AnimatedMachineAvatar app={app} isOnline={isOnline} />
+					</Box>
+					<Box minWidth={0} flex={1} zIndex={1} pt={2}>
 						<ResponsiveTextWrapper
 							value={title}
-							variant="h6"
-							fontWeight={700}
+							fontSize="16px"
+							fontWeight={800}
 							color="text.primary"
+							lineHeight={1.15}
+							sx={{
+								whiteSpace: 'nowrap',
+								overflow: 'hidden',
+								textOverflow: 'ellipsis',
+							}}
 						/>
-						<ResponsiveTextWrapper
-							value={formatTimestamp(lastUpdated)}
+						<Stack
+							direction="row"
+							alignItems="center"
+							spacing={0.5}
+							mt={0.45}
 							color="text.secondary"
-							fontWeight={500}
-							fontSize="12.5px"
-						/>
+						>
+							<CalendarMonthRounded sx={{ fontSize: 17 }} />
+							<ResponsiveTextWrapper
+								value={formatTimestamp(lastUpdated) || '-'}
+								fontSize="11px"
+								fontWeight={500}
+								sx={{ whiteSpace: 'normal', lineHeight: 1.15 }}
+							/>
+						</Stack>
 					</Box>
 				</Stack>
-
-				<Chip
-					label={status?.toUpperCase()}
-					size="small"
+				<Stack
+					direction="row"
+					alignItems="center"
+					spacing={0.6}
 					sx={{
-						flexShrink: 0,
-						fontWeight: 700,
-						fontSize: '11px',
-						color: isOnline ? 'success.main' : 'error.main',
-						bgcolor: (t) =>
-							alpha(
-								isOnline ? t.palette.success.main : t.palette.error.main,
-								t.palette.mode === 'dark' ? 0.2 : 0.12
-							),
-						border: 'none',
+						position: 'absolute',
+						top: 9,
+						right: 9,
+						px: 0.8,
+						py: 0.35,
+						borderRadius: '999px',
+						color: statusColor,
+						bgcolor: alpha(statusColor, 0.07),
+						border: `1px solid ${alpha(statusColor, 0.35)}`,
 					}}
-				/>
-			</Stack>
-			<Divider
-				sx={{
-					my: 1,
-					borderColor: (t) =>
-						alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16),
-				}}
-			/>
-			<Box width="100%">{children}</Box>
+				>
+					<Box width={9} height={9} borderRadius="50%" bgcolor={statusColor} />
+					<Typography fontSize="10px" fontWeight={800}>
+						{statusLabel}
+					</Typography>
+				</Stack>
+			</Box>
+
+			<Box width="100%" minWidth={0}>
+				{children}
+			</Box>
+
 			{todayMtd && (
-				<>
-					<Divider
-						sx={{
-							my: 1,
-							borderColor: (t) =>
-								alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16),
-						}}
-					/>
-					<Stack
-						direction="row"
-						justifyContent="space-between"
-						gap={1}
-						px={0.25}
-					>
-						<Box minWidth={0} flex={1}>
-							<ResponsiveTextWrapper
-								value={todayMtd.todayLabel || 'Today'}
-								fontSize="12px"
-								color="text.secondary"
-								fontWeight={500}
-							/>
-							<ResponsiveTextWrapper
-								value={todayMtd.todayValue}
-								fontSize="17px"
-								color="text.primary"
-								fontWeight={700}
-							/>
-						</Box>
-						<Box minWidth={0} flex={1} textAlign="right">
-							<ResponsiveTextWrapper
-								value={todayMtd.mtdLabel || 'MTD'}
-								fontSize="12px"
-								color="text.secondary"
-								fontWeight={500}
-								sx={{ textAlign: 'right' }}
-							/>
-							<ResponsiveTextWrapper
-								value={todayMtd.mtdValue}
-								fontSize="17px"
-								color="text.primary"
-								fontWeight={700}
-								sx={{ textAlign: 'right' }}
-							/>
-						</Box>
-					</Stack>
-				</>
-			)}
-			<Box flex={1} />
-			{footer !== null && (
-				<>
-					<Divider
-						sx={{
-							mt: 1,
-							mb: 0.75,
-							borderColor: (t) =>
-								alpha(accent, t.palette.mode === 'dark' ? 0.28 : 0.16),
-						}}
-					/>
-					<Stack direction="row" justifyContent="flex-end" alignItems="center">
-						{footer || (
-							<Button
-								onClick={onOpenTrend}
-								size="small"
-								startIcon={<Insights fontSize="small" />}
-								disableElevation
-								variant="contained"
-								fullWidth
-								sx={{
-									fontWeight: 700,
-									fontSize: '12px',
-									borderRadius: '14px',
-									py: 0.75,
-									// TREND always reflects live connectivity (green/red),
-									// same as the status chip above — independent of `accent`,
-									// which can be a threshold/band color (e.g. temperature)
-									// unrelated to whether the device is online.
-									bgcolor: (t) =>
-										isOnline ? t.palette.success.main : t.palette.error.main,
-									'&:hover': {
-										bgcolor: (t) =>
-											isOnline ? t.palette.success.dark : t.palette.error.dark,
-									},
-								}}
+				<Box
+					sx={{
+						display: 'grid',
+						gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+						border: '1px solid',
+						borderColor: 'divider',
+						borderRadius: '12px',
+						boxShadow: '0 5px 14px rgba(37,69,111,.06)',
+						overflow: 'hidden',
+					}}
+				>
+					{[
+						[todayMtd.todayLabel || 'Today', todayMtd.todayValue],
+						[todayMtd.mtdLabel || 'MTD', todayMtd.mtdValue],
+					].map(([label, value], index) => (
+						<Box
+							key={label}
+							minWidth={0}
+							sx={{
+								minHeight: 68,
+								p: 0.75,
+								borderLeft: index ? '1px solid' : 0,
+								borderColor: 'divider',
+								background: (t) =>
+									`linear-gradient(155deg, ${alpha(statusColor, 0.035)}, ${
+										t.palette.background.paper
+									} 65%)`,
+							}}
+						>
+							<Stack
+								direction="row"
+								alignItems="center"
+								spacing={0.55}
+								color={statusColor}
 							>
-								TREND
-							</Button>
-						)}
-					</Stack>
-				</>
+								<CalendarMonthRounded sx={{ fontSize: 15 }} />
+								<ResponsiveTextWrapper
+									value={label}
+									fontSize="11px"
+									color="text.secondary"
+									fontWeight={500}
+								/>
+							</Stack>
+							<ResponsiveTextWrapper
+								value={value}
+								fontSize="15px"
+								color="text.primary"
+								fontWeight={800}
+								sx={{
+									mt: 0.2,
+									whiteSpace: 'nowrap',
+									overflow: 'hidden',
+									textOverflow: 'ellipsis',
+								}}
+							/>
+							<Box
+								sx={{ width: '100%', height: 18, mt: 0.2 }}
+								aria-hidden="true"
+							>
+								<MiniSparkline
+									data={
+										index === 0
+											? [32, 40, 36, 47, 42, 51, 45, 58]
+											: [29, 37, 33, 43, 39, 48, 44, 56]
+									}
+									color="#F26A7A"
+									width="100%"
+									height={18}
+								/>
+							</Box>
+						</Box>
+					))}
+				</Box>
 			)}
+
+			<Box flex={1} />
+			{footer !== null &&
+				(footer || (
+					<Button
+						onClick={onOpenTrend}
+						fullWidth
+						variant="contained"
+						startIcon={<InsightsRounded />}
+						endIcon={<ChevronRightRounded />}
+						sx={{
+							minHeight: 34,
+							borderRadius: '10px',
+							fontSize: 12.5,
+							fontWeight: 800,
+							background: isOnline
+								? 'linear-gradient(105deg,#16A34A 0%,#22C55E 100%)'
+								: 'linear-gradient(105deg,#F23857 0%,#FF5A24 100%)',
+							boxShadow: `0 6px 14px ${alpha(statusColor, 0.22)}`,
+							'& .MuiButton-endIcon': { position: 'absolute', right: 14 },
+							'&:hover': {
+								background: isOnline
+									? 'linear-gradient(105deg,#138A3F 0%,#1DAA50 100%)'
+									: 'linear-gradient(105deg,#DB2947 0%,#E84B19 100%)',
+							},
+						}}
+					>
+						TREND
+					</Button>
+				))}
 		</Box>
 	);
 };

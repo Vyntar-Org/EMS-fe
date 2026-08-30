@@ -45,7 +45,7 @@ const PremiumTemperatureMachineCard = ({
 				}))}
 			/>
 			{tempStatus && (
-				<Box mt={1.25}>
+				<Box mt={0.6}>
 					<MachineTemperatureGauge
 						value={temperature}
 						statusColor={tempStatus.color}

@@ -181,7 +181,7 @@ const ModalContentForTrend = memo(
 
 		return (
 			<>
-				<Box width={{ xs: '100%', sm: 200 }}>
+				<Box width={{ xs: '100%', sm: 200 }} ml="auto">
 					<CustomSelect
 						label="Parameter"
 						value={tab}
@@ -207,7 +207,7 @@ const ModalContentForTrend = memo(
 					/>
 				</Box>
 
-				<Box height={355} mt={1}>
+				<Box height={{ xs: 320, sm: 'min(500px, calc(80vh - 150px))' }} mt={1}>
 					{chartLoading ? (
 						<Loading />
 					) : chartResponse?.data?.length ? (
@@ -216,7 +216,7 @@ const ModalContentForTrend = memo(
 							type="line"
 							colors={chartColors}
 							xAxesType="datetime"
-							height={350}
+							height="100%"
 							unit={chartResponse?.unit}
 						/>
 					) : (
@@ -323,7 +323,7 @@ const TemperatureMachineList = () => {
 						{isLoading ? (
 							<TemperatureMachineListSkeleton />
 						) : filteredMachines?.length ? (
-							<Grid container rowGap={1} columnSpacing={1}>
+							<Grid container rowGap={0.5} columnSpacing={0.5}>
 								{filteredMachines.map((mc) => {
 									const availableParams = getAvailableParams(
 										mc,
@@ -336,6 +336,7 @@ const TemperatureMachineList = () => {
 											sm={6}
 											md={4}
 											lg={3}
+											sx={{ display: 'flex', minWidth: 0 }}
 											key={`temperature-machine-${mc.id}`}
 										>
 											<PremiumTemperatureMachineCard
@@ -376,6 +377,7 @@ const TemperatureMachineList = () => {
 				title={`${modalDetails?.data?.name} - ${modalDetails?.tabDesc}`}
 				confirmText={null}
 				cancelText={null}
+				type="chart"
 			>
 				{modalDetails?.isOpen ? (
 					<ModalContentForTrend

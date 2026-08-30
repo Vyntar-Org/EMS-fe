@@ -370,7 +370,7 @@ const ModalContentForTrend = memo(
 					)}
 				</Box>
 
-				<Box height={355}>
+				<Box height={{ xs: 320, sm: 'min(500px, calc(80vh - 150px))' }}>
 					{tab === 'KEY_PARAMETERS' && !keyParam ? (
 						<NoDataFound message="Need to select 'Key Parameters' to get details" />
 					) : chartLoading ? (
@@ -381,7 +381,7 @@ const ModalContentForTrend = memo(
 							type="line"
 							colors={chartColors}
 							xAxesType="datetime"
-							height={350}
+							height="100%"
 						/>
 					)}
 				</Box>
@@ -474,7 +474,7 @@ const EnergyMachineList = () => {
 						{isLoading ? (
 							<EnergyMachineListSkeleton />
 						) : filteredMachines?.length ? (
-							<Grid container rowGap={1} columnSpacing={1}>
+							<Grid container rowGap={0.5} columnSpacing={0.5}>
 								{filteredMachines.map((mc) => {
 									return (
 										<Grid
@@ -483,6 +483,7 @@ const EnergyMachineList = () => {
 											sm={6}
 											md={4}
 											lg={3}
+											sx={{ display: 'flex', minWidth: 0 }}
 											key={`machine-card-${mc.slave_id}-${mc.name}`}
 										>
 											<PremiumEnergyMachineCard
@@ -524,6 +525,7 @@ const EnergyMachineList = () => {
 				title={`${modalDetails?.data?.name} - ${modalDetails?.tabDesc}`}
 				confirmText={null}
 				cancelText={null}
+				type="chart"
 			>
 				{modalDetails?.isOpen ? (
 					<ModalContentForTrend

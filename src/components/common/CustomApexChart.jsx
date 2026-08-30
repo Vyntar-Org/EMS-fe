@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { memo, useCallback, useMemo } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
+import { getApexYAxisConfig } from '../../helpers/chartConfig';
 import { smartParseDate } from '../../helpers/dateParse';
 import { formatNumber } from '../../helpers/formatters';
 
@@ -254,8 +255,6 @@ const CustomApexChart = ({
 		[resolvedUnit]
 	);
 
-	const yLabelFormatter = useCallback((val) => formatValue(val), [formatValue]);
-
 	const xLabelFormatter = useCallback(
 		(val) => formatByGranularity(val, granularity),
 		[granularity]
@@ -347,7 +346,7 @@ const CustomApexChart = ({
 				// chart container.
 				padding: minimal
 					? { top: 10, right: 24, bottom: 10, left: 24 }
-					: { top: 10, right: 20, bottom: 10, left: 10 },
+					: { top: 10, right: 20, bottom: 10, left: 14 },
 			},
 			dataLabels: { enabled: false },
 			legend: {
@@ -410,16 +409,10 @@ const CustomApexChart = ({
 				},
 			},
 			yaxis: {
-				tickAmount: minimal ? 1 : 5,
-				axisBorder: {
-					show: minimal,
-					color: 'rgba(145, 158, 171, 0.32)',
-				},
-				axisTicks: { show: false },
+				...getApexYAxisConfig({ unit: resolvedUnit, minimal }),
 				...customOptions?.yaxis,
 				labels: {
-					style: { colors: '#637381', fontSize: '12px' },
-					formatter: yLabelFormatter,
+					...getApexYAxisConfig({ unit: resolvedUnit, minimal }).labels,
 					...customOptions?.yaxis?.labels,
 				},
 			},
@@ -449,9 +442,9 @@ const CustomApexChart = ({
 			pointCount,
 			animationsEnabled,
 			buildTooltip,
-			yLabelFormatter,
 			customOptions,
 			minimal,
+			resolvedUnit,
 		]
 	);
 

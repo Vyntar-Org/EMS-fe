@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 
 import PremiumMachineCard from '../../common/PremiumMachineCard';
+import { MachineMetricPanel } from '../../common/MachineCardBits';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 import StatusChips from '../../common/StatusChips';
 import { formatNumber } from '../../../helpers/formatters';
@@ -62,7 +63,6 @@ const WaterLevelTableRows = ({ groupedMetricsData }) => {
 							py: 0.5,
 							width: '50%',
 							px: 0.5,
-							backgroundColor: 'background.paper',
 							borderRight: (t) => `1px solid ${t.palette.divider}`,
 						}}
 					>
@@ -74,10 +74,15 @@ const WaterLevelTableRows = ({ groupedMetricsData }) => {
 						>
 							<Box width="calc(100% - 40px - 4px)" textAlign="left">
 								<ResponsiveTextWrapper
-									fontSize="14px"
+									fontSize="10.5px"
 									color="text.primary"
-									fontWeight={500}
+									fontWeight={600}
 									value={row.left.label}
+									sx={{
+										whiteSpace: 'nowrap',
+										overflow: 'hidden',
+										textOverflow: 'ellipsis',
+									}}
 								/>
 							</Box>
 							<StatusChips value={String(row.left.value ?? 'Nil')} />
@@ -90,7 +95,6 @@ const WaterLevelTableRows = ({ groupedMetricsData }) => {
 							py: 0.5,
 							width: '50%',
 							px: 0.5,
-							backgroundColor: 'background.paper',
 						}}
 					>
 						<Box
@@ -101,10 +105,15 @@ const WaterLevelTableRows = ({ groupedMetricsData }) => {
 						>
 							<Box width="calc(100% - 41px - 4px)" textAlign="left">
 								<ResponsiveTextWrapper
-									fontSize="14px"
+									fontSize="10.5px"
 									color="text.primary"
-									fontWeight={500}
+									fontWeight={600}
 									value={row.right.label}
+									sx={{
+										whiteSpace: 'nowrap',
+										overflow: 'hidden',
+										textOverflow: 'ellipsis',
+									}}
 								/>
 							</Box>
 							<StatusChips value={String(row.right.value ?? 'Nil')} />
@@ -149,80 +158,66 @@ const PremiumFlowCardMachineCard = ({
 			trend={slaveId ? { url: trendUrl } : null}
 			onOpenTrend={onOpenTrend}
 		>
-			<Box
-				sx={{
-					bgcolor: 'surface.muted',
-					border: '1px solid',
-					borderColor: 'surface.mutedBorder',
-					borderRadius: '14px',
-					width: '100%',
-				}}
-			>
-				<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
-					<TableHead>
-						<TableRow>
-							<TableCell
-								sx={{
-									fontWeight: 'bold',
-									border: 0,
-									width: '50%',
-									...(isTankCard ? { px: 0.5, textAlign: 'center' } : {}),
-								}}
-							>
-								<ResponsiveTextWrapper
-									fontSize="14px"
-									fontWeight="bold"
-									value={isTankCard ? 'Collection Tank' : 'Parameter'}
-								/>
-							</TableCell>
-							<TableCell
-								align="right"
-								sx={{
-									fontWeight: 'bold',
-									border: 0,
-									width: '50%',
-									...(isTankCard ? { px: 0.5, textAlign: 'center' } : {}),
-								}}
-							>
-								<ResponsiveTextWrapper
-									fontSize="14px"
-									fontWeight="bold"
-									value={isTankCard ? 'Filter out' : 'Value'}
-								/>
-							</TableCell>
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						{isTankCard ? (
+			{isFlowCard ? (
+				<MachineMetricPanel
+					rows={metrics.map((row) => ({
+						label: row.label,
+						value: formatNumber(row?.value, 2, { fallback: '0' }),
+					}))}
+				/>
+			) : (
+				<Box
+					sx={{
+						border: '1px solid',
+						borderColor: 'divider',
+						borderRadius: '12px',
+						width: '100%',
+						boxShadow: '0 5px 14px rgba(37,69,111,.06)',
+						overflow: 'hidden',
+						bgcolor: 'background.paper',
+						'& .MuiTableCell-root': { bgcolor: 'background.paper' },
+					}}
+				>
+					<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
+						<TableHead>
+							<TableRow>
+								<TableCell
+									sx={{
+										fontWeight: 'bold',
+										border: 0,
+										width: '50%',
+										...(isTankCard ? { px: 0.5, textAlign: 'center' } : {}),
+									}}
+								>
+									<ResponsiveTextWrapper
+										fontSize="9.5px"
+										fontWeight="bold"
+										value={isTankCard ? 'Collection Tank' : 'Parameter'}
+									/>
+								</TableCell>
+								<TableCell
+									align="right"
+									sx={{
+										fontWeight: 'bold',
+										border: 0,
+										width: '50%',
+										...(isTankCard ? { px: 0.5, textAlign: 'center' } : {}),
+									}}
+								>
+									<ResponsiveTextWrapper
+										fontSize="9.5px"
+										fontWeight="bold"
+										value={isTankCard ? 'Filter out' : 'Value'}
+									/>
+								</TableCell>
+							</TableRow>
+						</TableHead>
+						<TableBody>
 							<WaterLevelTableRows groupedMetricsData={metrics} />
-						) : (
-							metrics.map((row) => (
-								<TableRow key={row.metric_key}>
-									<TableCell sx={{ border: 0, py: 0.5, width: '50%' }}>
-										<ResponsiveTextWrapper
-											fontSize="13px"
-											color="text.primary"
-											fontWeight={500}
-											value={row.label}
-										/>
-									</TableCell>
-									<TableCell
-										align="right"
-										sx={{ border: 0, py: 0.5, width: '50%' }}
-									>
-										<ResponsiveTextWrapper
-											fontSize="13.5px"
-											color="text.primary"
-											fontWeight={700}
-											value={formatNumber(row?.value, 2, { fallback: '0' })}
-										/>
-									</TableCell>
-								</TableRow>
-							))
-						)}
-					</TableBody>
-				</Table>
-			</Box>
+						</TableBody>
+					</Table>
+				</Box>
+			)}
 		</PremiumMachineCard>
 	);
 };

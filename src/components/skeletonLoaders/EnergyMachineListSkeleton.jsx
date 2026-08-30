@@ -5,7 +5,7 @@ const EnergyMachineListSkeleton = () => {
 	const skeletonItems = Array.from({ length: 9 }, (_, i) => i);
 
 	return (
-		<Grid container rowGap={1} columnSpacing={1}>
+		<Grid container rowGap={0.5} columnSpacing={0.5}>
 			{skeletonItems.map((_, ind) => {
 				return (
 					<Grid

@@ -5,7 +5,7 @@ const FireSafetyMachineListSkeleton = () => {
 	const skeletonItems = Array.from({ length: 12 }, (_, i) => i);
 
 	return (
-		<Grid container rowGap={1} columnSpacing={1}>
+		<Grid container rowGap={0.5} columnSpacing={0.5}>
 			{skeletonItems.map((_, ind) => {
 				return (
 					<Grid
@@ -15,7 +15,7 @@ const FireSafetyMachineListSkeleton = () => {
 						md={4}
 						lg={3}
 						key={`fire-safety-machine-card-skeleton-${ind + 1}`}
-						height="274px"
+						height="360px"
 					>
 						<Skeleton
 							sx={{ borderRadius: '16px' }}

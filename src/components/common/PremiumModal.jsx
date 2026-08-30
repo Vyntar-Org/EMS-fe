@@ -8,6 +8,7 @@ import {
 	Typography,
 	Box,
 	IconButton,
+	Zoom,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
@@ -19,6 +20,8 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
 		borderRadius: '16px',
 		backgroundColor: theme.palette.background.paper,
 		color: theme.palette.text.primary,
+		overflow: 'hidden',
+		boxShadow: '0 24px 80px rgba(15, 23, 42, 0.24)',
 	},
 }));
 
@@ -34,6 +37,7 @@ const PremiumModal = ({
 	type = 'default',
 }) => {
 	const isLogout = type === 'logout';
+	const isChart = type === 'chart';
 	const finalTitle = isLogout ? title || 'Confirm Logout' : title;
 	const finalConfirmText = isLogout
 		? confirmText === 'Confirm'
@@ -67,8 +71,19 @@ const PremiumModal = ({
 		<StyledDialog
 			open={open}
 			onClose={onClose}
-			maxWidth={isLogout ? 'xs' : 'sm'}
+			maxWidth={isLogout ? 'xs' : isChart ? 'lg' : 'sm'}
 			fullWidth
+			TransitionComponent={Zoom}
+			transitionDuration={{ enter: 220, exit: 160 }}
+			PaperProps={{
+				sx: isChart
+					? {
+							width: { xs: 'calc(100% - 16px)', sm: 'calc(100% - 48px)' },
+							maxHeight: '90vh',
+							m: { xs: 1, sm: 3 },
+					  }
+					: undefined,
+			}}
 			TransitionProps={{
 				onEntered: () => {
 					setHasEntered(true);
@@ -88,10 +103,10 @@ const PremiumModal = ({
 					fontWeight: 'bold',
 					borderBottom: isLogout ? 'none' : '1px solid',
 					borderColor: isLogout ? 'transparent' : 'divider',
-					pt: isLogout ? 3 : 1.5,
-					pb: 1,
-					pr: 1.5,
-					pl: isLogout ? 3 : 2.5,
+					pt: isLogout ? 3 : isChart ? 1.25 : 1.5,
+					pb: isChart ? 1.25 : 1,
+					pr: isChart ? 1.25 : 1.5,
+					pl: isLogout ? 3 : isChart ? 2 : 2.5,
 					gap: 1,
 				}}
 			>
@@ -140,9 +155,10 @@ const PremiumModal = ({
 			<DialogContent
 				sx={{
 					'&.MuiDialogContent-root': {
-						p: 3,
-						pt: isLogout ? 1 : 2,
-						pl: isLogout ? 3 : '24px',
+						p: isChart ? { xs: 1, sm: 2 } : 3,
+						pt: isLogout ? 1 : isChart ? { xs: 1, sm: 1.5 } : 2,
+						pl: isLogout ? 3 : isChart ? { xs: 1, sm: 2 } : '24px',
+						overflow: isChart ? 'hidden' : 'auto',
 					},
 				}}
 			>

@@ -1,4 +1,4 @@
-import { alpha, Box, Divider } from '@mui/material';
+import { alpha, Box, Divider, Typography } from '@mui/material';
 
 import { formatChartValue } from '../../../helpers/chartConfig';
 import CardFooterAnalytics from '../CardFooterAnalytics';
@@ -61,16 +61,27 @@ const StatCardForTodayYesterdayBar = ({
 							/>
 
 							<Box width={100} textAlign="center" mx="auto">
-								<ResponsiveTextWrapper
+								<Typography
+									noWrap
+									color={accent}
 									fontSize="16px"
 									fontWeight={800}
-									value={`${formatChartValue(item.value) || 0}${
-										unit ? ` ${unit}` : ''
-									}`}
-									color={accent}
-									sx={{ lineHeight: 1.1 }}
+									lineHeight={1.1}
 									my={0.5}
-								/>
+								>
+									{formatChartValue(item.value) || 0}
+									{unit && (
+										<Typography
+											component="span"
+											fontSize="10px"
+											fontWeight={700}
+											color="text.secondary"
+											sx={{ ml: 0.35 }}
+										>
+											{unit}
+										</Typography>
+									)}
+								</Typography>
 							</Box>
 
 							{caption ? (

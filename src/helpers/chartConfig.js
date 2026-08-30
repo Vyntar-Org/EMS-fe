@@ -110,6 +110,54 @@ export const formatChartValue = (val) => {
 };
 
 /**
+ * Compact axis-only number formatting. Tooltips retain their more precise
+ * two-decimal formatting while crowded axes use short, stable labels.
+ */
+export const formatCompactChartValue = (value) => {
+	const numericValue = Number(value);
+	if (!Number.isFinite(numericValue)) {
+		return '-';
+	}
+
+	if (Math.abs(numericValue) < 1000) {
+		return formatNumber(numericValue, 2);
+	}
+
+	return new Intl.NumberFormat('en-US', {
+		notation: 'compact',
+		compactDisplay: 'short',
+		maximumFractionDigits: 1,
+	})
+		.format(numericValue)
+		.replace('K', 'k');
+};
+
+/**
+ * Shared ApexCharts Y-axis defaults. Four intervals produce no more than
+ * five labels, while forceNiceScale keeps gridlines on readable steps.
+ */
+export const getApexYAxisConfig = ({ unit = '', minimal = false } = {}) => ({
+	tickAmount: minimal ? 1 : 4,
+	forceNiceScale: true,
+	decimalsInFloat: 2,
+	axisBorder: {
+		show: minimal,
+		color: 'rgba(145, 158, 171, 0.32)',
+	},
+	axisTicks: { show: false },
+	labels: {
+		minWidth: 32,
+		maxWidth: 72,
+		offsetX: -2,
+		style: { colors: '#637381', fontSize: '11px' },
+		formatter: (value) => {
+			const formatted = formatCompactChartValue(value);
+			return unit && formatted !== '-' ? `${formatted} ${unit}` : formatted;
+		},
+	},
+});
+
+/**
  * @param {Array}  data       - raw API data array
  * @param {Object} seriesMap  - { actual: "fieldName", target: "fieldName" }
  * @param {number} maxPoints  - downsample limit for large data

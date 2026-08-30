@@ -65,7 +65,7 @@ const PremiumSolarMachineCard = ({
 				]}
 			/>
 			{outletStatus && (
-				<Box mt={1.25}>
+				<Box mt={0.6}>
 					<MachineTemperatureGauge
 						value={outletTemperature}
 						statusColor={outletStatus.color}

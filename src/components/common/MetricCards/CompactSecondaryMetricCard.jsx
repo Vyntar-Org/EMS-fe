@@ -1,5 +1,5 @@
 import { TrendingDown, TrendingFlat, TrendingUp } from '@mui/icons-material';
-import { Box, Stack, alpha } from '@mui/material';
+import { Box, Stack, Typography, alpha } from '@mui/material';
 import PropTypes from 'prop-types';
 
 import { formatChartValue } from '../../../helpers/chartConfig';
@@ -86,13 +86,26 @@ const CompactSecondaryMetricCard = ({
 				<TrendIcon sx={{ fontSize: 13, color: accent, flexShrink: 0 }} />
 			</Stack>
 
-			<ResponsiveTextWrapper
-				value={`${formatChartValue(current)}${unit ? ` ${unit}` : ''}`}
+			<Typography
+				noWrap
 				fontWeight={800}
 				fontSize={{ xs: '17px', md: '19px' }}
 				color={accent}
-				sx={{ lineHeight: 1.05 }}
-			/>
+				lineHeight={1.05}
+			>
+				{formatChartValue(current)}
+				{unit && (
+					<Typography
+						component="span"
+						fontSize="10px"
+						fontWeight={700}
+						color="text.secondary"
+						sx={{ ml: 0.35 }}
+					>
+						{unit}
+					</Typography>
+				)}
+			</Typography>
 
 			<MiniProgressBar
 				percent={todayPct}

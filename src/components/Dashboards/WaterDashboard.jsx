@@ -45,12 +45,6 @@ const CARD_META = {
 	total_stations: { icon: DeviceHub, color: '#64748B' },
 };
 
-// Only the volume metrics are measured in KL. Water Positivity is a ratio
-// index (not a volume), so it gets "%" instead of the wrong "KL" suffix.
-// Total Stations is a live device count — no unit, and no today/yesterday
-// comparison either (see `total_stations` handling in WaterKpiCard below).
-const UNIT_OVERRIDES = { water_positivity: '%' };
-
 const WaterKpiCard = ({
 	metricKey,
 	title,
@@ -67,7 +61,7 @@ const WaterKpiCard = ({
 	};
 	const isLiveCount = metricKey === 'total_stations';
 	const isCompact = variant === 'compact';
-	const unit = UNIT_OVERRIDES[metricKey] || 'KL';
+	const unit = 'KLD';
 
 	return (
 		<CustomCard
@@ -88,9 +82,11 @@ const WaterKpiCard = ({
 				isLiveCount ? (
 					<StatCardLiveCount
 						value={value}
-						label="Connected Stations"
+						label={isCompact ? title : 'Connected Stations'}
 						accent={color}
 						asOf={asOf}
+						compact={isCompact}
+						icon={Icon}
 					/>
 				) : isCompact ? (
 					<CompactSecondaryMetricCard
@@ -213,10 +209,11 @@ const WaterDashboard = () => {
 				</Grid>
 				<Grid item xs={12} sm={6} md={3} height={{ md: '100%' }}>
 					<WaterKpiCard
-						metricKey="total_stations"
-						title="Total Stations"
-						hasData={Boolean(overviewData?.total_stations)}
-						value={overviewData?.total_stations || 0}
+						metricKey="water_positivity"
+						title="Water Positivity"
+						hasData={Boolean(overviewData?.water_positivity)}
+						value={overviewData?.water_positivity?.current || 0}
+						yesterdayVal={overviewData?.water_positivity?.previous || 0}
 						asOf={asOf}
 					/>
 				</Grid>
@@ -263,11 +260,10 @@ const WaterDashboard = () => {
 						</Grid>
 						<Grid item xs={6} sm={3} md={12} height={{ xs: 120, md: '25%' }}>
 							<WaterKpiCard
-								metricKey="water_positivity"
-								title="Water Positivity"
-								hasData={Boolean(overviewData?.water_positivity)}
-								value={overviewData?.water_positivity?.current || 0}
-								yesterdayVal={overviewData?.water_positivity?.previous || 0}
+								metricKey="total_stations"
+								title="Total Stations"
+								hasData={Boolean(overviewData?.total_stations)}
+								value={overviewData?.total_stations || 0}
 								variant="compact"
 							/>
 						</Grid>

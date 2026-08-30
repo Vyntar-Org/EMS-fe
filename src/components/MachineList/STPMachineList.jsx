@@ -169,7 +169,7 @@ const ModalContentForTrend = memo(
 
 		return (
 			<>
-				<Box width={{ xs: '100%', sm: 200 }}>
+				<Box width={{ xs: '100%', sm: 200 }} ml="auto">
 					<CustomSelect
 						label="Parameter"
 						value={tab}
@@ -187,7 +187,11 @@ const ModalContentForTrend = memo(
 						}}
 					/>
 				</Box>
-				<Box height={355} mt={1} overflow="hidden">
+				<Box
+					height={{ xs: 320, sm: 'min(500px, calc(80vh - 150px))' }}
+					mt={1}
+					overflow="hidden"
+				>
 					{chartLoading ? (
 						<Loading />
 					) : chartResponse?.data?.length ? (
@@ -199,7 +203,7 @@ const ModalContentForTrend = memo(
 							type="line"
 							colors={[APP_ACCENT_COLOR.STP]}
 							xAxesType="datetime"
-							height={350}
+							height="100%"
 						/>
 					) : (
 						<NoDataFound message="No machine readings received yet — data appears once the device reports" />
@@ -324,7 +328,7 @@ const STPMachineList = () => {
 						{isLoading ? (
 							<TemperatureMachineListSkeleton />
 						) : filteredMachines?.length ? (
-							<Grid container rowGap={1} columnSpacing={1}>
+							<Grid container rowGap={0.5} columnSpacing={0.5}>
 								{filteredMachines.map((mc, ind) => {
 									const filterParamsAlone = mc?.metrics?.filter(
 										(f) =>
@@ -349,6 +353,7 @@ const STPMachineList = () => {
 											sm={6}
 											md={4}
 											lg={3}
+											sx={{ display: 'flex', minWidth: 0 }}
 											key={`water-machine-${ind + 1}`}
 										>
 											<PremiumFlowCardMachineCard
@@ -407,6 +412,7 @@ const STPMachineList = () => {
 				title={`${modalDetails?.tabDesc} - Trend`}
 				confirmText={null}
 				cancelText={null}
+				type="chart"
 			>
 				{modalDetails?.isOpen ? (
 					<ModalContentForTrend
