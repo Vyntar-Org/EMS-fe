@@ -166,7 +166,7 @@ const EnergySummary = ({ exportedEnergy, importedEnergy }) => {
 				borderRadius: '12px',
 				bgcolor: 'background.paper',
 				boxShadow: '0 5px 14px rgba(37,69,111,.06)',
-				mb:1
+				mb: 1,
 			}}
 		>
 			{metrics.map(({ label, value, color, Icon }, index) => (

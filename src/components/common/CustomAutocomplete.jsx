@@ -247,9 +247,10 @@ export const CustomAutocomplete = ({
 									opacity: 1,
 								},
 							},
-							'& .MuiAutocomplete-popupIndicator, & .MuiAutocomplete-clearIndicator': {
-								color: 'text.secondary',
-							},
+							'& .MuiAutocomplete-popupIndicator, & .MuiAutocomplete-clearIndicator':
+								{
+									color: 'text.secondary',
+								},
 						}}
 					/>
 				)}
