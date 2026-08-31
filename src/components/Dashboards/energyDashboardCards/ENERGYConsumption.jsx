@@ -39,7 +39,7 @@ const ENERGYConsumption = ({ data }) => {
 					color={ACCENT}
 					fontWeight={800}
 					mt={1.5}
-					value={formatNumber(value, 2, { fallback: '0', useGrouping: true })}
+					value={formatNumber(value, 2, { fallback: '0' })}
 				/>
 
 				<ResponsiveTextWrapper

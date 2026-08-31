@@ -39,7 +39,7 @@ const ENERGYCarbonFootprints = ({ data }) => {
 					fontSize={{ xs: '12px', sm: '13px', md: '15px' }}
 					color={ACCENT}
 					fontWeight={800}
-					value={formatNumber(value, 2, { fallback: '0', useGrouping: true })}
+					value={formatNumber(value, 2, { fallback: '0' })}
 				/>
 				<ResponsiveTextWrapper
 					mt={0.5}

@@ -110,7 +110,6 @@ const ENERGYEnerAndCarbon = ({ data }) => {
 						fontWeight={800}
 						value={formatNumber(enerValue, 2, {
 							fallback: '0',
-							useGrouping: true,
 						})}
 					/>
 					<CustomProgressBar
@@ -152,7 +151,6 @@ const ENERGYEnerAndCarbon = ({ data }) => {
 						fontWeight={800}
 						value={formatNumber(carbonValue, 2, {
 							fallback: '0',
-							useGrouping: true,
 						})}
 					/>
 

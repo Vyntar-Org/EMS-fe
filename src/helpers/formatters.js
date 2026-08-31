@@ -8,7 +8,7 @@
 export const formatNumber = (
 	value,
 	maxDecimals = 2,
-	{ minimumDecimals = 0, fallback = '-', useGrouping = true } = {}
+	{ minimumDecimals = 0, fallback = '-', useGrouping = false } = {}
 ) => {
 	if (value === null || value === undefined || value === '') {
 		return fallback;
