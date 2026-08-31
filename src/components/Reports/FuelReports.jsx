@@ -340,7 +340,6 @@ const FuelReports = () => {
 		fetchReportsData(selectedTab, payload);
 	}, []);
 
-
 	return (
 		<Box
 			sx={{

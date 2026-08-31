@@ -22,18 +22,17 @@ import TemperatureMachineListSkeleton from '../skeletonLoaders/TemperatureMachin
 import PremiumFuelMachineCard from './cards/PremiumFuelMachineCard';
 
 const parametersData = [
-			{
-				label: 'Consumed',
-				value: 'consumed',
-				desc: 'Last 6 hours Consumed data',
-			},
-			{
-				label: 'Refilled',
-				value: 'refilled',
-				desc: 'Last 6 hours Refilled data',
-			},
-
-		];
+	{
+		label: 'Consumed',
+		value: 'consumed',
+		desc: 'Last 6 hours Consumed data',
+	},
+	{
+		label: 'Refilled',
+		value: 'refilled',
+		desc: 'Last 6 hours Refilled data',
+	},
+];
 
 const handleDownload = (filteredMachines, selectedApp) => {
 	const headers = [
@@ -105,7 +104,6 @@ const ModalContentForTrend = memo(
 		const [chartResponse, setChartResponse] = useState(null);
 		const [chartLoading, setChartLoading] = useState(true);
 		// const { parametersData } = useCommonData();
-
 
 		const fetchTrendModalChartData = async (parameter) => {
 			if (!slaveId || !parameter) {
@@ -186,7 +184,8 @@ const ModalContentForTrend = memo(
 ModalContentForTrend.displayName = 'ModalContentForTrend';
 
 const FuelMachineList = () => {
-	const { slavesData,
+	const {
+		slavesData,
 		// parametersData
 	} = useCommonData();
 	const { selectedApp } = useApplications();

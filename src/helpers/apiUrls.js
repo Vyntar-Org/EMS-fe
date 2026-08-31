@@ -252,7 +252,8 @@ const WATER_REPORTS = {
 };
 
 const FUEL_DASHBOARD = {
-	FUEL_DASHBOARD_ONLINE_OFFLINE_SUMMARY: '/applications/fuel/online-offline-summary/',
+	FUEL_DASHBOARD_ONLINE_OFFLINE_SUMMARY:
+		'/applications/fuel/online-offline-summary/',
 	FUEL_DASHBOARD_DAILY_CONSUMPTION: (slaveId) =>
 		`/applications/fuel/daily-consumption/?slave_id=${slaveId}`,
 };
