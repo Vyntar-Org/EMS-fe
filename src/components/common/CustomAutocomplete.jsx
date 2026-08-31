@@ -1,18 +1,19 @@
-import React from 'react';
+import { CheckBox, CheckBoxOutlineBlankOutlined } from '@mui/icons-material';
 import {
 	Autocomplete,
-	TextField,
 	Box,
-	Typography,
-	useTheme,
-	useMediaQuery,
-	styled,
-	Popper,
-	autocompleteClasses,
 	Checkbox,
+	ListSubheader,
+	Popper,
+	TextField,
+	Typography,
+	autocompleteClasses,
+	styled,
+	useMediaQuery,
+	useTheme,
 } from '@mui/material';
+import React from 'react';
 import { List, useListRef } from 'react-window';
-import { CheckBox, CheckBoxOutlineBlankOutlined } from '@mui/icons-material';
 
 const LISTBOX_PADDING = 8; // px
 
@@ -44,16 +45,6 @@ function RowComponent({ index, itemData, style }) {
 			{dataSet[1]}
 		</Typography>
 	);
-}
-
-function useResetCache(data) {
-	const ref = React.useRef(null);
-	React.useEffect(() => {
-		if (ref.current != null) {
-			ref.current.resetAfterIndex(0, true);
-		}
-	}, [data]);
-	return ref;
 }
 
 // Adapter for react-window to MUI Autocomplete
@@ -90,7 +81,7 @@ const ListboxComponent = React.forwardRef(
 		const itemSize = smUp ? 36 : 48;
 
 		const getChildSize = (child) => {
-			if (child.hasOwnProperty('group')) {
+			if (Object.prototype.hasOwnProperty.call(child, 'group')) {
 				return 48;
 			}
 			return itemSize;
@@ -103,7 +94,7 @@ const ListboxComponent = React.forwardRef(
 			return itemData.map(getChildSize).reduce((a, b) => a + b, 0);
 		};
 
-		const { className, style, ...otherProps } = other;
+		const { className, ...otherProps } = other;
 
 		return (
 			<div ref={ref} {...otherProps}>
@@ -127,15 +118,23 @@ const ListboxComponent = React.forwardRef(
 	}
 );
 
-const StyledPopper = styled(Popper)({
+const StyledPopper = styled(Popper)(({ theme }) => ({
+	zIndex: theme.zIndex.modal + 1,
+	[`& .${autocompleteClasses.paper}`]: {
+		color: theme.palette.text.primary,
+		backgroundColor: theme.palette.background.paper,
+		border: `1px solid ${theme.palette.divider}`,
+	},
 	[`& .${autocompleteClasses.listbox}`]: {
 		boxSizing: 'border-box',
+		color: theme.palette.text.primary,
+		backgroundColor: theme.palette.background.paper,
 		'& ul': {
 			padding: 0,
 			margin: 0,
 		},
 	},
-});
+}));
 
 export const CustomAutocomplete = ({
 	label,
@@ -176,7 +175,9 @@ export const CustomAutocomplete = ({
 	};
 
 	const isOptionEqualToValue = (option, val) => {
-		if (!val) return false;
+		if (!val) {
+			return false;
+		}
 		return option.value === val || option.value === val.value;
 	};
 
@@ -205,7 +206,9 @@ export const CustomAutocomplete = ({
 				multiple={multiple}
 				options={options}
 				onChange={(event, newValue) => {
-					if (onChange) onChange(newValue);
+					if (onChange) {
+						onChange(newValue);
+					}
 				}}
 				onBlur={onBlur}
 				fullWidth={fullWidth}
@@ -228,6 +231,8 @@ export const CustomAutocomplete = ({
 							'& .MuiOutlinedInput-root': {
 								borderRadius: 2,
 								height: '40px',
+								color: 'text.primary',
+								backgroundColor: 'background.paper',
 								overflowY: 'hidden',
 								display: 'flex',
 								flexWrap: 'nowrap',
@@ -236,6 +241,14 @@ export const CustomAutocomplete = ({
 							},
 							'& .MuiAutocomplete-inputRoot .MuiAutocomplete-input': {
 								minWidth: '30px',
+								color: 'text.primary',
+								'&::placeholder': {
+									color: 'text.secondary',
+									opacity: 1,
+								},
+							},
+							'& .MuiAutocomplete-popupIndicator, & .MuiAutocomplete-clearIndicator': {
+								color: 'text.secondary',
 							},
 						}}
 					/>
@@ -282,8 +295,10 @@ export const CustomAutocomplete = ({
 						onItemsBuilt: handleItemsBuilt,
 					},
 				}}
-				renderTags={(value, getTagProps) => {
-					if (value.length === 0) return null;
+				renderTags={(value) => {
+					if (value.length === 0) {
+						return null;
+					}
 					return (
 						<Typography
 							variant="caption"

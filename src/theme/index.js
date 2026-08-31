@@ -215,6 +215,8 @@ export const buildTheme = (mode) => {
 			MuiAutocomplete: {
 				styleOverrides: {
 					paper: {
+						color: palette.text.primary,
+						backgroundColor: palette.background.paper,
 						borderRadius: 12,
 						border: `1px solid ${palette.divider}`,
 						boxShadow: isDark
@@ -222,8 +224,12 @@ export const buildTheme = (mode) => {
 							: '0 12px 32px rgba(15, 35, 62, 0.12)',
 					},
 					option: {
+						color: palette.text.primary,
 						borderRadius: 8,
 						margin: '1px 4px',
+						'&:hover, &.Mui-focused': {
+							backgroundColor: palette.action.hover,
+						},
 						'&[aria-selected="true"]': {
 							backgroundColor: alpha(palette.secondary.main, 0.18),
 						},

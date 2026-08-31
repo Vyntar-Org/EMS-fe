@@ -8,6 +8,9 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import dayjs from 'dayjs';
 import { basePickerStyles } from '../../helpers/common';
 
+const DATE_DISPLAY_FORMAT = 'YYYY-MM-DD';
+const DATE_TIME_DISPLAY_FORMAT = 'YYYY-MM-DD hh:mm A';
+
 export const CustomDatePicker = ({
 	mode = 'datepicker', // datepicker | timepicker | datetimepicker | daterangepicker | timerangepicker | datetimerangepicker | monthpicker | yearpicker | monthrangepicker | yearrangepicker
 	value, // Single value (dayjs object) OR Array [start, end] for ranges
@@ -188,6 +191,7 @@ export const CustomDatePicker = ({
 			case 'datetimepicker':
 				return (
 					<DateTimePicker
+						format={DATE_TIME_DISPLAY_FORMAT}
 						label={label}
 						value={value}
 						onChange={onChange}
@@ -215,6 +219,7 @@ export const CustomDatePicker = ({
 						}}
 					>
 						<DatePicker
+							format={DATE_DISPLAY_FORMAT}
 							label={startLabel}
 							value={startDate}
 							onChange={(val) => handleRangeChange(val, 'start')}
@@ -230,6 +235,7 @@ export const CustomDatePicker = ({
 							}}
 						/>
 						<DatePicker
+							format={DATE_DISPLAY_FORMAT}
 							label={endLabel}
 							value={endDate}
 							onChange={(val) => handleRangeChange(val, 'end')}
@@ -299,6 +305,7 @@ export const CustomDatePicker = ({
 						}}
 					>
 						<DateTimePicker
+							format={DATE_TIME_DISPLAY_FORMAT}
 							label={startLabel}
 							value={startDate}
 							onChange={(val) => handleRangeChange(val, 'start')}
@@ -314,6 +321,7 @@ export const CustomDatePicker = ({
 							}}
 						/>
 						<DateTimePicker
+							format={DATE_TIME_DISPLAY_FORMAT}
 							label={endLabel}
 							value={endDate}
 							onChange={(val) => handleRangeChange(val, 'end')}
@@ -335,6 +343,7 @@ export const CustomDatePicker = ({
 			default:
 				return (
 					<DatePicker
+						format={DATE_DISPLAY_FORMAT}
 						label={label}
 						value={value}
 						onChange={onChange}

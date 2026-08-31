@@ -61,12 +61,12 @@ const getCardTokens = (isDay) =>
 				`,
 				heading: DARK.text.primary,
 				subText: DARK.text.secondary,
-				inputBg: 'rgba(24, 34, 56, 0.65)',
-				inputBgFocus: 'rgba(26, 36, 64, 0.85)',
-				inputText: DARK.text.primary,
-				inputBorder: 'rgba(56, 189, 248, 0.18)',
-				inputBorderHover: 'rgba(56, 189, 248, 0.45)',
-				iconColor: DARK.text.secondary,
+				inputBg: 'rgba(43, 57, 88, 0.94)',
+				inputBgFocus: 'rgba(52, 68, 104, 0.98)',
+				inputText: '#FFFFFF',
+				inputBorder: 'rgba(255, 255, 255, 0.24)',
+				inputBorderHover: 'rgba(56, 189, 248, 0.72)',
+				iconColor: '#C8D3E3',
 				focusRing: 'rgba(56, 189, 248, 0.75)',
 				linkColor: DARK.text.secondary,
 				linkHover: BRAND.gold,
@@ -113,11 +113,18 @@ const Login = () => {
 				color: t.subText,
 				opacity: 1,
 			},
+			'& input': {
+				color: t.inputText,
+				caretColor: t.inputText,
+			},
 			'& input:-webkit-autofill': {
 				WebkitBoxShadow: `0 0 0 100px ${isDay ? '#FFFFFF' : '#1A2440'} inset`,
 				WebkitTextFillColor: t.inputText,
 				borderRadius: '14px',
 			},
+		},
+		'& .MuiFormHelperText-root': {
+			fontWeight: 600,
 		},
 	};
 

@@ -215,6 +215,7 @@ const FuelDashboard = () => {
 								titleIcon={<LocalGasStation />}
 								accentColor={STATION_ACCENT}
 								showRing
+								showPercent={false}
 							/>
 						</Grid>
 						<Grid item xs={12} height={{ xs: 300, md: '65%' }}>

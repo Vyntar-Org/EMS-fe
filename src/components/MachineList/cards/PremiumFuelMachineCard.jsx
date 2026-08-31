@@ -14,6 +14,16 @@ import PremiumMachineCard from '../../common/PremiumMachineCard';
 
 const FUEL_COLOR = '#EA580C';
 
+const getFuelLevelColor = (level) => {
+	if (level < 30) {
+		return FUEL_COLOR;
+	}
+	if (level <= 90) {
+		return '#16A34A';
+	}
+	return '#DC2626';
+};
+
 const getTemperatureColor = (temperature) => {
 	const value = Number(temperature);
 	if (value <= 10) {
@@ -164,6 +174,7 @@ const PremiumFuelMachineCard = ({
 	onOpenTrend,
 }) => {
 	const level = Math.max(0, Math.min(100, Number(fuelLevel) || 0));
+	const levelColor = getFuelLevelColor(level);
 	const temperatureColor = getTemperatureColor(temperature);
 
 	return (
@@ -181,7 +192,7 @@ const PremiumFuelMachineCard = ({
 					borderRadius: '13px',
 					// border: '1px solid',
 					// borderColor: alpha(FUEL_COLOR, 0.2),
-					bgcolor: alpha(FUEL_COLOR, 0.045),
+					bgcolor: alpha(levelColor, 0.045),
 				}}
 			>
 				<Stack
@@ -190,12 +201,12 @@ const PremiumFuelMachineCard = ({
 					justifyContent="space-between"
 				>
 					<Stack direction="row" alignItems="center" spacing={0.6}>
-						<LocalGasStationRounded sx={{ fontSize: 18, color: FUEL_COLOR }} />
+						<LocalGasStationRounded sx={{ fontSize: 18, color: levelColor }} />
 						<Typography fontSize="11px" fontWeight={700}>
 							Fuel level
 						</Typography>
 					</Stack>
-					<Typography fontSize="16px" fontWeight={900} color={FUEL_COLOR}>
+					<Typography fontSize="16px" fontWeight={900} color={levelColor}>
 						{formatNumber(level, 1, { fallback: '0' })}%
 					</Typography>
 				</Stack>
@@ -206,10 +217,10 @@ const PremiumFuelMachineCard = ({
 						mt: 0.8,
 						height: 9,
 						borderRadius: 99,
-						bgcolor: alpha(FUEL_COLOR, 0.14),
+						bgcolor: alpha(levelColor, 0.14),
 						'& .MuiLinearProgress-bar': {
 							borderRadius: 99,
-							background: 'linear-gradient(90deg, #F59E0B, #EA580C)',
+							backgroundColor: levelColor,
 						},
 					}}
 				/>
@@ -220,13 +231,13 @@ const PremiumFuelMachineCard = ({
 					<Typography
 						fontSize="11px"
 						fontWeight={900}
-						color={FUEL_COLOR}
+						color={levelColor}
 						sx={{
 							px: 0.8,
 							py: 0.25,
 							borderRadius: '7px',
-							bgcolor: alpha(FUEL_COLOR, 0.12),
-							border: `1px solid ${alpha(FUEL_COLOR, 0.22)}`,
+							bgcolor: alpha(levelColor, 0.12),
+							border: `1px solid ${alpha(levelColor, 0.22)}`,
 						}}
 					>
 						{formatNumber(fuelVolume, 1, { fallback: '0' })} /{' '}

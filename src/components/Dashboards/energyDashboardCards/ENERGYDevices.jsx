@@ -44,7 +44,7 @@ const DeviceRing = ({ percent }) => {
 			role="img"
 			aria-label={`${clamped}% of fuel stations online`}
 			sx={{
-				width: 'clamp(78px, 9vw, 112px)',
+				width: 'clamp(64px, 7vw, 88px)',
 				aspectRatio: '1',
 				flexShrink: 0,
 				borderRadius: '50%',
@@ -61,7 +61,7 @@ const DeviceRing = ({ percent }) => {
 					0.2
 				)}, inset 0 1px 2px ${alpha('#FFFFFF', 0.65)}`,
 				'@container (max-width: 330px)': {
-					width: 76,
+					width: 62,
 					p: '6px',
 				},
 			}}
@@ -89,7 +89,7 @@ const DeviceRing = ({ percent }) => {
 	);
 };
 
-const CountChip = ({ label, value, percent, color, isOnline }) => {
+const CountChip = ({ label, value, percent, color, isOnline, showPercent }) => {
 	const TrendIcon = isOnline ? ShowChartRounded : TrendingDownRounded;
 
 	return (
@@ -173,12 +173,18 @@ const CountChip = ({ label, value, percent, color, isOnline }) => {
 				>
 					{value}
 				</Typography>
-				<Typography
-					variant="caption"
-					sx={{ color: 'text.secondary', fontSize: '0.72rem', lineHeight: 1.1 }}
-				>
-					{percent}% of total
-				</Typography>
+				{showPercent && (
+					<Typography
+						variant="caption"
+						sx={{
+							color: 'text.secondary',
+							fontSize: '0.72rem',
+							lineHeight: 1.1,
+						}}
+					>
+						{percent}% of total
+					</Typography>
+				)}
 			</Stack>
 
 			<Box
@@ -208,6 +214,7 @@ export const OnlineOfflineSummaryCard = ({
 	titleIcon = <MonitorHeartRounded />,
 	accentColor = ACCENT,
 	showRing = false,
+	showPercent = true,
 }) => {
 	const online = Number(data?.online) || 0;
 	const offline = Number(data?.offline) || 0;
@@ -240,11 +247,11 @@ export const OnlineOfflineSummaryCard = ({
 					{showRing && (
 						<Box
 							sx={{
-								width: 'clamp(90px, 34%, 120px)',
+								width: 'clamp(72px, 28%, 96px)',
 								flexShrink: 0,
 								display: 'grid',
 								placeItems: 'center',
-								'@container (max-width: 330px)': { width: 78 },
+								'@container (max-width: 330px)': { width: 66 },
 								'@container (max-width: 270px)': { display: 'none' },
 							}}
 						>
@@ -262,12 +269,14 @@ export const OnlineOfflineSummaryCard = ({
 							percent={percentage(online)}
 							color={ONLINE_COLOR}
 							isOnline
+							showPercent={showPercent}
 						/>
 						<CountChip
 							label="OFFLINE"
 							value={offline}
 							percent={percentage(offline)}
 							color={OFFLINE_COLOR}
+							showPercent={showPercent}
 						/>
 					</Stack>
 				</Stack>

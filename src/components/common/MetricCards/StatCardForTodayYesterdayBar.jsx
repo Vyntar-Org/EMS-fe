@@ -16,7 +16,16 @@ const StatCardForTodayYesterdayBar = ({
 	unit = 'KL',
 	asOf,
 	isAnalyticsCard = true,
+	colorByValueSign = false,
+	emphasizeValue = false,
 }) => {
+	const getValueColor = (metricValue) => {
+		if (!colorByValueSign || Number(metricValue) === 0) {
+			return accent;
+		}
+		return Number(metricValue) > 0 ? '#16A34A' : '#DC2626';
+	};
+
 	return (
 		<Box
 			sx={{
@@ -63,8 +72,8 @@ const StatCardForTodayYesterdayBar = ({
 							<Box width={100} textAlign="center" mx="auto">
 								<Typography
 									noWrap
-									color={accent}
-									fontSize="16px"
+									color={getValueColor(item.value)}
+									fontSize={emphasizeValue ? '20px' : '16px'}
 									fontWeight={800}
 									lineHeight={1.1}
 									my={0.5}

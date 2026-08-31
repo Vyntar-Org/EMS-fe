@@ -1,4 +1,5 @@
 import {
+	CellTowerRounded,
 	ElectricMeterRounded,
 	ShowChartRounded,
 	SpeedRounded,
@@ -6,6 +7,7 @@ import {
 import {
 	Box,
 	Grid,
+	Stack,
 	Table,
 	TableBody,
 	TableCell,
@@ -14,9 +16,9 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
+import { formatNumber } from '../../../helpers/formatters';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
-import { formatNumber } from '../../../helpers/formatters';
 
 // 3-phase R/Y/B voltage+current table — unique to Energy, kept as its own
 // dedicated visual rather than folded into the generic metric panel.
@@ -137,6 +139,86 @@ const PhaseTable = ({
 const STAT_ICONS = [ShowChartRounded, ElectricMeterRounded, SpeedRounded];
 const STAT_COLORS = ['#16A085', '#805AD5', '#2589D8'];
 
+const EnergySummary = ({ exportedEnergy, importedEnergy }) => {
+	const metrics = [
+		{
+			label: 'Export',
+			value: exportedEnergy,
+			color: '#10B981',
+			Icon: CellTowerRounded,
+		},
+		{
+			label: 'Energy',
+			value: importedEnergy,
+			color: '#F04455',
+			Icon: ElectricMeterRounded,
+		},
+	];
+
+	return (
+		<Box
+			sx={{
+				display: 'grid',
+				gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+				my: 0.25,
+				border: '1px solid',
+				borderColor: 'divider',
+				borderRadius: '12px',
+				bgcolor: 'background.paper',
+				boxShadow: '0 5px 14px rgba(37,69,111,.06)',
+				mb:1
+			}}
+		>
+			{metrics.map(({ label, value, color, Icon }, index) => (
+				<Stack
+					key={label}
+					direction="row"
+					alignItems="center"
+					spacing={0.8}
+					sx={{
+						minWidth: 0,
+						px: 1,
+						py: 0.85,
+						borderLeft: index ? '1px solid' : 0,
+						borderColor: 'divider',
+					}}
+				>
+					<Box
+						sx={{
+							width: 34,
+							height: 34,
+							borderRadius: '50%',
+							display: 'grid',
+							placeItems: 'center',
+							flexShrink: 0,
+							color,
+							bgcolor: alpha(color, 0.11),
+							'& svg': { fontSize: 21 },
+						}}
+					>
+						<Icon />
+					</Box>
+					<Box minWidth={0}>
+						<ResponsiveTextWrapper
+							value={label}
+							fontSize="10px"
+							color="text.secondary"
+							fontWeight={500}
+						/>
+						<ResponsiveTextWrapper
+							value={`${formatNumber(value, 2, { fallback: '0' })} kWh`}
+							fontSize="14px"
+							color="text.primary"
+							fontWeight={800}
+							sx={{ whiteSpace: 'nowrap' }}
+						/>
+					</Box>
+				</Stack>
+			))}
+		</Box>
+	);
+};
+
 const StatCell = ({ label, value, index }) => {
 	const Icon = STAT_ICONS[index];
 	const color = STAT_COLORS[index];
@@ -204,7 +286,8 @@ const PremiumEnergyMachineCard = ({
 	title,
 	status,
 	lastUpdated,
-	total,
+	importedEnergy,
+	exportedEnergy,
 	phaseRV,
 	phaseRA,
 	phaseYV,
@@ -229,31 +312,10 @@ const PremiumEnergyMachineCard = ({
 		trend={slaveId ? { url: trendUrl } : null}
 		onOpenTrend={onOpenTrend}
 	>
-		<Box
-			display="flex"
-			justifyContent="space-between"
-			alignItems="baseline"
-			my={0.25}
-			gap={1}
-			sx={{ borderLeft: '3px solid #E5485D', pl: 1 }}
-		>
-			<Box minWidth={0} flex={1}>
-				<ResponsiveTextWrapper
-					value="Total Energy"
-					fontSize="12.5px"
-					color="text.secondary"
-					fontWeight={600}
-				/>
-			</Box>
-			<Box flexShrink={0}>
-				<ResponsiveTextWrapper
-					value={`${formatNumber(total, 2, { fallback: '0' })} kWh`}
-					fontSize="16px"
-					color="text.primary"
-					fontWeight={700}
-				/>
-			</Box>
-		</Box>
+		<EnergySummary
+			exportedEnergy={exportedEnergy}
+			importedEnergy={importedEnergy}
+		/>
 		<PhaseTable
 			phaseRV={phaseRV}
 			phaseRA={phaseRA}

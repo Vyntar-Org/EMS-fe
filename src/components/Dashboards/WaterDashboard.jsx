@@ -60,6 +60,7 @@ const WaterKpiCard = ({
 		color: null,
 	};
 	const isLiveCount = metricKey === 'total_stations';
+	const isWaterPositivity = metricKey === 'water_positivity';
 	const isCompact = variant === 'compact';
 	const unit = 'KLD';
 
@@ -102,6 +103,8 @@ const WaterKpiCard = ({
 						value={value || 0}
 						previousValue={yesterdayVal || 0}
 						accent={color}
+						colorByValueSign={isWaterPositivity}
+						emphasizeValue={isWaterPositivity}
 						unit={unit}
 						asOf={asOf}
 						isAnalyticsCard={isAnalyticsCard}
