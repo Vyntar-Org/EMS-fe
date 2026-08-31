@@ -1,11 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { transformDynamicDataToDailyMatrix } from '../../helpers/common';
-import {
-	WATER_REPORTS_ALLOW_MONTH,
-	WATER_REPORTS_API_DATA_KEY_CONFIG,
-	WATER_REPORTS_TAB_OPTIONS,
-} from '../../constants/waterReports';
 import { exportToCSV, exportToPDF } from '../../helpers/exports';
 import { API_URLS } from '../../helpers/apiUrls';
 import { api } from '../../helpers/api';
@@ -25,6 +20,11 @@ import { CustomTable } from '../common/CustomTable';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import { Description, FileDownload, Search } from '@mui/icons-material';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import {
+	FUEL_REPORTS_ALLOW_MONTH,
+	FUEL_REPORTS_API_DATA_KEY_CONFIG,
+	FUEL_REPORTS_TAB_OPTIONS,
+} from '../../constants/fuelReports';
 
 const ReportsHeader = ({
 	selectedTab,
@@ -90,7 +90,7 @@ const ReportsHeader = ({
 					},
 				}}
 			>
-				{WATER_REPORTS_TAB_OPTIONS.map((app) => (
+				{FUEL_REPORTS_TAB_OPTIONS.map((app) => (
 					<Tab
 						disableRipple
 						key={app.tab}
@@ -110,7 +110,7 @@ const ReportsHeader = ({
 				alignItems="center"
 				sx={{ bgcolor: 'surface.muted', p: 1.5, borderRadius: 2 }}
 			>
-				{WATER_REPORTS_ALLOW_MONTH.includes(selectedTab) && (
+				{FUEL_REPORTS_ALLOW_MONTH.includes(selectedTab) && (
 					<Grid item xs sm md={2}>
 						<CustomDatePicker
 							label="Select Month"
@@ -246,7 +246,7 @@ const FuelReports = () => {
 	const { slavesData } = useCommonData();
 	const [slavesId, setSlavesId] = useState(null);
 	const [selectedTab, setSelectedTab] = useState(
-		'WATER_REPORTS_DATE_WISE_CONSUMPTION_DATA'
+		'FUEL_REPORTS_DATE_WISE_CONSUMPTION_DATA'
 	);
 	const [loading, setLoading] = useState(null);
 	const [reportsData, setReportsData] = useState(null);
@@ -262,7 +262,7 @@ const FuelReports = () => {
 	const { tableData, tableColumns } = useMemo(() => {
 		const { tableData, tableColumns } = transformDynamicDataToDailyMatrix(
 			reportsData,
-			WATER_REPORTS_API_DATA_KEY_CONFIG[selectedTab]
+			FUEL_REPORTS_API_DATA_KEY_CONFIG[selectedTab]
 		);
 
 		const filteredData = slaveName
@@ -275,7 +275,7 @@ const FuelReports = () => {
 	const fetchReportsData = async (curTab, newPayload) => {
 		if (!curTab) return;
 
-		const isMonthAllowed = WATER_REPORTS_ALLOW_MONTH.includes(curTab);
+		const isMonthAllowed = FUEL_REPORTS_ALLOW_MONTH.includes(curTab);
 
 		if (isMonthAllowed && (!newPayload?.month || !newPayload?.year)) return;
 
@@ -323,14 +323,14 @@ const FuelReports = () => {
 	};
 
 	const handlePdfDownload = () => {
-		const findTabName = WATER_REPORTS_TAB_OPTIONS.find(
+		const findTabName = FUEL_REPORTS_TAB_OPTIONS.find(
 			(r) => r.tab === selectedTab
 		);
 		exportToPDF(tableData, tableColumns, findTabName.label);
 	};
 
 	const handleExcelDownload = () => {
-		const findTabName = WATER_REPORTS_TAB_OPTIONS.find(
+		const findTabName = FUEL_REPORTS_TAB_OPTIONS.find(
 			(r) => r.tab === selectedTab
 		);
 		exportToCSV(tableData, tableColumns, findTabName.label);
@@ -339,6 +339,7 @@ const FuelReports = () => {
 	useEffect(() => {
 		fetchReportsData(selectedTab, payload);
 	}, []);
+
 
 	return (
 		<Box

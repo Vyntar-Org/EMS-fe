@@ -27,6 +27,8 @@ import NoDataFound from '../common/errors/NoDataFound';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper';
 import FuelDashboardSkeleton from '../skeletonLoaders/FuelDashboardSkeleton';
 
+import { OnlineOfflineSummaryCard } from './energyDashboardCards/ENERGYDevices';
+
 const STATION_ACCENT = '#2563EB';
 const DEVICES_ACCENT = '#0891B2';
 const FUEL_ACCENT = CHART_COLORS.fuelUsage;
@@ -110,22 +112,24 @@ const DeviceRow = ({ name, isActive, onClick }) => (
 
 const FuelDashboard = () => {
 	const { slavesData } = useCommonData();
-	const [overviewData, setOverviewData] = useState(null);
+	const [stationSummary, setStationSummary] = useState(null);
 	const [slavesId, setSlavesId] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [mode, setMode] = useState(1);
 	const [fuelConsumption, setFuelConsumption] = useState(null);
 	const [searchDevices, setSearchDevices] = useState(null);
 
-	const fetchDashboardOverviewData = async () => {
+	const fetchStationSummary = async () => {
 		setIsLoading(true);
 		try {
-			const getOverviewRes = await api.get(API_URLS.FUEL_DASHBOARD_OVERVIEW);
-			if (getOverviewRes?.success) {
-				setOverviewData(getOverviewRes?.data);
+			const response = await api.get(
+				API_URLS.FUEL_DASHBOARD_ONLINE_OFFLINE_SUMMARY
+			);
+			if (response?.success) {
+				setStationSummary(response?.data);
 			}
 		} catch (error) {
-			console.error('One of the API calls failed:', error);
+			console.error('Fuel station summary fetch failed:', error);
 		} finally {
 			setIsLoading(false);
 		}
@@ -156,19 +160,20 @@ const FuelDashboard = () => {
 
 	const fetchFuelConsumption = async () => {
 		try {
-			const getFuelConsumptionData = await api.get(
-				`${API_URLS.FUEL_DASHBOARD_DAILY_CONSUMPTION(slavesId || 0)}`
+			const response = await api.get(
+				API_URLS.FUEL_DASHBOARD_DAILY_CONSUMPTION(slavesId)
 			);
-			if (getFuelConsumptionData?.success) {
-				setFuelConsumption(getFuelConsumptionData?.data?.data);
+			if (response?.success) {
+				setFuelConsumption(response?.data?.data || []);
 			}
 		} catch (error) {
-			console.error('One of the API calls failed:', error);
+			setFuelConsumption([]);
+			console.error('Fuel daily consumption fetch failed:', error);
 		}
 	};
 
 	useEffect(() => {
-		fetchDashboardOverviewData();
+		fetchStationSummary();
 	}, []);
 
 	useEffect(() => {
@@ -182,6 +187,7 @@ const FuelDashboard = () => {
 			return;
 		}
 
+		setFuelConsumption(null);
 		fetchFuelConsumption();
 	}, [slavesId]);
 
@@ -200,37 +206,18 @@ const FuelDashboard = () => {
 			}}
 		>
 			<Grid container spacing={1.5} flex={1} minHeight={0}>
-				<Grid item xs={12} md={4} height={{ md: '100%' }}>
+				<Grid item xs={12} md={3} height={{ md: '100%' }}>
 					<Grid container rowGap={1.5} height={{ md: 'calc(100% - 12px)' }}>
-						<Grid item xs={12} height={{ xs: 250, md: '40%' }}>
-							<CustomCard
+						<Grid item xs={12} height={{ xs: 250, md: '35%' }}>
+							<OnlineOfflineSummaryCard
+								data={stationSummary}
 								title="Fuel Station"
 								titleIcon={<LocalGasStation />}
 								accentColor={STATION_ACCENT}
-							>
-								{overviewData?.fuel_station ? (
-									<Grid
-										container
-										sx={{ height: '100%', width: '100%' }}
-										justifyContent="center"
-									>
-										<CustomApexChart
-											key="fuel-station-chart"
-											series={[
-												overviewData?.fuel_station?.online,
-												overviewData?.fuel_station?.offline,
-											]}
-											type="donut"
-											colors={[CHART_COLORS.online, CHART_COLORS.offline]}
-											height="100%"
-										/>
-									</Grid>
-								) : (
-									<NoDataFound message="Waiting for live device data — readings appear automatically" />
-								)}
-							</CustomCard>
+								showRing
+							/>
 						</Grid>
-						<Grid item xs={12} height={{ xs: 300, md: '60%' }}>
+						<Grid item xs={12} height={{ xs: 300, md: '65%' }}>
 							<CustomCard
 								title="Devices"
 								titleIcon={<DeviceHub />}
@@ -284,11 +271,12 @@ const FuelDashboard = () => {
 					</Grid>
 				</Grid>
 
-				<Grid item xs={12} md={8} height={{ xs: 400, md: '100%' }}>
+				<Grid item xs={12} md={9} height={{ xs: 400, md: '100%' }}>
 					<CustomCard
 						title={`Monthly Fuel Consumption ${
 							slavesDisplayName ? `- ${slavesDisplayName}` : ''
 						}`}
+						titleIcon={<LocalGasStation />}
 						accentColor={FUEL_ACCENT}
 						icon={
 							<ToggleButtonGroup
@@ -325,13 +313,13 @@ const FuelDashboard = () => {
 								<CustomApexChart
 									key={`chart-${mode}`}
 									series={getChartSeries(fuelConsumption, {
-										actual: 'consumption',
-										target: 'target',
-										actualLabel: 'Actual Consumption',
-										targetLabel: 'Target',
+										actual: 'consumed',
+										target: 'refilled',
+										actualLabel: 'Consumption',
+										targetLabel: 'Refill',
 									})}
 									type={mode === 1 ? 'bar' : 'line'}
-									colors={[CHART_COLORS.fuelUsage, CHART_COLORS.secondary]}
+									colors={[CHART_COLORS.success, CHART_COLORS.danger]}
 									xAxesType="datetime"
 									height="100%"
 								/>

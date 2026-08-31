@@ -3,7 +3,7 @@ import { Grid, Skeleton } from '@mui/material';
 const FuelDashboardSkeleton = () => {
 	return (
 		<Grid container spacing={1.5} flex={1} minHeight={0}>
-			<Grid item xs={12} md={4} height="100%">
+			<Grid item xs={12} md={3} height="100%">
 				<Grid container rowGap={1.5} height={{ md: 'calc(100% - 12px)' }}>
 					<Grid item xs={12} height={{ xs: 250, md: '40%' }}>
 						<Skeleton
@@ -26,7 +26,7 @@ const FuelDashboardSkeleton = () => {
 				</Grid>
 			</Grid>
 
-			<Grid item xs={12} md height={{ xs: 400, md: '100%' }}>
+			<Grid item xs={12} md={9} height={{ xs: 400, md: '100%' }}>
 				<Skeleton
 					sx={{ borderRadius: '16px' }}
 					animation="wave"

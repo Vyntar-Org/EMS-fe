@@ -97,7 +97,12 @@ export const transformDynamicDataToDailyMatrix = (
 	apiData,
 	keyConfig = { dateKey: 'date', valueKey: 'consumption' }
 ) => {
-	const { dateKey, valueKey } = keyConfig;
+	const { dateKey, valueKey, valueKeys = [] } = keyConfig;
+	const hasMultipleValues = Array.isArray(valueKeys) && valueKeys.length > 0;
+	const toFiniteNumber = (value) => {
+		const numericValue = Number(value);
+		return Number.isFinite(numericValue) ? numericValue : 0;
+	};
 
 	if (!apiData || typeof apiData !== 'object' || Array.isArray(apiData)) {
 		return { tableData: [], tableColumns: [] };
@@ -166,6 +171,20 @@ export const transformDynamicDataToDailyMatrix = (
 				}
 			}
 
+			if (hasMultipleValues) {
+				return {
+					id: `group-${dateString}`,
+					header: headerLabel,
+					size: valueKeys.length * 100,
+					columns: valueKeys.map(({ key, label }) => ({
+						accessorKey: `${dateString}__${key}`,
+						header: label,
+						size: 100,
+						cell: (info) => formatNumber(info.getValue(), 2, { fallback: '0' }),
+					})),
+				};
+			}
+
 			return {
 				accessorKey: dateString,
 				header: headerLabel,
@@ -182,17 +201,29 @@ export const transformDynamicDataToDailyMatrix = (
 		const row = { device: deviceName };
 
 		sortedDates.forEach((dateStr) => {
-			row[dateStr] = 0;
+			if (hasMultipleValues) {
+				valueKeys.forEach(({ key }) => {
+					row[`${dateStr}__${key}`] = 0;
+				});
+			} else {
+				row[dateStr] = 0;
+			}
 		});
 
 		if (Array.isArray(dataArray)) {
 			dataArray.forEach((item) => {
 				const itemDate =
 					item?.[dateKey] !== undefined ? String(item[dateKey]).trim() : null;
-				const itemValue = item?.[valueKey];
 
-				if (itemDate && itemDate in row) {
-					row[itemDate] = Number(formatNumber(itemValue, 2, { fallback: '0' }));
+				if (itemDate && sortedDates.includes(itemDate)) {
+					if (hasMultipleValues) {
+						valueKeys.forEach(({ key }) => {
+							row[`${itemDate}__${key}`] = toFiniteNumber(item?.[key]);
+						});
+					} else {
+						const itemValue = item?.[valueKey];
+						row[itemDate] = toFiniteNumber(itemValue);
+					}
 				}
 			});
 		}

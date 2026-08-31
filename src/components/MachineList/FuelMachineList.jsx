@@ -21,27 +21,60 @@ import TemperatureMachineListSkeleton from '../skeletonLoaders/TemperatureMachin
 
 import PremiumFuelMachineCard from './cards/PremiumFuelMachineCard';
 
+const parametersData = [
+			{
+				label: 'Consumed',
+				value: 'consumed',
+				desc: 'Last 6 hours Consumed data',
+			},
+			{
+				label: 'Refilled',
+				value: 'refilled',
+				desc: 'Last 6 hours Refilled data',
+			},
+
+		];
+
 const handleDownload = (filteredMachines, selectedApp) => {
 	const headers = [
+		'Device Name',
 		'Device UID',
-		'MTD',
+		'Slave ID',
 		'Slave Index',
 		'Status',
-		'Consumption',
-		'Rate of Flow',
 		'Latest Timestamp',
-		'Totalizer',
+		'Fuel Level (L)',
+		'Fuel Level (%)',
+		'Tank Capacity (L)',
+		'Temperature (°C)',
+		'Battery Voltage (V)',
+		'Consumed Today (L)',
+		'Consumed MTD (L)',
+		'Refilled Today (L)',
+		'Refilled MTD (L)',
 	];
 
+	const formatExportNumber = (value) =>
+		value === undefined || value === null
+			? 'N/A'
+			: formatNumber(value, 2, { fallback: 'N/A' });
+
 	const rows = filteredMachines.map((machine) => [
+		machine.slave_name || 'N/A',
 		machine.device_uid || 'N/A',
-		machine.mtd || 'N/A',
+		machine.slave_id ?? 'N/A',
 		machine.slave_index ?? 'N/A',
 		machine.status || 'N/A',
-		formatNumber(machine.consumption, 2, { fallback: '0' }),
-		formatNumber(machine.rate_of_flow, 2, { fallback: '0' }),
 		machine.latest_ts ? formatTimestamp(machine.latest_ts) : 'N/A',
-		formatNumber(machine.totalizer, 2, { fallback: '0' }),
+		formatExportNumber(machine.fuel_level),
+		formatExportNumber(machine.fuel_percent),
+		formatExportNumber(machine.capacity_liters),
+		formatExportNumber(machine.temperature),
+		formatExportNumber(machine.battery_voltage),
+		formatExportNumber(machine.consumed?.today),
+		formatExportNumber(machine.consumed?.mtd),
+		formatExportNumber(machine.refilled?.today),
+		formatExportNumber(machine.refilled?.mtd),
 	]);
 
 	const csvContent = Papa.unparse({
@@ -71,7 +104,8 @@ const ModalContentForTrend = memo(
 	({ handleTabChange, tab, slaveId, slaveName }) => {
 		const [chartResponse, setChartResponse] = useState(null);
 		const [chartLoading, setChartLoading] = useState(true);
-		const { parametersData } = useCommonData();
+		// const { parametersData } = useCommonData();
+
 
 		const fetchTrendModalChartData = async (parameter) => {
 			if (!slaveId || !parameter) {
@@ -152,7 +186,9 @@ const ModalContentForTrend = memo(
 ModalContentForTrend.displayName = 'ModalContentForTrend';
 
 const FuelMachineList = () => {
-	const { slavesData, parametersData } = useCommonData();
+	const { slavesData,
+		// parametersData
+	} = useCommonData();
 	const { selectedApp } = useApplications();
 	const [machineListData, setMachineListData] = useState(null);
 	const [slavesId, setSlavesId] = useState(null);
@@ -199,6 +235,7 @@ const FuelMachineList = () => {
 				setMachineListData(res?.data);
 			}
 		} catch (error) {
+			setMachineListData(null);
 			console.error('Fuel machine list fetch failed:', error);
 		} finally {
 			setIsLoading(false);
@@ -311,21 +348,21 @@ const FuelMachineList = () => {
 										md={4}
 										lg={3}
 										sx={{ display: 'flex', minWidth: 0 }}
-										key={`water-machine-${ind + 1}`}
+										key={mc?.slave_id || `fuel-machine-${ind + 1}`}
 									>
 										<PremiumFuelMachineCard
 											title={mc?.slave_name || ''}
 											status={mc?.status}
 											lastUpdated={mc?.latest_ts}
-											consumption={mc?.consumption}
-											rateOfFlow={mc?.rate_of_flow}
-											totalizer={mc?.totalizer}
-											mtd={mc?.mtd}
-											slaveId={mc?.slave_id}
-											trendUrl={API_URLS.FUEL_MACHINE_LIST_TREND(
-												mc?.slave_id,
-												parametersData?.[0]?.value
-											)}
+											fuelLevel={mc?.fuel_percent}
+											fuelVolume={mc?.fuel_level}
+											fuelCapacity={mc?.capacity_liters}
+											temperature={mc?.temperature}
+											battery={mc?.battery_voltage}
+											consumedToday={mc?.consumed?.today}
+											consumedMtd={mc?.consumed?.mtd}
+											refilledToday={mc?.refilled?.today}
+											refilledMtd={mc?.refilled?.mtd}
 											onOpenTrend={() => handleOpenModal(mc)}
 										/>
 									</Grid>

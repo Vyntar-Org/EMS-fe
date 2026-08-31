@@ -6,14 +6,25 @@ import Papa from 'papaparse';
 import { triggerFileDownload } from './common';
 import { formatNumber } from './formatters';
 
+const flattenExportColumns = (columns, parentHeader = '') =>
+	columns.flatMap((column) => {
+		const header = parentHeader
+			? `${parentHeader} - ${column.header}`
+			: column.header;
+		return column.columns?.length
+			? flattenExportColumns(column.columns, header)
+			: [{ ...column, header }];
+	});
+
 export const exportToCSV = (tableData, tableColumns, filename = 'Report') => {
 	if (!tableData?.length) {
 		return;
 	}
 
-	const csvHeaders = tableColumns.map((col) => col.header);
+	const exportColumns = flattenExportColumns(tableColumns);
+	const csvHeaders = exportColumns.map((col) => col.header);
 	const csvRows = tableData.map((row) =>
-		tableColumns.map((col) => {
+		exportColumns.map((col) => {
 			const val = row[col.accessorKey];
 			return typeof val === 'number' ? formatNumber(val) : val ?? '';
 		})
@@ -37,8 +48,9 @@ export const exportToPDF = (
 
 	const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
 
-	const fixedColumn = tableColumns[0];
-	const timelineColumns = tableColumns.slice(1);
+	const exportColumns = flattenExportColumns(tableColumns);
+	const fixedColumn = exportColumns[0];
+	const timelineColumns = exportColumns.slice(1);
 
 	const COLUMNS_PER_PAGE = 11;
 	const totalTimelineCols = timelineColumns.length;

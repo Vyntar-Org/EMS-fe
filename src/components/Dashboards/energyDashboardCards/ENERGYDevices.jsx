@@ -1,27 +1,26 @@
 import {
 	MonitorHeartRounded,
-	OnDeviceTraining,
 	ShowChartRounded,
 	TrendingDownRounded,
 } from '@mui/icons-material';
 import { Box, Stack, Typography, alpha } from '@mui/material';
 
+import { formatNumber } from '../../../helpers/formatters';
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
-import { formatNumber } from '../../../helpers/formatters';
 
 const ONLINE_COLOR = '#16A34A';
 const OFFLINE_COLOR = '#DC2626';
 const ACCENT = '#2563EB';
 
-const TotalDevices = ({ value }) => (
+const TotalDevices = ({ value, label = 'Total Devices' }) => (
 	<>
 		<Stack spacing={0.1} minWidth={66}>
 			<Typography
 				variant="caption"
 				sx={{ color: 'text.secondary', fontWeight: 600, lineHeight: 1.15 }}
 			>
-				Total Devices
+				{label}
 			</Typography>
 			<Typography
 				sx={{
@@ -37,13 +36,15 @@ const TotalDevices = ({ value }) => (
 	</>
 );
 
-const _DeviceRing = ({ percent }) => {
+const DeviceRing = ({ percent }) => {
 	const clamped = Math.max(0, Math.min(100, Number(percent) || 0));
 
 	return (
 		<Box
+			role="img"
+			aria-label={`${clamped}% of fuel stations online`}
 			sx={{
-				width: 'clamp(72px, 100%, 110px)',
+				width: 'clamp(78px, 9vw, 112px)',
 				aspectRatio: '1',
 				flexShrink: 0,
 				borderRadius: '50%',
@@ -59,22 +60,31 @@ const _DeviceRing = ({ percent }) => {
 					ONLINE_COLOR,
 					0.2
 				)}, inset 0 1px 2px ${alpha('#FFFFFF', 0.65)}`,
+				'@container (max-width: 330px)': {
+					width: 76,
+					p: '6px',
+				},
 			}}
 		>
-			<Box
+			<Stack
 				sx={{
 					height: '100%',
 					borderRadius: '50%',
-					display: 'grid',
-					placeItems: 'center',
+					alignItems: 'center',
+					justifyContent: 'center',
 					color: ACCENT,
 					backgroundColor: 'background.paper',
 					boxShadow: (theme) =>
 						`inset 0 2px 8px ${alpha(theme.palette.text.primary, 0.1)}`,
 				}}
 			>
-				<OnDeviceTraining sx={{ fontSize: 'clamp(32px, 4vw, 46px)' }} />
-			</Box>
+				<Typography fontSize="18px" fontWeight={900} lineHeight={1}>
+					{clamped}%
+				</Typography>
+				<Typography fontSize="8px" fontWeight={700} color="text.secondary">
+					ONLINE
+				</Typography>
+			</Stack>
 		</Box>
 	);
 };
@@ -103,6 +113,10 @@ const CountChip = ({ label, value, percent, color, isOnline }) => {
 								'#FFFFFF',
 								0.9
 						  )}`,
+				'@container (max-width: 330px)': {
+					height: 60,
+					borderRadius: '11px',
+				},
 			}}
 		>
 			<Box
@@ -116,6 +130,7 @@ const CountChip = ({ label, value, percent, color, isOnline }) => {
 						0.06
 					)} 0%, ${alpha(color, 0.2)} 100%)`,
 					boxShadow: `inset -1px 0 0 ${alpha(color, 0.16)}`,
+					'@container (max-width: 330px)': { width: 30 },
 				}}
 			>
 				<Box
@@ -134,7 +149,13 @@ const CountChip = ({ label, value, percent, color, isOnline }) => {
 
 			<Stack
 				justifyContent="center"
-				sx={{ flex: 1, minWidth: 0, px: 1.5, py: 1 }}
+				sx={{
+					flex: 1,
+					minWidth: 0,
+					px: 1.5,
+					py: 1,
+					'@container (max-width: 330px)': { px: 0.75, py: 0.6 },
+				}}
 			>
 				<Typography
 					sx={{
@@ -172,6 +193,7 @@ const CountChip = ({ label, value, percent, color, isOnline }) => {
 					borderRadius: '50%',
 					color,
 					backgroundColor: alpha(color, 0.1),
+					'@container (max-width: 360px)': { display: 'none' },
 				}}
 			>
 				<TrendIcon sx={{ fontSize: 22 }} />
@@ -180,10 +202,16 @@ const CountChip = ({ label, value, percent, color, isOnline }) => {
 	);
 };
 
-const ENERGYDevices = ({ data }) => {
+export const OnlineOfflineSummaryCard = ({
+	data,
+	title = 'Total Devices',
+	titleIcon = <MonitorHeartRounded />,
+	accentColor = ACCENT,
+	showRing = false,
+}) => {
 	const online = Number(data?.online) || 0;
 	const offline = Number(data?.offline) || 0;
-	const total = online + offline;
+	const total = Number(data?.total) || online + offline;
 	const percentage = (value) => {
 		if (!total) {
 			return 0;
@@ -193,21 +221,36 @@ const ENERGYDevices = ({ data }) => {
 
 	return (
 		<CustomCard
-			titleIcon={<MonitorHeartRounded />}
-			title={<TotalDevices value={total} />}
-			accentColor={ACCENT}
-			// icon={<TotalDevices value={total} />}
+			titleIcon={titleIcon}
+			title={<TotalDevices value={total} label={title} />}
+			accentColor={accentColor}
+			sx={{ containerType: 'inline-size' }}
 		>
 			{data ? (
 				<Stack
 					direction="row"
 					alignItems="center"
 					gap={1}
-					sx={{ height: '100%', px: 0.25 }}
+					sx={{
+						height: '100%',
+						px: 0.25,
+						'@container (max-width: 330px)': { gap: 0.5, px: 0 },
+					}}
 				>
-					{/* <Box flex={1}>
-						<DeviceRing percent={percentage(online)} />
-					</Box> */}
+					{showRing && (
+						<Box
+							sx={{
+								width: 'clamp(90px, 34%, 120px)',
+								flexShrink: 0,
+								display: 'grid',
+								placeItems: 'center',
+								'@container (max-width: 330px)': { width: 78 },
+								'@container (max-width: 270px)': { display: 'none' },
+							}}
+						>
+							<DeviceRing percent={percentage(online)} />
+						</Box>
+					)}
 					<Stack
 						justifyContent="center"
 						gap={1.25}
@@ -234,5 +277,7 @@ const ENERGYDevices = ({ data }) => {
 		</CustomCard>
 	);
 };
+
+const ENERGYDevices = ({ data }) => <OnlineOfflineSummaryCard data={data} />;
 
 export default ENERGYDevices;

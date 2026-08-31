@@ -252,20 +252,20 @@ const WATER_REPORTS = {
 };
 
 const FUEL_DASHBOARD = {
-	FUEL_DASHBOARD_OVERVIEW: '/applications/water/dashboard-overview/',
+	FUEL_DASHBOARD_ONLINE_OFFLINE_SUMMARY: '/applications/fuel/online-offline-summary/',
 	FUEL_DASHBOARD_DAILY_CONSUMPTION: (slaveId) =>
-		`/applications/water/daily-consumption/?slave_id=${slaveId}`,
+		`/applications/fuel/daily-consumption/?slave_id=${slaveId}`,
 };
 
 const FUEL_MACHINE_LIST = {
-	FUEL_MACHINE_LIST_DATA: '/applications/water/machine-list/',
+	FUEL_MACHINE_LIST_DATA: '/applications/fuel/machine-list/',
 	FUEL_MACHINE_LIST_TREND: (slaveId, parameter) =>
-		`/applications/water/machine-trend/?slave_id=${slaveId}&parameter=${parameter}`,
+		`/applications/fuel/machine-trend/?slave_id=${slaveId}&parameter=${parameter}`,
 };
 
 const FUEL_ANALYTICS = {
 	FUEL_ANALYTICS_DATA: (slaveId, parameters, start_datetime, end_datetime) =>
-		`/applications/water/analytics/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}`,
+		`/applications/fuel/analytics/?slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}`,
 };
 
 const FUEL_LOGS = {
@@ -278,20 +278,14 @@ const FUEL_LOGS = {
 		offset = 0,
 		isDownload = false
 	) =>
-		`/applications/water/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
+		`/applications/fuel/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
 const FUEL_REPORTS = {
 	FUEL_REPORTS_DATE_WISE_CONSUMPTION_DATA: (year, month) =>
-		`/applications/water/daily-consumption-reports/?month=${month}&year=${year}`,
+		`/applications/fuel/daily-consumption-reports/?month=${month}&year=${year}`,
 	FUEL_REPORTS_MONTH_WISE_CONSUMPTION_DATA: (year) =>
-		`/applications/water/monthly-consumption-reports/?year=${year}`,
-	FUEL_REPORTS_DATE_WISE_READING_DATA: (year, month) =>
-		`/applications/water/daily-reading-reports/?month=${month}&year=${year}`,
-	FUEL_REPORTS_DATE_WISE_CONSUMPTION_COST_DATA: (year, month) =>
-		`/reports/date-wise/consumption-cost?month=${month}&year=${year}`,
-	FUEL_REPORTS_MONTH_WISE_CONSUMPTION_COST_DATA: (year) =>
-		`/reports/month-wise/consumption-cost?year=${year}`,
+		`/applications/fuel/monthly-consumption-reports/?year=${year}`,
 };
 
 const STP_DASHBOARD = {
