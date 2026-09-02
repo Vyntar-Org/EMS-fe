@@ -133,7 +133,12 @@ const MetricColumn = ({ metric, data, unit, carbonUnit, showDivider }) => {
 			</Box>
 
 			<Divider sx={{ my: 0.55, borderColor: 'divider' }} />
-			<Stack direction="column" alignItems="baseline" spacing={0.35} minWidth={0}>
+			<Stack
+				direction="column"
+				alignItems="baseline"
+				spacing={0.35}
+				minWidth={0}
+			>
 				<Typography
 					sx={{ fontSize: '1rem', lineHeight: 1, fontWeight: 700, color }}
 				>
