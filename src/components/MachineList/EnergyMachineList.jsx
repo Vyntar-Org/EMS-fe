@@ -490,8 +490,7 @@ const EnergyMachineList = () => {
 												title={mc?.name || ''}
 												status={mc?.status}
 												lastUpdated={mc?.latest?.last_ts || 0}
-												importedEnergy={mc?.latest?.acte_im || 0}
-												exportedEnergy={mc?.latest?.acte_ex || 0}
+												total={mc?.latest?.acte_im || 0}
 												phaseRV={mc?.latest?.rv || 0}
 												phaseRA={mc?.latest?.ir || 0}
 												phaseYV={mc?.latest?.yv || 0}

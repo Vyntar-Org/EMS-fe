@@ -12,6 +12,8 @@ const TOOLTIP_STYLE_ID = 'capx-tooltip-styles';
 const TOOLTIP_CSS = `
 .capx-tooltip {
 	min-width: 160px;
+	max-width: min(360px, calc(100vw - 32px));
+	max-height: min(360px, calc(100vh - 160px));
 	padding: 10px 14px;
 	border-radius: 12px;
 	border: 1px solid rgba(145, 158, 171, 0.16);
@@ -21,6 +23,9 @@ const TOOLTIP_CSS = `
 	box-shadow: 0 8px 28px rgba(20, 30, 45, 0.16), 0 1px 2px rgba(20, 30, 45, 0.08);
 	font-family: 'Public Sans', Inter, Roboto, sans-serif;
 	animation: capx-tooltip-in 140ms ease-out;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
 }
 @keyframes capx-tooltip-in {
 	from { opacity: 0; transform: translateY(-4px) scale(0.98); }
@@ -28,21 +33,48 @@ const TOOLTIP_CSS = `
 }
 .capx-tooltip-date {
 	font-size: 12px;
-	font-weight: 600;
+	font-weight: 700;
 	color: #212b36;
 	margin-bottom: 1px;
 }
 .capx-tooltip-time {
-	font-size: 11px;
-	font-weight: 500;
-	color: #637381;
+	font-size: 12px;
+	font-weight: 700;
+	color: #0156a6;
 	letter-spacing: 0.2px;
+}
+.capx-tooltip-timestamp {
+	margin: -4px -6px 7px;
+	padding: 6px 8px;
+	border-radius: 8px;
+	background: rgba(1, 86, 166, 0.08);
 }
 .capx-tooltip-relative {
 	font-size: 10.5px;
 	font-style: italic;
 	color: #919eab;
 	margin-bottom: 6px;
+	flex-shrink: 0;
+}
+.capx-tooltip-series {
+	max-height: 240px;
+	min-height: 0;
+	overflow-y: scroll !important;
+	overflow-x: hidden;
+	overscroll-behavior: contain;
+	touch-action: pan-y;
+	pointer-events: auto !important;
+	padding-right: 5px;
+	margin-right: -5px;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(99, 115, 129, 0.45) transparent;
+}
+.capx-tooltip-series::-webkit-scrollbar {
+	width: 5px;
+}
+.capx-tooltip-series::-webkit-scrollbar-thumb {
+	background: rgba(99, 115, 129, 0.45);
+	border-radius: 999px;
 }
 .capx-tooltip-row {
 	display: flex;
@@ -60,11 +92,15 @@ const TOOLTIP_CSS = `
 	font-size: 12px;
 	color: #454f5b;
 	flex: 1;
+	min-width: 0;
+	overflow-wrap: anywhere;
 }
 .capx-tooltip-value {
 	font-size: 12px;
 	font-weight: 700;
 	color: #212b36;
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 `;
 
@@ -129,16 +165,16 @@ const WEEKDAY_LABELS = [
 ];
 
 // dayjs format strings per requested label granularity — the tooltip always
-// shows full IST/UTC precision regardless, this only controls how terse the
+// shows full local precision regardless, this only controls how terse the
 // axis ticks themselves are.
 const GRANULARITY_FORMATS = {
 	date: 'DD MMM YYYY',
-	time: 'hh:mm:ss A',
+	time: 'DD MMM, hh:mm:ss A',
 	datetime: 'DD MMM, hh:mm A',
 	day: 'ddd',
-	hour: 'hh A',
-	minute: 'hh:mm A',
-	second: 'hh:mm:ss A',
+	hour: 'DD MMM, hh A',
+	minute: 'DD MMM, hh:mm A',
+	second: 'DD MMM, hh:mm:ss A',
 };
 
 // Renders one axis tick at the requested granularity. Handles the shapes
@@ -199,6 +235,12 @@ const hasExplicitXValues = (series) => {
 	);
 };
 
+const hasTimestampXValues = (series) => {
+	const firstPoint = series.find((s) => s?.data?.length)?.data?.[0];
+	const xValue = Array.isArray(firstPoint) ? firstPoint[0] : firstPoint?.x;
+	return xValue !== undefined && Boolean(smartParseDate(xValue));
+};
+
 const CustomApexChart = ({
 	type = 'line',
 	series = [],
@@ -228,13 +270,14 @@ const CustomApexChart = ({
 		[series, pointCount]
 	);
 
-	const effectiveXAxesType = useMemo(
-		() =>
-			xAxesType === 'datetime' && !hasExplicitXValues(renderSeries)
-				? 'category'
-				: xAxesType,
-		[xAxesType, renderSeries]
-	);
+	const effectiveXAxesType = useMemo(() => {
+		if (hasTimestampXValues(renderSeries)) {
+			return 'datetime';
+		}
+		return xAxesType === 'datetime' && !hasExplicitXValues(renderSeries)
+			? 'category'
+			: xAxesType;
+	}, [xAxesType, renderSeries]);
 
 	const useCustomLegend = renderSeries.length > LEGEND_WINDOW_THRESHOLD;
 	const chartHeight =
@@ -256,8 +299,12 @@ const CustomApexChart = ({
 	);
 
 	const xLabelFormatter = useCallback(
-		(val) => formatByGranularity(val, granularity),
-		[granularity]
+		(val) =>
+			formatByGranularity(
+				val,
+				effectiveXAxesType === 'datetime' ? 'date' : granularity
+			),
+		[effectiveXAxesType, granularity]
 	);
 
 	const buildTooltip = useCallback(
@@ -271,9 +318,11 @@ const CustomApexChart = ({
 			if (parsed) {
 				const dateStr = parsed.format('DD MMM YYYY');
 				const istStr = parsed.format('hh:mm:ss A');
-				const utcStr = parsed.utc().format('hh:mm:ss A');
+				// Explicit UTC text is intentionally hidden; keep the local timestamp
+				// and all existing series data in the tooltip.
+				// const utcStr = parsed.utc().format('hh:mm:ss A');
 				const relativeStr = parsed.fromNow();
-				dateHtml = `<div class="capx-tooltip-date">${dateStr}</div><div class="capx-tooltip-time">${istStr} IST / ${utcStr} UTC</div><div class="capx-tooltip-relative">${relativeStr}</div>`;
+				dateHtml = `<div class="capx-tooltip-timestamp"><div class="capx-tooltip-date">${dateStr}</div><div class="capx-tooltip-time">${istStr} IST</div></div><div class="capx-tooltip-relative">${relativeStr}</div>`;
 			} else if (xVal !== undefined && xVal !== null) {
 				dateHtml = `<div class="capx-tooltip-date">${escapeHtml(xVal)}</div>`;
 			}
@@ -293,7 +342,7 @@ const CustomApexChart = ({
 				})
 				.join('');
 
-			return `<div class="capx-tooltip">${dateHtml}${rows}</div>`;
+			return `<div class="capx-tooltip">${dateHtml}<div class="capx-tooltip-series">${rows}</div></div>`;
 		},
 		[formatValue]
 	);
@@ -393,27 +442,66 @@ const CustomApexChart = ({
 				tickAmount: minimal
 					? 1
 					: Math.min(tickAmount, Math.max(pointCount - 1, 1)),
-				axisBorder: {
-					show: minimal,
-					color: 'rgba(145, 158, 171, 0.32)',
-				},
-				axisTicks: { show: false },
 				...customOptions?.xaxis,
+				// Axis visibility is an application-wide invariant. Keep these after
+				// caller options so a narrow chart cannot accidentally suppress them.
+				axisBorder: {
+					...customOptions?.xaxis?.axisBorder,
+					show: true,
+					color:
+						customOptions?.xaxis?.axisBorder?.color ||
+						'rgba(145, 158, 171, 0.32)',
+				},
+				axisTicks: {
+					...customOptions?.xaxis?.axisTicks,
+					show: true,
+					color:
+						customOptions?.xaxis?.axisTicks?.color ||
+						'rgba(145, 158, 171, 0.32)',
+				},
+				title: {
+					...(effectiveXAxesType === 'datetime' ? { text: 'Date' } : {}),
+					style: { color: '#637381', fontSize: '12px', fontWeight: 500 },
+					...customOptions?.xaxis?.title,
+				},
 				labels: {
 					style: { colors: '#637381', fontSize: '12px' },
 					rotate: 0,
 					hideOverlappingLabels: true,
 					trim: !minimal,
-					...(granularity ? { formatter: xLabelFormatter } : {}),
+					...(granularity || effectiveXAxesType === 'datetime'
+						? { formatter: xLabelFormatter }
+						: {}),
 					...customOptions?.xaxis?.labels,
+					show: true,
 				},
 			},
 			yaxis: {
 				...getApexYAxisConfig({ unit: resolvedUnit, minimal }),
 				...customOptions?.yaxis,
+				axisBorder: {
+					...customOptions?.yaxis?.axisBorder,
+					show: true,
+					color:
+						customOptions?.yaxis?.axisBorder?.color ||
+						'rgba(145, 158, 171, 0.32)',
+				},
+				axisTicks: {
+					...customOptions?.yaxis?.axisTicks,
+					show: true,
+					color:
+						customOptions?.yaxis?.axisTicks?.color ||
+						'rgba(145, 158, 171, 0.32)',
+				},
+				title: {
+					...(resolvedUnit ? { text: `Value (${resolvedUnit})` } : {}),
+					style: { color: '#637381', fontSize: '12px', fontWeight: 500 },
+					...customOptions?.yaxis?.title,
+				},
 				labels: {
 					...getApexYAxisConfig({ unit: resolvedUnit, minimal }).labels,
 					...customOptions?.yaxis?.labels,
+					show: true,
 				},
 			},
 			title: {

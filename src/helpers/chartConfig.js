@@ -1,3 +1,4 @@
+import { downAnalyticsSampleData } from './common';
 import { detectTimeField, smartParseDate } from './dateParse';
 import { formatNumber } from './formatters';
 
@@ -141,11 +142,15 @@ export const getApexYAxisConfig = ({ unit = '', minimal = false } = {}) => ({
 	forceNiceScale: true,
 	decimalsInFloat: 2,
 	axisBorder: {
-		show: minimal,
+		show: true,
 		color: 'rgba(145, 158, 171, 0.32)',
 	},
-	axisTicks: { show: false },
+	axisTicks: {
+		show: true,
+		color: 'rgba(145, 158, 171, 0.32)',
+	},
 	labels: {
+		show: true,
 		minWidth: 32,
 		maxWidth: 72,
 		offsetX: -2,
@@ -251,4 +256,43 @@ export const buildPointSeries = (
 			return timeField ? [timestamps[i].valueOf(), y] : y;
 		}),
 	}));
+};
+
+/**
+ * Builds Analytics series without converting timestamps to display-only
+ * category strings. Each point retains its actual epoch-ms X value, and each
+ * metric keeps the existing LTTB sampling behaviour.
+ */
+export const buildAnalyticsPointSeries = (
+	data,
+	fields,
+	labelMap = {},
+	maxPoints = 300
+) => {
+	const rows = Array.isArray(data) ? data : [];
+	const timeField = detectTimeField(rows);
+	// A selected timestamp is an X coordinate, never a metric. Keeping it out
+	// of the series list prevents "Timestamp" from appearing in legends or as
+	// a plotted value while retaining it on the axis and in the tooltip.
+	const valueFields = (Array.isArray(fields) ? fields : []).filter(
+		(field) => !timeField || field.toLowerCase() !== timeField.toLowerCase()
+	);
+
+	return valueFields.map((field) => {
+		const sampled = downAnalyticsSampleData(rows, maxPoints, field) || [];
+		const timestamps = timeField
+			? sampled.map((row) => smartParseDate(row?.[timeField]))
+			: null;
+		const hasCompleteTimeline = timestamps?.every(Boolean);
+		return {
+			name: labelMap[field] || field,
+			data: sampled.map((row, index) => {
+				const value = row?.[field] ?? null;
+				if (!hasCompleteTimeline) {
+					return value;
+				}
+				return [timestamps[index].valueOf(), value];
+			}),
+		};
+	});
 };

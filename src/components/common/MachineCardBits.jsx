@@ -222,9 +222,11 @@ export const MachineMetricPanel = ({ rows = [] }) => (
 						bottom: 9,
 						width: 3,
 						borderRadius: '0 4px 4px 0',
-						bgcolor: ['#16A085', '#805AD5', '#2589D8', '#F59E0B', '#E5485D'][
-							index % 5
-						],
+						bgcolor:
+							row.color ||
+							['#16A085', '#805AD5', '#2589D8', '#F59E0B', '#E5485D'][
+								index % 5
+							],
 					},
 				}}
 			>
@@ -243,7 +245,7 @@ export const MachineMetricPanel = ({ rows = [] }) => (
 				<ResponsiveTextWrapper
 					value={row.value}
 					fontSize="12px"
-					color="text.primary"
+					color={row.color || 'text.primary'}
 					fontWeight={800}
 					lineHeight={1.15}
 					sx={{
@@ -922,6 +924,7 @@ export const MachineTemperatureGauge = ({
 	value,
 	statusColor,
 	statusLabel,
+	useStatusColor = false,
 }) => (
 	<Tooltip arrow placement="top" title={statusLabel || ''}>
 		<Box
@@ -930,8 +933,9 @@ export const MachineTemperatureGauge = ({
 				height: 6,
 				borderRadius: 3,
 				width: '100%',
-				background:
-					'linear-gradient(to right, #2563EB 0%, #16A34A 25%, #E3B13E 50%, #EA580C 75%, #DC2626 100%)',
+				background: useStatusColor
+					? statusColor || 'primary.main'
+					: 'linear-gradient(to right, #2563EB 0%, #16A34A 25%, #E3B13E 50%, #EA580C 75%, #DC2626 100%)',
 			}}
 		>
 			<Box

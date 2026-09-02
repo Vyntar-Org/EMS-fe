@@ -9,6 +9,7 @@ import {
 	Box,
 	IconButton,
 	Zoom,
+	CircularProgress,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
@@ -35,6 +36,7 @@ const PremiumModal = ({
 	cancelText = 'Cancel',
 	children,
 	type = 'default',
+	loading = false,
 }) => {
 	const isLogout = type === 'logout';
 	const isChart = type === 'chart';
@@ -70,7 +72,7 @@ const PremiumModal = ({
 	return (
 		<StyledDialog
 			open={open}
-			onClose={onClose}
+			onClose={loading ? undefined : onClose}
 			maxWidth={isLogout ? 'xs' : isChart ? 'lg' : 'sm'}
 			fullWidth
 			TransitionComponent={Zoom}
@@ -133,6 +135,7 @@ const PremiumModal = ({
 					<IconButton
 						aria-label="close"
 						onClick={onClose}
+						disabled={loading}
 						disableRipple
 						disableFocusRipple
 						sx={{
@@ -196,6 +199,7 @@ const PremiumModal = ({
 						<Button
 							disableElevation
 							onClick={onClose}
+							disabled={loading}
 							variant="text"
 							sx={{
 								px: 2.5,
@@ -218,10 +222,12 @@ const PremiumModal = ({
 						<Button
 							disableElevation
 							onClick={onConfirm}
+							disabled={loading}
 							variant="contained"
 							sx={{
 								px: 3,
 								height: '40px',
+								gap: 1,
 								fontWeight: 600,
 								textTransform: 'none',
 								borderRadius: '8px',
@@ -236,7 +242,14 @@ const PremiumModal = ({
 								},
 							}}
 						>
-							{finalConfirmText}
+							{loading ? (
+								<>
+									<CircularProgress size={17} thickness={5} color="inherit" />
+									Logging out…
+								</>
+							) : (
+								finalConfirmText
+							)}
 						</Button>
 					)}
 				</DialogActions>

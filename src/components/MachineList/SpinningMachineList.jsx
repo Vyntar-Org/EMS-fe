@@ -25,6 +25,7 @@ import { useApplications } from '../../contexts/ApplicationContext';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
+import { getChartSeries } from '../../helpers/chartConfig';
 import { formatTimestamp } from '../../helpers/common';
 import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
@@ -662,17 +663,13 @@ const ModalContentForTrend = memo(
 				// Match series name 'Connectivity' from Code 1
 				return [{ name: 'Connectivity', data: data }];
 			} else {
-				return [
-					{
-						name: `${tabDesc || 'Trend'}`,
-						data: chartData.map((item) => {
-							const value = item.value ?? item[tab];
-							return typeof value === 'number'
-								? Number(value)
-								: Number(value || 0);
-						}),
-					},
-				];
+				return getChartSeries(chartData, {
+					actual: chartData.some((item) => item.value !== undefined)
+						? 'value'
+						: tab,
+					actualLabel: `${tabDesc || 'Trend'}`,
+					includeTarget: false,
+				});
 			}
 		}, [chartData, isStatusTrend, tab, tabDesc]);
 
@@ -716,7 +713,7 @@ const ModalContentForTrend = memo(
 							series={chartSeries}
 							type={isStatusTrend ? 'area' : 'line'}
 							colors={isStatusTrend ? ['#30b44a'] : undefined}
-							xAxesType={isStatusTrend ? 'datetime' : 'category'}
+							xAxesType="datetime"
 							height="100%"
 							unit={isStatusTrend ? '' : chartResponse?.unit}
 						/>

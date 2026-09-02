@@ -115,7 +115,20 @@ const chartGlobalStyles = (theme) => {
 			color: `${LIGHT.text.primary} !important`,
 			border: `1px solid ${LIGHT.divider} !important`,
 			boxShadow: '0 8px 24px rgba(15, 35, 62, 0.18) !important',
+			// Custom chart tooltips contain a bounded, scrollable metric list.
+			// ApexCharts disables pointer events by default, which would make that
+			// scrollbar unusable when many parameters are selected.
+			pointerEvents: 'auto !important',
 		},
+		'.apexcharts-tooltip.apexcharts-active, .apexcharts-tooltip.apexcharts-theme-light.apexcharts-active':
+			{
+				pointerEvents: 'auto !important',
+				overflow: 'visible !important',
+			},
+		'.apexcharts-tooltip .capx-tooltip, .apexcharts-tooltip .capx-tooltip-series':
+			{
+				pointerEvents: 'auto !important',
+			},
 		'.apexcharts-tooltip-title': {
 			background: `${LIGHT.surface.muted} !important`,
 			color: `${LIGHT.text.primary} !important`,

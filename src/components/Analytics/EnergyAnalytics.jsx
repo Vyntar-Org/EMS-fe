@@ -18,11 +18,11 @@ import {
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { getCategoricalColors } from '../../helpers/chartConfig';
 import {
-	basePickerStyles,
-	downAnalyticsSampleData,
-} from '../../helpers/common';
+	buildAnalyticsPointSeries,
+	getCategoricalColors,
+} from '../../helpers/chartConfig';
+import { basePickerStyles } from '../../helpers/common';
 import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
@@ -46,32 +46,14 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
 
 	const rawData = rawAnalytics.data;
 	const maxPoints = 300;
-
-	const series = activeKeys.map((key) => {
-		const sampledDataPoints = downAnalyticsSampleData(rawData, maxPoints, key);
-		return {
-			name: KEY_PARAMETER_OPTIONS_MAPPING[key] || key,
-			data: sampledDataPoints.map((row) => row[key] ?? null),
-		};
-	});
-
-	const baseSampledData = downAnalyticsSampleData(
-		rawData,
-		maxPoints,
-		activeKeys[0] || 'timestamp'
-	);
-
-	const allDates = baseSampledData.map((item) =>
-		item.timestamp ? dayjs(item.timestamp).format('DD MMM HH:mm') : ''
-	);
-
-	const maxLabels = 10;
-	const labelStep = Math.max(1, Math.ceil(allDates.length / maxLabels));
-	const categories = allDates.map((date, idx) =>
-		idx % labelStep === 0 ? date : ''
-	);
-
-	return { series, categories };
+	return {
+		series: buildAnalyticsPointSeries(
+			rawData,
+			activeKeys,
+			KEY_PARAMETER_OPTIONS_MAPPING,
+			maxPoints
+		),
+	};
 };
 
 const GlobalFiltersRow = memo(
@@ -399,8 +381,7 @@ const AnalyticsRow = memo(
 						<CustomApexChart
 							series={processedData.series}
 							type="line"
-							xAxesType="category"
-							categories={processedData.categories}
+							xAxesType="datetime"
 							height={CHART_CANVAS_HEIGHT}
 						/>
 					)}
@@ -519,7 +500,7 @@ const MergedAnalyticsRow = memo(({ rows }) => {
 	// of them) — keeping it in useMemo means it only reruns when `rows`
 	// itself actually changes, not on every render this component happens
 	// to take part in.
-	const { mergedSeries, mergedCategories, isAnyLoading } = useMemo(() => {
+	const { mergedSeries, isAnyLoading } = useMemo(() => {
 		const rowsWithProcessedData = rows.map((row) => ({
 			...row,
 			deviceLabel: row.payload?.slave_id?.label || `Device Segment ${row.id}`,
@@ -535,19 +516,8 @@ const MergedAnalyticsRow = memo(({ rows }) => {
 				name: `${row.deviceLabel} - ${s.name}`,
 			}))
 		);
-		// Rows may span different ranges/point counts — the longest row's
-		// categories give the best-effort shared axis labeling.
-		const categories = rowsWithData.reduce(
-			(longest, row) =>
-				row.processedData.categories.length > longest.length
-					? row.processedData.categories
-					: longest,
-			[]
-		);
-
 		return {
 			mergedSeries: series,
-			mergedCategories: categories,
 			isAnyLoading: rows.some((row) => row.isLoading),
 		};
 	}, [rows]);
@@ -621,8 +591,7 @@ const MergedAnalyticsRow = memo(({ rows }) => {
 					<CustomApexChart
 						series={mergedSeries}
 						type="line"
-						xAxesType="category"
-						categories={mergedCategories}
+						xAxesType="datetime"
 						height={CHART_CANVAS_HEIGHT}
 					/>
 				)}

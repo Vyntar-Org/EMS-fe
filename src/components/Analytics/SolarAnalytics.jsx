@@ -16,11 +16,11 @@ import { SOLAR_LOG_COLUMN_MAPPING } from '../../constants/solarLogs';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { getCategoricalColors } from '../../helpers/chartConfig';
 import {
-	basePickerStyles,
-	downAnalyticsSampleData,
-} from '../../helpers/common';
+	buildAnalyticsPointSeries,
+	getCategoricalColors,
+} from '../../helpers/chartConfig';
+import { basePickerStyles } from '../../helpers/common';
 import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
@@ -51,31 +51,14 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
 
 	const rawData = rawAnalytics.data;
 	const maxPoints = 300;
-
-	const series = activeKeys.map((key) => {
-		const sampledDataPoints = downAnalyticsSampleData(rawData, maxPoints, key);
-		return {
-			name: SOLAR_LOG_COLUMN_MAPPING[key] || key,
-			data: sampledDataPoints.map((row) => row[key] ?? null),
-		};
-	});
-
-	const baseSampledData = downAnalyticsSampleData(
-		rawData,
-		maxPoints,
-		activeKeys[0] || 'timestamp'
-	);
-	const allDates = baseSampledData.map((item) =>
-		item.timestamp ? dayjs(item.timestamp).format('DD MMM HH:mm') : ''
-	);
-
-	const maxLabels = 12;
-	const labelStep = Math.max(1, Math.ceil(allDates.length / maxLabels));
-	const categories = allDates.map((date, idx) =>
-		idx % labelStep === 0 ? date : ''
-	);
-
-	return { series, categories };
+	return {
+		series: buildAnalyticsPointSeries(
+			rawData,
+			activeKeys,
+			SOLAR_LOG_COLUMN_MAPPING,
+			maxPoints
+		),
+	};
 };
 
 const GlobalFiltersRow = memo(
@@ -396,8 +379,7 @@ const AnalyticsRow = memo(
 						<CustomApexChart
 							series={processedData.series}
 							type="line"
-							xAxesType="category"
-							categories={processedData.categories}
+							xAxesType="datetime"
 							height={CHART_CANVAS_HEIGHT}
 						/>
 					)}
@@ -413,7 +395,7 @@ AnalyticsRow.displayName = 'AnalyticsRow';
 // per-row chart data in one place instead of recomputing it on every
 // keystroke anywhere on the page.
 const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
-	const { mergedSeries, mergedCategories } = useMemo(() => {
+	const { mergedSeries } = useMemo(() => {
 		const rowsWithData = rows
 			.map((row) => ({
 				...row,
@@ -427,15 +409,6 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 					...series,
 					name: `${row.deviceLabel} - ${series.name}`,
 				}))
-			),
-			// Rows may span different ranges/point counts — the longest row's
-			// categories give the best-effort shared axis labeling.
-			mergedCategories: rowsWithData.reduce(
-				(longest, row) =>
-					row.processedData.categories.length > longest.length
-						? row.processedData.categories
-						: longest,
-				[]
 			),
 		};
 	}, [rows]);
@@ -509,8 +482,7 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 					<CustomApexChart
 						series={mergedSeries}
 						type="line"
-						xAxesType="category"
-						categories={mergedCategories}
+						xAxesType="datetime"
 						height={CHART_CANVAS_HEIGHT}
 					/>
 				)}

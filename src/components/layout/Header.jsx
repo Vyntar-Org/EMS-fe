@@ -66,6 +66,7 @@ export const Header = ({
 
 	const [anchorEl, setAnchorEl] = useState(null);
 	const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+	const [isLoggingOut, setIsLoggingOut] = useState(false);
 
 	const handleDrawerToggle = () => {
 		if (isDesktop) {
@@ -94,13 +95,20 @@ export const Header = ({
 	};
 
 	const handleLogoutConfirm = async () => {
-		setLogoutModalOpen(false);
-		// Wait for auth state to actually clear before navigating — firing
-		// both this navigate() and PrivateLayout's own `!user` redirect back
-		// to back (because `user` went null mid-navigation) is what made
-		// logout look like the page reloading twice.
-		await logout();
-		navigate('/login', { replace: true });
+		if (isLoggingOut) {
+			return;
+		}
+
+		setIsLoggingOut(true);
+		try {
+			// Auth guards perform the one and only redirect after logout clears
+			// the user. An explicit navigate here races those guards and causes a
+			// duplicate login transition.
+			await logout();
+		} finally {
+			setIsLoggingOut(false);
+			setLogoutModalOpen(false);
+		}
 	};
 
 	const open = Boolean(anchorEl);
@@ -634,13 +642,14 @@ export const Header = ({
 			{/* Logout Confirmation Modal */}
 			<PremiumModal
 				open={logoutModalOpen}
-				onClose={() => setLogoutModalOpen(false)}
+				onClose={() => !isLoggingOut && setLogoutModalOpen(false)}
 				title="Confirm Logout"
 				content="Are you sure you want to logout?"
 				onConfirm={handleLogoutConfirm}
 				confirmText="Logout"
 				cancelText="Cancel"
 				type="logout"
+				loading={isLoggingOut}
 			/>
 		</>
 	);

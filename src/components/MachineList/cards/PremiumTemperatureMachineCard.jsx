@@ -1,12 +1,12 @@
 import { Box } from '@mui/material';
 
-import { getTemperatureStatus } from '../../../helpers/temperatureStatus';
+import { formatNumber } from '../../../helpers/formatters';
+import { getTemperatureAppStatus } from '../../../helpers/temperatureStatus';
 import {
 	MachineMetricPanel,
 	MachineTemperatureGauge,
 } from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
-import { formatNumber } from '../../../helpers/formatters';
 
 /**
  * Dedicated premium card for the Temperature machine list: thermostat icon,
@@ -24,7 +24,7 @@ const PremiumTemperatureMachineCard = ({
 	trendUrl,
 	onOpenTrend,
 }) => {
-	const tempStatus = getTemperatureStatus(temperature);
+	const tempStatus = getTemperatureAppStatus(temperature);
 
 	return (
 		<PremiumMachineCard
@@ -42,6 +42,7 @@ const PremiumTemperatureMachineCard = ({
 					value: `${formatNumber(value, 2, { fallback: '0' })}${
 						unit ? ` ${unit}` : ''
 					}`,
+					color: /temperature/i.test(label) ? tempStatus?.color : undefined,
 				}))}
 			/>
 			{tempStatus && (
@@ -50,6 +51,7 @@ const PremiumTemperatureMachineCard = ({
 						value={temperature}
 						statusColor={tempStatus.color}
 						statusLabel={`${tempStatus.label} · ${tempStatus.range}`}
+						useStatusColor
 					/>
 				</Box>
 			)}

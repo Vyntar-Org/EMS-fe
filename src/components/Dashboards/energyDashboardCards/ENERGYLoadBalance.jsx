@@ -10,9 +10,9 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { api } from '../../../helpers/api';
 import { API_URLS } from '../../../helpers/apiUrls';
+import { formatNumber } from '../../../helpers/formatters';
 import CustomCard from '../../common/CustomCard';
 import NoDataFound from '../../common/errors/NoDataFound';
-import { formatNumber } from '../../../helpers/formatters';
 
 const ACCENT = '#4A3AA7';
 
@@ -340,6 +340,11 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 			title="Load Balance"
 			accentColor={ACCENT}
 			headerAction={loadToggle}
+			sx={{
+				'& .MuiCardContent-root > .MuiBox-root:first-of-type': {
+					alignItems: 'center',
+				},
+			}}
 		>
 			{loadBalanceData ? (
 				<Box

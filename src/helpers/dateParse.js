@@ -25,6 +25,7 @@ const WEEKDAY_NAMES = new Set([
 const MIN_PLAUSIBLE_YEAR = 2000;
 const MAX_PLAUSIBLE_YEAR = 2100;
 const TIME_ONLY_RE = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/;
+const YEAR_IN_VALUE_RE = /\b(?:19|20|21)\d{2}\b/;
 
 // Auto-detects unix-seconds vs unix-ms vs ISO/date strings vs bare HH:mm:ss
 // time strings, and only accepts the result if it lands in a real-world year
@@ -75,16 +76,39 @@ export const smartParseDate = (val) => {
 // various trend/analytics endpoints — checked in priority order.
 const TIME_FIELD_CANDIDATES = [
 	'timestamp',
-	'time',
 	'ts',
 	'datetime',
 	'date_time',
-	'date',
-	'created_at',
 	'recorded_at',
+	'created_at',
 	'event_time',
+	'measured_at',
+	'sampled_at',
+	'logged_at',
+	'reading_at',
+	'reading_time',
+	'start_time',
+	'time',
+	'date',
 	'start',
+	// Some aggregation endpoints call a full ISO/unix timestamp `hour`.
+	// Bare hour-of-day values are rejected by hasCalendarDate(), below.
+	'hour',
 ];
+
+const hasCalendarDate = (value) => {
+	if (typeof value === 'number') {
+		return Math.abs(value) >= 1_000_000_000;
+	}
+	if (typeof value !== 'string') {
+		return false;
+	}
+	const trimmed = value.trim();
+	return (
+		YEAR_IN_VALUE_RE.test(trimmed) ||
+		(/^\d{10,13}$/.test(trimmed) && Number(trimmed) >= 1_000_000_000)
+	);
+};
 
 // Inspects the first row of `data` and returns the first candidate key whose
 // value across the sample actually parses to a plausible real-world date —
@@ -101,7 +125,7 @@ export const detectTimeField = (data) => {
 	const keys = Object.keys(sample);
 	for (const candidate of TIME_FIELD_CANDIDATES) {
 		const key = keys.find((k) => k.toLowerCase() === candidate);
-		if (key && smartParseDate(sample[key])) {
+		if (key && hasCalendarDate(sample[key]) && smartParseDate(sample[key])) {
 			return key;
 		}
 	}

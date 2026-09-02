@@ -55,3 +55,35 @@ export const getTemperatureStatus = (value) => {
 	}
 	return TEMPERATURE_STATUS_TIERS[4];
 };
+
+// Temperature-app machine list thresholds. Kept separate from the shared
+// HVAC tiers above because Solar and Fire Safety use those broader bands.
+export const getTemperatureAppStatus = (value) => {
+	const num = Number(value);
+	if (!Number.isFinite(num)) {
+		return null;
+	}
+
+	if (num < 23) {
+		return {
+			key: 'below-range',
+			label: 'Below Range',
+			range: '< 23°C',
+			color: '#EA580C',
+		};
+	}
+	if (num < 25) {
+		return {
+			key: 'normal',
+			label: 'Normal',
+			range: '23–<25°C',
+			color: '#16A34A',
+		};
+	}
+	return {
+		key: 'high',
+		label: 'High',
+		range: '≥ 25°C',
+		color: '#DC2626',
+	};
+};
