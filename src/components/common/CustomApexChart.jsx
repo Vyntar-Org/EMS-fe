@@ -169,7 +169,7 @@ const WEEKDAY_LABELS = [
 // axis ticks themselves are.
 const GRANULARITY_FORMATS = {
 	date: 'DD MMM YYYY',
-	time: 'DD MMM, hh:mm:ss A',
+	time: 'hh:mm:ss A',
 	datetime: 'DD MMM, hh:mm A',
 	day: 'ddd',
 	hour: 'DD MMM, hh A',
@@ -309,12 +309,19 @@ const CustomApexChart = ({
 
 	const buildTooltip = useCallback(
 		({ series: s, seriesIndex, dataPointIndex, w }) => {
+			// Category charts store an internal numeric x value in `seriesX`.
+			// Prefer the API-provided label for those charts so values such as
+			// "Mon" and "Wed" are shown unchanged in the tooltip.
 			const xVal =
-				w.globals.seriesX?.[seriesIndex]?.[dataPointIndex] ??
-				w.globals.labels?.[dataPointIndex];
+				effectiveXAxesType === 'category'
+					? (w.globals.labels?.[dataPointIndex] ??
+					  w.globals.seriesX?.[seriesIndex]?.[dataPointIndex])
+					: (w.globals.seriesX?.[seriesIndex]?.[dataPointIndex] ??
+					  w.globals.labels?.[dataPointIndex]);
 
 			let dateHtml = '';
-			const parsed = smartParseDate(xVal);
+			const parsed =
+				effectiveXAxesType === 'datetime' ? smartParseDate(xVal) : null;
 			if (parsed) {
 				const dateStr = parsed.format('DD MMM YYYY');
 				const istStr = parsed.format('hh:mm:ss A');
@@ -344,7 +351,7 @@ const CustomApexChart = ({
 
 			return `<div class="capx-tooltip">${dateHtml}<div class="capx-tooltip-series">${rows}</div></div>`;
 		},
-		[formatValue]
+		[effectiveXAxesType, formatValue]
 	);
 
 	const baseOptions = useMemo(

@@ -7,11 +7,11 @@ import {
 	TableRow,
 } from '@mui/material';
 
-import PremiumMachineCard from '../../common/PremiumMachineCard';
+import { formatNumber } from '../../../helpers/formatters';
 import { MachineMetricPanel } from '../../common/MachineCardBits';
+import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 import StatusChips from '../../common/StatusChips';
-import { formatNumber } from '../../../helpers/formatters';
 
 // Two-column collection-tank readout (Water Level / Motor Status per tank) —
 // unique to the STP/FlowMeter TANK_CARD variant.
@@ -158,11 +158,13 @@ const PremiumFlowCardMachineCard = ({
 			trend={slaveId ? { url: trendUrl } : null}
 			onOpenTrend={onOpenTrend}
 		>
-			{isFlowCard ? (
+			{!isTankCard ? (
 				<MachineMetricPanel
 					rows={metrics.map((row) => ({
 						label: row.label,
-						value: formatNumber(row?.value, 2, { fallback: '0' }),
+						value: `${formatNumber(row?.value, 2, { fallback: '0' })}${
+							row?.unit ? ` ${row.unit}` : ''
+						}`,
 					}))}
 				/>
 			) : (

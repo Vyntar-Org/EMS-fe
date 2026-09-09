@@ -8,6 +8,7 @@ import {
 	formatChartValue,
 	getCategoricalColors,
 } from '../../helpers/chartConfig';
+import { smartParseDate } from '../../helpers/dateParse';
 import CustomApexChart from '../common/CustomApexChart';
 import CustomCard from '../common/CustomCard';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -22,6 +23,11 @@ const PALETTE = getCategoricalColors(8);
 const INTAKE_ACCENT = PALETTE[0];
 const TREATED_ACCENT = PALETTE[2];
 const QUALITY_ACCENT = PALETTE[6];
+
+const formatTimeCategory = (value) => {
+	const parsed = smartParseDate(value);
+	return parsed ? parsed.format('hh:mm:ss A') : String(value ?? '');
+};
 
 const STPDashboard = () => {
 	const [overviewData, setOverviewData] = useState(null);
@@ -273,8 +279,30 @@ const STPDashboard = () => {
 										(historyTrends?.series || []).length || 4
 									)}
 									xAxesType="category"
+									categories={(historyTrends.categories || []).map(
+										formatTimeCategory
+									)}
 									height="100%"
 									meta={historyTrends?.meta}
+									tickAmount={6}
+									customOptions={{
+										xaxis: { title: { text: 'Time' } },
+										responsive: [
+											{
+												breakpoint: 900,
+												options: { xaxis: { tickAmount: 4 } },
+											},
+											{
+												breakpoint: 600,
+												options: {
+													xaxis: {
+														tickAmount: 2,
+														labels: { rotate: -45, trim: false },
+													},
+												},
+											},
+										],
+									}}
 								/>
 							</Box>
 						) : (
@@ -294,8 +322,10 @@ const STPDashboard = () => {
 									type="bar"
 									colors={getCategoricalColors(4)}
 									xAxesType="category"
+									categories={waterComparison.categories || []}
 									height="100%"
 									meta={waterComparison?.meta}
+									customOptions={{ xaxis: { title: { text: 'Week' } } }}
 								/>
 							</Box>
 						) : (

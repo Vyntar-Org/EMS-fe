@@ -28,7 +28,7 @@ const PeriodCard = ({ period, data, unit }) => {
 				py: 0.7,
 				borderRadius: '12px',
 				border: '1px solid',
-				borderColor: featured ? alpha(ACCENT, 0.5) : 'divider',
+				borderColor: featured ? alpha(ACCENT, 0.3) : 'divider',
 				background: (theme) =>
 					featured
 						? `linear-gradient(145deg, ${alpha(
@@ -238,7 +238,7 @@ const ENERGYConsumption = ({ data }) => (
 					</Stack>
 				</Stack>
 
-				<Stack direction="row" spacing={1.2} flex={1} minHeight={0}>
+				<Stack direction="row" spacing={1.5} flex={1} minHeight={0}>
 					{PERIODS.map((period) => (
 						<PeriodCard
 							key={period.key}
