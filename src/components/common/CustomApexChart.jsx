@@ -314,10 +314,10 @@ const CustomApexChart = ({
 			// "Mon" and "Wed" are shown unchanged in the tooltip.
 			const xVal =
 				effectiveXAxesType === 'category'
-					? (w.globals.labels?.[dataPointIndex] ??
-					  w.globals.seriesX?.[seriesIndex]?.[dataPointIndex])
-					: (w.globals.seriesX?.[seriesIndex]?.[dataPointIndex] ??
-					  w.globals.labels?.[dataPointIndex]);
+					? w.globals.labels?.[dataPointIndex] ??
+					  w.globals.seriesX?.[seriesIndex]?.[dataPointIndex]
+					: w.globals.seriesX?.[seriesIndex]?.[dataPointIndex] ??
+					  w.globals.labels?.[dataPointIndex];
 
 			let dateHtml = '';
 			const parsed =

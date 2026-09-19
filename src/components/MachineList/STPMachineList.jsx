@@ -300,7 +300,6 @@ const STPMachineList = () => {
 		];
 	};
 
-
 	return (
 		<>
 			<Box
