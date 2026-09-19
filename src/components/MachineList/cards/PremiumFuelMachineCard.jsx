@@ -9,7 +9,6 @@ import { Box, LinearProgress, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 import { formatNumber } from '../../../helpers/formatters';
-import { MiniSparkline } from '../../common/MachineCardBits';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 
 const FUEL_COLOR = '#EA580C';
@@ -139,18 +138,6 @@ const FuelMovementTile = ({ label, today, mtd, color, icon: Icon }) => (
 					<Typography fontSize="11.5px" fontWeight={800} noWrap>
 						{formatNumber(amount, 1, { fallback: '0' })} L
 					</Typography>
-					<Box height={16} mt={0.2} aria-hidden="true">
-						<MiniSparkline
-							data={
-								index === 0
-									? [32, 40, 36, 47, 42, 51, 45, 58]
-									: [29, 37, 33, 43, 39, 48, 44, 56]
-							}
-							color={color}
-							width="100%"
-							height={16}
-						/>
-					</Box>
 				</Box>
 			))}
 		</Box>

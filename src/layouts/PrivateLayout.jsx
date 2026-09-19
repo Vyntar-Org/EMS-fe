@@ -4,6 +4,7 @@ import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
+import { SubAppContextBar } from '../components/layout/SubAppContextBar';
 import { useApplications } from '../contexts/ApplicationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { layoutBackgroundSx } from '../helpers/layoutImages';
@@ -94,6 +95,7 @@ export const PrivateLayout = () => {
 					isAutoSwitching={isAutoSwitching}
 					onToggleAutoSwitch={() => setIsAutoSwitching((value) => !value)}
 				/>
+				<SubAppContextBar />
 				<Box
 					component="main"
 					sx={{
@@ -101,6 +103,8 @@ export const PrivateLayout = () => {
 						minHeight: 0,
 						overflow: 'hidden',
 						p: 1,
+						display: 'flex',
+						flexDirection: 'column',
 						backgroundColor: 'background.default',
 						...layoutBackgroundSx('main', selectedApp, theme.palette.mode),
 					}}
@@ -111,7 +115,8 @@ export const PrivateLayout = () => {
 					<Box
 						key={location.pathname}
 						sx={{
-							height: '100%',
+							flex: 1,
+							minHeight: 0,
 							animation: 'pageFadeIn 0.25s ease',
 							'@keyframes pageFadeIn': {
 								from: { opacity: 0, transform: 'translateY(4px)' },

@@ -17,6 +17,7 @@ import { alpha } from '@mui/material/styles';
 
 import { formatTimestamp } from '../../../helpers/common';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
+import { MACHINE_CARD_DESIGN } from '../../common/machineCardDesign';
 
 const GREEN = '#16A34A';
 const RED = '#EF3340';
@@ -92,21 +93,21 @@ const PremiumCompressorMachineCard = ({
 				maxWidth: '100%',
 				boxSizing: 'border-box',
 				minHeight: 430,
-				p: 1,
-				borderRadius: '20px',
+				p: MACHINE_CARD_DESIGN.cardPadding,
+				borderRadius: MACHINE_CARD_DESIGN.cardRadius,
 				border: '1px solid',
 				borderColor: (t) => alpha(t.palette.primary.main, 0.11),
 				bgcolor: 'background.paper',
 				boxShadow: '0 12px 35px rgba(37,69,111,.10)',
 				display: 'flex',
 				flexDirection: 'column',
-				gap: 0.85,
+				gap: MACHINE_CARD_DESIGN.cardGap,
 				transition: (t) =>
 					t.transitions.create(['transform', 'box-shadow', 'border-color'], {
 						duration: t.transitions.duration.short,
 					}),
 				'&:hover': {
-					transform: 'translateY(-4px)',
+					transform: 'translateY(-2px)',
 					boxShadow: `0 16px 34px ${alpha(statusColor, 0.18)}`,
 					borderColor: alpha(statusColor, 0.28),
 				},
@@ -523,7 +524,7 @@ const PremiumCompressorMachineCard = ({
 					},
 				}}
 			>
-				TREND
+				VIEW TREND
 			</Button>
 		</Box>
 	);

@@ -7,12 +7,9 @@ import { Box, Button, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 import { formatTimestamp } from '../../helpers/common';
-import {
-	AnimatedMachineAvatar,
-	APP_ACCENT_COLOR,
-	MiniSparkline,
-} from './MachineCardBits';
+import { AnimatedMachineAvatar, APP_ACCENT_COLOR } from './MachineCardBits';
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
+import { MACHINE_CARD_DESIGN } from './machineCardDesign';
 
 /** Shared shell matching the Compressor / Spinning machine-list card. */
 const PremiumMachineCard = ({
@@ -38,23 +35,23 @@ const PremiumMachineCard = ({
 				width: '100%',
 				maxWidth: '100%',
 				boxSizing: 'border-box',
-				p: 1,
-				borderRadius: '20px',
+				p: MACHINE_CARD_DESIGN.cardPadding,
+				borderRadius: MACHINE_CARD_DESIGN.cardRadius,
 				border: '1px solid',
 				borderColor: (t) => alpha(t.palette.primary.main, 0.11),
 				bgcolor: 'background.paper',
 				boxShadow: '0 12px 35px rgba(37,69,111,.10)',
 				display: 'flex',
 				flexDirection: 'column',
-				minHeight: 360,
-				gap: 0.6,
+				minHeight: MACHINE_CARD_DESIGN.cardMinHeight,
+				gap: MACHINE_CARD_DESIGN.cardGap,
 				minWidth: 0,
 				transition: (t) =>
 					t.transitions.create(['transform', 'box-shadow', 'border-color'], {
 						duration: t.transitions.duration.short,
 					}),
 				'&:hover': {
-					transform: 'translateY(-4px)',
+					transform: 'translateY(-2px)',
 					boxShadow: `0 16px 34px ${alpha(statusColor, 0.18)}`,
 					borderColor: alpha(statusColor, 0.28),
 				},
@@ -64,8 +61,8 @@ const PremiumMachineCard = ({
 				sx={{
 					position: 'relative',
 					overflow: 'hidden',
-					minHeight: 104,
-					borderRadius: '15px',
+					minHeight: MACHINE_CARD_DESIGN.headerMinHeight,
+					borderRadius: MACHINE_CARD_DESIGN.sectionRadius,
 					border: `1px solid ${alpha(statusColor, 0.42)}`,
 					background: `linear-gradient(120deg, ${alpha(
 						statusColor,
@@ -122,7 +119,7 @@ const PremiumMachineCard = ({
 					<Box minWidth={0} flex={1} zIndex={1} pt={2}>
 						<ResponsiveTextWrapper
 							value={title}
-							fontSize="16px"
+							fontSize={MACHINE_CARD_DESIGN.titleSize}
 							fontWeight={800}
 							color="text.primary"
 							lineHeight={1.15}
@@ -142,7 +139,7 @@ const PremiumMachineCard = ({
 							<CalendarMonthRounded sx={{ fontSize: 17 }} />
 							<ResponsiveTextWrapper
 								value={formatTimestamp(lastUpdated) || '-'}
-								fontSize="11px"
+								fontSize={MACHINE_CARD_DESIGN.helperSize}
 								fontWeight={500}
 								sx={{ whiteSpace: 'normal', lineHeight: 1.15 }}
 							/>
@@ -166,7 +163,10 @@ const PremiumMachineCard = ({
 					}}
 				>
 					<Box width={9} height={9} borderRadius="50%" bgcolor={statusColor} />
-					<Typography fontSize="10px" fontWeight={800}>
+					<Typography
+						fontSize={MACHINE_CARD_DESIGN.statusSize}
+						fontWeight={800}
+					>
 						{statusLabel}
 					</Typography>
 				</Stack>
@@ -232,21 +232,6 @@ const PremiumMachineCard = ({
 									textOverflow: 'ellipsis',
 								}}
 							/>
-							<Box
-								sx={{ width: '100%', height: 18, mt: 0.2 }}
-								aria-hidden="true"
-							>
-								<MiniSparkline
-									data={
-										index === 0
-											? [32, 40, 36, 47, 42, 51, 45, 58]
-											: [29, 37, 33, 43, 39, 48, 44, 56]
-									}
-									color="#F26A7A"
-									width="100%"
-									height={18}
-								/>
-							</Box>
 						</Box>
 					))}
 				</Box>
@@ -264,7 +249,7 @@ const PremiumMachineCard = ({
 						sx={{
 							minHeight: 34,
 							borderRadius: '10px',
-							fontSize: 12.5,
+							fontSize: MACHINE_CARD_DESIGN.actionSize,
 							fontWeight: 800,
 							background: isOnline
 								? 'linear-gradient(105deg,#16A34A 0%,#22C55E 100%)'
@@ -278,7 +263,7 @@ const PremiumMachineCard = ({
 							},
 						}}
 					>
-						TREND
+						VIEW TREND
 					</Button>
 				))}
 		</Box>

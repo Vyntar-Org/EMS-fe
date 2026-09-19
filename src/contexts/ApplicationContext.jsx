@@ -4,6 +4,56 @@ import { api } from '../helpers/api';
 
 const ApplicationContext = createContext();
 
+const normalizePages = (pages) =>
+	Array.isArray(pages)
+		? pages.map((page) =>
+				typeof page === 'string' ? page.toUpperCase() : page
+		  )
+		: [];
+
+const SOLAR_TEST_SUB_APP_PAGES = ['MACHINE_LIST', 'LOGS', 'ANALYTICS'];
+
+const normalizeApplication = (app) => {
+	const pages = normalizePages(app.pages);
+	const normalizedApp = {
+		...app,
+		pages,
+		sub_apps: Array.isArray(app.sub_apps)
+			? app.sub_apps.map((subApp) => ({
+					...subApp,
+					code: subApp.code?.toUpperCase(),
+					pages: normalizePages(subApp.pages),
+			  }))
+			: [],
+	};
+
+	// Temporary static navigation fixture for testing the three-level HVAC UI.
+	// Solar keeps its existing parent routes; AHU keeps its nested routes.
+	if (app.code?.toUpperCase() === 'SOLAR') {
+		return {
+			...normalizedApp,
+			name: 'HVAC',
+			sub_apps: [
+				{
+					code: 'SOLAR',
+					name: 'Solar',
+					pages,
+					default_landing_page: app.default_landing_page,
+					is_application_root: true,
+				},
+				{
+					code: 'AHU',
+					name: 'AHU',
+					pages: SOLAR_TEST_SUB_APP_PAGES,
+					default_landing_page: 'MACHINE_LIST',
+				},
+			],
+		};
+	}
+
+	return normalizedApp;
+};
+
 // A hard refresh re-derives `selectedApp` from scratch every time — without
 // this, it always fell back to the API's default landing app, silently
 // bouncing the user off whatever page (and app) they were actually on back
@@ -61,15 +111,9 @@ export const ApplicationProvider = ({ children }) => {
 				//   response.data?.applications || response.applications || [];
 				let appData = user?.applications || [];
 
-				// Ensure pages is always an array and normalize page codes
-				appData = appData.map((app) => ({
-					...app,
-					pages: Array.isArray(app.pages)
-						? app.pages.map((p) =>
-								typeof p === 'string' ? p.toUpperCase() : p
-						  )
-						: [],
-				}));
+				// Keep the Apps API response as the navigation source of truth while
+				// normalizing route codes once at the context boundary.
+				appData = appData.map(normalizeApplication);
 
 				if (Array.isArray(appData) && appData.length > 0) {
 					setApplications(appData);

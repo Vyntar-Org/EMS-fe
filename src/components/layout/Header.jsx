@@ -309,6 +309,11 @@ export const Header = ({
 									return (
 										<Tab
 											key={app.code}
+											onClick={
+												selectedApp === app.code
+													? (event) => handleAppChange(event, app.code)
+													: undefined
+											}
 											label={
 												<Box
 													sx={{

@@ -23,6 +23,7 @@ import { formatChartValue } from '../../helpers/chartConfig';
 import { getTemperatureScalePercent } from '../../helpers/temperatureStatus';
 
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
+import { MACHINE_CARD_DESIGN } from './machineCardDesign';
 
 export const APP_ICONS = {
 	ENERGY: BoltIcon,
@@ -193,7 +194,7 @@ export const MachineMetricPanel = ({ rows = [] }) => (
 				xs: 'repeat(2, minmax(0, 1fr))',
 				sm: `repeat(${Math.min(Math.max(rows.length, 1), 3)}, minmax(0, 1fr))`,
 			},
-			gap: 0.6,
+			gap: MACHINE_CARD_DESIGN.cardGap,
 			width: '100%',
 		}}
 	>
@@ -206,7 +207,7 @@ export const MachineMetricPanel = ({ rows = [] }) => (
 					p: 0.7,
 					border: '1px solid',
 					borderColor: 'divider',
-					borderRadius: '12px',
+					borderRadius: MACHINE_CARD_DESIGN.sectionRadius,
 					bgcolor: 'background.paper',
 					boxShadow: '0 5px 14px rgba(37,69,111,.06)',
 					display: 'flex',
@@ -232,7 +233,7 @@ export const MachineMetricPanel = ({ rows = [] }) => (
 			>
 				<ResponsiveTextWrapper
 					value={row.label}
-					fontSize="9.5px"
+					fontSize={MACHINE_CARD_DESIGN.metricLabelSize}
 					color="text.secondary"
 					fontWeight={500}
 					lineHeight={1.15}
@@ -244,7 +245,7 @@ export const MachineMetricPanel = ({ rows = [] }) => (
 				/>
 				<ResponsiveTextWrapper
 					value={row.value}
-					fontSize="12px"
+					fontSize={MACHINE_CARD_DESIGN.metricValueSize}
 					color={row.color || 'text.primary'}
 					fontWeight={800}
 					lineHeight={1.15}

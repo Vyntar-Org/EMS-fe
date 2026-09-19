@@ -7,6 +7,7 @@ export const ProtectedRoute = ({
 	children,
 	appCode,
 	pageCode,
+	subAppCode,
 	requiredPermission,
 }) => {
 	const { user } = useAuth();
@@ -28,8 +29,12 @@ export const ProtectedRoute = ({
 		return <Navigate to="/unauthorized" replace />;
 	}
 
-	// Check if the page is in the app's pages array
-	if (!app.pages || !app.pages.includes(pageCode)) {
+	const availablePages = subAppCode
+		? app.sub_apps?.find((subApp) => subApp.code === subAppCode)?.pages
+		: app.pages;
+
+	// Parent pages and sub-app pages are separate grants in the Apps API.
+	if (!availablePages?.includes(pageCode)) {
 		return <Navigate to="/unauthorized" replace />;
 	}
 

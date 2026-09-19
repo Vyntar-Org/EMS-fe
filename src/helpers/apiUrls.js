@@ -212,6 +212,18 @@ const SOLAR_ANALYTICS = {
 		`/applications/solar/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${from_datetime}&to_datetime=${to_datetime}`,
 };
 
+// AHU currently follows the Solar HVAC backend contract. These aliases live in
+// the established central URL registry so dedicated endpoints can replace them
+// later without coupling the independent AHU page implementations to Solar.
+const AHU = {
+	AHU_MACHINE_LIST_DATA: SOLAR_MACHINE_LIST.SOLAR_MACHINE_LIST_DATA,
+	AHU_MACHINE_LIST_TREND: (slaveId, parameter, hours = 6) =>
+		SOLAR_MACHINE_LIST.SOLAR_MACHINE_LIST_TREND(slaveId, parameter, hours),
+	AHU_LOGS_DATA: (...args) => SOLAR_LOGS.SOLAR_LOGS_DATA(...args),
+	AHU_ANALYTICS_DATA: (...args) =>
+		SOLAR_ANALYTICS.SOLAR_ANALYTICS_DATA(...args),
+};
+
 const WATER_DASHBOARD = {
 	WATER_DASHBOARD_OVERVIEW: '/applications/water/dashboard-overview/',
 	WATER_DASHBOARD_DAILY_CONSUMPTION: (slaveId) =>
@@ -380,6 +392,7 @@ export const API_URLS = {
 	...SOLAR_LOGS,
 	...SOLAR_ANALYTICS,
 	...SOLAR_MACHINE_LIST,
+	...AHU,
 	...FIRE_SAFETY_MACHINE_LIST,
 	...FIRE_SAFETY_ANALYTICS,
 	...FIRE_SAFETY_LOGS,

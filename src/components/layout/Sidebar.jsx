@@ -31,6 +31,10 @@ import {
 	pageDisplayInfo,
 	getPageCodeFromPath,
 } from '../../helpers/pageMapping.jsx';
+import {
+	getSubAppPagePath,
+	getSubAppRouteContext,
+} from '../../helpers/subApps.jsx';
 import ResponsiveTextWrapper from '../common/ResponsiveTextWrapper.jsx';
 
 const miniDrawerWidth = 70;
@@ -214,8 +218,15 @@ export const Sidebar = ({
 	const pages = currentApp?.pages || [];
 
 	const currentPageCode = getPageCodeFromPath(location.pathname);
+	const subAppRouteContext = getSubAppRouteContext(
+		location.pathname,
+		applications
+	);
+	const activeSubApp = subAppRouteContext?.subApp || null;
 
-	const visiblePages = pages;
+	// The sidebar owns page navigation only. Its page collection follows the
+	// route: application pages on parent routes, sub-app pages on sub-app routes.
+	const visiblePages = activeSubApp?.pages || pages;
 
 	const getPageDisplayName = (pageCode) => {
 		const info = pageDisplayInfo[pageCode];
@@ -234,7 +245,9 @@ export const Sidebar = ({
 	};
 
 	const handlePageClick = (pageCode) => {
-		const path = getPagePath(pageCode, selectedApp);
+		const path = activeSubApp
+			? getSubAppPagePath(selectedApp, activeSubApp.code, pageCode)
+			: getPagePath(pageCode, selectedApp);
 		navigate(path);
 		setIsMobileOpen(false);
 	};

@@ -5,6 +5,7 @@ import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { useApplications } from '../contexts/ApplicationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { pageComponentMap, getPagePath } from '../helpers/pageMapping.jsx';
+import { getSubApp, getSubAppPageComponent } from '../helpers/subApps.jsx';
 import { PrivateLayout } from '../layouts/PrivateLayout';
 import { PublicLayout } from '../layouts/PublicLayout';
 import Unauthorized from '../pages/Unauthorized.jsx';
@@ -52,6 +53,38 @@ const DynamicAppPage = () => {
 
 	return (
 		<ProtectedRoute appCode={normalizedAppCode} pageCode={normalizedPageCode}>
+			<Suspense fallback={<RouteLoadingBar />}>
+				<Component />
+			</Suspense>
+		</ProtectedRoute>
+	);
+};
+
+const DynamicSubAppPage = () => {
+	const { appCode, subAppCode, pageCode } = useParams();
+	const normalizedAppCode = appCode?.toUpperCase();
+	const normalizedSubAppCode = subAppCode?.toUpperCase();
+	const normalizedPageCode = pageCode?.toUpperCase();
+	const { applications } = useApplications();
+	const application = applications.find(
+		(app) => app.code === normalizedAppCode
+	);
+	const subApp = getSubApp(application, normalizedSubAppCode);
+	const Component = getSubAppPageComponent(
+		normalizedSubAppCode,
+		normalizedPageCode
+	);
+
+	if (!subApp?.pages.includes(normalizedPageCode) || !Component) {
+		return <Navigate to="/unauthorized" replace />;
+	}
+
+	return (
+		<ProtectedRoute
+			appCode={normalizedAppCode}
+			subAppCode={normalizedSubAppCode}
+			pageCode={normalizedPageCode}
+		>
 			<Suspense fallback={<RouteLoadingBar />}>
 				<Component />
 			</Suspense>
@@ -130,6 +163,10 @@ export const AppRoutes = () => {
 
 				{/* Every app/page URL — see DynamicAppPage above for why this is
 				    one static route instead of one per (app, page) pair. */}
+				<Route
+					path="/:appCode/:subAppCode/:pageCode"
+					element={<DynamicSubAppPage />}
+				/>
 				<Route path="/:appCode/:pageCode" element={<DynamicAppPage />} />
 
 				{/* Unauthorized page */}

@@ -474,7 +474,7 @@ const EnergyMachineList = () => {
 						{isLoading ? (
 							<EnergyMachineListSkeleton />
 						) : filteredMachines?.length ? (
-							<Grid container rowGap={0.5} columnSpacing={0.5}>
+							<Grid container spacing={1.5}>
 								{filteredMachines.map((mc) => {
 									return (
 										<Grid

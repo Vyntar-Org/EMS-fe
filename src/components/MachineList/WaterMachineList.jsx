@@ -266,7 +266,7 @@ const WaterMachineList = () => {
 						{isLoading ? (
 							<TemperatureMachineListSkeleton />
 						) : filteredMachines?.length ? (
-							<Grid container rowGap={0.5} columnSpacing={0.5}>
+							<Grid container spacing={1.5}>
 								{filteredMachines.map((mc, ind) => (
 									<Grid
 										item
