@@ -89,15 +89,24 @@ const DeviceRing = ({ percent }) => {
 	);
 };
 
-const CountChip = ({ label, value, percent, color, isOnline, showPercent }) => {
+const CountChip = ({
+	label,
+	value,
+	percent,
+	color,
+	isOnline,
+	showPercent,
+	statusVariant,
+}) => {
 	const TrendIcon = isOnline ? ShowChartRounded : TrendingDownRounded;
+	const isReference = statusVariant === 'reference';
 
 	return (
 		<Box
 			sx={{
 				display: 'flex',
 				alignItems: 'stretch',
-				height: 64,
+				height: isReference ? 74 : 64,
 				overflow: 'hidden',
 				borderRadius: '14px',
 				border: (theme) =>
@@ -114,35 +123,37 @@ const CountChip = ({ label, value, percent, color, isOnline, showPercent }) => {
 								0.9
 						  )}`,
 				'@container (max-width: 330px)': {
-					height: 60,
+					height: isReference ? 68 : 60,
 					borderRadius: '11px',
 				},
 			}}
 		>
 			<Box
 				sx={{
-					width: 42,
+					width: isReference ? 38 : 42,
 					flexShrink: 0,
 					display: 'grid',
 					placeItems: 'center',
 					background: `linear-gradient(145deg, ${alpha(
 						color,
-						0.06
-					)} 0%, ${alpha(color, 0.2)} 100%)`,
+						isReference ? 0.04 : 0.06
+					)} 0%, ${alpha(color, isReference ? 0.16 : 0.2)} 100%)`,
 					boxShadow: `inset -1px 0 0 ${alpha(color, 0.16)}`,
-					'@container (max-width: 330px)': { width: 30 },
+					'@container (max-width: 330px)': {
+						width: isReference ? 36 : 30,
+					},
 				}}
 			>
 				<Box
 					sx={{
-						width: 16,
-						height: 16,
+						width: isReference ? 20 : 16,
+						height: isReference ? 20 : 16,
 						borderRadius: '50%',
 						background: `linear-gradient(145deg, ${alpha(
 							'#FFFFFF',
 							0.45
 						)} 0%, ${color} 45%)`,
-						boxShadow: `0 2px 5px ${alpha(color, 0.4)}`,
+						boxShadow: `0 2px 7px ${alpha(color, isReference ? 0.5 : 0.4)}`,
 					}}
 				/>
 			</Box>
@@ -152,15 +163,18 @@ const CountChip = ({ label, value, percent, color, isOnline, showPercent }) => {
 				sx={{
 					flex: 1,
 					minWidth: 0,
-					px: 1.5,
+					px: isReference ? 1.25 : 1.5,
 					py: 1,
-					'@container (max-width: 330px)': { px: 0.75, py: 0.6 },
+					'@container (max-width: 330px)': {
+						px: isReference ? 1 : 0.75,
+						py: isReference ? 0.75 : 0.6,
+					},
 				}}
 			>
 				<Typography
 					sx={{
 						color,
-						fontSize: '0.78rem',
+						fontSize: isReference ? '0.8rem' : '0.78rem',
 						fontWeight: 800,
 						lineHeight: 1,
 						letterSpacing: '0.04em',
@@ -169,7 +183,12 @@ const CountChip = ({ label, value, percent, color, isOnline, showPercent }) => {
 					{label}
 				</Typography>
 				<Typography
-					sx={{ color, fontSize: '1.25rem', fontWeight: 800, lineHeight: 1.1 }}
+					sx={{
+						color,
+						fontSize: isReference ? '1.3rem' : '1.25rem',
+						fontWeight: 800,
+						lineHeight: 1.1,
+					}}
 				>
 					{value}
 				</Typography>
@@ -178,7 +197,7 @@ const CountChip = ({ label, value, percent, color, isOnline, showPercent }) => {
 						variant="caption"
 						sx={{
 							color: 'text.secondary',
-							fontSize: '0.72rem',
+							fontSize: isReference ? '0.75rem' : '0.72rem',
 							lineHeight: 1.1,
 						}}
 					>
@@ -187,23 +206,25 @@ const CountChip = ({ label, value, percent, color, isOnline, showPercent }) => {
 				)}
 			</Stack>
 
-			<Box
-				sx={{
-					alignSelf: 'center',
-					mr: 0.75,
-					width: 38,
-					height: 38,
-					flexShrink: 0,
-					display: 'grid',
-					placeItems: 'center',
-					borderRadius: '50%',
-					color,
-					backgroundColor: alpha(color, 0.1),
-					'@container (max-width: 360px)': { display: 'none' },
-				}}
-			>
-				<TrendIcon sx={{ fontSize: 22 }} />
-			</Box>
+			{!isReference && (
+				<Box
+					sx={{
+						alignSelf: 'center',
+						mr: 0.75,
+						width: 38,
+						height: 38,
+						flexShrink: 0,
+						display: 'grid',
+						placeItems: 'center',
+						borderRadius: '50%',
+						color,
+						backgroundColor: alpha(color, 0.1),
+						'@container (max-width: 360px)': { display: 'none' },
+					}}
+				>
+					<TrendIcon sx={{ fontSize: 22 }} />
+				</Box>
+			)}
 		</Box>
 	);
 };
@@ -215,6 +236,7 @@ export const OnlineOfflineSummaryCard = ({
 	accentColor = ACCENT,
 	showRing = false,
 	showPercent = true,
+	statusVariant,
 }) => {
 	const online = Number(data?.online) || 0;
 	const offline = Number(data?.offline) || 0;
@@ -270,6 +292,7 @@ export const OnlineOfflineSummaryCard = ({
 							color={ONLINE_COLOR}
 							isOnline
 							showPercent={showPercent}
+							statusVariant={statusVariant}
 						/>
 						<CountChip
 							label="OFFLINE"
@@ -277,6 +300,7 @@ export const OnlineOfflineSummaryCard = ({
 							percent={percentage(offline)}
 							color={OFFLINE_COLOR}
 							showPercent={showPercent}
+							statusVariant={statusVariant}
 						/>
 					</Stack>
 				</Stack>

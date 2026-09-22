@@ -41,12 +41,12 @@ const normalizeApplication = (app) => {
 					default_landing_page: app.default_landing_page,
 					is_application_root: true,
 				},
-				{
-					code: 'AHU',
-					name: 'AHU',
-					pages: SOLAR_TEST_SUB_APP_PAGES,
-					default_landing_page: 'MACHINE_LIST',
-				},
+				// {
+				// 	code: 'AHU',
+				// 	name: 'AHU',
+				// 	pages: SOLAR_TEST_SUB_APP_PAGES,
+				// 	default_landing_page: 'MACHINE_LIST',
+				// },
 			],
 		};
 	}
