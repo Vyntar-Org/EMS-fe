@@ -19,6 +19,14 @@ import PremiumModal from '../common/PremiumModal';
 import TemperatureMachineListSkeleton from '../skeletonLoaders/TemperatureMachineListSkeleton';
 
 import PremiumFlowCardMachineCard from './cards/PremiumFlowCardMachineCard';
+import PremiumWaterQualityMonitorCard from './cards/PremiumWaterQualityMonitorCard';
+
+const isWaterQualityMetric = (metric) => {
+	const key = `${metric?.metric_key || ''} ${metric?.label || ''}`
+		.trim()
+		.toLowerCase();
+	return key === 'tds' || key === 'ph' || /(^|\s)(tds|ph)(\s|$)/.test(key);
+};
 
 const MachineListHeader = ({
 	slaveOptions,
@@ -329,7 +337,7 @@ const STPMachineList = () => {
 							<TemperatureMachineListSkeleton />
 						) : filteredMachines?.length ? (
 							<Grid container spacing={1.5}>
-								{filteredMachines.map((mc, ind) => {
+								{filteredMachines.flatMap((mc, ind) => {
 									const filterParamsAlone = mc?.metrics?.filter(
 										(f) =>
 											!['today_consumption', 'mtd_consumption'].includes(
@@ -346,7 +354,43 @@ const STPMachineList = () => {
 													label: i.label,
 											  }));
 
-									return (
+									const qualityMetrics = filterParamsAlone?.filter(isWaterQualityMetric) || [];
+
+									if (qualityMetrics.length) {
+										return qualityMetrics.map((metric) => (
+											<Grid
+												item
+												xs={12}
+												sm={6}
+												md={4}
+												lg={3}
+												sx={{ display: 'flex', minWidth: 0 }}
+												key={`stp-quality-${mc?.slave_id}-${metric?.metric_key || metric?.label}`}
+											>
+												<PremiumWaterQualityMonitorCard
+													title={mc?.card_name || ''}
+													status={mc?.status}
+													lastUpdated={mc?.last_updated}
+													metric={metric}
+													trendUrl={API_URLS.STP_MACHINE_LIST_TREND(
+														mc?.slave_id,
+														metric?.metric_key
+													)}
+													onOpenTrend={() =>
+														handleOpenModal(mc, [
+															{
+																value: metric?.metric_key,
+																desc: mc?.card_name,
+																label: metric?.label,
+															},
+														])
+													}
+												/>
+											</Grid>
+										));
+									}
+
+									return [(
 										<Grid
 											item
 											xs={12}
@@ -396,7 +440,7 @@ const STPMachineList = () => {
 												)}
 											/>
 										</Grid>
-									);
+									)];
 								})}
 							</Grid>
 						) : (

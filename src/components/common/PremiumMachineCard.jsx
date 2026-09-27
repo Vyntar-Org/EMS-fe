@@ -7,9 +7,10 @@ import { Box, Button, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 import { formatTimestamp } from '../../helpers/common';
+
 import { AnimatedMachineAvatar, APP_ACCENT_COLOR } from './MachineCardBits';
-import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 import { MACHINE_CARD_DESIGN } from './machineCardDesign';
+import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 
 /** Shared shell matching the Compressor / Spinning machine-list card. */
 const PremiumMachineCard = ({
@@ -21,6 +22,8 @@ const PremiumMachineCard = ({
 	onOpenTrend,
 	footer,
 	accentColor,
+	headerCaption,
+	headerTagline,
 	children,
 }) => {
 	const isOnline = status?.toLowerCase() === 'online';
@@ -144,8 +147,38 @@ const PremiumMachineCard = ({
 								sx={{ whiteSpace: 'normal', lineHeight: 1.15 }}
 							/>
 						</Stack>
+						{headerCaption && (
+							<Typography
+								noWrap
+								sx={{
+									mt: 0.25,
+									fontSize: '0.48rem',
+									fontWeight: 800,
+									letterSpacing: '0.18em',
+									color: 'text.secondary',
+								}}
+							>
+								{headerCaption}
+							</Typography>
+						)}
 					</Box>
 				</Stack>
+				{headerTagline && (
+					<Typography
+						noWrap
+						sx={{
+							position: 'absolute',
+							right: 10,
+							bottom: 6,
+							fontSize: '0.43rem',
+							fontWeight: 800,
+							letterSpacing: '0.16em',
+							color: 'text.secondary',
+						}}
+					>
+						{headerTagline}
+					</Typography>
+				)}
 				<Stack
 					direction="row"
 					alignItems="center"

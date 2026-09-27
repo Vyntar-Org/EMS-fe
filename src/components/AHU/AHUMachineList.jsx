@@ -26,7 +26,6 @@ import { alpha } from '@mui/material/styles';
 import Papa from 'papaparse';
 import { useEffect, useMemo, useState } from 'react';
 
-import { SOLAR_TREND_TAB_OPTIONS } from '../../constants/solarMachineList';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
@@ -43,7 +42,10 @@ import PremiumModal from '../common/PremiumModal';
 const AHU_IMAGE = '/assets/ahu/ahu-unit.png';
 const getMachineId = (machine) => machine?.slave_id ?? machine?.id;
 
-const AHUMetric = ({ icon, label, value, color, change }) => (
+const AHUMetric = ({ icon, label, value, color, change }) => {
+	const numericChange = Number(change) || 0;
+	const changeColor = numericChange < 0 ? '#EF1745' : '#16A34A';
+	return (
 	<Box
 		sx={{
 			position: 'relative',
@@ -108,13 +110,13 @@ const AHUMetric = ({ icon, label, value, color, change }) => (
 					px: 0.6,
 					py: 0.2,
 					borderRadius: 1,
-					bgcolor: alpha(color, 0.09),
+					bgcolor: alpha(changeColor, 0.09),
 				}}
 			>
-				<TrendingUpRounded sx={{ color, fontSize: 13 }} />
+				<TrendingUpRounded sx={{ color: changeColor, fontSize: 13, transform: numericChange < 0 ? 'rotate(180deg)' : 'none' }} />
 				<Typography
 					sx={{
-						color,
+						color: changeColor,
 						fontSize: MACHINE_CARD_DESIGN.helperSize,
 						fontWeight: 800,
 					}}
@@ -133,7 +135,8 @@ const AHUMetric = ({ icon, label, value, color, change }) => (
 			</Box>
 		</Box>
 	</Box>
-);
+	);
+};
 
 const AHUTemperatureRange = ({ machine, value }) => {
 	const minimum = Number(
@@ -269,7 +272,8 @@ const AHUInlineTrend = ({ machine, currentValue }) => {
 			.get(
 				API_URLS.AHU_MACHINE_LIST_TREND(
 					getMachineId(machine),
-					SOLAR_TREND_TAB_OPTIONS[0].tab
+					'inlet_temperature',
+					24
 				)
 			)
 			.then((response) => {
@@ -288,8 +292,8 @@ const AHUInlineTrend = ({ machine, currentValue }) => {
 		};
 	}, [machine]);
 
-	const min = Math.min(...points, 0);
-	const max = Math.max(...points, 1);
+	const min = points.length ? Math.min(...points) : 0;
+	const max = points.length ? Math.max(...points) : 1;
 	const polyline = points
 		.map((point, index) => {
 			const x = points.length > 1 ? (index / (points.length - 1)) * 300 : 150;
@@ -663,20 +667,22 @@ const AHUCard = ({ machine, onOpenTrend }) => {
 						{machine?.device_uid || getMachineId(machine) || '-'}
 					</Typography>
 				</Box>
-				<Chip
-					label={isOnline ? 'ONLINE' : 'OFFLINE'}
-					icon={<AdjustRounded />}
-					size="small"
+				<Stack
+					direction="row"
+					alignItems="center"
+					spacing={0.55}
 					sx={{
-						height: 24,
+						px: 0.8,
+						py: 0.4,
+						borderRadius: 99,
 						color: statusColor,
 						bgcolor: alpha(statusColor, 0.08),
 						border: `1px solid ${alpha(statusColor, 0.35)}`,
-						fontSize: MACHINE_CARD_DESIGN.statusSize,
-						fontWeight: 800,
-						'& .MuiChip-icon': { color: statusColor, fontSize: 13 },
 					}}
-				/>
+				>
+					<Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: statusColor }} />
+					<Typography sx={{ fontSize: MACHINE_CARD_DESIGN.statusSize, fontWeight: 900 }}>{isOnline ? 'ONLINE' : 'OFFLINE'}</Typography>
+				</Stack>
 				<Typography
 					sx={{
 						position: 'absolute',
@@ -758,6 +764,9 @@ const AHUCard = ({ machine, onOpenTrend }) => {
 					borderRadius: 1.5,
 					fontSize: MACHINE_CARD_DESIGN.actionSize,
 					fontWeight: 800,
+					background: isOnline
+						? 'linear-gradient(105deg,#0AA653 0%,#16C568 100%)'
+						: 'linear-gradient(105deg,#F2184B 0%,#FF5A24 100%)',
 					'& .MuiButton-endIcon': { position: 'absolute', right: 12 },
 				}}
 			>
@@ -779,7 +788,8 @@ const AHUTrend = ({ machine }) => {
 				const response = await api.get(
 					API_URLS.AHU_MACHINE_LIST_TREND(
 						getMachineId(machine),
-						SOLAR_TREND_TAB_OPTIONS[0].tab
+						'inlet_temperature',
+						24
 					)
 				);
 				if (active) {
