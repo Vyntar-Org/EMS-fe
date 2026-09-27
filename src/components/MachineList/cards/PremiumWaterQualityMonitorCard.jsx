@@ -83,7 +83,10 @@ const MiniTrend = ({ values }) => {
 						<stop offset="100%" stopColor={GREEN} stopOpacity="0" />
 					</linearGradient>
 				</defs>
-				<polygon points={`0,62 ${line} 600,62`} fill="url(#quality-trend-fill)" />
+				<polygon
+					points={`0,62 ${line} 600,62`}
+					fill="url(#quality-trend-fill)"
+				/>
 				<polyline
 					points={line}
 					fill="none"
@@ -92,21 +95,43 @@ const MiniTrend = ({ values }) => {
 					strokeLinejoin="round"
 					strokeLinecap="round"
 				/>
-				<circle cx="600" cy={line.split(' ').at(-1)?.split(',')[1]} r="7" fill={GREEN} />
+				<circle
+					cx="600"
+					cy={line.split(' ').at(-1)?.split(',')[1]}
+					r="7"
+					fill={GREEN}
+				/>
 			</Box>
 		</Box>
 	);
 };
 
 const Summary = ({ label, value, unit }) => (
-	<Stack direction="row" alignItems="center" justifyContent="center" spacing={0.45} minWidth={0}>
+	<Stack
+		direction="row"
+		alignItems="center"
+		justifyContent="center"
+		spacing={0.45}
+		minWidth={0}
+	>
 		<SignalCellularAltRounded sx={{ color: 'text.secondary', fontSize: 17 }} />
 		<Box minWidth={0}>
-			<Typography sx={{ color: 'text.secondary', fontSize: '0.62rem', lineHeight: 1.1 }}>
+			<Typography
+				sx={{ color: 'text.secondary', fontSize: '0.62rem', lineHeight: 1.1 }}
+			>
 				{label}
 			</Typography>
-			<Typography noWrap sx={{ color: 'text.primary', fontWeight: 800, fontSize: '0.72rem', lineHeight: 1.2 }}>
-				{formatNumber(value, 2, { fallback: '-' })}{unit ? ` ${unit}` : ''}
+			<Typography
+				noWrap
+				sx={{
+					color: 'text.primary',
+					fontWeight: 800,
+					fontSize: '0.72rem',
+					lineHeight: 1.2,
+				}}
+			>
+				{formatNumber(value, 2, { fallback: '-' })}
+				{unit ? ` ${unit}` : ''}
 			</Typography>
 		</Box>
 	</Stack>
@@ -133,7 +158,8 @@ const PremiumWaterQualityMonitorCard = ({
 			};
 		}
 
-		api.get(trendUrl)
+		api
+			.get(trendUrl)
 			.then((response) => {
 				if (!active) {
 					return;
@@ -164,9 +190,10 @@ const PremiumWaterQualityMonitorCard = ({
 		? values.reduce((sum, value) => sum + value, 0) / values.length
 		: Number.NaN;
 	const previous = values.length > 1 ? values[values.length - 2] : currentValue;
-	const change = Number.isFinite(currentValue) && Number.isFinite(previous) && previous !== 0
-		? ((currentValue - previous) / Math.abs(previous)) * 100
-		: 0;
+	const change =
+		Number.isFinite(currentValue) && Number.isFinite(previous) && previous !== 0
+			? ((currentValue - previous) / Math.abs(previous)) * 100
+			: 0;
 	const ChangeIcon = change < 0 ? TrendingDownRounded : TrendingUpRounded;
 	const displayTitle = /monitor/i.test(title || '')
 		? title
@@ -197,58 +224,197 @@ const PremiumWaterQualityMonitorCard = ({
 					minHeight: MACHINE_CARD_DESIGN.headerMinHeight,
 					borderRadius: 2.25,
 					border: `1px solid ${alpha(statusColor, 0.18)}`,
-					background: (theme) => `linear-gradient(110deg, ${alpha(statusColor, theme.palette.mode === 'dark' ? 0.18 : 0.08)}, ${alpha(statusColor, 0.025)})`,
+					background: (theme) =>
+						`linear-gradient(110deg, ${alpha(
+							statusColor,
+							theme.palette.mode === 'dark' ? 0.18 : 0.08
+						)}, ${alpha(statusColor, 0.025)})`,
 					overflow: 'hidden',
 				}}
 			>
-				<Stack direction="row" alignItems="center" spacing={1} height="100%" p={1.05}>
-					<Box sx={{ width: 56, height: 56, display: 'grid', placeItems: 'center', borderRadius: '50%', color: '#0891B2', bgcolor: 'background.paper', boxShadow: '0 7px 16px rgba(37,69,111,.12)', flexShrink: 0 }}>
+				<Stack
+					direction="row"
+					alignItems="center"
+					spacing={1}
+					height="100%"
+					p={1.05}
+				>
+					<Box
+						sx={{
+							width: 56,
+							height: 56,
+							display: 'grid',
+							placeItems: 'center',
+							borderRadius: '50%',
+							color: '#0891B2',
+							bgcolor: 'background.paper',
+							boxShadow: '0 7px 16px rgba(37,69,111,.12)',
+							flexShrink: 0,
+						}}
+					>
 						<ScienceRounded sx={{ fontSize: 32 }} />
 					</Box>
 					<Box minWidth={0} flex={1} pt={2}>
-						<Typography noWrap sx={{ fontSize: MACHINE_CARD_DESIGN.titleSize, fontWeight: 900, color: 'text.primary' }}>
+						<Typography
+							noWrap
+							sx={{
+								fontSize: MACHINE_CARD_DESIGN.titleSize,
+								fontWeight: 900,
+								color: 'text.primary',
+							}}
+						>
 							{displayTitle}
 						</Typography>
-						<Stack direction="row" alignItems="center" spacing={0.6} mt={0.35} color="text.secondary">
+						<Stack
+							direction="row"
+							alignItems="center"
+							spacing={0.6}
+							mt={0.35}
+							color="text.secondary"
+						>
 							<CalendarMonthRounded sx={{ fontSize: 17 }} />
-							<Typography noWrap sx={{ fontSize: MACHINE_CARD_DESIGN.helperSize }}>
+							<Typography
+								noWrap
+								sx={{ fontSize: MACHINE_CARD_DESIGN.helperSize }}
+							>
 								{formatTimestamp(lastUpdated) || '-'}
 							</Typography>
 						</Stack>
 					</Box>
 				</Stack>
-				<Stack direction="row" alignItems="center" spacing={0.55} sx={{ position: 'absolute', top: 9, right: 9, width: 'fit-content', px: 0.8, py: 0.35, borderRadius: 99, color: statusColor, bgcolor: alpha(statusColor, 0.07), border: `1px solid ${alpha(statusColor, 0.18)}` }}>
-					<Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: statusColor }} />
-					<Typography sx={{ fontSize: MACHINE_CARD_DESIGN.statusSize, fontWeight: 900 }}>{isOnline ? 'ONLINE' : 'OFFLINE'}</Typography>
+				<Stack
+					direction="row"
+					alignItems="center"
+					spacing={0.55}
+					sx={{
+						position: 'absolute',
+						top: 9,
+						right: 9,
+						width: 'fit-content',
+						px: 0.8,
+						py: 0.35,
+						borderRadius: 99,
+						color: statusColor,
+						bgcolor: alpha(statusColor, 0.07),
+						border: `1px solid ${alpha(statusColor, 0.18)}`,
+					}}
+				>
+					<Box
+						sx={{
+							width: 9,
+							height: 9,
+							borderRadius: '50%',
+							bgcolor: statusColor,
+						}}
+					/>
+					<Typography
+						sx={{ fontSize: MACHINE_CARD_DESIGN.statusSize, fontWeight: 900 }}
+					>
+						{isOnline ? 'ONLINE' : 'OFFLINE'}
+					</Typography>
 				</Stack>
 			</Box>
 
-			<Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={0.75} px={0.25}>
+			<Stack
+				direction="row"
+				alignItems="flex-start"
+				justifyContent="space-between"
+				spacing={0.75}
+				px={0.25}
+			>
 				<Box>
-					<Typography sx={{ color: 'text.secondary', fontSize: '0.68rem', fontWeight: 600 }}>{metric?.label || title}</Typography>
-					<Typography sx={{ color: 'text.primary', fontSize: '1.5rem', lineHeight: 1.05, fontWeight: 900 }}>
+					<Typography
+						sx={{
+							color: 'text.secondary',
+							fontSize: '0.68rem',
+							fontWeight: 600,
+						}}
+					>
+						{metric?.label || title}
+					</Typography>
+					<Typography
+						sx={{
+							color: 'text.primary',
+							fontSize: '1.5rem',
+							lineHeight: 1.05,
+							fontWeight: 900,
+						}}
+					>
 						{formatNumber(metric?.value, 2, { fallback: '-' })}{' '}
-						<Typography component="span" sx={{ color: 'text.secondary', fontSize: '0.72rem', fontWeight: 700 }}>{metric?.unit || ''}</Typography>
+						<Typography
+							component="span"
+							sx={{
+								color: 'text.secondary',
+								fontSize: '0.72rem',
+								fontWeight: 700,
+							}}
+						>
+							{metric?.unit || ''}
+						</Typography>
 					</Typography>
 				</Box>
-				<Box sx={{ px: 0.7, py: 0.4, borderRadius: 1.5, bgcolor: alpha(GREEN, 0.07), textAlign: 'center' }}>
-					<Stack direction="row" alignItems="center" justifyContent="center" spacing={0.35}>
+				<Box
+					sx={{
+						px: 0.7,
+						py: 0.4,
+						borderRadius: 1.5,
+						bgcolor: alpha(GREEN, 0.07),
+						textAlign: 'center',
+					}}
+				>
+					<Stack
+						direction="row"
+						alignItems="center"
+						justifyContent="center"
+						spacing={0.35}
+					>
 						<ChangeIcon sx={{ color: GREEN, fontSize: 16 }} />
-						<Typography sx={{ color: GREEN, fontWeight: 900, fontSize: '0.72rem' }}>{change >= 0 ? '+' : ''}{formatNumber(change, 1, { fallback: '0' })}%</Typography>
+						<Typography
+							sx={{ color: GREEN, fontWeight: 900, fontSize: '0.72rem' }}
+						>
+							{change >= 0 ? '+' : ''}
+							{formatNumber(change, 1, { fallback: '0' })}%
+						</Typography>
 					</Stack>
-					<Typography sx={{ color: 'text.secondary', fontSize: '0.56rem' }}>vs. last hour</Typography>
+					<Typography sx={{ color: 'text.secondary', fontSize: '0.56rem' }}>
+						vs. last hour
+					</Typography>
 				</Box>
 			</Stack>
 
 			<MiniTrend values={values} />
 
-			<Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', '& > * + *': { borderLeft: '1px solid', borderColor: 'divider' } }}>
+			<Box
+				sx={{
+					display: 'grid',
+					gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+					'& > * + *': { borderLeft: '1px solid', borderColor: 'divider' },
+				}}
+			>
 				<Summary label="Min" value={min} unit={metric?.unit} />
 				<Summary label="Avg" value={average} unit={metric?.unit} />
 				<Summary label="Max" value={max} unit={metric?.unit} />
 			</Box>
 
-			<Button onClick={onOpenTrend} fullWidth variant="contained" startIcon={<InsightsRounded />} endIcon={<ChevronRightRounded />} sx={{ mt: 'auto', minHeight: 34, borderRadius: '10px', fontSize: MACHINE_CARD_DESIGN.actionSize, fontWeight: 900, background: isOnline ? 'linear-gradient(105deg,#16A34A 0%,#22C55E 100%)' : 'linear-gradient(105deg,#F23857 0%,#FF5A24 100%)', boxShadow: `0 6px 14px ${alpha(statusColor, 0.22)}`, '& .MuiButton-endIcon': { position: 'absolute', right: 14 } }}>
+			<Button
+				onClick={onOpenTrend}
+				fullWidth
+				variant="contained"
+				startIcon={<InsightsRounded />}
+				endIcon={<ChevronRightRounded />}
+				sx={{
+					mt: 'auto',
+					minHeight: 34,
+					borderRadius: '10px',
+					fontSize: MACHINE_CARD_DESIGN.actionSize,
+					fontWeight: 900,
+					background: isOnline
+						? 'linear-gradient(105deg,#16A34A 0%,#22C55E 100%)'
+						: 'linear-gradient(105deg,#F23857 0%,#FF5A24 100%)',
+					boxShadow: `0 6px 14px ${alpha(statusColor, 0.22)}`,
+					'& .MuiButton-endIcon': { position: 'absolute', right: 14 },
+				}}
+			>
 				VIEW TREND
 			</Button>
 		</Box>

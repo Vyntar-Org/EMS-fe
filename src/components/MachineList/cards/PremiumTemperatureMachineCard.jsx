@@ -36,7 +36,11 @@ const Metric = ({ metric, temperatureColor }) => {
 	const temperatureNormal = numericValue >= 23 && numericValue <= 25;
 	const humidityNormal = numericValue >= 30 && numericValue <= 70;
 	const batteryPercent = Math.max(0, Math.min(100, (numericValue / 4) * 100));
-	const healthy = isBattery ? numericValue >= 2.8 : isHumidity ? humidityNormal : temperatureNormal;
+	const healthy = isBattery
+		? numericValue >= 2.8
+		: isHumidity
+		  ? humidityNormal
+		  : temperatureNormal;
 	return (
 		<Box
 			sx={{
@@ -47,7 +51,10 @@ const Metric = ({ metric, temperatureColor }) => {
 				borderColor: alpha(color, 0.2),
 				borderRadius: MACHINE_CARD_DESIGN.sectionRadius,
 				boxShadow: '0 4px 12px rgba(37,69,111,.06)',
-				background: (theme) => `linear-gradient(145deg, ${alpha(color, 0.06)}, ${theme.palette.background.paper} 70%)`,
+				background: (theme) =>
+					`linear-gradient(145deg, ${alpha(color, 0.06)}, ${
+						theme.palette.background.paper
+					} 70%)`,
 				borderLeft: `3px solid ${color}`,
 			}}
 		>
@@ -91,15 +98,85 @@ const Metric = ({ metric, temperatureColor }) => {
 			</Stack>
 			{isBattery ? (
 				<>
-					<Stack direction="row" alignItems="center" spacing={0.3} sx={{ mt: 0.35, color: GREEN, width: 'fit-content', px: 0.45, py: 0.1, borderRadius: 99, bgcolor: alpha(GREEN, 0.09) }}>
-						<CheckCircleRounded sx={{ fontSize: 11 }} /><Typography sx={{ fontSize: '0.5rem', fontWeight: 900 }}>{healthy ? 'Good' : 'Low'}</Typography>
+					<Stack
+						direction="row"
+						alignItems="center"
+						spacing={0.3}
+						sx={{
+							mt: 0.35,
+							color: GREEN,
+							width: 'fit-content',
+							px: 0.45,
+							py: 0.1,
+							borderRadius: 99,
+							bgcolor: alpha(GREEN, 0.09),
+						}}
+					>
+						<CheckCircleRounded sx={{ fontSize: 11 }} />
+						<Typography sx={{ fontSize: '0.5rem', fontWeight: 900 }}>
+							{healthy ? 'Good' : 'Low'}
+						</Typography>
 					</Stack>
-					<Stack direction="row" alignItems="center" spacing={0.35} mt={0.4}><Box sx={{ flex: 1, height: 5, borderRadius: 99, bgcolor: alpha(GREEN, 0.12), overflow: 'hidden' }}><Box sx={{ width: `${batteryPercent}%`, height: '100%', borderRadius: 99, bgcolor: GREEN }} /></Box><Typography sx={{ fontSize: '0.48rem', fontWeight: 900 }}>{formatNumber(batteryPercent, 0)}%</Typography></Stack>
+					<Stack direction="row" alignItems="center" spacing={0.35} mt={0.4}>
+						<Box
+							sx={{
+								flex: 1,
+								height: 5,
+								borderRadius: 99,
+								bgcolor: alpha(GREEN, 0.12),
+								overflow: 'hidden',
+							}}
+						>
+							<Box
+								sx={{
+									width: `${batteryPercent}%`,
+									height: '100%',
+									borderRadius: 99,
+									bgcolor: GREEN,
+								}}
+							/>
+						</Box>
+						<Typography sx={{ fontSize: '0.48rem', fontWeight: 900 }}>
+							{formatNumber(batteryPercent, 0)}%
+						</Typography>
+					</Stack>
 				</>
 			) : (
-				<Stack direction="row" alignItems="center" spacing={0.35} sx={{ mt: 0.45, px: 0.45, py: 0.25, borderRadius: 1, color: healthy ? GREEN : color, bgcolor: alpha(healthy ? GREEN : color, 0.08) }}>
-					{healthy ? <CheckCircleRounded sx={{ fontSize: 13 }} /> : <WarningAmberRounded sx={{ fontSize: 13 }} />}
-					<Box minWidth={0}><Typography noWrap sx={{ fontSize: '0.5rem', fontWeight: 900 }}>{healthy ? 'Normal' : 'ALERT'}</Typography><Typography noWrap sx={{ color: 'text.secondary', fontSize: '0.42rem' }}>{isHumidity ? '(30 - 70 RH)' : healthy ? 'Normal range' : numericValue < 23 ? 'Below normal range' : 'Above normal range'}</Typography></Box>
+				<Stack
+					direction="row"
+					alignItems="center"
+					spacing={0.35}
+					sx={{
+						mt: 0.45,
+						px: 0.45,
+						py: 0.25,
+						borderRadius: 1,
+						color: healthy ? GREEN : color,
+						bgcolor: alpha(healthy ? GREEN : color, 0.08),
+					}}
+				>
+					{healthy ? (
+						<CheckCircleRounded sx={{ fontSize: 13 }} />
+					) : (
+						<WarningAmberRounded sx={{ fontSize: 13 }} />
+					)}
+					<Box minWidth={0}>
+						<Typography noWrap sx={{ fontSize: '0.5rem', fontWeight: 900 }}>
+							{healthy ? 'Normal' : 'ALERT'}
+						</Typography>
+						<Typography
+							noWrap
+							sx={{ color: 'text.secondary', fontSize: '0.42rem' }}
+						>
+							{isHumidity
+								? '(30 - 70 RH)'
+								: healthy
+								  ? 'Normal range'
+								  : numericValue < 23
+								    ? 'Below normal range'
+								    : 'Above normal range'}
+						</Typography>
+					</Box>
 				</Stack>
 			)}
 		</Box>
@@ -118,7 +195,10 @@ const PremiumTemperatureMachineCard = ({
 }) => {
 	const tempStatus = getTemperatureAppStatus(temperature);
 	const shownMetrics = metrics.slice(0, 3);
-	const temperaturePercent = Math.max(0, Math.min(100, ((Number(temperature) - 20) / 10) * 100));
+	const temperaturePercent = Math.max(
+		0,
+		Math.min(100, ((Number(temperature) - 20) / 10) * 100)
+	);
 	return (
 		<PremiumMachineCard
 			app="TEMPERATURE"
@@ -172,8 +252,30 @@ const PremiumTemperatureMachineCard = ({
 						Current: {formatNumber(temperature, 1, { fallback: '0' })} °C
 					</Typography>
 				</Stack>
-				<Box sx={{ position: 'relative', height: 7, borderRadius: 99, background: 'linear-gradient(90deg,#F5A524 0%,#F5A524 30%,#16A34A 30%,#16A34A 50%,#EF1745 50%,#EF1745 100%)' }}>
-					<Box sx={{ position: 'absolute', left: `${temperaturePercent}%`, top: '50%', width: 15, height: 15, borderRadius: '50%', bgcolor: 'background.paper', border: '3px solid', borderColor: tempStatus?.color || '#F97316', boxShadow: '0 2px 5px rgba(0,0,0,.25)', transform: 'translate(-50%,-50%)' }} />
+				<Box
+					sx={{
+						position: 'relative',
+						height: 7,
+						borderRadius: 99,
+						background:
+							'linear-gradient(90deg,#F5A524 0%,#F5A524 30%,#16A34A 30%,#16A34A 50%,#EF1745 50%,#EF1745 100%)',
+					}}
+				>
+					<Box
+						sx={{
+							position: 'absolute',
+							left: `${temperaturePercent}%`,
+							top: '50%',
+							width: 15,
+							height: 15,
+							borderRadius: '50%',
+							bgcolor: 'background.paper',
+							border: '3px solid',
+							borderColor: tempStatus?.color || '#F97316',
+							boxShadow: '0 2px 5px rgba(0,0,0,.25)',
+							transform: 'translate(-50%,-50%)',
+						}}
+					/>
 				</Box>
 				<Stack
 					direction="row"
@@ -221,37 +323,48 @@ const PremiumTemperatureMachineCard = ({
 						caption: 'Temperature too high',
 						color: '#EF3340',
 					},
-				].map(
-					({ title: zoneTitle, state, caption, color }, index) => (
+				].map(({ title: zoneTitle, state, caption, color }, index) => (
+					<Box
+						key={zoneTitle}
+						sx={{
+							p: 0.5,
+							textAlign: 'center',
+							borderLeft: index ? '1px solid' : 0,
+							borderColor: 'divider',
+							bgcolor: alpha(color, 0.045),
+						}}
+					>
 						<Box
-							key={zoneTitle}
 							sx={{
-								p: 0.5,
-								textAlign: 'center',
-								borderLeft: index ? '1px solid' : 0,
-								borderColor: 'divider',
-								bgcolor: alpha(color, 0.045),
+								width: 24,
+								height: 24,
+								mx: 'auto',
+								display: 'grid',
+								placeItems: 'center',
+								borderRadius: 1,
+								color,
+								bgcolor: alpha(color, 0.09),
 							}}
 						>
-							<Box sx={{ width: 24, height: 24, mx: 'auto', display: 'grid', placeItems: 'center', borderRadius: 1, color, bgcolor: alpha(color, 0.09) }}><DeviceThermostatRounded sx={{ fontSize: 15 }} /></Box>
-							<Typography
-								noWrap
-								sx={{ fontSize: '0.55rem', fontWeight: 800, color }}
-							>
-								{zoneTitle}
-							</Typography>
-							<Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color }}>
-								{state}
-							</Typography>
-							<Typography
-								noWrap
-								sx={{ fontSize: '0.46rem', color: 'text.secondary' }}
-							>
-								{caption}
-							</Typography>
+							<DeviceThermostatRounded sx={{ fontSize: 15 }} />
 						</Box>
-					)
-				)}
+						<Typography
+							noWrap
+							sx={{ fontSize: '0.55rem', fontWeight: 800, color }}
+						>
+							{zoneTitle}
+						</Typography>
+						<Typography sx={{ fontSize: '0.5rem', fontWeight: 900, color }}>
+							{state}
+						</Typography>
+						<Typography
+							noWrap
+							sx={{ fontSize: '0.46rem', color: 'text.secondary' }}
+						>
+							{caption}
+						</Typography>
+					</Box>
+				))}
 			</Box>
 		</PremiumMachineCard>
 	);

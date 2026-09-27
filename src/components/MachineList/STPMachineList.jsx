@@ -354,7 +354,8 @@ const STPMachineList = () => {
 													label: i.label,
 											  }));
 
-									const qualityMetrics = filterParamsAlone?.filter(isWaterQualityMetric) || [];
+									const qualityMetrics =
+										filterParamsAlone?.filter(isWaterQualityMetric) || [];
 
 									if (qualityMetrics.length) {
 										return qualityMetrics.map((metric) => (
@@ -365,7 +366,9 @@ const STPMachineList = () => {
 												md={4}
 												lg={3}
 												sx={{ display: 'flex', minWidth: 0 }}
-												key={`stp-quality-${mc?.slave_id}-${metric?.metric_key || metric?.label}`}
+												key={`stp-quality-${mc?.slave_id}-${
+													metric?.metric_key || metric?.label
+												}`}
 											>
 												<PremiumWaterQualityMonitorCard
 													title={mc?.card_name || ''}
@@ -390,7 +393,7 @@ const STPMachineList = () => {
 										));
 									}
 
-									return [(
+									return [
 										<Grid
 											item
 											xs={12}
@@ -439,8 +442,8 @@ const STPMachineList = () => {
 														)
 												)}
 											/>
-										</Grid>
-									)];
+										</Grid>,
+									];
 								})}
 							</Grid>
 						) : (

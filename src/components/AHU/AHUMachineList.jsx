@@ -46,95 +46,101 @@ const AHUMetric = ({ icon, label, value, color, change }) => {
 	const numericChange = Number(change) || 0;
 	const changeColor = numericChange < 0 ? '#EF1745' : '#16A34A';
 	return (
-	<Box
-		sx={{
-			position: 'relative',
-			display: 'flex',
-			alignItems: 'center',
-			gap: 1,
-			minWidth: 0,
-			p: 1,
-			border: '1px solid',
-			borderColor: 'divider',
-			borderRadius: MACHINE_CARD_DESIGN.sectionRadius,
-			'&::before': {
-				content: '""',
-				position: 'absolute',
-				left: 0,
-				top: 8,
-				bottom: 8,
-				width: 4,
-				borderRadius: '0 4px 4px 0',
-				bgcolor: color,
-			},
-		}}
-	>
 		<Box
 			sx={{
-				width: 38,
-				height: 38,
-				display: 'grid',
-				placeItems: 'center',
-				borderRadius: '50%',
-				color,
-				bgcolor: alpha(color, 0.1),
-				flexShrink: 0,
-				'& svg': { fontSize: 22 },
+				position: 'relative',
+				display: 'flex',
+				alignItems: 'center',
+				gap: 1,
+				minWidth: 0,
+				p: 1,
+				border: '1px solid',
+				borderColor: 'divider',
+				borderRadius: MACHINE_CARD_DESIGN.sectionRadius,
+				'&::before': {
+					content: '""',
+					position: 'absolute',
+					left: 0,
+					top: 8,
+					bottom: 8,
+					width: 4,
+					borderRadius: '0 4px 4px 0',
+					bgcolor: color,
+				},
 			}}
 		>
-			{icon}
-		</Box>
-		<Box minWidth={0}>
-			<Typography
-				noWrap
-				sx={{
-					fontSize: MACHINE_CARD_DESIGN.metricLabelSize,
-					color: 'text.secondary',
-					fontWeight: 600,
-				}}
-			>
-				{label}
-			</Typography>
-			<Typography
-				noWrap
-				sx={{ fontSize: '1rem', color: 'text.primary', fontWeight: 800 }}
-			>
-				{value}
-			</Typography>
 			<Box
 				sx={{
-					display: 'inline-flex',
-					alignItems: 'center',
-					gap: 0.35,
-					mt: 0.25,
-					px: 0.6,
-					py: 0.2,
-					borderRadius: 1,
-					bgcolor: alpha(changeColor, 0.09),
+					width: 38,
+					height: 38,
+					display: 'grid',
+					placeItems: 'center',
+					borderRadius: '50%',
+					color,
+					bgcolor: alpha(color, 0.1),
+					flexShrink: 0,
+					'& svg': { fontSize: 22 },
 				}}
 			>
-				<TrendingUpRounded sx={{ color: changeColor, fontSize: 13, transform: numericChange < 0 ? 'rotate(180deg)' : 'none' }} />
+				{icon}
+			</Box>
+			<Box minWidth={0}>
 				<Typography
+					noWrap
 					sx={{
-						color: changeColor,
-						fontSize: MACHINE_CARD_DESIGN.helperSize,
-						fontWeight: 800,
-					}}
-				>
-					{Number(change) >= 0 ? '+' : ''}
-					{formatNumber(change, 1, { fallback: '0.0' })}%
-				</Typography>
-				<Typography
-					sx={{
+						fontSize: MACHINE_CARD_DESIGN.metricLabelSize,
 						color: 'text.secondary',
-						fontSize: MACHINE_CARD_DESIGN.helperSize,
+						fontWeight: 600,
 					}}
 				>
-					vs. last hour
+					{label}
 				</Typography>
+				<Typography
+					noWrap
+					sx={{ fontSize: '1rem', color: 'text.primary', fontWeight: 800 }}
+				>
+					{value}
+				</Typography>
+				<Box
+					sx={{
+						display: 'inline-flex',
+						alignItems: 'center',
+						gap: 0.35,
+						mt: 0.25,
+						px: 0.6,
+						py: 0.2,
+						borderRadius: 1,
+						bgcolor: alpha(changeColor, 0.09),
+					}}
+				>
+					<TrendingUpRounded
+						sx={{
+							color: changeColor,
+							fontSize: 13,
+							transform: numericChange < 0 ? 'rotate(180deg)' : 'none',
+						}}
+					/>
+					<Typography
+						sx={{
+							color: changeColor,
+							fontSize: MACHINE_CARD_DESIGN.helperSize,
+							fontWeight: 800,
+						}}
+					>
+						{Number(change) >= 0 ? '+' : ''}
+						{formatNumber(change, 1, { fallback: '0.0' })}%
+					</Typography>
+					<Typography
+						sx={{
+							color: 'text.secondary',
+							fontSize: MACHINE_CARD_DESIGN.helperSize,
+						}}
+					>
+						vs. last hour
+					</Typography>
+				</Box>
 			</Box>
 		</Box>
-	</Box>
 	);
 };
 
@@ -680,8 +686,19 @@ const AHUCard = ({ machine, onOpenTrend }) => {
 						border: `1px solid ${alpha(statusColor, 0.35)}`,
 					}}
 				>
-					<Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: statusColor }} />
-					<Typography sx={{ fontSize: MACHINE_CARD_DESIGN.statusSize, fontWeight: 900 }}>{isOnline ? 'ONLINE' : 'OFFLINE'}</Typography>
+					<Box
+						sx={{
+							width: 8,
+							height: 8,
+							borderRadius: '50%',
+							bgcolor: statusColor,
+						}}
+					/>
+					<Typography
+						sx={{ fontSize: MACHINE_CARD_DESIGN.statusSize, fontWeight: 900 }}
+					>
+						{isOnline ? 'ONLINE' : 'OFFLINE'}
+					</Typography>
 				</Stack>
 				<Typography
 					sx={{

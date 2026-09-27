@@ -83,11 +83,42 @@ const MetricTile = ({ icon: Icon, label, value, color, tinted = false }) => (
 					{value}
 				</Typography>
 			</Box>
-			<Box sx={{ pl: 0.55, borderLeft: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
-				<Typography sx={{ color: 'text.secondary', fontSize: '0.43rem', letterSpacing: '0.08em' }}>STATUS</Typography>
-				<Stack direction="row" alignItems="center" spacing={0.3} sx={{ mt: 0.15, px: 0.5, py: 0.2, borderRadius: 99, color, bgcolor: alpha(color, 0.09) }}>
-					<Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: color }} />
-					<Typography sx={{ fontSize: '0.48rem', fontWeight: 900 }}>NORMAL</Typography>
+			<Box
+				sx={{
+					pl: 0.55,
+					borderLeft: '1px solid',
+					borderColor: 'divider',
+					textAlign: 'center',
+				}}
+			>
+				<Typography
+					sx={{
+						color: 'text.secondary',
+						fontSize: '0.43rem',
+						letterSpacing: '0.08em',
+					}}
+				>
+					STATUS
+				</Typography>
+				<Stack
+					direction="row"
+					alignItems="center"
+					spacing={0.3}
+					sx={{
+						mt: 0.15,
+						px: 0.5,
+						py: 0.2,
+						borderRadius: 99,
+						color,
+						bgcolor: alpha(color, 0.09),
+					}}
+				>
+					<Box
+						sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: color }}
+					/>
+					<Typography sx={{ fontSize: '0.48rem', fontWeight: 900 }}>
+						NORMAL
+					</Typography>
 				</Stack>
 			</Box>
 		</Stack>
@@ -96,11 +127,28 @@ const MetricTile = ({ icon: Icon, label, value, color, tinted = false }) => (
 
 const MiniBars = ({ color, today, mtd }) => {
 	const seed = Math.max(1, Number(today) || Number(mtd) || 1);
-	const bars = [0.24, 0.39, 0.34, 0.55, 0.38, 0.43, 0.51, 0.7, 0.46, 0.42, 0.58, 0.82];
+	const bars = [
+		0.24, 0.39, 0.34, 0.55, 0.38, 0.43, 0.51, 0.7, 0.46, 0.42, 0.58, 0.82,
+	];
 	return (
-		<Stack direction="row" alignItems="flex-end" spacing={0.25} sx={{ position: 'absolute', left: 7, right: 7, bottom: 4, height: 20 }} aria-hidden="true">
+		<Stack
+			direction="row"
+			alignItems="flex-end"
+			spacing={0.25}
+			sx={{ position: 'absolute', left: 7, right: 7, bottom: 4, height: 20 }}
+			aria-hidden="true"
+		>
 			{bars.map((factor, index) => (
-				<Box key={index} sx={{ flex: 1, height: `${Math.min(100, factor * 100 + (seed % 7))}%`, minWidth: 2, borderRadius: '3px 3px 0 0', bgcolor: alpha(color, 0.72) }} />
+				<Box
+					key={index}
+					sx={{
+						flex: 1,
+						height: `${Math.min(100, factor * 100 + (seed % 7))}%`,
+						minWidth: 2,
+						borderRadius: '3px 3px 0 0',
+						bgcolor: alpha(color, 0.72),
+					}}
+				/>
 			))}
 		</Stack>
 	);
@@ -121,14 +169,28 @@ const FuelMovementTile = ({ label, today, mtd, color, icon: Icon }) => (
 				} 65%)`,
 		}}
 	>
-		<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={0.5} mb={0.45}>
+		<Stack
+			direction="row"
+			alignItems="center"
+			justifyContent="space-between"
+			spacing={0.5}
+			mb={0.45}
+		>
 			<Stack direction="row" alignItems="center" spacing={0.4}>
-			<Icon sx={{ fontSize: 17, color }} />
-			<Typography fontSize="11px" fontWeight={800}>
-				{label}
-			</Typography>
+				<Icon sx={{ fontSize: 17, color }} />
+				<Typography fontSize="11px" fontWeight={800}>
+					{label}
+				</Typography>
 			</Stack>
-			<Typography sx={{ color: 'text.secondary', fontSize: '0.42rem', letterSpacing: '0.08em' }}>{label === 'Consumed' ? 'FUEL CONSUMPTION' : 'FUEL REFILL HISTORY'}</Typography>
+			<Typography
+				sx={{
+					color: 'text.secondary',
+					fontSize: '0.42rem',
+					letterSpacing: '0.08em',
+				}}
+			>
+				{label === 'Consumed' ? 'FUEL CONSUMPTION' : 'FUEL REFILL HISTORY'}
+			</Typography>
 		</Stack>
 		<Box
 			sx={{
@@ -212,11 +274,40 @@ const PremiumFuelMachineCard = ({
 					<Stack direction="row" alignItems="center" spacing={0.6}>
 						<LocalGasStationRounded sx={{ fontSize: 20, color: levelColor }} />
 						<Box>
-							<Typography fontSize="11px" fontWeight={800}>Fuel level</Typography>
-							<Typography sx={{ color: 'text.secondary', fontSize: '0.43rem', letterSpacing: '0.1em' }}>TANK CAPACITY {formatNumber(fuelCapacity, 1, { fallback: '0' })} L</Typography>
+							<Typography fontSize="11px" fontWeight={800}>
+								Fuel level
+							</Typography>
+							<Typography
+								sx={{
+									color: 'text.secondary',
+									fontSize: '0.43rem',
+									letterSpacing: '0.1em',
+								}}
+							>
+								TANK CAPACITY {formatNumber(fuelCapacity, 1, { fallback: '0' })}{' '}
+								L
+							</Typography>
 						</Box>
 					</Stack>
-					<Box textAlign="right"><Typography fontSize="17px" lineHeight={1} fontWeight={900} color={levelColor}>{formatNumber(level, 1, { fallback: '0' })}%</Typography><Typography sx={{ color: 'text.secondary', fontSize: '0.43rem', letterSpacing: '0.08em' }}>REMAINING {formatNumber(fuelVolume, 1, { fallback: '0' })} L</Typography></Box>
+					<Box textAlign="right">
+						<Typography
+							fontSize="17px"
+							lineHeight={1}
+							fontWeight={900}
+							color={levelColor}
+						>
+							{formatNumber(level, 1, { fallback: '0' })}%
+						</Typography>
+						<Typography
+							sx={{
+								color: 'text.secondary',
+								fontSize: '0.43rem',
+								letterSpacing: '0.08em',
+							}}
+						>
+							REMAINING {formatNumber(fuelVolume, 1, { fallback: '0' })} L
+						</Typography>
+					</Box>
 				</Stack>
 				<LinearProgress
 					variant="determinate"
@@ -232,7 +323,12 @@ const PremiumFuelMachineCard = ({
 						},
 					}}
 				/>
-				<Stack direction="row" justifyContent="space-between" alignItems="center" mt={0.35}>
+				<Stack
+					direction="row"
+					justifyContent="space-between"
+					alignItems="center"
+					mt={0.35}
+				>
 					<Typography fontSize="9px" color="text.secondary">
 						0%
 					</Typography>
