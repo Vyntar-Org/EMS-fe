@@ -13,7 +13,7 @@ export const ENERGY_PARAMETER_OPTIONS = [
 	},
 	{
 		label: 'Energy',
-		value: 'acte_im,reacte_im',
+		value: 'acte_im,reacte_im,acte_ex',
 	},
 	{
 		label: 'Power Factor',
@@ -42,6 +42,7 @@ export const KEY_PARAMETER_OPTIONS_MAPPING = {
 	actpr_t: 'Active Power (kW)',
 	apppr_t: 'Apparent Power (kVA)',
 	acte_im: 'Active Energy Import (kWh)',
+	acte_ex: 'Active Energy Export (kWh)',
 	reacte_im: 'Reactive Energy Import (kVArh)',
 	pf_t: 'Power Factor',
 	fq: 'Frequency (Hz)',

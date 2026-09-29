@@ -115,14 +115,14 @@ const ThresholdBar = memo(({ value, type }) => {
 	const displayValue = formatNumber(imbalanceValue, 2, { fallback: '0' });
 
 	const status =
-		imbalanceValue <= threshold.normal
+		100 - imbalanceValue <= threshold.normal
 			? {
 					label: 'Normal',
 					color: '#16A34A',
 					Icon: CheckCircle,
 					markerPosition: 16.67,
 			  }
-			: imbalanceValue <= threshold.warning
+			: 100 - imbalanceValue <= threshold.warning
 			  ? {
 						label: 'Warning',
 						color: '#F59E0B',
