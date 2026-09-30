@@ -15,10 +15,10 @@ export const ENERGY_PARAMETER_OPTIONS = [
 		label: 'Energy',
 		value: 'acte_im,reacte_im,acte_ex',
 	},
-	{
-		label: 'Power Factor',
-		value: 'pf_t',
-	},
+	// {
+	// 	label: 'Power Factor',
+	// 	value: 'pf_t',
+	// },
 	{
 		label: 'Frequency (Hz)',
 		value: 'fq',
@@ -39,6 +39,10 @@ export const ENERGY_PARAMETER_OPTIONS = [
 		label: 'Current (A)',
 		value: 'i_b,i_r,i_y,avg_i',
 	},
+	{
+		label: 'Power Factor',
+		value: 'pf_r,pf_y,pf_b,pf_t',
+	},
 ];
 
 export const KEY_PARAMETER_OPTIONS_MAPPING = {
@@ -48,7 +52,10 @@ export const KEY_PARAMETER_OPTIONS_MAPPING = {
 	acte_im: 'Active Energy Import (kWh)',
 	acte_ex: 'Active Energy Export (kWh)',
 	reacte_im: 'Reactive Energy Import (kVArh)',
-	pf_t: 'Power Factor',
+	pf_t: 'Total Power Factor',
+	pf_r: 'Power Factor (R Phase)',
+	pf_y: 'Power Factor (Y Phase)',
+	pf_b: 'Power Factor (B Phase)',
 	fq: 'Frequency (Hz)',
 	rv: 'R Phase Voltage (V)',
 	yv: 'Y Phase Voltage (V)',
