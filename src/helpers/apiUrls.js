@@ -62,11 +62,7 @@ const EMS_LOGS = {
 const EMS_REPORTS = {
 	EMS_REPORTS_DATE_WISE_CONSUMPTION_DATA: (year, month, mode = 'IMPORT') =>
 		`/applications/energy/daily-consumption-reports/?month=${month}&year=${year}&mode=${mode}`,
-	EMS_REPORTS_MONTH_WISE_CONSUMPTION_DATA: (
-		year,
-		_month,
-		mode = 'IMPORT'
-	) =>
+	EMS_REPORTS_MONTH_WISE_CONSUMPTION_DATA: (year, _month, mode = 'IMPORT') =>
 		`/applications/energy/monthly-consumption-reports/?year=${year}&mode=${mode}`,
 	EMS_REPORTS_DATE_WISE_READING_DATA: (year, month, mode = 'IMPORT') =>
 		`/applications/energy/daily-reading-reports/?month=${month}&year=${year}&mode=${mode}`,

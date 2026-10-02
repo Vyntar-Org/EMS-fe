@@ -183,7 +183,7 @@ const DeviceFilterRow = memo(
 						sx={basePickerStyles}
 					/>
 				</Grid>
-				<Grid item xs={12} md={4.5} display='flex' alignItems='center' gap={1}>
+				<Grid item xs={12} md={4.5} display="flex" alignItems="center" gap={1}>
 					<CustomAutocomplete
 						multiple
 						options={parameterOptions}
@@ -301,7 +301,9 @@ const HourlyDataTable = ({ rows, activeKeys }) => {
 						const parsed = smartParseDate(timestamp);
 						return (
 							<TableRow key={`${timestamp ?? 'hour'}-${index}`} hover>
-								<TableCell>{parsed ? parsed.format('DD MMM, hh A') : timestamp}</TableCell>
+								<TableCell>
+									{parsed ? parsed.format('DD MMM, hh A') : timestamp}
+								</TableCell>
 								{activeKeys.map((key) => (
 									<TableCell key={key} align="right">
 										{formatNumber(row?.[key] ?? 0, 2, { fallback: '0' })}
@@ -458,8 +460,12 @@ const AnalyticsRow = memo(
 							}
 							size="small"
 						>
-							<ToggleButton value="line" aria-label="Line chart"><SsidChart fontSize="small" /></ToggleButton>
-							<ToggleButton value="bar" aria-label="Bar chart"><BarChart fontSize="small" /></ToggleButton>
+							<ToggleButton value="line" aria-label="Line chart">
+								<SsidChart fontSize="small" />
+							</ToggleButton>
+							<ToggleButton value="bar" aria-label="Bar chart">
+								<BarChart fontSize="small" />
+							</ToggleButton>
 						</ToggleButtonGroup>
 					</Box>
 				)}

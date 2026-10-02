@@ -109,26 +109,26 @@ const ThresholdBar = memo(({ value, type }) => {
 	const displayValue = formatNumber(imbalanceValue, 2, { fallback: '0' });
 
 	const status =
-  100 - imbalanceValue <= threshold.normal
-    ? {
-        label: 'Normal',
-        color: '#0F766E',
-        fillColor: '#CCFBF1',
-        Icon: CheckCircle,
-      }
-    : 100 - imbalanceValue <= threshold.warning
-      ? {
-          label: 'Warning',
-          color: '#D97706',
-          fillColor: '#FEF3C7',
-          Icon: Warning,
-        }
-      : {
-          label: 'Critical',
-          color: '#DC2626',
-          fillColor: '#FEE2E2',
-          Icon: Error,
-        };
+		100 - imbalanceValue <= threshold.normal
+			? {
+					label: 'Normal',
+					color: '#0F766E',
+					fillColor: '#CCFBF1',
+					Icon: CheckCircle,
+			  }
+			: 100 - imbalanceValue <= threshold.warning
+			  ? {
+						label: 'Warning',
+						color: '#D97706',
+						fillColor: '#FEF3C7',
+						Icon: Warning,
+			    }
+			  : {
+						label: 'Critical',
+						color: '#DC2626',
+						fillColor: '#FEE2E2',
+						Icon: Error,
+			    };
 	const { Icon } = status;
 	const fillPercentage = Math.min(Math.max(imbalanceValue, 0), 100);
 
