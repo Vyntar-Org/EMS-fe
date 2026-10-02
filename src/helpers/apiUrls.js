@@ -35,8 +35,14 @@ const EMS_MACHINE_LIST = {
 };
 
 const EMS_ANALYTICS = {
-	EMS_ANALYTICS_DATA: (slaveId, parameters, from_datetime, to_datetime) =>
-		`/applications/energy/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${from_datetime}&to_datetime=${to_datetime}`,
+	EMS_ANALYTICS_DATA: (
+		slaveId,
+		parameters,
+		from_datetime,
+		to_datetime,
+		isHourly = false
+	) =>
+		`/applications/energy/analytics/?slave_id=${slaveId}&parameters=${parameters}&from_datetime=${from_datetime}&to_datetime=${to_datetime}&is_hourly=${isHourly}`,
 };
 
 const EMS_LOGS = {
@@ -54,12 +60,16 @@ const EMS_LOGS = {
 };
 
 const EMS_REPORTS = {
-	EMS_REPORTS_DATE_WISE_CONSUMPTION_DATA: (year, month) =>
-		`/applications/energy/daily-consumption-reports/?month=${month}&year=${year}`,
-	EMS_REPORTS_MONTH_WISE_CONSUMPTION_DATA: (year) =>
-		`/applications/energy/monthly-consumption-reports/?year=${year}`,
-	EMS_REPORTS_DATE_WISE_READING_DATA: (year, month) =>
-		`/applications/energy/daily-reading-reports/?month=${month}&year=${year}`,
+	EMS_REPORTS_DATE_WISE_CONSUMPTION_DATA: (year, month, mode = 'IMPORT') =>
+		`/applications/energy/daily-consumption-reports/?month=${month}&year=${year}&mode=${mode}`,
+	EMS_REPORTS_MONTH_WISE_CONSUMPTION_DATA: (
+		year,
+		_month,
+		mode = 'IMPORT'
+	) =>
+		`/applications/energy/monthly-consumption-reports/?year=${year}&mode=${mode}`,
+	EMS_REPORTS_DATE_WISE_READING_DATA: (year, month, mode = 'IMPORT') =>
+		`/applications/energy/daily-reading-reports/?month=${month}&year=${year}&mode=${mode}`,
 	EMS_REPORTS_DATE_WISE_CONSUMPTION_COST_DATA: (year, month) =>
 		`/applications/energy/daily-consumption-cost-reports/?month=${month}&year=${year}`,
 	EMS_REPORTS_MONTH_WISE_CONSUMPTION_COST_DATA: (year) =>

@@ -1,6 +1,6 @@
 import { Box } from '@mui/material';
 import dayjs from 'dayjs';
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
 import { getApexYAxisConfig } from '../../helpers/chartConfig';
@@ -102,6 +102,12 @@ const TOOLTIP_CSS = `
 	white-space: nowrap;
 	flex-shrink: 0;
 }
+.apexcharts-tooltip.capx-dynamic-horizontal-position {
+	left: 0 !important;
+	transform: translate3d(var(--capx-tooltip-x), 0, 0) !important;
+	transition-property: opacity !important;
+	will-change: transform;
+}
 `;
 
 const ensureTooltipStylesInjected = () => {
@@ -140,6 +146,40 @@ const LEGEND_WINDOW_THRESHOLD = 5;
 const CUSTOM_LEGEND_HEIGHT = 60;
 
 const MAX_RENDER_POINTS = 500;
+const HOVER_PANEL_POINTER_GAP = 12;
+const HOVER_PANEL_EDGE_PADDING = 4;
+const HOVER_PANEL_SWITCH_HYSTERESIS = 24;
+const HORIZONTAL_CLIP_VALUES = new Set(['auto', 'scroll', 'hidden', 'clip']);
+
+const getVisibleHorizontalBounds = (element) => {
+	const elementBounds = element.getBoundingClientRect();
+	const viewport = window.visualViewport;
+	const viewportLeft = viewport?.offsetLeft || 0;
+	const viewportRight = viewportLeft + (viewport?.width || window.innerWidth);
+	let left = Math.max(elementBounds.left, viewportLeft);
+	let right = Math.min(elementBounds.right, viewportRight);
+	const clippingAncestors = [];
+
+	for (
+		let ancestor = element.parentElement;
+		ancestor && ancestor !== document.documentElement;
+		ancestor = ancestor.parentElement
+	) {
+		const styles = window.getComputedStyle(ancestor);
+		if (
+			HORIZONTAL_CLIP_VALUES.has(styles.overflowX) ||
+			HORIZONTAL_CLIP_VALUES.has(styles.overflow)
+		) {
+			const ancestorBounds = ancestor.getBoundingClientRect();
+			clippingAncestors.push(ancestor);
+			left = Math.max(left, ancestorBounds.left);
+			right = Math.min(right, ancestorBounds.right);
+			if (right <= left) break;
+		}
+	}
+
+	return { left, right, clippingAncestors };
+};
 
 // Defensive downsample: even if the caller already thinned its data, this
 // stops any accidental oversized array from ever reaching ApexCharts.
@@ -257,6 +297,9 @@ const CustomApexChart = ({
 	minimal = false, // strips background grid + intermediate ticks down to baseline X/Y axes with only start/end labels
 	customOptions = {}, // Only for absolute emergency overrides
 }) => {
+	const chartContainerRef = useRef(null);
+	const hoverPanelSideRef = useRef('right');
+	const lastPointerXRef = useRef(null);
 	const resolvedUnit = unit || meta?.unit || '';
 	const resolvedTitle = title || meta?.title || '';
 
@@ -287,6 +330,184 @@ const CustomApexChart = ({
 
 	// Large datasets skip animation entirely to avoid frame drops.
 	const animationsEnabled = pointCount <= 150;
+
+	useEffect(() => {
+		const container = chartContainerRef.current;
+		if (!container) return undefined;
+
+		let hoverPanel = null;
+		let chartCanvas = null;
+		let geometry = null;
+		let animationFrameId = null;
+		let framePending = false;
+		const observedElements = new WeakSet();
+
+		const observeElement = (element) => {
+			if (!element || observedElements.has(element)) return;
+			resizeObserver.observe(element);
+			observedElements.add(element);
+		};
+
+		const resolveElements = () => {
+			if (!hoverPanel?.isConnected) {
+				hoverPanel = container.querySelector('.apexcharts-tooltip');
+				geometry = null;
+				observeElement(hoverPanel);
+			}
+			if (!chartCanvas?.isConnected) {
+				chartCanvas = container.querySelector('.apexcharts-canvas');
+				geometry = null;
+				observeElement(chartCanvas);
+			}
+			return Boolean(hoverPanel && chartCanvas && hoverPanel.offsetParent);
+		};
+
+		const measureGeometry = () => {
+			if (!resolveElements()) return null;
+
+			const hoverPanelWidth = hoverPanel.getBoundingClientRect().width;
+			if (!hoverPanelWidth) return null;
+
+			// These layout/style reads are intentionally performed only when an
+			// observed size, scroll position, or viewport boundary changes—not for
+			// every mouse event.
+			const visibleBounds = getVisibleHorizontalBounds(chartCanvas);
+			const visibleLeft = visibleBounds.left;
+			const visibleRight = visibleBounds.right;
+			if (visibleRight <= visibleLeft) return null;
+			visibleBounds.clippingAncestors.forEach(observeElement);
+
+			const offsetParentLeft =
+				hoverPanel.offsetParent.getBoundingClientRect().left;
+			const minimumClientLeft = visibleLeft + HOVER_PANEL_EDGE_PADDING;
+			const maximumClientLeft = Math.max(
+				minimumClientLeft,
+				visibleRight - hoverPanelWidth - HOVER_PANEL_EDGE_PADDING
+			);
+
+			return {
+				hoverPanelWidth,
+				visibleLeft,
+				visibleRight,
+				offsetParentLeft,
+				minimumClientLeft,
+				maximumClientLeft,
+			};
+		};
+
+		const positionHoverPanel = () => {
+			framePending = false;
+			const pointerClientX = lastPointerXRef.current;
+			if (pointerClientX === null || !resolveElements()) return;
+			if (!hoverPanel.classList.contains('apexcharts-active')) return;
+
+			const measurements = geometry || measureGeometry();
+			if (!measurements) return;
+			geometry = measurements;
+			const {
+				hoverPanelWidth,
+				visibleLeft,
+				visibleRight,
+				offsetParentLeft,
+				minimumClientLeft,
+				maximumClientLeft,
+			} = measurements;
+
+			const pointerX = Math.min(
+				Math.max(pointerClientX, visibleLeft),
+				visibleRight
+			);
+			const availableRight =
+				visibleRight -
+				pointerX -
+				HOVER_PANEL_POINTER_GAP -
+				HOVER_PANEL_EDGE_PADDING;
+			const availableLeft =
+				pointerX -
+				visibleLeft -
+				HOVER_PANEL_POINTER_GAP -
+				HOVER_PANEL_EDGE_PADDING;
+
+			let side = hoverPanelSideRef.current;
+			if (side === 'right') {
+				if (
+					availableRight < hoverPanelWidth &&
+					availableLeft > availableRight
+				) {
+					side = 'left';
+				}
+			} else if (
+				(availableLeft < hoverPanelWidth && availableRight > availableLeft) ||
+				availableRight >= hoverPanelWidth + HOVER_PANEL_SWITCH_HYSTERESIS
+			) {
+				side = 'right';
+			}
+			hoverPanelSideRef.current = side;
+
+			const idealClientLeft =
+				side === 'right'
+					? pointerX + HOVER_PANEL_POINTER_GAP
+					: pointerX - HOVER_PANEL_POINTER_GAP - hoverPanelWidth;
+			const clampedClientLeft = Math.min(
+				Math.max(idealClientLeft, minimumClientLeft),
+				maximumClientLeft
+			);
+			// Apex owns the fixed vertical `top` value. Only a compositor-friendly
+			// horizontal transform is updated during pointer movement.
+			hoverPanel.classList.add('capx-dynamic-horizontal-position');
+			hoverPanel.style.setProperty(
+				'--capx-tooltip-x',
+				`${clampedClientLeft - offsetParentLeft}px`
+			);
+		};
+
+		const schedulePosition = () => {
+			if (framePending) return;
+			framePending = true;
+			animationFrameId = window.requestAnimationFrame(positionHoverPanel);
+		};
+
+		const handlePointerMove = (event) => {
+			lastPointerXRef.current = event.clientX;
+			schedulePosition();
+		};
+
+		const handleBoundsChange = () => {
+			geometry = null;
+			if (lastPointerXRef.current !== null) {
+				schedulePosition();
+			}
+		};
+
+		const resizeObserver = new ResizeObserver(handleBoundsChange);
+		observeElement(container);
+		container.addEventListener('mousemove', handlePointerMove, {
+			passive: true,
+		});
+		window.addEventListener('resize', handleBoundsChange, { passive: true });
+		window.addEventListener('scroll', handleBoundsChange, {
+			capture: true,
+			passive: true,
+		});
+		window.visualViewport?.addEventListener('resize', handleBoundsChange, {
+			passive: true,
+		});
+		window.visualViewport?.addEventListener('scroll', handleBoundsChange, {
+			passive: true,
+		});
+
+		return () => {
+			if (animationFrameId !== null) {
+				window.cancelAnimationFrame(animationFrameId);
+			}
+			resizeObserver.disconnect();
+			container.removeEventListener('mousemove', handlePointerMove);
+			window.removeEventListener('resize', handleBoundsChange);
+			window.removeEventListener('scroll', handleBoundsChange, true);
+			window.visualViewport?.removeEventListener('resize', handleBoundsChange);
+			window.visualViewport?.removeEventListener('scroll', handleBoundsChange);
+		};
+	}, []);
 
 	const formatValue = useCallback(
 		(val) => {
@@ -557,6 +778,7 @@ const CustomApexChart = ({
 
 	return (
 		<Box
+			ref={chartContainerRef}
 			sx={{
 				display: 'flex',
 				flexDirection: 'column',

@@ -1,21 +1,34 @@
 import {
 	Box,
 	Button,
+	ClickAwayListener,
 	Divider,
 	Grid,
+	Grow,
+	MenuItem,
+	MenuList,
+	Paper,
+	Popper,
 	Tab,
 	Tabs,
 	tabsClasses,
 	Tooltip,
+	Typography,
 } from '@mui/material';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
 	ENERGY_REPORTS_ALLOW_MONTH,
 	ENERGY_REPORTS_API_DATA_KEY_CONFIG,
 	ENERGY_REPORTS_TAB_OPTIONS,
 } from '../../constants/energyReports';
 import { CustomDatePicker } from '../common/CustomDatePicker';
-import { Description, FileDownload, Search } from '@mui/icons-material';
+import {
+	Check,
+	Description,
+	FileDownload,
+	FileUploadRounded,
+	Search,
+} from '@mui/icons-material';
 import { Loading } from '../common/Loading';
 import NoDataFound from '../common/errors/NoDataFound';
 import { CustomTable } from '../common/CustomTable';
@@ -39,7 +52,42 @@ const ReportsHeader = ({
 	slavesData,
 	slavesId,
 	setSlavesId,
+	reportMode,
+	onReportModeChange,
 }) => {
+	const [menuAnchor, setMenuAnchor] = useState(null);
+	const [hoveredTab, setHoveredTab] = useState(null);
+	const closeTimerRef = useRef(null);
+	const menuTabs = ENERGY_REPORTS_TAB_OPTIONS.slice(0, 3).map(
+		(option) => option.tab
+	);
+
+	const openTabMenu = (event, tab) => {
+		if (!menuTabs.includes(tab)) return;
+		window.clearTimeout(closeTimerRef.current);
+		setMenuAnchor(event.currentTarget);
+		setHoveredTab(tab);
+	};
+
+	const closeTabMenu = () => {
+		window.clearTimeout(closeTimerRef.current);
+		setMenuAnchor(null);
+		setHoveredTab(null);
+	};
+
+	const scheduleMenuClose = () => {
+		window.clearTimeout(closeTimerRef.current);
+		closeTimerRef.current = window.setTimeout(closeTabMenu, 180);
+	};
+
+	const keepMenuOpen = () => window.clearTimeout(closeTimerRef.current);
+
+	useEffect(() => () => window.clearTimeout(closeTimerRef.current), []);
+
+	const selectReportMode = (mode) => {
+		onReportModeChange(hoveredTab, mode);
+		closeTabMenu();
+	};
 	const handleFieldCh = (key, value) => {
 		setPayload((prev) => ({
 			...prev,
@@ -102,9 +150,144 @@ const ReportsHeader = ({
 							</Box>
 						}
 						value={app.tab}
+						onMouseEnter={(event) => openTabMenu(event, app.tab)}
+						onMouseLeave={scheduleMenuClose}
 					/>
 				))}
 			</Tabs>
+			<Popper
+				anchorEl={menuAnchor}
+				open={Boolean(menuAnchor)}
+				placement="bottom-start"
+				transition
+				modifiers={[
+					{ name: 'offset', options: { offset: [0, 6] } },
+					{ name: 'preventOverflow', options: { padding: 12 } },
+				]}
+				sx={{ zIndex: (theme) => theme.zIndex.modal + 1 }}
+			>
+				{({ TransitionProps }) => (
+					<Grow
+						{...TransitionProps}
+						timeout={180}
+						style={{ transformOrigin: 'top left' }}
+					>
+						<Paper
+							elevation={0}
+							onMouseEnter={keepMenuOpen}
+							onMouseLeave={scheduleMenuClose}
+							sx={{
+								// mt: 0.75,
+								minWidth: 230,
+								borderRadius: 3,
+								border: '1px solid',
+								borderColor: 'divider',
+								background: (theme) =>
+									`linear-gradient(145deg, ${
+										theme.palette.background.paper
+									} 0%, ${
+										theme.palette.surface?.muted ||
+										theme.palette.background.default
+									} 100%)`,
+								boxShadow: (theme) =>
+									theme.palette.mode === 'dark'
+										? '0 18px 45px rgba(0, 0, 0, 0.45)'
+										: '0 18px 45px rgba(15, 35, 62, 0.16)',
+								overflow: 'visible',
+								// '&::before': {
+								// 	content: '""',
+								// 	position: 'absolute',
+								// 	top: -5,
+								// 	left: 24,
+								// 	width: 10,
+								// 	height: 10,
+								// 	bgcolor: 'background.paper',
+								// 	borderLeft: '1px solid',
+								// 	borderTop: '1px solid',
+								// 	borderColor: 'divider',
+								// 	transform: 'rotate(45deg)',
+								// },
+							}}
+						>
+							<ClickAwayListener onClickAway={closeTabMenu}>
+								<MenuList dense autoFocusItem={false} sx={{ p: 1 }}>
+									{[
+										{
+											value: 'import',
+											label: 'Import',
+											description: 'View imported energy data',
+											Icon: FileUploadRounded,
+										},
+										{
+											value: 'export',
+											label: 'Export',
+											description: 'View exported energy data',
+											Icon: FileDownload,
+										},
+									].map(({ value, label, description, Icon }, index) => {
+										const isSelected =
+											hoveredTab === selectedTab && reportMode === value;
+										return (
+											<React.Fragment key={value}>
+												{index > 0 && <Divider sx={{ my: 0.5 }} />}
+												<MenuItem
+													onClick={() => selectReportMode(value)}
+													selected={isSelected}
+													sx={{
+														gap: 1.25,
+														px: 1.25,
+														py: 1,
+														borderRadius: 2,
+														'&.Mui-selected': { bgcolor: 'action.selected' },
+														'&:hover': {
+															bgcolor: 'action.hover',
+															transform: 'translateX(2px)',
+														},
+														transition:
+															'background-color 160ms ease, transform 160ms ease',
+													}}
+												>
+													<Box
+														sx={{
+															width: 38,
+															height: 38,
+															borderRadius: 2,
+															display: 'grid',
+															placeItems: 'center',
+															color: isSelected
+																? 'primary.contrastText'
+																: 'primary.main',
+															bgcolor: isSelected
+																? 'primary.main'
+																: 'action.hover',
+														}}
+													>
+														<Icon fontSize="small" />
+													</Box>
+													<Box flex={1} minWidth={0}>
+														<Typography fontSize="0.86rem" fontWeight={800}>
+															{label}
+														</Typography>
+														<Typography
+															fontSize="0.68rem"
+															color="text.secondary"
+														>
+															{description}
+														</Typography>
+													</Box>
+													{isSelected && (
+														<Check fontSize="small" color="primary" />
+													)}
+												</MenuItem>
+											</React.Fragment>
+										);
+									})}
+								</MenuList>
+							</ClickAwayListener>
+						</Paper>
+					</Grow>
+				)}
+			</Popper>
 
 			<Grid
 				container
@@ -252,6 +435,11 @@ const EnergyReports = () => {
 	);
 	const [loading, setLoading] = useState(null);
 	const [reportsData, setReportsData] = useState(null);
+	const [reportModes, setReportModes] = useState(() =>
+		Object.fromEntries(
+			ENERGY_REPORTS_TAB_OPTIONS.slice(0, 3).map(({ tab }) => [tab, 'import'])
+		)
+	);
 	const [payload, setPayload] = useState({
 		month: dayjs(new Date()),
 		year: dayjs(new Date()),
@@ -274,7 +462,11 @@ const EnergyReports = () => {
 		return { tableData: filteredData, tableColumns };
 	}, [reportsData, selectedTab, slaveName]);
 
-	const fetchReportsData = async (curTab, newPayload) => {
+	const fetchReportsData = async (
+		curTab,
+		newPayload,
+		mode = reportModes[curTab] || 'import'
+	) => {
 		if (!curTab) return;
 
 		const isMonthAllowed = ENERGY_REPORTS_ALLOW_MONTH.includes(curTab);
@@ -294,7 +486,14 @@ const EnergyReports = () => {
 				? yearObj.format('YYYY')
 				: '';
 
-			const newApiUrl = API_URLS[curTab](formattedYearObj, formattedMonthObj);
+			const supportsMode = ENERGY_REPORTS_TAB_OPTIONS.slice(0, 3).some(
+				({ tab }) => tab === curTab
+			);
+			const newApiUrl = API_URLS[curTab](
+				formattedYearObj,
+				formattedMonthObj,
+				supportsMode ? mode.toUpperCase() : undefined
+			);
 
 			const res = await api.get(newApiUrl);
 			if (res?.success) {
@@ -308,20 +507,36 @@ const EnergyReports = () => {
 	};
 
 	const handleTabChange = (tabVal) => {
+		const nextPayload = {
+			month: dayjs(new Date()),
+			year: dayjs(new Date()),
+		};
 		setSelectedTab(tabVal);
-		setPayload({
-			month: dayjs(new Date()),
-			year: dayjs(new Date()),
-		});
+		setPayload(nextPayload);
 		setReportsData(null);
-		fetchReportsData(tabVal, {
-			month: dayjs(new Date()),
-			year: dayjs(new Date()),
-		});
+		fetchReportsData(tabVal, nextPayload, reportModes[tabVal] || 'import');
+	};
+
+	const handleReportModeChange = (tab, mode) => {
+		setReportModes((previous) => ({ ...previous, [tab]: mode }));
+		const nextPayload =
+			tab === selectedTab
+				? payload
+				: { month: dayjs(new Date()), year: dayjs(new Date()) };
+		if (tab !== selectedTab) {
+			setSelectedTab(tab);
+			setPayload(nextPayload);
+		}
+		setReportsData(null);
+		fetchReportsData(tab, nextPayload, mode);
 	};
 
 	const handleSearch = () => {
-		fetchReportsData(selectedTab, payload);
+		fetchReportsData(
+			selectedTab,
+			payload,
+			reportModes[selectedTab] || 'import'
+		);
 	};
 
 	const handlePdfDownload = () => {
@@ -362,6 +577,8 @@ const EnergyReports = () => {
 				loading={loading}
 				slavesId={slavesId}
 				setSlavesId={setSlavesId}
+				reportMode={reportModes[selectedTab] || 'import'}
+				onReportModeChange={handleReportModeChange}
 				slavesData={slavesData?.map((f) => ({
 					label: f?.slave_name,
 					value: f?.slave_id,
