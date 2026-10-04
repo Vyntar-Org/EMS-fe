@@ -24,12 +24,12 @@ const PHASE_COLORS = {
 
 const THRESHOLDS = {
 	V: {
-		normal: 1,
-		warning: 2,
+		normal: 99,
+		warning: 97,
 	},
 	A: {
-		normal: 6,
-		warning: 10,
+		normal: 96,
+		warning: 90,
 	},
 };
 
@@ -109,14 +109,14 @@ const ThresholdBar = memo(({ value, type }) => {
 	const displayValue = formatNumber(imbalanceValue, 2, { fallback: '0' });
 
 	const status =
-		100 - imbalanceValue <= threshold.normal
+		imbalanceValue >= threshold.normal
 			? {
 					label: 'Normal',
 					color: '#0F766E',
 					fillColor: '#CCFBF1',
 					Icon: CheckCircle,
 			  }
-			: 100 - imbalanceValue <= threshold.warning
+			: imbalanceValue >= threshold.warning
 			  ? {
 						label: 'Warning',
 						color: '#D97706',
@@ -190,7 +190,7 @@ const ThresholdBar = memo(({ value, type }) => {
 						sx={{
 							height: '100%',
 							width: `${fillPercentage}%`,
-							bgcolor: status.fillColor,
+							bgcolor: status.color,
 							borderRadius: 'inherit',
 							transition: 'width 300ms ease, background-color 300ms ease',
 						}}
