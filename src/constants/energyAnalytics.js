@@ -13,7 +13,7 @@ export const ENERGY_PARAMETER_OPTIONS = [
 	},
 	{
 		label: 'Energy',
-		value: 'acte_im,reacte_im,acte_ex',
+		value: 'acte_im,reacte_im,acte_ex,reacte_ex',
 	},
 	// {
 	// 	label: 'Power Factor',
@@ -51,6 +51,7 @@ export const KEY_PARAMETER_OPTIONS_MAPPING = {
 	apppr_t: 'Apparent Power (kVA)',
 	acte_im: 'Active Energy Import (kWh)',
 	acte_ex: 'Active Energy Export (kWh)',
+	reacte_ex:'Reactive Energy Export (kVArh)',
 	reacte_im: 'Reactive Energy Import (kVArh)',
 	pf_t: 'Total Power Factor',
 	pf_r: 'Power Factor (R Phase)',

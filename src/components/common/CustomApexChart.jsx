@@ -127,6 +127,44 @@ ensureTooltipStylesInjected();
 
 const roundTrim = (val) => formatNumber(val);
 
+const buildYAxisConfig = (axisOptions, { unit, minimal }) => {
+	const defaultConfig = getApexYAxisConfig({ unit, minimal });
+
+	return {
+		...defaultConfig,
+		...axisOptions,
+		axisBorder: {
+			...axisOptions?.axisBorder,
+			show: true,
+			color: axisOptions?.axisBorder?.color || 'rgba(145, 158, 171, 0.32)',
+		},
+		axisTicks: {
+			...axisOptions?.axisTicks,
+			show: true,
+			color: axisOptions?.axisTicks?.color || 'rgba(145, 158, 171, 0.32)',
+		},
+		title: {
+			...(unit ? { text: `Value (${unit})` } : {}),
+			...axisOptions?.title,
+			style: {
+				color: '#637381',
+				fontSize: '12px',
+				fontWeight: 500,
+				...axisOptions?.title?.style,
+			},
+		},
+		labels: {
+			...defaultConfig.labels,
+			...axisOptions?.labels,
+			style: {
+				...defaultConfig.labels.style,
+				...axisOptions?.labels?.style,
+			},
+			show: true,
+		},
+	};
+};
+
 const escapeHtml = (str) =>
 	String(str).replace(
 		/[&<>"']/g,
@@ -704,34 +742,17 @@ const CustomApexChart = ({
 					show: true,
 				},
 			},
-			yaxis: {
-				...getApexYAxisConfig({ unit: resolvedUnit, minimal }),
-				...customOptions?.yaxis,
-				axisBorder: {
-					...customOptions?.yaxis?.axisBorder,
-					show: true,
-					color:
-						customOptions?.yaxis?.axisBorder?.color ||
-						'rgba(145, 158, 171, 0.32)',
-				},
-				axisTicks: {
-					...customOptions?.yaxis?.axisTicks,
-					show: true,
-					color:
-						customOptions?.yaxis?.axisTicks?.color ||
-						'rgba(145, 158, 171, 0.32)',
-				},
-				title: {
-					...(resolvedUnit ? { text: `Value (${resolvedUnit})` } : {}),
-					style: { color: '#637381', fontSize: '12px', fontWeight: 500 },
-					...customOptions?.yaxis?.title,
-				},
-				labels: {
-					...getApexYAxisConfig({ unit: resolvedUnit, minimal }).labels,
-					...customOptions?.yaxis?.labels,
-					show: true,
-				},
-			},
+			yaxis: Array.isArray(customOptions?.yaxis)
+				? customOptions.yaxis.map((axisOptions) =>
+						buildYAxisConfig(axisOptions, {
+							unit: resolvedUnit,
+							minimal,
+						})
+				  )
+				: buildYAxisConfig(customOptions?.yaxis, {
+						unit: resolvedUnit,
+						minimal,
+				  }),
 			title: {
 				text: resolvedTitle,
 				align: 'left',

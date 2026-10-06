@@ -46,39 +46,117 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 	}, [slavesId]);
 
 	const seriesData = useMemo(() => {
-		if (!demandIndicator?.data) {
-			return [];
-		}
+		const payload = demandIndicator?.data ?? demandIndicator;
 
-		const points = demandIndicator.data
-			.map((item) => ({
-				x: new Date(item.timestamp).getTime(),
-				y: item.value,
-			}))
-			.filter(
-				(point) =>
-					!Number.isNaN(point.x) && point.y !== null && point.y !== undefined
-			)
-			.sort((a, b) => a.x - b.x);
+		const getReadings = (key) => {
+			const bucket = Array.isArray(payload)
+				? payload.find((item) => item?.[key] !== undefined)?.[key]
+				: payload?.[key];
 
-		// Keep the trend readable on a card-sized chart instead of plotting
-		// every raw reading.
-		return downsample(points);
+			if (Array.isArray(bucket)) {
+				return bucket;
+			}
+
+			// The new API groups each series in an object containing its own list.
+			return (
+				[bucket?.data, bucket?.list, bucket?.points, bucket?.readings].find(
+					Array.isArray
+				) || []
+			);
+		};
+
+		const toPoints = (readings, key) => {
+			if (!Array.isArray(readings)) {
+				return [];
+			}
+
+			const points = readings
+				.map((item) => {
+					const value = item?.value ?? item?.[key];
+
+					return {
+						x: new Date(item?.timestamp).getTime(),
+						y:
+							value === null || value === undefined || value === ''
+								? Number.NaN
+								: Number(value),
+					};
+				})
+				.filter((point) => !Number.isNaN(point.x) && Number.isFinite(point.y))
+				.sort((a, b) => a.x - b.x);
+
+			// Keep each trend readable on a card-sized chart instead of plotting
+			// every raw reading.
+			return downsample(points);
+		};
+
+		return {
+			positive: toPoints(getReadings('positive'), 'positive'),
+			negative: toPoints(getReadings('negative'), 'negative'),
+		};
 	}, [demandIndicator]);
 
-	const yAxisMax = useMemo(() => {
-		if (!seriesData.length) {
-			return 14;
-		}
+	const hasData = seriesData.positive.length + seriesData.negative.length > 0;
 
-		const maxValue = Math.max(...seriesData.map((point) => point.y));
-		return maxValue <= 0 ? 14 : Math.ceil(maxValue * 1.2);
+	const yAxes = useMemo(() => {
+		const getRange = (points, fallback) => {
+			if (!points.length) {
+				return fallback;
+			}
+
+			const values = points.map((point) => point.y);
+			const minValue = Math.min(...values);
+			const maxValue = Math.max(...values);
+
+			if (minValue === maxValue) {
+				const padding = Math.max(Math.abs(minValue) * 0.2, 1);
+				return {
+					min: Math.floor(Math.min(0, minValue - padding)),
+					max: Math.ceil(Math.max(0, maxValue + padding)),
+				};
+			}
+
+			const padding = (maxValue - minValue) * 0.1;
+			return {
+				min: Math.floor(Math.min(0, minValue - padding)),
+				max: Math.ceil(Math.max(0, maxValue + padding)),
+			};
+		};
+
+		return [
+			{
+				seriesName: 'Positive Demand',
+				...getRange(seriesData.positive, { min: 0, max: 14 }),
+				tickAmount: 2,
+				title: { text: '' },
+				axisBorder: { color: CHART_COLORS.demand },
+				axisTicks: { color: CHART_COLORS.demand },
+				labels: { style: { colors: CHART_COLORS.demand } },
+			},
+			{
+				seriesName: 'Negative Demand',
+				...getRange(seriesData.negative, { min: -14, max: 0 }),
+				opposite: true,
+				tickAmount: 2,
+				title: { text: '' },
+				axisBorder: { color: CHART_COLORS.danger },
+				axisTicks: { color: CHART_COLORS.danger },
+				labels: {
+					offsetX: 2,
+					style: { colors: CHART_COLORS.danger },
+				},
+			},
+		];
 	}, [seriesData]);
 
 	const series = [
 		{
-			name: 'Peak Demand',
-			data: seriesData,
+			name: 'Positive Demand',
+			data: seriesData.positive,
+		},
+		{
+			name: 'Negative Demand',
+			data: seriesData.negative,
 		},
 	];
 
@@ -126,20 +204,23 @@ const ENERGYDemandIndicator = ({ slavesId }) => {
 			accentColor={CHART_COLORS.demand}
 			icon={chartToggle}
 		>
-			{demandIndicator && demandIndicator?.data?.length ? (
+			{hasData ? (
 				<Fade in key={chartType} timeout={300}>
 					<Box height="100%" width="100%" overflow="hidden">
 						<CustomApexChart
 							key={chartType}
 							series={series}
-							type={chartType === 'bar' ? 'bar' : 'area'}
-							colors={[CHART_COLORS.demand]}
+							type={chartType === 'bar' ? 'bar' : 'line'}
+							colors={[CHART_COLORS.demand, CHART_COLORS.danger]}
 							xAxesType="datetime"
 							granularity="time"
 							unit="kW"
 							tickAmount={4}
 							showToolbar={false}
-							customOptions={{ yaxis: { min: 0, max: yAxisMax } }}
+							customOptions={{
+								yaxis: yAxes,
+								legend: { show: false },
+							}}
 							height="100%"
 						/>
 					</Box>

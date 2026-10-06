@@ -52,7 +52,7 @@ const ROW_ACCENTS = getCategoricalColors(6);
 // Distinct from any single row's accent — signals "this combines every row"
 // rather than belonging to one of them.
 const MERGE_ACCENT = getCategoricalColors(7)[6];
-const ENERGY_PARAMETER_VALUE = 'acte_im,reacte_im,acte_ex';
+const ENERGY_PARAMETER_VALUE = 'acte_im,reacte_im,acte_ex,reacte_ex';
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 

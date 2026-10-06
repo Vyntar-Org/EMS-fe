@@ -37,8 +37,8 @@ const PhaseMetric = memo(({ phase, value, unit, color }) => (
 	<Box
 		sx={{
 			minWidth: 0,
-			p: 0.75,
-			borderRadius: 2,
+			p: 1.5,
+			borderRadius: '11px',
 			border: '1px solid',
 			borderColor: 'divider',
 			bgcolor: 'background.paper',
@@ -112,14 +112,14 @@ const ThresholdBar = memo(({ value, type }) => {
 		imbalanceValue >= threshold.normal
 			? {
 					label: 'Normal',
-					color: '#0F766E',
+					color: '#1BAF7A',
 					fillColor: '#CCFBF1',
 					Icon: CheckCircle,
 			  }
 			: imbalanceValue >= threshold.warning
 			  ? {
 						label: 'Warning',
-						color: '#D97706',
+						color: '#EA580C',
 						fillColor: '#FEF3C7',
 						Icon: Warning,
 			    }
@@ -320,8 +320,7 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 				>
 					<Box
 						sx={{
-							px: 1,
-							py: 0.65,
+							p:1.5,
 							borderRadius: 1,
 							border: '1px solid',
 							borderColor: 'divider',

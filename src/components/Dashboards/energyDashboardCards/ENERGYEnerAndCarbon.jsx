@@ -15,7 +15,7 @@ const METRICS = [
 	{
 		key: 'main',
 		label: 'Main',
-		color: '#2563EB',
+		color: '#1976d2',
 		Icon: ElectricalServicesRounded,
 	},
 	{ key: 'backup', label: 'Backup', color: '#EA580C', Icon: Battery90Rounded },
