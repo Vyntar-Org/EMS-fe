@@ -320,7 +320,7 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 				>
 					<Box
 						sx={{
-							p:1.5,
+							p: 1.5,
 							borderRadius: 1,
 							border: '1px solid',
 							borderColor: 'divider',
