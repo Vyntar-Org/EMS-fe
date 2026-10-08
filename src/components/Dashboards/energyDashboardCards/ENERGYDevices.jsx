@@ -11,7 +11,7 @@ import NoDataFound from '../../common/errors/NoDataFound';
 
 const ONLINE_COLOR = '#16A34A';
 const OFFLINE_COLOR = '#DC2626';
-const ACCENT = '#2563EB';
+const ACCENT = '#1976d2';
 
 const TotalDevices = ({ value, label = 'Total Devices' }) => (
 	<>

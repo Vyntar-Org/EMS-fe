@@ -1,10 +1,24 @@
-import { RestartAlt, Search, Timeline } from '@mui/icons-material';
+import {
+	BarChart,
+	RestartAlt,
+	Search,
+	SsidChart,
+	Timeline,
+} from '@mui/icons-material';
 import {
 	Box,
 	Button,
 	Checkbox,
 	FormControlLabel,
 	Grid,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
+	ToggleButton,
+	ToggleButtonGroup,
 	Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
@@ -23,6 +37,8 @@ import {
 	getCategoricalColors,
 } from '../../helpers/chartConfig';
 import { basePickerStyles } from '../../helpers/common';
+import { smartParseDate } from '../../helpers/dateParse';
+import { formatNumber } from '../../helpers/formatters';
 import CustomApexChart from '../common/CustomApexChart';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
@@ -36,6 +52,7 @@ const ROW_ACCENTS = getCategoricalColors(6);
 // Distinct from any single row's accent — signals "this combines every row"
 // rather than belonging to one of them.
 const MERGE_ACCENT = getCategoricalColors(7)[6];
+const ENERGY_PARAMETER_VALUE = 'acte_im,reacte_im,acte_ex,reacte_ex';
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 
@@ -166,7 +183,7 @@ const DeviceFilterRow = memo(
 						sx={basePickerStyles}
 					/>
 				</Grid>
-				<Grid item xs={12} md={4.5}>
+				<Grid item xs={12} md={4.5} display="flex" alignItems="center" gap={1}>
 					<CustomAutocomplete
 						multiple
 						options={parameterOptions}
@@ -178,6 +195,26 @@ const DeviceFilterRow = memo(
 						size="small"
 						sx={basePickerStyles}
 					/>
+					{payload?.parameters?.length === 1 &&
+						payload.parameters[0]?.value === ENERGY_PARAMETER_VALUE && (
+							<FormControlLabel
+								control={
+									<Checkbox
+										checked={Boolean(payload?.is_hourly)}
+										onChange={(event) =>
+											handleFieldChange(
+												comparisonId,
+												'is_hourly',
+												event.target.checked
+											)
+										}
+										size="small"
+									/>
+								}
+								label="Hourly"
+								sx={{ ml: 0, mt: 0.5 }}
+							/>
+						)}
 				</Grid>
 				<Grid
 					item
@@ -242,6 +279,45 @@ DeviceFilterRow.displayName = 'DeviceFilterRow';
 // scroll for anything beyond a single row).
 const CHART_CANVAS_HEIGHT = 350;
 
+const HourlyDataTable = ({ rows, activeKeys }) => {
+	if (!Array.isArray(rows) || !rows.length) return null;
+	return (
+		<TableContainer sx={{ mt: 1.5, maxHeight: 320, borderRadius: 2 }}>
+			<Table stickyHeader size="small" aria-label="Hourly energy data">
+				<TableHead>
+					<TableRow>
+						<TableCell>Hour</TableCell>
+						{activeKeys.map((key) => (
+							<TableCell key={key} align="right">
+								{KEY_PARAMETER_OPTIONS_MAPPING[key] || key}
+							</TableCell>
+						))}
+					</TableRow>
+				</TableHead>
+				<TableBody>
+					{rows.map((row, index) => {
+						const timestamp =
+							row?.timestamp ?? row?.datetime ?? row?.hour ?? row?.date;
+						const parsed = smartParseDate(timestamp);
+						return (
+							<TableRow key={`${timestamp ?? 'hour'}-${index}`} hover>
+								<TableCell>
+									{parsed ? parsed.format('DD MMM, hh A') : timestamp}
+								</TableCell>
+								{activeKeys.map((key) => (
+									<TableCell key={key} align="right">
+										{formatNumber(row?.[key] ?? 0, 2, { fallback: '0' })}
+									</TableCell>
+								))}
+							</TableRow>
+						);
+					})}
+				</TableBody>
+			</Table>
+		</TableContainer>
+	);
+};
+
 const AnalyticsRow = memo(
 	({
 		id,
@@ -292,6 +368,8 @@ const AnalyticsRow = memo(
 		const accent = ROW_ACCENTS[index % ROW_ACCENTS.length];
 
 		const deviceLabel = payload?.slave_id?.label || `Device Segment ${id}`;
+		const isHourly = Boolean(payload?.is_hourly);
+		const chartType = payload?.chart_type || 'line';
 
 		return (
 			<Box
@@ -372,6 +450,26 @@ const AnalyticsRow = memo(
 					parameterOptions={parametersData}
 				/>
 
+				{isHourly && (
+					<Box display="flex" justifyContent="flex-end" mb={1}>
+						<ToggleButtonGroup
+							value={chartType}
+							exclusive
+							onChange={(_event, value) =>
+								value && handleFieldChange(id, 'chart_type', value)
+							}
+							size="small"
+						>
+							<ToggleButton value="line" aria-label="Line chart">
+								<SsidChart fontSize="small" />
+							</ToggleButton>
+							<ToggleButton value="bar" aria-label="Bar chart">
+								<BarChart fontSize="small" />
+							</ToggleButton>
+						</ToggleButtonGroup>
+					</Box>
+				)}
+
 				<Box height={CHART_CANVAS_HEIGHT}>
 					{isLoading ? (
 						<Loading />
@@ -380,12 +478,15 @@ const AnalyticsRow = memo(
 					) : (
 						<CustomApexChart
 							series={processedData.series}
-							type="line"
+							type={isHourly && chartType === 'bar' ? 'bar' : 'line'}
 							xAxesType="datetime"
 							height={CHART_CANVAS_HEIGHT}
 						/>
 					)}
 				</Box>
+				{isHourly && (
+					<HourlyDataTable rows={rawAnalytics?.data} activeKeys={activeKeys} />
+				)}
 
 				{/* {hoveredData && (
 					<Box
@@ -612,7 +713,15 @@ const EnergyAnalytics = () => {
 	const [mergeCompare, setMergeCompare] = useState(false);
 
 	const handleFieldChange = useCallback((id, key, value) => {
-		setPayloads((prev) => ({ ...prev, [id]: { ...prev[id], [key]: value } }));
+		setPayloads((prev) => {
+			const nextRow = { ...prev[id], [key]: value };
+			if (key === 'parameters') {
+				const isEnergyOnly =
+					value?.length === 1 && value[0]?.value === ENERGY_PARAMETER_VALUE;
+				if (!isEnergyOnly) nextRow.is_hourly = false;
+			}
+			return { ...prev, [id]: nextRow };
+		});
 	}, []);
 
 	const handleSearch = useCallback(
@@ -647,7 +756,8 @@ const EnergyAnalytics = () => {
 							slaveId,
 							parameterValues,
 							formattedStart,
-							formattedEnd
+							formattedEnd,
+							Boolean(currentPayload.is_hourly)
 						);
 						const res = await api.get(newApiUrl);
 						if (res?.success) {

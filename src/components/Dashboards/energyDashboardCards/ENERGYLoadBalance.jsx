@@ -24,18 +24,12 @@ const PHASE_COLORS = {
 
 const THRESHOLDS = {
 	V: {
-		normal: 1,
-		warning: 2,
-		normalText: '≤1%',
-		warningText: '>1% to 2%',
-		criticalText: '>2%',
+		normal: 99,
+		warning: 97,
 	},
 	A: {
-		normal: 6,
-		warning: 10,
-		normalText: '≤5–6%',
-		warningText: '>6% to 10%',
-		criticalText: '>10%',
+		normal: 96,
+		warning: 90,
 	},
 };
 
@@ -43,8 +37,8 @@ const PhaseMetric = memo(({ phase, value, unit, color }) => (
 	<Box
 		sx={{
 			minWidth: 0,
-			p: 0.75,
-			borderRadius: 2,
+			p: 1.5,
+			borderRadius: '11px',
 			border: '1px solid',
 			borderColor: 'divider',
 			bgcolor: 'background.paper',
@@ -115,27 +109,28 @@ const ThresholdBar = memo(({ value, type }) => {
 	const displayValue = formatNumber(imbalanceValue, 2, { fallback: '0' });
 
 	const status =
-		imbalanceValue <= threshold.normal
+		imbalanceValue >= threshold.normal
 			? {
 					label: 'Normal',
-					color: '#16A34A',
+					color: '#1BAF7A',
+					fillColor: '#CCFBF1',
 					Icon: CheckCircle,
-					markerPosition: 16.67,
 			  }
-			: imbalanceValue <= threshold.warning
+			: imbalanceValue >= threshold.warning
 			  ? {
 						label: 'Warning',
-						color: '#F59E0B',
+						color: '#EA580C',
+						fillColor: '#FEF3C7',
 						Icon: Warning,
-						markerPosition: 50,
 			    }
 			  : {
 						label: 'Critical',
 						color: '#DC2626',
+						fillColor: '#FEE2E2',
 						Icon: Error,
-						markerPosition: 83.33,
 			    };
 	const { Icon } = status;
+	const fillPercentage = Math.min(Math.max(imbalanceValue, 0), 100);
 
 	return (
 		<Box>
@@ -185,55 +180,22 @@ const ThresholdBar = memo(({ value, type }) => {
 
 			<Box mt={0.65} position="relative" pt={0.7}>
 				<Box
-					sx={{
-						position: 'absolute',
-						left: `calc(${status.markerPosition}% - 1px)`,
-						top: 0,
-						width: 2,
-						height: 13,
-						bgcolor: 'text.primary',
-						borderRadius: 1,
-						zIndex: 1,
-					}}
-				/>
-				<Box
-					display="flex"
 					height={7}
 					borderRadius={4}
 					overflow="hidden"
 					boxShadow="inset 0 1px 2px rgba(0,0,0,.18)"
+					sx={{ bgcolor: 'action.hover' }}
 				>
-					<Box bgcolor="#16A34A" flex={1} />
-					<Box bgcolor="#F59E0B" flex={1} />
-					<Box bgcolor="#DC2626" flex={1} />
-				</Box>
-			</Box>
-
-			<Box display="flex" justifyContent="space-between" gap={0.5} mt={0.35}>
-				{[
-					['#16A34A', `Normal ${threshold.normalText}`],
-					['#F59E0B', `Warning ${threshold.warningText}`],
-					['#DC2626', `Critical ${threshold.criticalText}`],
-				].map(([color, label]) => (
 					<Box
-						key={label}
-						display="flex"
-						alignItems="center"
-						gap={0.3}
-						minWidth={0}
-					>
-						<Box
-							width={6}
-							height={6}
-							borderRadius="50%"
-							bgcolor={color}
-							flexShrink={0}
-						/>
-						<Typography noWrap fontSize="7.5px" color="text.secondary">
-							{label}
-						</Typography>
-					</Box>
-				))}
+						sx={{
+							height: '100%',
+							width: `${fillPercentage}%`,
+							bgcolor: status.color,
+							borderRadius: 'inherit',
+							transition: 'width 300ms ease, background-color 300ms ease',
+						}}
+					/>
+				</Box>
 			</Box>
 		</Box>
 	);
@@ -358,8 +320,7 @@ const ENERGYLoadBalance = ({ slavesId }) => {
 				>
 					<Box
 						sx={{
-							px: 1,
-							py: 0.65,
+							p: 1.5,
 							borderRadius: 1,
 							border: '1px solid',
 							borderColor: 'divider',

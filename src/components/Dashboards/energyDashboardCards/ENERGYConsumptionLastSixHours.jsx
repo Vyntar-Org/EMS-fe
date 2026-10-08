@@ -43,7 +43,7 @@ const ENERGYConsumptionLastSixHours = () => {
 			actualLabel: '(kWh)',
 			includeTarget: false,
 		},
-		DEFAULT_MAX_POINTS
+		50
 	);
 
 	const handleChartTypeChange = (_e, val) => {
