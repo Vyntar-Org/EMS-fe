@@ -34,7 +34,6 @@ const PremiumMachineCard = ({
 	return (
 		<Box
 			sx={{
-				height: '100%',
 				width: '100%',
 				maxWidth: '100%',
 				boxSizing: 'border-box',
@@ -46,7 +45,6 @@ const PremiumMachineCard = ({
 				boxShadow: '0 12px 35px rgba(37,69,111,.10)',
 				display: 'flex',
 				flexDirection: 'column',
-				minHeight: MACHINE_CARD_DESIGN.cardMinHeight,
 				gap: MACHINE_CARD_DESIGN.cardGap,
 				minWidth: 0,
 				transition: (t) =>

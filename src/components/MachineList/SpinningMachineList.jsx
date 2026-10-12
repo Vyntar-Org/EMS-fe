@@ -828,7 +828,7 @@ const SpinningMachineList = () => {
 						{isLoading ? (
 							<Loading />
 						) : filteredMachines?.length ? (
-							<Grid container spacing={1.5}>
+							<Grid container spacing={1.5} alignItems="stretch">
 								{filteredMachines.map((machine) => {
 									const latest = machine?.latest || {};
 									const rawStatus =

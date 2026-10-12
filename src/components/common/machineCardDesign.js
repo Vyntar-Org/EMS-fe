@@ -4,7 +4,6 @@ export const MACHINE_CARD_DESIGN = {
 	gridGap: 1.5,
 	cardRadius: 2.5,
 	sectionRadius: 1.5,
-	cardMinHeight: 360,
 	headerMinHeight: 88,
 	titleSize: '0.95rem',
 	metricLabelSize: '0.625rem',

@@ -317,7 +317,7 @@ const SolarMachineList = () => {
 						{isLoading ? (
 							<SolarMachineListSkeleton />
 						) : filteredMachines?.length ? (
-							<Grid container spacing={1.5}>
+							<Grid container spacing={1.5} alignItems="stretch">
 								{filteredMachines.map((mc) => (
 									<Grid
 										item

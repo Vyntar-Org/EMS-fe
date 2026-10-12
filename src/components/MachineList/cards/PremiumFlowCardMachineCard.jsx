@@ -1,136 +1,219 @@
 import {
-	Box,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
-} from '@mui/material';
+	CalendarMonthRounded,
+	EqualizerRounded,
+	TrendingDownRounded,
+	TrendingUpRounded,
+} from '@mui/icons-material';
+import { Box, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { useEffect, useMemo, useState } from 'react';
 
+import { api } from '../../../helpers/api';
 import { formatNumber } from '../../../helpers/formatters';
-import { MachineMetricPanel } from '../../common/MachineCardBits';
+import {
+	APP_ACCENT_COLOR,
+	MachineMetricPanel,
+} from '../../common/MachineCardBits';
+import { MACHINE_CARD_DESIGN } from '../../common/machineCardDesign';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
-import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
-import StatusChips from '../../common/StatusChips';
 
-// Two-column collection-tank readout (Water Level / Motor Status per tank) —
-// unique to the STP/FlowMeter TANK_CARD variant.
-const WaterLevelTableRows = ({ groupedMetricsData }) => {
-	const findMetric = (key) =>
-		groupedMetricsData?.find((m) => m.metric_key === key);
+const POSITIVE = '#16A34A';
+const NEGATIVE = '#F23857';
 
-	const level1 = findMetric('Level 1');
-	const level2 = findMetric('Level 2');
-	const motor1 = findMetric('Motor 1 Status');
-	const motor2 = findMetric('Motor 2 Status');
+const formatMetricValue = (metric) => {
+	const numericValue = formatNumber(metric?.value, 2, { fallback: null });
+	const value = numericValue ?? metric?.value ?? '-';
+	return `${value}${metric?.unit ? ` ${metric.unit}` : ''}`;
+};
 
-	const rowsConfig = [
-		{
-			left: {
-				label: 'Water Level',
-				value: level1?.value,
-				color:
-					level1?.status_color || (level1?.value === 'Full' ? 'RED' : 'GREEN'),
-			},
-			right: {
-				label: 'Water Level',
-				value: level2?.value,
-				color:
-					level2?.status_color || (level2?.value === 'Low' ? 'RED' : 'GREEN'),
-			},
-		},
-		{
-			left: {
-				label: 'Motor Status',
-				value: motor1?.value,
-				color: motor1?.status_color,
-			},
-			right: {
-				label: 'Motor Status',
-				value: motor2?.value,
-				color: motor2?.status_color,
-			},
-		},
-	];
+const getPointValue = (point, metric) => {
+	if (typeof point === 'number') {
+		return point;
+	}
+	if (!point || typeof point !== 'object') {
+		return Number.NaN;
+	}
+
+	const preferredKeys = [
+		metric?.metric_key,
+		metric?.label,
+		'value',
+		'actual',
+	].filter(Boolean);
+	for (const key of preferredKeys) {
+		const numericValue = Number(point[key]);
+		if (Number.isFinite(numericValue)) {
+			return numericValue;
+		}
+	}
+
+	const ignoredKeys = new Set([
+		'timestamp',
+		'datetime',
+		'date_time',
+		'date',
+		'time',
+		'created_at',
+	]);
+	return Object.entries(point).reduce((result, [key, value]) => {
+		if (Number.isFinite(result) || ignoredKeys.has(key.toLowerCase())) {
+			return result;
+		}
+		const numericValue = Number(value);
+		return Number.isFinite(numericValue) ? numericValue : result;
+	}, Number.NaN);
+};
+
+const percentChange = (current, previous) => {
+	if (
+		!Number.isFinite(current) ||
+		!Number.isFinite(previous) ||
+		previous === 0
+	) {
+		return null;
+	}
+	return ((current - previous) / Math.abs(previous)) * 100;
+};
+
+const ChangeBadge = ({ value }) => {
+	if (!Number.isFinite(value)) {
+		return null;
+	}
+
+	const isPositive = value >= 0;
+	const color = isPositive ? POSITIVE : NEGATIVE;
+	const Icon = isPositive ? TrendingUpRounded : TrendingDownRounded;
 
 	return (
-		<>
-			{rowsConfig.map((row, index) => (
-				<TableRow key={index}>
-					<TableCell
-						sx={{
-							border: 0,
-							py: 0.5,
-							width: '50%',
-							px: 0.5,
-							borderRight: (t) => `1px solid ${t.palette.divider}`,
-						}}
-					>
-						<Box
-							width="100%"
-							display="flex"
-							justifyContent="space-between"
-							alignItems="center"
-						>
-							<Box width="calc(100% - 40px - 4px)" textAlign="left">
-								<ResponsiveTextWrapper
-									fontSize="10.5px"
-									color="text.primary"
-									fontWeight={600}
-									value={row.left.label}
-									sx={{
-										whiteSpace: 'nowrap',
-										overflow: 'hidden',
-										textOverflow: 'ellipsis',
-									}}
-								/>
-							</Box>
-							<StatusChips value={String(row.left.value ?? 'Nil')} />
-						</Box>
-					</TableCell>
-					<TableCell
-						align="right"
-						sx={{
-							border: 0,
-							py: 0.5,
-							width: '50%',
-							px: 0.5,
-						}}
-					>
-						<Box
-							width="100%"
-							display="flex"
-							justifyContent="space-between"
-							alignItems="center"
-						>
-							<Box width="calc(100% - 41px - 4px)" textAlign="left">
-								<ResponsiveTextWrapper
-									fontSize="10.5px"
-									color="text.primary"
-									fontWeight={600}
-									value={row.right.label}
-									sx={{
-										whiteSpace: 'nowrap',
-										overflow: 'hidden',
-										textOverflow: 'ellipsis',
-									}}
-								/>
-							</Box>
-							<StatusChips value={String(row.right.value ?? 'Nil')} />
-						</Box>
-					</TableCell>
-				</TableRow>
-			))}
-		</>
+		<Box sx={{ flexShrink: 0, textAlign: 'right' }}>
+			<Stack
+				direction="row"
+				alignItems="center"
+				spacing={0.25}
+				sx={{
+					px: 0.55,
+					py: 0.25,
+					borderRadius: 1,
+					bgcolor: alpha(color, 0.08),
+				}}
+			>
+				<Icon sx={{ color, fontSize: 15 }} />
+				<Typography sx={{ color, fontSize: '0.68rem', fontWeight: 900 }}>
+					{isPositive ? '+' : ''}
+					{formatNumber(value, 1, { fallback: '0' })}%
+				</Typography>
+			</Stack>
+			<Typography
+				sx={{ mt: 0.15, color: 'text.secondary', fontSize: '0.5rem' }}
+			>
+				latest interval
+			</Typography>
+		</Box>
 	);
 };
 
+const TinyTrend = ({ values, color }) => {
+	if (values.length < 2) {
+		return null;
+	}
+
+	const min = Math.min(...values);
+	const max = Math.max(...values);
+	const line = values
+		.map((value, index) => {
+			const x = (index / (values.length - 1)) * 160;
+			const y = 24 - ((value - min) / (max - min || 1)) * 16;
+			return `${x},${y}`;
+		})
+		.join(' ');
+
+	return (
+		<Box
+			component="svg"
+			viewBox="0 0 160 28"
+			preserveAspectRatio="none"
+			aria-label="Recent machine readings"
+			sx={{
+				position: 'absolute',
+				left: 8,
+				right: 8,
+				bottom: 3,
+				width: 'calc(100% - 16px)',
+				height: 22,
+			}}
+		>
+			<polygon points={`0,28 ${line} 160,28`} fill={alpha(color, 0.1)} />
+			<polyline
+				points={line}
+				fill="none"
+				stroke={color}
+				strokeWidth="2.3"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+			/>
+		</Box>
+	);
+};
+
+const PeriodMetric = ({ label, value, trendValues, color }) => (
+	<Box
+		sx={{
+			position: 'relative',
+			minWidth: 0,
+			minHeight: 68,
+			p: 0.75,
+			border: '1px solid',
+			borderColor: 'divider',
+			borderRadius: MACHINE_CARD_DESIGN.sectionRadius,
+			boxShadow: '0 3px 10px rgba(37,69,111,.04)',
+			overflow: 'hidden',
+		}}
+	>
+		<Stack direction="row" spacing={0.4} alignItems="center">
+			<CalendarMonthRounded sx={{ color, fontSize: 16 }} />
+			<Typography
+				sx={{ color: 'text.secondary', fontSize: '0.65rem', fontWeight: 600 }}
+			>
+				{label}
+			</Typography>
+		</Stack>
+		<Typography
+			noWrap
+			sx={{ color: 'text.primary', fontSize: '0.86rem', fontWeight: 900 }}
+		>
+			{value}
+		</Typography>
+		<TinyTrend values={trendValues} color={color} />
+	</Box>
+);
+
+const SummaryMetric = ({ label, value }) => (
+	<Stack
+		direction="row"
+		justifyContent="center"
+		alignItems="center"
+		spacing={0.4}
+		minWidth={0}
+	>
+		<EqualizerRounded sx={{ color: 'text.secondary', fontSize: 17 }} />
+		<Box minWidth={0}>
+			<Typography noWrap sx={{ color: 'text.secondary', fontSize: '0.55rem' }}>
+				{label}
+			</Typography>
+			<Typography
+				noWrap
+				sx={{ color: 'text.primary', fontSize: '0.68rem', fontWeight: 900 }}
+			>
+				{value}
+			</Typography>
+		</Box>
+	</Stack>
+);
+
 /**
- * Shared dedicated premium card for STP and FlowMeter machine lists (they
- * share the exact same `metrics[]` / `ui_card_type` API shape). Pass
- * `app="STP"` or `app="FLOWMETER"` for the app-specific icon. Renders either
- * a dynamic Parameter/Value table (FLOW_CARD) or the collection-tank Water
- * Level/Motor Status readout (TANK_CARD).
+ * Standard card shared by every non-unique STP and Flow Meter machine type.
+ * Its metric, period and analytics sections deliberately follow the Water
+ * Monitoring card's layout while retaining each machine's own fields/units.
  */
 const PremiumFlowCardMachineCard = ({
 	app,
@@ -138,15 +221,62 @@ const PremiumFlowCardMachineCard = ({
 	status,
 	lastUpdated,
 	metrics = [],
-	cardType,
 	today,
 	mtd,
-	slaveId,
 	trendUrl,
 	onOpenTrend,
 }) => {
-	const isTankCard = cardType === 'TANK_CARD';
-	const isFlowCard = cardType === 'FLOW_CARD';
+	const [trendValues, setTrendValues] = useState([]);
+	const primaryMetric = metrics[0];
+	const accent = APP_ACCENT_COLOR[app] || '#2E90E5';
+
+	useEffect(() => {
+		let active = true;
+		if (!trendUrl || !primaryMetric) {
+			setTrendValues([]);
+			return () => {
+				active = false;
+			};
+		}
+
+		api
+			.get(trendUrl)
+			.then((response) => {
+				if (!active) {
+					return;
+				}
+				const rows = response?.data?.trends || response?.data?.data || [];
+				setTrendValues(
+					rows
+						.map((point) => getPointValue(point, primaryMetric))
+						.filter(Number.isFinite)
+						.slice(-24)
+				);
+			})
+			.catch(() => active && setTrendValues([]));
+
+		return () => {
+			active = false;
+		};
+	}, [primaryMetric, trendUrl]);
+
+	const stats = useMemo(() => {
+		if (!trendValues.length) {
+			return null;
+		}
+		const current = trendValues.at(-1);
+		const previous = trendValues.length > 1 ? trendValues.at(-2) : null;
+		return {
+			latest: current,
+			average:
+				trendValues.reduce((sum, value) => sum + value, 0) / trendValues.length,
+			peak: Math.max(...trendValues),
+			change: percentChange(current, previous),
+		};
+	}, [trendValues]);
+
+	const unit = primaryMetric?.unit ? ` ${primaryMetric.unit}` : '';
+	const hasPeriodMetrics = today !== undefined || mtd !== undefined;
 
 	return (
 		<PremiumMachineCard
@@ -154,72 +284,103 @@ const PremiumFlowCardMachineCard = ({
 			title={title}
 			status={status}
 			lastUpdated={lastUpdated}
-			todayMtd={isFlowCard ? { todayValue: today, mtdValue: mtd } : null}
-			trend={slaveId ? { url: trendUrl } : null}
 			onOpenTrend={onOpenTrend}
+			footer={metrics.length ? undefined : null}
 		>
-			{!isTankCard ? (
-				<MachineMetricPanel
-					rows={metrics.map((row) => ({
-						label: row.label,
-						value: `${formatNumber(row?.value, 2, { fallback: '0' })}${
-							row?.unit ? ` ${row.unit}` : ''
-						}`,
-					}))}
-				/>
+			{metrics.length ? (
+				<Box position="relative">
+					<MachineMetricPanel
+						rows={metrics.map((metric) => ({
+							label: metric?.label || metric?.metric_key || 'Metric',
+							value: formatMetricValue(metric),
+						}))}
+					/>
+					{Number.isFinite(stats?.change) && metrics.length === 1 ? (
+						<Box sx={{ position: 'absolute', top: 5, right: 5 }}>
+							<ChangeBadge value={stats.change} />
+						</Box>
+					) : null}
+				</Box>
 			) : (
 				<Box
 					sx={{
-						border: '1px solid',
+						minHeight: 52,
+						display: 'grid',
+						placeItems: 'center',
+						border: '1px dashed',
 						borderColor: 'divider',
-						borderRadius: '12px',
-						width: '100%',
-						boxShadow: '0 5px 14px rgba(37,69,111,.06)',
-						overflow: 'hidden',
-						bgcolor: 'background.paper',
-						'& .MuiTableCell-root': { bgcolor: 'background.paper' },
+						borderRadius: MACHINE_CARD_DESIGN.sectionRadius,
 					}}
 				>
-					<Table size="small" sx={{ width: '100%', tableLayout: 'fixed' }}>
-						<TableHead>
-							<TableRow>
-								<TableCell
-									sx={{
-										fontWeight: 'bold',
-										border: 0,
-										width: '50%',
-										...(isTankCard ? { px: 0.5, textAlign: 'center' } : {}),
-									}}
-								>
-									<ResponsiveTextWrapper
-										fontSize="9.5px"
-										fontWeight="bold"
-										value={isTankCard ? 'Collection Tank' : 'Parameter'}
-									/>
-								</TableCell>
-								<TableCell
-									align="right"
-									sx={{
-										fontWeight: 'bold',
-										border: 0,
-										width: '50%',
-										...(isTankCard ? { px: 0.5, textAlign: 'center' } : {}),
-									}}
-								>
-									<ResponsiveTextWrapper
-										fontSize="9.5px"
-										fontWeight="bold"
-										value={isTankCard ? 'Filter out' : 'Value'}
-									/>
-								</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							<WaterLevelTableRows groupedMetricsData={metrics} />
-						</TableBody>
-					</Table>
+					<Typography sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>
+						No live metrics available
+					</Typography>
 				</Box>
 			)}
+
+			{hasPeriodMetrics ? (
+				<Box
+					sx={{
+						mt: 0.65,
+						display: 'grid',
+						gridTemplateColumns: 'repeat(2,minmax(0,1fr))',
+						gap: 0.65,
+					}}
+				>
+					<PeriodMetric
+						label="Today"
+						value={today ?? '-'}
+						trendValues={trendValues}
+						color={accent}
+					/>
+					<PeriodMetric
+						label="MTD"
+						value={mtd ?? '-'}
+						trendValues={trendValues}
+						color={accent}
+					/>
+				</Box>
+			) : null}
+
+			<Box
+				sx={{
+					mt: 0.65,
+					minHeight: 43,
+					display: 'grid',
+					gridTemplateColumns: 'repeat(3,minmax(0,1fr))',
+					alignItems: 'center',
+					border: '1px solid',
+					borderColor: 'divider',
+					borderRadius: MACHINE_CARD_DESIGN.sectionRadius,
+					overflow: 'hidden',
+					'& > * + *': { borderLeft: '1px solid', borderColor: 'divider' },
+				}}
+			>
+				<SummaryMetric
+					label="Latest"
+					value={
+						stats
+							? `${formatNumber(stats.latest, 2, { fallback: '-' })}${unit}`
+							: '-'
+					}
+				/>
+				<SummaryMetric
+					label="Average"
+					value={
+						stats
+							? `${formatNumber(stats.average, 2, { fallback: '-' })}${unit}`
+							: '-'
+					}
+				/>
+				<SummaryMetric
+					label="Peak"
+					value={
+						stats
+							? `${formatNumber(stats.peak, 2, { fallback: '-' })}${unit}`
+							: '-'
+					}
+				/>
+			</Box>
 		</PremiumMachineCard>
 	);
 };

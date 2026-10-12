@@ -213,8 +213,6 @@ const PremiumWaterQualityMonitorCard = ({
 				flexDirection: 'column',
 				gap: MACHINE_CARD_DESIGN.cardGap,
 				minWidth: 0,
-				minHeight: MACHINE_CARD_DESIGN.cardMinHeight,
-				height: '100%',
 				boxSizing: 'border-box',
 			}}
 		>

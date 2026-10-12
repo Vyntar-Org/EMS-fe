@@ -560,7 +560,6 @@ const AHUCard = ({ machine, onOpenTrend }) => {
 		<Box
 			sx={{
 				width: '100%',
-				height: '100%',
 				minWidth: 0,
 				p: 1.5,
 				display: 'flex',
@@ -777,6 +776,7 @@ const AHUCard = ({ machine, onOpenTrend }) => {
 				startIcon={<TuneRounded />}
 				endIcon={<ChevronRightRounded />}
 				sx={{
+					mt: 'auto',
 					minHeight: 36,
 					borderRadius: 1.5,
 					fontSize: MACHINE_CARD_DESIGN.actionSize,
@@ -963,7 +963,7 @@ const AHUMachineList = () => {
 				{loading ? (
 					<Loading />
 				) : filteredMachines.length ? (
-					<Grid container spacing={2}>
+					<Grid container spacing={2} alignItems="stretch">
 						{filteredMachines.map((machine) => (
 							<Grid
 								item

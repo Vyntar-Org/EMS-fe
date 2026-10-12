@@ -18,15 +18,7 @@ import { APP_ACCENT_COLOR } from '../common/MachineCardBits';
 import PremiumModal from '../common/PremiumModal';
 import TemperatureMachineListSkeleton from '../skeletonLoaders/TemperatureMachineListSkeleton';
 
-import PremiumFlowCardMachineCard from './cards/PremiumFlowCardMachineCard';
-import PremiumWaterQualityMonitorCard from './cards/PremiumWaterQualityMonitorCard';
-
-const isWaterQualityMetric = (metric) => {
-	const key = `${metric?.metric_key || ''} ${metric?.label || ''}`
-		.trim()
-		.toLowerCase();
-	return key === 'tds' || key === 'ph' || /(^|\s)(tds|ph)(\s|$)/.test(key);
-};
+import FlowStpMachineCards from './FlowStpMachineCards';
 
 const MachineListHeader = ({
 	slaveOptions,
@@ -148,6 +140,7 @@ const ModalContentForTrend = memo(
 		const fetchTrendModalChartData = async (parameter) => {
 			if (!slaveId || !parameter) {
 				setChartResponse(null);
+				setChartLoading(false);
 				return;
 			}
 
@@ -282,32 +275,6 @@ const STPMachineList = () => {
 		fetchMachineListData();
 	}, []);
 
-	const remapWaterMetricsData = (apiResponse, cardName) => {
-		if (!Array.isArray(apiResponse)) {
-			return [];
-		}
-
-		const levelMetrics = apiResponse.filter((item) =>
-			item.metric_key.includes('Level')
-		);
-		const motorMetrics = apiResponse.filter((item) =>
-			item.metric_key.includes('Motor')
-		);
-
-		return [
-			{
-				label: 'Level',
-				value: levelMetrics.map((m) => m.metric_key).join(', '),
-				desc: cardName,
-			},
-			{
-				label: 'Motor',
-				value: motorMetrics.map((m) => m.metric_key).join(', '),
-				desc: cardName,
-			},
-		];
-	};
-
 	return (
 		<>
 			<Box
@@ -336,115 +303,14 @@ const STPMachineList = () => {
 						{isLoading ? (
 							<TemperatureMachineListSkeleton />
 						) : filteredMachines?.length ? (
-							<Grid container spacing={1.5}>
-								{filteredMachines.flatMap((mc, ind) => {
-									const filterParamsAlone = mc?.metrics?.filter(
-										(f) =>
-											!['today_consumption', 'mtd_consumption'].includes(
-												f?.metric_key
-											)
-									);
-
-									const paramOptions =
-										mc?.ui_card_type === 'TANK_CARD'
-											? remapWaterMetricsData(filterParamsAlone, mc?.card_name)
-											: filterParamsAlone?.map((i) => ({
-													value: i.metric_key,
-													desc: mc?.card_name,
-													label: i.label,
-											  }));
-
-									const qualityMetrics =
-										filterParamsAlone?.filter(isWaterQualityMetric) || [];
-
-									if (qualityMetrics.length) {
-										return qualityMetrics.map((metric) => (
-											<Grid
-												item
-												xs={12}
-												sm={6}
-												md={4}
-												lg={3}
-												sx={{ display: 'flex', minWidth: 0 }}
-												key={`stp-quality-${mc?.slave_id}-${
-													metric?.metric_key || metric?.label
-												}`}
-											>
-												<PremiumWaterQualityMonitorCard
-													title={mc?.card_name || ''}
-													status={mc?.status}
-													lastUpdated={mc?.last_updated}
-													metric={metric}
-													trendUrl={API_URLS.STP_MACHINE_LIST_TREND(
-														mc?.slave_id,
-														metric?.metric_key
-													)}
-													onOpenTrend={() =>
-														handleOpenModal(mc, [
-															{
-																value: metric?.metric_key,
-																desc: mc?.card_name,
-																label: metric?.label,
-															},
-														])
-													}
-												/>
-											</Grid>
-										));
-									}
-
-									return [
-										<Grid
-											item
-											xs={12}
-											sm={6}
-											md={4}
-											lg={3}
-											sx={{ display: 'flex', minWidth: 0 }}
-											key={`water-machine-${ind + 1}`}
-										>
-											<PremiumFlowCardMachineCard
-												app="STP"
-												cardType={mc?.ui_card_type}
-												title={mc?.card_name || ''}
-												status={mc?.status}
-												lastUpdated={mc?.last_updated}
-												today={`${
-													mc?.metrics?.find(
-														(v) => v?.metric_key === 'today_consumption'
-													)?.value || 0
-												} KLD`}
-												mtd={`${
-													mc?.metrics?.find(
-														(v) => v?.metric_key === 'mtd_consumption'
-													)?.value || 0
-												} KLD`}
-												todayValue={
-													mc?.metrics?.find(
-														(v) => v?.metric_key === 'today_consumption'
-													)?.value || 0
-												}
-												mtdValue={
-													mc?.metrics?.find(
-														(v) => v?.metric_key === 'mtd_consumption'
-													)?.value || 0
-												}
-												slaveId={mc?.slave_id}
-												trendUrl={API_URLS.STP_MACHINE_LIST_TREND(
-													mc?.slave_id,
-													paramOptions?.[0]?.value
-												)}
-												onOpenTrend={() => handleOpenModal(mc, paramOptions)}
-												metrics={mc?.metrics?.filter(
-													(f) =>
-														!['today_consumption', 'mtd_consumption'].includes(
-															f?.metric_key
-														)
-												)}
-											/>
-										</Grid>,
-									];
-								})}
+							<Grid container spacing={1.5} alignItems="stretch">
+								<FlowStpMachineCards
+									machines={filteredMachines}
+									app="STP"
+									consumptionUnit="KLD"
+									getTrendUrl={API_URLS.STP_MACHINE_LIST_TREND}
+									onOpenTrend={handleOpenModal}
+								/>
 							</Grid>
 						) : (
 							<NoDataFound message="No machine readings received yet — data appears once the device reports" />

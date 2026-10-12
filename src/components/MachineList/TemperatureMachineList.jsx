@@ -323,7 +323,7 @@ const TemperatureMachineList = () => {
 						{isLoading ? (
 							<TemperatureMachineListSkeleton />
 						) : filteredMachines?.length ? (
-							<Grid container spacing={1.5}>
+							<Grid container spacing={1.5} alignItems="stretch">
 								{filteredMachines.map((mc) => {
 									const availableParams = getAvailableParams(
 										mc,

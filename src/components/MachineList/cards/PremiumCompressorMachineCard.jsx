@@ -88,11 +88,9 @@ const PremiumCompressorMachineCard = ({
 	return (
 		<Box
 			sx={{
-				height: '100%',
 				width: '100%',
 				maxWidth: '100%',
 				boxSizing: 'border-box',
-				minHeight: 430,
 				p: MACHINE_CARD_DESIGN.cardPadding,
 				borderRadius: MACHINE_CARD_DESIGN.cardRadius,
 				border: '1px solid',
