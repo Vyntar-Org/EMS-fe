@@ -339,6 +339,75 @@ const STP_LOGS = {
 		`/applications/stp/logs/?download=${isDownload}&slave_id=${slaveId}&parameters=${parameters}&start_datetime=${start_datetime}&end_datetime=${end_datetime}&limit=${limit}&offset=${offset}`,
 };
 
+const WEATHER_STATION_PARAMETERS = {
+	WEATHER_STATION_LOGS_PARAMETERS: '/logs/parameters',
+	WEATHER_STATION_ANALYTICS_PARAMETERS: '/analytics/parameters',
+};
+
+const WEATHER_STATION_DASHBOARD = {
+	WEATHER_STATION_DASHBOARD_OVERVIEW: '/dashboard/kpi-cards',
+	WEATHER_STATION_DASHBOARD_RAINFALL:
+		'/dashboard/rainfall-temp-pressure-trend?hours=24',
+	WEATHER_STATION_DASHBOARD_WIND_DIRECTION:
+		'/dashboard/wind-direction-distribution',
+	WEATHER_STATION_DASHBOARD_AIR_QUALITY: '/dashboard/air-quality-trend',
+	WEATHER_STATION_DASHBOARD_IRRADIANCE:
+		'/dashboard/solar-irradiance-energy-trend',
+};
+
+const WEATHER_STATION_MACHINE_LIST = {
+	WEATHER_STATION_MACHINE_LIST_DATA: '/machine-list',
+	WEATHER_STATION_MACHINE_LIST_TREND: (slaveId, parameter) =>
+		`/machine-trend/?slave_id=${slaveId}&parameter=${parameter}`,
+};
+
+const WEATHER_STATION_ANALYTICS = {
+	WEATHER_STATION_ANALYTICS_DATA: (parameters, startDatetime, endDatetime) =>
+		`/analytics?parameters=${parameters}&start_datetime=${startDatetime}&end_datetime=${endDatetime}`,
+};
+
+const WEATHER_STATION_LOGS = {
+	WEATHER_STATION_LOGS_DATA: (
+		parameters,
+		startDatetime,
+		endDatetime,
+		limit = 50,
+		offset = 0
+	) =>
+		`/logs?parameters=${parameters}&start_datetime=${startDatetime}&end_datetime=${endDatetime}&limit=${limit}&offset=${offset}`,
+	WEATHER_STATION_DOWNLOAD_LOGS_DATA: (
+		parameters,
+		startDatetime,
+		endDatetime
+	) =>
+		`/logs/download?parameters=${parameters}&start_datetime=${startDatetime}&end_datetime=${endDatetime}`,
+};
+
+const WEATHER_STATION_REPORTS = {
+	WEATHER_SOLAR_REPORTS_DATE_WISE_CONSUMPTION_DATA: (year, month) =>
+		`/reports/daywise-generation?month=${month}&year=${year}`,
+	WEATHER_SOLAR_REPORTS_MONTH_WISE_CONSUMPTION_DATA: (year) =>
+		`/reports/monthwise-generation?year=${year}`,
+	WEATHER_SOLAR_REPORTS_DATE_WISE_READING_DATA: (year, month) =>
+		`/reports/daily-reading?month=${month}&year=${year}`,
+	WEATHER_SOLAR_REPORTS_DATE_WISE_CONSUMPTION_COST_DATA: (year, month) =>
+		`/reports/daywise-revenue?month=${month}&year=${year}`,
+	WEATHER_SOLAR_REPORTS_MONTH_WISE_CONSUMPTION_COST_DATA: (year) =>
+		`/reports/monthwise-revenue?year=${year}`,
+	WEATHER_SOLAR_REPORTS_DATE_WISE_CONSUMPTION_DATA_DOWNLOAD: (year, month) =>
+		`/reports/daywise-generation/download?month=${month}&year=${year}`,
+	WEATHER_SOLAR_REPORTS_MONTH_WISE_CONSUMPTION_DATA_DOWNLOAD: (year) =>
+		`/reports/monthwise-generation/download?year=${year}`,
+	WEATHER_SOLAR_REPORTS_DATE_WISE_READING_DATA_DOWNLOAD: (year, month) =>
+		`/reports/daily-reading/download?month=${month}&year=${year}`,
+	WEATHER_SOLAR_REPORTS_DATE_WISE_CONSUMPTION_COST_DATA_DOWNLOAD: (
+		year,
+		month
+	) => `/reports/daywise-revenue/download?month=${month}&year=${year}`,
+	WEATHER_SOLAR_REPORTS_MONTH_WISE_CONSUMPTION_COST_DATA_DOWNLOAD: (year) =>
+		`/reports/monthwise-revenue/download?year=${year}`,
+};
+
 const FLOWMETER_DASHBOARD = {
 	FLOWMETER_DASHBOARD_OVERVIEW: '/applications/flowmeter/dashboard/summary/',
 	FLOWMETER_DASHBOARD_WATER_COMPARISON:
@@ -422,6 +491,12 @@ export const API_URLS = {
 	...STP_MACHINE_LIST,
 	...STP_ANALYTICS,
 	...STP_LOGS,
+	...WEATHER_STATION_PARAMETERS,
+	...WEATHER_STATION_DASHBOARD,
+	...WEATHER_STATION_MACHINE_LIST,
+	...WEATHER_STATION_ANALYTICS,
+	...WEATHER_STATION_LOGS,
+	...WEATHER_STATION_REPORTS,
 	...FLOWMETER_DASHBOARD,
 	...FLOWMETER_MACHINE_LIST,
 	...FLOWMETER_ANALYTICS,

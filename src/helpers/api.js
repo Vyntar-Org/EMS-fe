@@ -139,16 +139,17 @@ const buildBody = (body, options) => {
 const AUTH_ENDPOINTS = [API_URLS.LOGIN, API_URLS.REFRESH, API_URLS.LOGOUT];
 
 const executeFetch = (endpoint, options, token) => {
+	const { baseUrl = BASE_URL, ...requestOptions } = options;
 	const headers = {
-		...(options.responseType !== 'blob' &&
-			(options.urlencoded
+		...(requestOptions.responseType !== 'blob' &&
+			(requestOptions.urlencoded
 				? { 'Content-Type': 'application/x-www-form-urlencoded' }
 				: { 'Content-Type': 'application/json' })),
 		...(token ? { Authorization: `Bearer ${token}` } : {}),
-		...options.headers,
+		...requestOptions.headers,
 	};
 
-	return fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
+	return fetch(`${baseUrl}${endpoint}`, { ...requestOptions, headers });
 };
 
 const fetchApi = async (endpoint, options = {}) => {
@@ -226,4 +227,42 @@ export const api = {
 		}),
 	delete: (endpoint, options) =>
 		fetchApi(endpoint, { ...options, method: 'DELETE' }),
+};
+
+const WEATHER_STATION_BASE_URL =
+	import.meta.env.VITE_WEATHER_STATION_API_BASE_URL || BASE_URL;
+const weatherStationInFlightGets = new Map();
+
+const withWeatherStationBase = (options = {}) => ({
+	...options,
+	baseUrl: WEATHER_STATION_BASE_URL,
+});
+
+const weatherStationGet = (endpoint, options) => {
+	const requestOptions = withWeatherStationBase(options);
+	const requestKey = `${endpoint}:${requestOptions.responseType || 'json'}`;
+
+	if (weatherStationInFlightGets.has(requestKey)) {
+		return weatherStationInFlightGets.get(requestKey);
+	}
+
+	const request = api.get(endpoint, requestOptions).finally(() => {
+		if (weatherStationInFlightGets.get(requestKey) === request) {
+			weatherStationInFlightGets.delete(requestKey);
+		}
+	});
+	weatherStationInFlightGets.set(requestKey, request);
+	return request;
+};
+
+// Weather Station uses the shared authentication, refresh, headers, response,
+// and error pipeline, with only its deployment-specific base URL overridden.
+export const weatherStationApi = {
+	get: weatherStationGet,
+	post: (endpoint, body, options) =>
+		api.post(endpoint, body, withWeatherStationBase(options)),
+	put: (endpoint, body, options) =>
+		api.put(endpoint, body, withWeatherStationBase(options)),
+	delete: (endpoint, options) =>
+		api.delete(endpoint, withWeatherStationBase(options)),
 };

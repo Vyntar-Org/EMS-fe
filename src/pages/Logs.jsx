@@ -11,6 +11,7 @@ import SpinningLogs from '../components/Logs/SpinningLogs.jsx';
 import STPLogs from '../components/Logs/STPLogs';
 import TemperatureLogs from '../components/Logs/TemperatureLogs';
 import WaterLogs from '../components/Logs/WaterLogs';
+import WeatherStationLogs from '../components/Logs/WeatherStationLogs';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const LOGS_CONFIG = {
@@ -24,6 +25,7 @@ const LOGS_CONFIG = {
 	STP: STPLogs,
 	FLOWMETER: FlowMeterLogs,
 	SPINNING: SpinningLogs,
+	WEATHER_STATION: WeatherStationLogs,
 };
 
 const Logs = () => {

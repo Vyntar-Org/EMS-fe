@@ -1,13 +1,9 @@
-import React, {
-	createContext,
-	useContext,
-	useEffect,
-	useMemo,
-	useState,
-} from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+
 import { PARAMETER_OPTIONS } from '../constants/parameterOptions';
 import { TEMPERATURE_PARAMETER_OPTIONS } from '../constants/temperatureLogs';
-import { api } from '../helpers/api';
+import { api, weatherStationApi } from '../helpers/api';
 import { API_URLS } from '../helpers/apiUrls';
 
 import { useApplications } from './ApplicationContext';
@@ -17,11 +13,13 @@ const CommonDataContext = createContext();
 
 export const CommonDataContextProvider = ({ children }) => {
 	const { user } = useAuth();
-	const { selectedApp } = useApplications();
+	const { applications, selectedApp } = useApplications();
 
 	const [slavesData, setSlavesData] = useState(null);
 	const [temperatureParametersData, setTemperatureParametersData] =
 		useState(null);
+	const [weatherStationParametersData, setWeatherStationParametersData] =
+		useState({ logs: [], analytics: [] });
 
 	// const fetchData = async (currSelectedApp) => {
 	//   try {
@@ -93,6 +91,33 @@ export const CommonDataContextProvider = ({ children }) => {
 		}
 	};
 
+	const fetchWeatherStationParameters = async () => {
+		const normalizeParameters = (response) =>
+			(response?.parameters || []).map((parameter) => ({
+				...parameter,
+				value: parameter.key,
+				label: `${parameter.label}${
+					parameter.unit ? ` (${parameter.unit})` : ''
+				}`,
+			}));
+
+		const [logsResult, analyticsResult] = await Promise.allSettled([
+			weatherStationApi.get(API_URLS.WEATHER_STATION_LOGS_PARAMETERS),
+			weatherStationApi.get(API_URLS.WEATHER_STATION_ANALYTICS_PARAMETERS),
+		]);
+
+		setWeatherStationParametersData({
+			logs:
+				logsResult.status === 'fulfilled'
+					? normalizeParameters(logsResult.value)
+					: [],
+			analytics:
+				analyticsResult.status === 'fulfilled'
+					? normalizeParameters(analyticsResult.value)
+					: [],
+		});
+	};
+
 	const parametersData = useMemo(() => {
 		if (!selectedApp) {
 			return [];
@@ -106,18 +131,32 @@ export const CommonDataContextProvider = ({ children }) => {
 				})) || []
 			);
 		}
+		if (selectedApp === 'WEATHER_STATION') {
+			return weatherStationParametersData;
+		}
 		return PARAMETER_OPTIONS?.[selectedApp] || [];
-	}, [selectedApp, temperatureParametersData]);
+	}, [selectedApp, temperatureParametersData, weatherStationParametersData]);
+	const usesSharedCommonData =
+		applications.find((application) => application.code === selectedApp)
+			?.uses_shared_common_data !== false;
 
 	useEffect(() => {
-		if ((user, selectedApp)) {
+		if (user && selectedApp) {
+			if (!usesSharedCommonData) {
+				setSlavesData([]);
+				if (selectedApp === 'WEATHER_STATION') {
+					fetchWeatherStationParameters();
+				}
+				return;
+			}
+
 			fetchData(selectedApp);
 
 			if (selectedApp === 'TEMPERATURE') {
 				fetchTemperatureParameters();
 			}
 		}
-	}, [user, selectedApp]);
+	}, [user, selectedApp, usesSharedCommonData]);
 
 	return (
 		<CommonDataContext.Provider

@@ -5,6 +5,7 @@ import EnergyReports from '../components/Reports/EnergyReports';
 import FlowMeterReports from '../components/Reports/FlowMeterReports';
 import FuelReports from '../components/Reports/FuelReports';
 import WaterReports from '../components/Reports/WaterReports';
+import WeatherStationReports from '../components/Reports/WeatherStationReports';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const REPORTS_CONFIG = {
@@ -12,6 +13,7 @@ const REPORTS_CONFIG = {
 	WATER: WaterReports,
 	FUEL: FuelReports,
 	FLOWMETER: FlowMeterReports,
+	WEATHER_STATION: WeatherStationReports,
 };
 
 const Reports = () => {

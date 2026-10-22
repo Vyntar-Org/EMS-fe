@@ -33,6 +33,7 @@ export const preloadAppImages = (appCodes = [], extraUrls = []) => {
 	folders.forEach((folder) => {
 		SECTIONS.forEach((section) => {
 			urls.add(`/assets/${folder}-LAYOUT-IMAGES/${section}.svg`);
+			urls.add(`/assets/${folder}-LAYOUT-IMAGES/${section}.png`);
 		});
 	});
 

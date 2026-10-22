@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="70" height="70" viewBox="0 0 70 70" fill="none" role="img" aria-label="Wind Speed" shape-rendering="geometricPrecision">
+
+<defs>
+  <linearGradient id="bg" x1="8" y1="7" x2="62" y2="63" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#F8FCFF"/>
+    <stop offset="1" stop-color="#EAF4FF"/>
+  </linearGradient>
+  <linearGradient id="blue" x1="18" y1="8" x2="52" y2="60" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#72B7FF"/>
+    <stop offset="1" stop-color="#1D63C8"/>
+  </linearGradient>
+  <linearGradient id="deepBlue" x1="13" y1="10" x2="56" y2="62" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#2D7DD8"/>
+    <stop offset="1" stop-color="#0B3561"/>
+  </linearGradient>
+  <linearGradient id="gold" x1="18" y1="8" x2="56" y2="62" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#FFE078"/>
+    <stop offset="1" stop-color="#F4A51C"/>
+  </linearGradient>
+  <linearGradient id="orange" x1="14" y1="9" x2="58" y2="62" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#FFB45C"/>
+    <stop offset="1" stop-color="#E45A20"/>
+  </linearGradient>
+  <linearGradient id="green" x1="12" y1="12" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#83D88C"/>
+    <stop offset="1" stop-color="#23934E"/>
+  </linearGradient>
+  <linearGradient id="leaf" x1="36" y1="28" x2="55" y2="52" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#86D989"/>
+    <stop offset="1" stop-color="#1F8F49"/>
+  </linearGradient>
+</defs>
+<circle cx="35" cy="35" r="31" fill="url(#bg)"/>
+
+
+<!-- Anemometer + wind speed lines -->
+<path d="M35 32v24" stroke="#0B3561" stroke-width="4" stroke-linecap="round"/>
+<path d="M27 56h16" stroke="#0B3561" stroke-width="4" stroke-linecap="round"/>
+<circle cx="35" cy="30" r="4.2" fill="#0B3561"/>
+<path d="M35 30L23 22" stroke="url(#blue)" stroke-width="4" stroke-linecap="round"/>
+<circle cx="19" cy="19.5" r="5.2" fill="#68B6FF" stroke="#1F65C8" stroke-width="2"/>
+<path d="M35 30l14-1" stroke="url(#blue)" stroke-width="4" stroke-linecap="round"/>
+<circle cx="54" cy="28.5" r="5.2" fill="#68B6FF" stroke="#1F65C8" stroke-width="2"/>
+<path d="M35 30l-4 14" stroke="url(#blue)" stroke-width="4" stroke-linecap="round"/>
+<circle cx="29" cy="49" r="5.2" fill="#68B6FF" stroke="#1F65C8" stroke-width="2"/>
+<path d="M16 34h13" stroke="#0B3561" stroke-width="3.5" stroke-linecap="round"/>
+<path d="M14 42h18" stroke="#2D7DD8" stroke-width="3.5" stroke-linecap="round"/>
+
+</svg>

@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+import AirIcon from '@mui/icons-material/Air';
 import BoltIcon from '@mui/icons-material/Bolt';
 import CompressIcon from '@mui/icons-material/Compress';
 import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
@@ -8,22 +10,15 @@ import SensorsIcon from '@mui/icons-material/Sensors';
 import SpeedIcon from '@mui/icons-material/Speed';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
-import {
-	Avatar,
-	Box,
-	Divider,
-	Stack,
-	Tooltip,
-	Typography,
-} from '@mui/material';
+import { Avatar, Box, Stack, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useId } from 'react';
 
 import { formatChartValue } from '../../helpers/chartConfig';
 import { getTemperatureScalePercent } from '../../helpers/temperatureStatus';
 
-import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 import { MACHINE_CARD_DESIGN } from './machineCardDesign';
+import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 
 export const APP_ICONS = {
 	ENERGY: BoltIcon,
@@ -35,6 +30,7 @@ export const APP_ICONS = {
 	'FIRE-SAFETY': LocalFireDepartmentIcon,
 	FLOWMETER: SpeedIcon,
 	COMPRESSOR: CompressIcon,
+	WEATHER_STATION: AirIcon,
 };
 
 // Each app's identity color — drives the icon chip, card wash/border and
@@ -50,6 +46,7 @@ export const APP_ACCENT_COLOR = {
 	'FIRE-SAFETY': '#DC2626',
 	FLOWMETER: '#7C3AED',
 	COMPRESSOR: '#16A34A',
+	WEATHER_STATION: '#0EA5E9',
 };
 
 /**

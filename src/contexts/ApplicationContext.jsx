@@ -1,8 +1,34 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState, useEffect } from 'react';
+
 import { useAuth } from './AuthContext';
-import { api } from '../helpers/api';
 
 const ApplicationContext = createContext();
+const WEATHER_STATION_APP_CODE = 'WEATHER_STATION';
+const WEATHER_STATION_APPLICATION = Object.freeze({
+	code: WEATHER_STATION_APP_CODE,
+	name: 'Weather Station',
+	pages: ['DASHBOARD', 'MACHINE_LIST', 'REPORTS', 'LOGS', 'ANALYTICS'],
+	default_landing_page: 'DASHBOARD',
+	uses_shared_common_data: false,
+});
+
+// This is the same shape as applications returned by /auth/me. When the API
+// starts returning Weather Station, the API record wins and no screen or route
+// implementation needs to change.
+const registerWeatherStation = (applications = []) => {
+	const hasApiRegistration = applications.some(
+		(application) => application.code === WEATHER_STATION_APP_CODE
+	);
+
+	return hasApiRegistration
+		? applications.map((application) =>
+				application.code === WEATHER_STATION_APP_CODE
+					? { ...application, uses_shared_common_data: false }
+					: application
+		  )
+		: [...applications, { ...WEATHER_STATION_APPLICATION }];
+};
 
 const normalizePages = (pages) =>
 	Array.isArray(pages)
@@ -11,12 +37,11 @@ const normalizePages = (pages) =>
 		  )
 		: [];
 
-const SOLAR_TEST_SUB_APP_PAGES = ['MACHINE_LIST', 'LOGS', 'ANALYTICS'];
-
 const normalizeApplication = (app) => {
 	const pages = normalizePages(app.pages);
 	const normalizedApp = {
 		...app,
+		code: app.code?.toUpperCase(),
 		pages,
 		sub_apps: Array.isArray(app.sub_apps)
 			? app.sub_apps.map((subApp) => ({
@@ -113,7 +138,7 @@ export const ApplicationProvider = ({ children }) => {
 
 				// Keep the Apps API response as the navigation source of truth while
 				// normalizing route codes once at the context boundary.
-				appData = appData.map(normalizeApplication);
+				appData = registerWeatherStation(appData.map(normalizeApplication));
 
 				if (Array.isArray(appData) && appData.length > 0) {
 					setApplications(appData);
