@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useEffect, useState } from 'react';
+
 import { useAuth } from './AuthContext';
-import { api } from '../helpers/api';
 
 const ApplicationContext = createContext();
 
@@ -64,6 +65,7 @@ export const ApplicationProvider = ({ children }) => {
 				// Ensure pages is always an array and normalize page codes
 				appData = appData.map((app) => ({
 					...app,
+					code: app.code?.toUpperCase(),
 					pages: Array.isArray(app.pages)
 						? app.pages.map((p) =>
 								typeof p === 'string' ? p.toUpperCase() : p

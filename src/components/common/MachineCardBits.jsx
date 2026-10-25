@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+import AirIcon from '@mui/icons-material/Air';
 import BoltIcon from '@mui/icons-material/Bolt';
 import CompressIcon from '@mui/icons-material/Compress';
 import DeviceThermostatIcon from '@mui/icons-material/DeviceThermostat';
@@ -11,7 +13,6 @@ import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import {
 	Avatar,
 	Box,
-	Divider,
 	Stack,
 	Tooltip,
 	Typography,
@@ -34,6 +35,7 @@ export const APP_ICONS = {
 	'FIRE-SAFETY': LocalFireDepartmentIcon,
 	FLOWMETER: SpeedIcon,
 	COMPRESSOR: CompressIcon,
+	WEATHER: AirIcon,
 };
 
 // Each app's identity color — drives the icon chip, card wash/border and
@@ -49,6 +51,7 @@ export const APP_ACCENT_COLOR = {
 	'FIRE-SAFETY': '#DC2626',
 	FLOWMETER: '#7C3AED',
 	COMPRESSOR: '#16A34A',
+	WEATHER: '#0EA5E9',
 };
 
 /**

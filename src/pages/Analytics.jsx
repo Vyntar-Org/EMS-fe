@@ -11,6 +11,7 @@ import SpinningAnalytics from '../components/Analytics/SpinningAnalytics.jsx';
 import STPAnalytics from '../components/Analytics/STPAnalytics';
 import TemperatureAnalytics from '../components/Analytics/TemperatureAnalytics';
 import WaterAnalytics from '../components/Analytics/WaterAnalytics';
+import WeatherStationAnalytics from '../components/Analytics/WeatherStationAnalytics';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const ANALYTICS_CONFIG = {
@@ -24,6 +25,7 @@ const ANALYTICS_CONFIG = {
 	STP: STPAnalytics,
 	FLOWMETER: FlowMeterAnalytics,
 	SPINNING: SpinningAnalytics,
+	WEATHER: WeatherStationAnalytics,
 };
 
 const Analytics = () => {

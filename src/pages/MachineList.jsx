@@ -11,6 +11,7 @@ import SpinningMachineList from '../components/MachineList/SpinningMachineList.j
 import STPMachineList from '../components/MachineList/STPMachineList';
 import TemperatureMachineList from '../components/MachineList/TemperatureMachineList';
 import WaterMachineList from '../components/MachineList/WaterMachineList';
+import WeatherStationMachineList from '../components/MachineList/WeatherStationMachineList';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const MACHINE_LIST_CONFIG = {
@@ -24,6 +25,7 @@ const MACHINE_LIST_CONFIG = {
 	STP: STPMachineList,
 	FLOWMETER: FlowMeterMachineList,
 	SPINNING: SpinningMachineList,
+	WEATHER: WeatherStationMachineList,
 };
 
 const MachineList = () => {

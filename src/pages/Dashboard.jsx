@@ -6,6 +6,7 @@ import FlowMeterDashboard from '../components/Dashboards/FlowMeterDashboard';
 import FuelDashboard from '../components/Dashboards/FuelDashboard';
 import STPDashboard from '../components/Dashboards/STPDashboard';
 import WaterDashboard from '../components/Dashboards/WaterDashboard';
+import WeatherStationDashboard from '../components/Dashboards/WeatherStationDashboard';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const DASHBOARD_CONFIG = {
@@ -14,6 +15,7 @@ const DASHBOARD_CONFIG = {
 	FUEL: FuelDashboard,
 	STP: STPDashboard,
 	FLOWMETER: FlowMeterDashboard,
+	WEATHER: WeatherStationDashboard,
 };
 
 const Dashboard = () => {
