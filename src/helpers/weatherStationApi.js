@@ -100,11 +100,7 @@ export const weatherStationApi = {
 	getRainfallTemperaturePressureTrend: (options) =>
 		getJson(API_URLS.WEATHER_DASHBOARD_RAINFALL, undefined, options),
 	getWindDirectionDistribution: (options) =>
-		getJson(
-			API_URLS.WEATHER_DASHBOARD_WIND_DIRECTION,
-			undefined,
-			options
-		),
+		getJson(API_URLS.WEATHER_DASHBOARD_WIND_DIRECTION, undefined, options),
 	getAirQualityTrend: (options) =>
 		getJson(API_URLS.WEATHER_DASHBOARD_AIR_QUALITY, undefined, options),
 	getSolarIrradianceTrend: (options) =>
@@ -149,11 +145,7 @@ export const weatherStationApi = {
 			options
 		),
 	getDaywiseRainfallReport: ({ year, month }, options) =>
-		getJson(
-			API_URLS.WEATHER_DAYWISE_RAINFALL_REPORT,
-			{ year, month },
-			options
-		),
+		getJson(API_URLS.WEATHER_DAYWISE_RAINFALL_REPORT, { year, month }, options),
 	downloadDaywiseRainfallReport: ({ year, month }, options) =>
 		getBlob(
 			API_URLS.WEATHER_DAYWISE_RAINFALL_DOWNLOAD,
@@ -161,17 +153,9 @@ export const weatherStationApi = {
 			options
 		),
 	getMonthwiseRainfallReport: ({ year }, options) =>
-		getJson(
-			API_URLS.WEATHER_MONTHWISE_RAINFALL_REPORT,
-			{ year },
-			options
-		),
+		getJson(API_URLS.WEATHER_MONTHWISE_RAINFALL_REPORT, { year }, options),
 	downloadMonthwiseRainfallReport: ({ year }, options) =>
-		getBlob(
-			API_URLS.WEATHER_MONTHWISE_RAINFALL_DOWNLOAD,
-			{ year },
-			options
-		),
+		getBlob(API_URLS.WEATHER_MONTHWISE_RAINFALL_DOWNLOAD, { year }, options),
 };
 
 export const getWeatherStationErrorMessage = (

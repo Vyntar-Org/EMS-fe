@@ -10,13 +10,7 @@ import SensorsIcon from '@mui/icons-material/Sensors';
 import SpeedIcon from '@mui/icons-material/Speed';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
-import {
-	Avatar,
-	Box,
-	Stack,
-	Tooltip,
-	Typography,
-} from '@mui/material';
+import { Avatar, Box, Stack, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useId } from 'react';
 

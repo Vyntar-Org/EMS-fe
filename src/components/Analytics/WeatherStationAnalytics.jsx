@@ -529,10 +529,7 @@ const WeatherStationAnalytics = () => {
 			}}
 		>
 			<LogsFilterHeader
-				parameterOptions={[
-					defaultParameters,
-					...(parametersQuery.data || []),
-				]}
+				parameterOptions={[defaultParameters, ...(parametersQuery.data || [])]}
 				handleSearch={handleSearch}
 				handleReset={handleReset}
 				payload={payload}

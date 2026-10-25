@@ -410,9 +410,7 @@ const handleDownload = (filteredMachines) => {
 
 	const link = document.createElement('a');
 	link.href = url;
-	link.download = `weather_list_${new Date()
-		.toISOString()
-		.slice(0, 10)}.csv`;
+	link.download = `weather_list_${new Date().toISOString().slice(0, 10)}.csv`;
 
 	document.body.appendChild(link);
 	link.click();
@@ -605,8 +603,7 @@ const WindDirectionModalContent = () => {
 };
 
 const WeatherSolarMachineList = () => {
-	const { slavesData, commonDataErrors, commonDataLoading } =
-		useCommonData();
+	const { slavesData, commonDataErrors, commonDataLoading } = useCommonData();
 	const [deviceId, setDeviceId] = useState(null);
 	const [modalDetails, setModalDetails] = useState(null);
 	const {

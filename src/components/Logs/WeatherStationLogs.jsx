@@ -279,10 +279,7 @@ const WeatherStationLogs = () => {
 			sx={{ height: { xs: 'calc(100vh - 80px)', sm: 'calc(100vh - 88px)' } }}
 		>
 			<LogsFilterHeader
-				parameterOptions={[
-					defaultParameters,
-					...(parametersQuery.data || []),
-				]}
+				parameterOptions={[defaultParameters, ...(parametersQuery.data || [])]}
 				onSearch={handleSearch}
 				onReset={handleReset}
 				payload={payload}

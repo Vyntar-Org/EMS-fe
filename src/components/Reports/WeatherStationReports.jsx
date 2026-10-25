@@ -182,9 +182,7 @@ const ReportsHeader = ({
 
 const WeatherStationReports = () => {
 	const { showToast } = useToast();
-	const [selectedTab, setSelectedTab] = useState(
-		WEATHER_REPORT_TYPES.DAYWISE
-	);
+	const [selectedTab, setSelectedTab] = useState(WEATHER_REPORT_TYPES.DAYWISE);
 	const [payload, setPayload] = useState(getDefaultPayload);
 	const [submittedParams, setSubmittedParams] = useState(() =>
 		formatReportParams(getDefaultPayload())
@@ -257,9 +255,7 @@ const WeatherStationReports = () => {
 				url,
 				getDownloadFileName(
 					response.headers,
-					`weather_${label}_rainfall_${dayjs().format(
-						'YYYY-MM-DD'
-					)}.xlsx`
+					`weather_${label}_rainfall_${dayjs().format('YYYY-MM-DD')}.xlsx`
 				)
 			);
 			URL.revokeObjectURL(url);
