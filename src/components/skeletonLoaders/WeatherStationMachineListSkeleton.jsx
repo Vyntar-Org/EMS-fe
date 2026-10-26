@@ -13,7 +13,7 @@ const WeatherStationMachineListSkeleton = () => {
 						sm={6}
 						md={4}
 						lg={3}
-						key={`weather-station-machine-card-skeleton-${ind + 1}`}
+						key={`weather-machine-card-skeleton-${ind + 1}`}
 						height="360px"
 					>
 						<Skeleton

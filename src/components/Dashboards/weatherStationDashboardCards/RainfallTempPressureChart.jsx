@@ -1,9 +1,11 @@
-import { useTheme } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import { useMemo } from 'react';
 
 import { getAxisConfig } from '../../../helpers/weatherStationChartAxis';
 import { mergeChartOptions } from '../../../helpers/weatherStationChartTheme';
 import { useChartHeight } from '../../../hooks/useWeatherStationChartHeight';
+import NoDataFound from '../../common/errors/NoDataFound';
+
 import ApexChart from './ApexChart';
 import DashboardCard from './DashboardCard';
 
@@ -16,6 +18,9 @@ function RainfallTempPressureChart({ data }) {
 		md: 315,
 		lg: 300,
 	});
+	const hasData = [data?.rainfall, data?.temperature, data?.pressure].some(
+		(values) => Array.isArray(values) && values.length > 0
+	);
 
 	const rainfallAxis = getAxisConfig(data?.rainfall, {
 		forceZero: true,
@@ -200,8 +205,14 @@ function RainfallTempPressureChart({ data }) {
 		];
 	}, [data]);
 
-	if (!data) {
-		return null;
+	if (!hasData) {
+		return (
+			<DashboardCard title="Rainfall, Temperature & Pressure Trend">
+				<Box height={height}>
+					<NoDataFound message="No rainfall, temperature, or pressure readings are available." />
+				</Box>
+			</DashboardCard>
+		);
 	}
 
 	return (

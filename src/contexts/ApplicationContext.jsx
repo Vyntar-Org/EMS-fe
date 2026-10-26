@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 import { useAuth } from './AuthContext';
 
@@ -136,9 +136,16 @@ export const ApplicationProvider = ({ children }) => {
 				//   response.data?.applications || response.applications || [];
 				let appData = user?.applications || [];
 
-				// Keep the Apps API response as the navigation source of truth while
-				// normalizing route codes once at the context boundary.
-				appData = registerWeatherStation(appData.map(normalizeApplication));
+				// Ensure pages is always an array and normalize page codes
+				appData = appData.map((app) => ({
+					...app,
+					code: app.code?.toUpperCase(),
+					pages: Array.isArray(app.pages)
+						? app.pages.map((p) =>
+								typeof p === 'string' ? p.toUpperCase() : p
+						  )
+						: [],
+				}));
 
 				if (Array.isArray(appData) && appData.length > 0) {
 					setApplications(appData);

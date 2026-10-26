@@ -13,7 +13,7 @@ const REPORTS_CONFIG = {
 	WATER: WaterReports,
 	FUEL: FuelReports,
 	FLOWMETER: FlowMeterReports,
-	WEATHER_STATION: WeatherStationReports,
+	WEATHER: WeatherStationReports,
 };
 
 const Reports = () => {

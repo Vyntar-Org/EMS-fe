@@ -1,4 +1,4 @@
-import { Box, Card, CardContent, Typography } from '@mui/material';
+import { alpha, Box, Card, CardContent, Typography } from '@mui/material';
 
 function DashboardCard({
 	title,
@@ -14,6 +14,16 @@ function DashboardCard({
 			sx={{
 				height: '100%',
 				bgcolor: 'background.paper',
+				border: '2px solid',
+				borderColor: (theme) =>
+					alpha(
+						theme.palette.primary.main,
+						theme.palette.mode === 'dark' ? 0.34 : 0
+					),
+				transition: (theme) =>
+					theme.transitions.create(['border-color', 'box-shadow'], {
+						duration: theme.transitions.duration.shorter,
+					}),
 				...sx,
 				boxShadow: (theme) =>
 					theme.palette.mode === 'dark'
@@ -27,12 +37,25 @@ function DashboardCard({
             0 10px 20px rgba(15,23,42,0.08),
             0 18px 40px rgba(15,23,42,0.10)
           `,
-				// Clean subtle border to make the edges razor-sharp
-				border: '1px solid',
-				borderColor: (theme) =>
-					theme.palette.mode === 'dark'
-						? 'rgba(255, 255, 255, 0.05)'
-						: 'rgba(15, 23, 42, 0.04)',
+				'&:hover': {
+					borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+					boxShadow: (theme) =>
+						theme.palette.mode === 'dark'
+							? `inset 0 1px 0 ${alpha(
+									theme.palette.common.white,
+									0.08
+							  )}, 0 4px 10px ${alpha(
+									theme.palette.common.black,
+									0.35
+							  )}, 0 18px 44px ${alpha(theme.palette.primary.main, 0.3)}`
+							: `inset 0 1px 0 ${alpha(
+									theme.palette.common.white,
+									0.95
+							  )}, 0 4px 10px ${alpha(
+									theme.palette.primary.main,
+									0.08
+							  )}, 0 18px 44px ${alpha(theme.palette.primary.main, 0.22)}`,
+				},
 			}}
 		>
 			<CardContent

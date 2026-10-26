@@ -12,14 +12,18 @@ import {
 	TableHead,
 	TableRow,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import Papa from 'papaparse';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
 import { MACHINE_LIST_CARD_ICONS } from '../../constants/weatherStationMachineList';
-import { weatherStationApi as api } from '../../helpers/api';
-import { API_URLS } from '../../helpers/apiUrls';
+import { useCommonData } from '../../contexts/CommonDataContext';
 import { basePickerStyles, formatTimestamp } from '../../helpers/common';
+import {
+	getWeatherStationErrorMessage,
+	weatherStationApi,
+} from '../../helpers/weatherStationApi';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import CustomCard from '../common/CustomCard';
 import { CustomSelect } from '../common/CustomSelect';
@@ -39,6 +43,7 @@ const MachineListHeader = ({
 	handleDownload,
 	isDownloadDisabled,
 	loading,
+	selectorError,
 }) => {
 	return (
 		<Box
@@ -57,6 +62,8 @@ const MachineListHeader = ({
 				<Box sx={{ flexGrow: 1, maxWidth: { sm: 350 } }}>
 					<CustomAutocomplete
 						disabled={loading}
+						error={Boolean(selectorError)}
+						helperText={selectorError || ''}
 						options={slaveOptions}
 						onChange={(option) =>
 							setDeviceId(
@@ -269,6 +276,10 @@ const WeatherSolarMetricBlock = ({
 						<TableBody>
 							{metrics.map((row, ind) => {
 								const RowIcon = row.Icon;
+								const hasValue =
+									row.value !== null &&
+									row.value !== undefined &&
+									row.value !== '';
 								return (
 									<TableRow key={row.key}>
 										<TableCell
@@ -325,7 +336,11 @@ const WeatherSolarMetricBlock = ({
 												fontSize="13px"
 												color="text.primary"
 												fontWeight={600}
-												value={`${row.value} ${row.unit}`}
+												value={
+													hasValue
+														? `${row.value}${row.unit ? ` ${row.unit}` : ''}`
+														: '—'
+												}
 											/>
 										</TableCell>
 									</TableRow>
@@ -340,6 +355,7 @@ const WeatherSolarMetricBlock = ({
 			<Box mt="auto">
 				<Button
 					onClick={handleOpenModal}
+					disabled={!metrics.length}
 					size="medium"
 					startIcon={<Insights />}
 					disableElevation
@@ -376,7 +392,9 @@ const handleDownload = (filteredMachines) => {
 		machine.name || 'N/A',
 		machine.slave_id ?? machine.id,
 		machine.status || 'N/A',
-		machine.metrics.map((m) => `${m.name}: ${m.value}${m.unit}`).join(', '),
+		(machine.metrics || [])
+			.map((m) => `${m.name}: ${m.value}${m.unit || ''}`)
+			.join(', '),
 		machine.last_updated ? formatTimestamp(machine.last_updated) : 'N/A',
 	]);
 
@@ -392,9 +410,7 @@ const handleDownload = (filteredMachines) => {
 
 	const link = document.createElement('a');
 	link.href = url;
-	link.download = `weather_station_list_${new Date()
-		.toISOString()
-		.slice(0, 10)}.csv`;
+	link.download = `weather_list_${new Date().toISOString().slice(0, 10)}.csv`;
 
 	document.body.appendChild(link);
 	link.click();
@@ -411,40 +427,23 @@ const ModalContentForTrend = ({
 	currentMetric,
 	parameters,
 }) => {
-	const [chartResponse, setChartResponse] = useState(null);
-	const [chartLoading, setChartLoading] = useState(true);
-
-	useEffect(() => {
-		if (!slaveId || !tab) {
-			setChartResponse(null);
-			return;
-		}
-
-		const fetchTrendData = async () => {
-			setChartLoading(true);
-			try {
-				const response = await api.get(
-					API_URLS.WEATHER_STATION_MACHINE_LIST_TREND(slaveId, tab)
-				);
-
-				// if (response?.success) {
-				setChartResponse({
-					data: response?.data?.trends ?? [],
-					unit: currentMetric?.unit ?? '',
-				});
-				// } else {
-				//   setChartResponse(null);
-				// }
-			} catch (err) {
-				console.error('Trend fetch failed:', err);
-				setChartResponse(null);
-			} finally {
-				setChartLoading(false);
-			}
-		};
-
-		fetchTrendData();
-	}, [slaveId, tab]);
+	const {
+		data: trendData,
+		isLoading: chartLoading,
+		error: trendError,
+	} = useQuery({
+		queryKey: ['weather', 'machine-list-trend', slaveId, tab],
+		queryFn: ({ signal }) =>
+			weatherStationApi.getMachineListTrend(
+				{ slaveId, parameter: tab },
+				{ signal }
+			),
+		enabled: Boolean(slaveId && tab),
+	});
+	const chartResponse = {
+		data: trendData?.trends || [],
+		unit: currentMetric?.unit || '',
+	};
 
 	// Create dynamic tab options based on available metrics
 	const chartOptions = {
@@ -540,6 +539,13 @@ const ModalContentForTrend = ({
 			<Box height={355} mt={1} overflow="hidden">
 				{chartLoading ? (
 					<Loading />
+				) : trendError ? (
+					<NoDataFound
+						message={getWeatherStationErrorMessage(
+							trendError,
+							'Unable to load trend data.'
+						)}
+					/>
 				) : chartResponse?.data?.length ? (
 					<ReactApexChart
 						options={chartOptions}
@@ -562,43 +568,28 @@ const ModalContentForTrend = ({
 const WIND_DIRECTION_METRIC_KEY = 'wind_direction';
 
 const WindDirectionModalContent = () => {
-	const [windData, setWindData] = useState(null);
-	const [loading, setLoading] = useState(true);
-
-	useEffect(() => {
-		let ignore = false;
-
-		const fetchWindDirection = async () => {
-			setLoading(true);
-			try {
-				const response = await api.get(
-					API_URLS.WEATHER_STATION_DASHBOARD_WIND_DIRECTION
-				);
-				if (!ignore) {
-					setWindData(response || null);
-				}
-			} catch (err) {
-				console.error('Wind direction fetch failed:', err);
-				if (!ignore) {
-					setWindData(null);
-				}
-			} finally {
-				if (!ignore) {
-					setLoading(false);
-				}
-			}
-		};
-
-		fetchWindDirection();
-		return () => {
-			ignore = true;
-		};
-	}, []);
+	const {
+		data: windData,
+		isLoading: loading,
+		error,
+	} = useQuery({
+		queryKey: ['weather', 'dashboard', 'wind-direction'],
+		queryFn: ({ signal }) =>
+			weatherStationApi.getWindDirectionDistribution({ signal }),
+		staleTime: 30 * 1000,
+	});
 
 	return (
 		<Box height={355} mt={1} overflow="hidden">
 			{loading ? (
 				<Loading />
+			) : error ? (
+				<NoDataFound
+					message={getWeatherStationErrorMessage(
+						error,
+						'Unable to load wind-direction data.'
+					)}
+				/>
 			) : windData ? (
 				<WindDirectionChart data={windData} isTrend={true} />
 			) : (
@@ -612,12 +603,20 @@ const WindDirectionModalContent = () => {
 };
 
 const WeatherSolarMachineList = () => {
+	const { slavesData, commonDataErrors, commonDataLoading } = useCommonData();
 	const [deviceId, setDeviceId] = useState(null);
 	const [modalDetails, setModalDetails] = useState(null);
-	const [machines, setMachines] = useState([]);
-	const [loading, setLoading] = useState(true);
+	const {
+		data: machineListData,
+		isLoading: loading,
+		error: machineListError,
+	} = useQuery({
+		queryKey: ['weather', 'machine-list'],
+		queryFn: ({ signal }) => weatherStationApi.getMachineList({ signal }),
+		refetchInterval: 65 * 1000,
+	});
 
-	// Use Mock Data directly
+	const machines = machineListData?.cards || [];
 
 	const filteredMachines = useMemo(() => {
 		if (
@@ -628,14 +627,16 @@ const WeatherSolarMachineList = () => {
 		) {
 			return machines;
 		}
-		return machines.filter((m) => String(m?.id) === String(deviceId));
+		return machines.filter(
+			(machine) => String(getMachineSlaveId(machine)) === String(deviceId)
+		);
 	}, [machines, deviceId]);
 
 	const handleOpenModal = (item, parameters) => {
 		const activePower = item?.metrics?.find(
 			(m) => m?.key === 'total_active_power'
 		);
-		const primaryMetric = activePower ? activePower : item.metrics[0];
+		const primaryMetric = activePower || item?.metrics?.[0];
 		const isWindDirection = primaryMetric?.key === WIND_DIRECTION_METRIC_KEY;
 
 		setModalDetails({
@@ -651,28 +652,6 @@ const WeatherSolarMachineList = () => {
 		});
 	};
 
-	const fetchMachineListData = async () => {
-		setLoading(true);
-		try {
-			const res = await api.get(API_URLS.WEATHER_STATION_MACHINE_LIST_DATA);
-			setMachines(res?.data?.cards || []);
-		} catch (error) {
-			console.error('weather station machine list fetch failed:', error);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	useEffect(() => {
-		fetchMachineListData();
-
-		const interval = setInterval(() => {
-			fetchMachineListData();
-		}, 65000);
-
-		return () => clearInterval(interval);
-	}, []);
-
 	const handleCloseModal = () => {
 		setModalDetails(null);
 	};
@@ -682,6 +661,7 @@ const WeatherSolarMachineList = () => {
 			...prev,
 			tab,
 			tabDesc,
+			currentMetric: prev?.data?.metrics?.find((metric) => metric.key === tab),
 		}));
 	};
 
@@ -697,22 +677,34 @@ const WeatherSolarMachineList = () => {
 			>
 				<MachineListHeader
 					slaveOptions={
-						machines?.map((f) => ({
-							label: f?.name,
-							value: f?.id,
+						(slavesData || []).map((slave) => ({
+							label:
+								slave?.slave_name ||
+								slave?.name ||
+								slave?.device_name ||
+								String(slave?.slave_id ?? slave?.id),
+							value: slave?.slave_id ?? slave?.id,
 						})) ?? []
 					}
 					setDeviceId={setDeviceId}
 					deviceId={deviceId}
 					handleDownload={() => handleDownload(filteredMachines)}
 					isDownloadDisabled={!filteredMachines?.length}
-					loading={loading}
+					loading={loading || commonDataLoading}
+					selectorError={commonDataErrors?.slaves}
 				/>
 
 				<Grid container height="calc(100% - 49px)" pt={1} overflow="auto">
 					<Grid item xs={12}>
 						{loading ? (
 							<WeatherStationMachineListSkeleton />
+						) : machineListError ? (
+							<NoDataFound
+								message={getWeatherStationErrorMessage(
+									machineListError,
+									'Unable to load Weather Station devices.'
+								)}
+							/>
 						) : filteredMachines?.length ? (
 							<Grid container rowGap={1.5} columnSpacing={1.5}>
 								{filteredMachines.map((mc) => {

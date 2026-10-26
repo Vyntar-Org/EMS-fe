@@ -7,22 +7,24 @@ import {
 	Typography,
 	useTheme,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
-import { useCommonData } from '../../contexts/CommonDataContext';
-import { weatherStationApi as api } from '../../helpers/api';
-import { API_URLS } from '../../helpers/apiUrls';
-import { mergeChartOptions } from '../../helpers/weatherStationChartTheme';
 import {
 	basePickerStyles,
 	downAnalyticsSampleData,
 } from '../../helpers/common';
-import ApexChart from '../Dashboards/weatherStationDashboardCards/ApexChart';
+import {
+	getWeatherStationErrorMessage,
+	weatherStationApi,
+} from '../../helpers/weatherStationApi';
+import { mergeChartOptions } from '../../helpers/weatherStationChartTheme';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
-import DashboardCard from '../Dashboards/weatherStationDashboardCards/DashboardCard';
 import NoDataFound from '../common/errors/NoDataFound';
+import ApexChart from '../Dashboards/weatherStationDashboardCards/ApexChart';
+import DashboardCard from '../Dashboards/weatherStationDashboardCards/DashboardCard';
 import PremiumLoader from '../Dashboards/weatherStationDashboardCards/PremiumLoader';
 import WindDirectionChart from '../Dashboards/weatherStationDashboardCards/WindDirectionChart';
 
@@ -45,6 +47,26 @@ const defaultParameters = {
 	label: 'All',
 	value: 'all',
 };
+
+const buildFilters = (payload) => {
+	const selectedParameters = (payload?.parameters || [])
+		.map((parameter) => parameter?.value)
+		.filter(Boolean);
+	const parameters =
+		!selectedParameters.length || selectedParameters.includes('all')
+			? 'all'
+			: selectedParameters.join(',');
+	const start = payload?.dateTime?.[0];
+	const end = payload?.dateTime?.[1];
+
+	return {
+		parameters,
+		startDatetime: start?.isValid?.()
+			? start.format('YYYY-MM-DD[T]HH:mm:ss')
+			: '',
+		endDatetime: end?.isValid?.() ? end.format('YYYY-MM-DD[T]HH:mm:ss') : '',
+	};
+};
 const LogsFilterHeader = ({
 	parameterOptions,
 	handleSearch,
@@ -52,6 +74,7 @@ const LogsFilterHeader = ({
 	payload,
 	setPayload,
 	loading,
+	parameterError,
 	// handlePdfDownload,
 	// handleExcelDownload,
 	// isDownloadLoading,
@@ -98,6 +121,8 @@ const LogsFilterHeader = ({
 				<Grid item xs={12} sm md={4} lg={3}>
 					<CustomAutocomplete
 						multiple
+						error={Boolean(parameterError)}
+						helperText={parameterError || ''}
 						options={parameterOptions}
 						onChange={(val) => handleFieldCh('parameters', val)}
 						value={payload?.parameters || []}
@@ -250,16 +275,36 @@ const LogsFilterHeader = ({
 
 const WeatherStationAnalytics = () => {
 	const theme = useTheme();
-	const { parametersData } = useCommonData();
-	const [loading, setLoading] = useState(true);
-	// const [isDownloadLoading, setIsDownloadLoading] = useState(null);
-	const [analyticsData, setAnalyticsData] = useState(null);
-	const [isReset, setIsReset] = useState(null);
-
 	const [payload, setPayload] = useState({
 		dateTime: getDefaultDateRange(),
 		parameters: [defaultParameters],
 	});
+	const [submittedFilters, setSubmittedFilters] = useState(() =>
+		buildFilters({
+			dateTime: getDefaultDateRange(),
+			parameters: [defaultParameters],
+		})
+	);
+	const parametersQuery = useQuery({
+		queryKey: ['weather', 'analytics', 'parameters'],
+		queryFn: ({ signal }) =>
+			weatherStationApi.getAnalyticsParameters({ signal }),
+		staleTime: 5 * 60 * 1000,
+	});
+	const analyticsQuery = useQuery({
+		queryKey: ['weather', 'analytics', submittedFilters],
+		queryFn: ({ signal }) =>
+			weatherStationApi.getAnalytics(submittedFilters, { signal }),
+		enabled: Boolean(
+			submittedFilters.startDatetime && submittedFilters.endDatetime
+		),
+		placeholderData: (previousData) => previousData,
+	});
+	const analyticsData = analyticsQuery.data || null;
+	const loading =
+		analyticsQuery.isLoading ||
+		analyticsQuery.isFetching ||
+		parametersQuery.isLoading;
 
 	// Hovered data point for the live readout strip (replaces the Apex popup
 	// tooltip, which gets clipped/unusable when many parameters are selected).
@@ -431,70 +476,21 @@ const WeatherStationAnalytics = () => {
 		});
 	}, [hasLineChart, lineCategories, theme]);
 
-	const handleSearch = async () => {
-		// isDownload = false,
-		// if (isDownload) {
-		//   setIsDownloadLoading(true);
-		// } else {
-		setLoading(true);
-		// }
-		try {
-			const parameterValues = payload?.parameters
-				? payload.parameters
-						.map((p) => p?.value)
-						.filter(Boolean)
-						.join(',')
-				: '';
-
-			const startDateObj = payload?.dateTime?.[0];
-			const endDateObj = payload?.dateTime?.[1];
-			const formattedStart = startDateObj?.isValid?.()
-				? startDateObj.format('YYYY-MM-DD[T]HH:mm:ss')
-				: '';
-			const formattedEnd = endDateObj?.isValid?.()
-				? endDateObj.format('YYYY-MM-DD[T]HH:mm:ss')
-				: '';
-
-			// const newApiUrl = isDownload
-			//   ? API_URLS.WEATHER_STATION_DOWNLOAD_LOGS_DATA(
-			//       parameterValues,
-			//       formattedStart,
-			//       formattedEnd,
-			//     )
-			//   : API_URLS.WEATHER_STATION_LOGS_DATA(
-			//       parameterValues,
-			//       formattedStart,
-			//       formattedEnd,
-			//       paginationDetails.limit,
-			//       paginationDetails.offset,
-			//     );
-			const newApiUrl = API_URLS.WEATHER_STATION_ANALYTICS_DATA(
-				parameterValues,
-				formattedStart,
-				formattedEnd
-			);
-
-			const res = await api.get(newApiUrl);
-
-			// New dataset — drop any hover index from the previous one so the
-			// readout strip can't point past the end of shorter results
-			hoverIdxRef.current = -1;
-			setHoverIndex(null);
-			setAnalyticsData(res);
-		} catch (error) {
-			console.error(`API Error:`, error);
-		} finally {
-			// if (isDownload) {
-			//   setIsDownloadLoading(false);
-			// } else {
-			setLoading(false);
-			// }
-		}
+	const handleSearch = () => {
+		hoverIdxRef.current = -1;
+		setHoverIndex(null);
+		setSubmittedFilters(buildFilters(payload));
 	};
 
 	const handleReset = () => {
-		setAnalyticsData(null);
-		setIsReset(new Date());
+		const nextPayload = {
+			dateTime: getDefaultDateRange(),
+			parameters: [defaultParameters],
+		};
+		setPayload(nextPayload);
+		setSubmittedFilters(buildFilters(nextPayload));
+		hoverIdxRef.current = -1;
+		setHoverIndex(null);
 	};
 
 	// const handlePdfDownload = async () => {
@@ -502,7 +498,7 @@ const WeatherStationAnalytics = () => {
 	//   exportToPDF(
 	//     downloadedData?.rows,
 	//     downloadedData?.columns,
-	//     "weather_station_logs",
+	//     "weather_logs",
 	//   );
 	// };
 
@@ -517,15 +513,11 @@ const WeatherStationAnalytics = () => {
 
 	//   triggerFileDownload(
 	//     url,
-	//     `weather_station_logs_${dayjs().format("YYYY-MM-DD")}.xlsx`,
+	//     `weather_logs_${dayjs().format("YYYY-MM-DD")}.xlsx`,
 	//   );
 
 	//   URL.revokeObjectURL(url);
 	// };
-
-	useEffect(() => {
-		handleSearch();
-	}, [isReset]);
 
 	return (
 		<Box
@@ -537,15 +529,20 @@ const WeatherStationAnalytics = () => {
 			}}
 		>
 			<LogsFilterHeader
-				parameterOptions={[
-					defaultParameters,
-					...(parametersData?.analytics || []),
-				]}
+				parameterOptions={[defaultParameters, ...(parametersQuery.data || [])]}
 				handleSearch={handleSearch}
 				handleReset={handleReset}
 				payload={payload}
 				setPayload={setPayload}
 				loading={loading}
+				parameterError={
+					parametersQuery.error
+						? getWeatherStationErrorMessage(
+								parametersQuery.error,
+								'Unable to load analytics parameters.'
+						  )
+						: null
+				}
 				// handlePdfDownload={handlePdfDownload}
 				// handleExcelDownload={handleExcelDownload}
 				// isDownloadLoading={isDownloadLoading}
@@ -562,6 +559,13 @@ const WeatherStationAnalytics = () => {
 			>
 				{loading ? (
 					<PremiumLoader />
+				) : analyticsQuery.error ? (
+					<NoDataFound
+						message={getWeatherStationErrorMessage(
+							analyticsQuery.error,
+							'Unable to load Weather Station analytics.'
+						)}
+					/>
 				) : !hasLineChart && !hasWindDirection ? (
 					!payload?.parameters?.length ? (
 						<NoDataFound
@@ -608,7 +612,7 @@ const WeatherStationAnalytics = () => {
 								>
 									<Box sx={{ flex: 1, minHeight: 0 }}>
 										<ApexChart
-											chartKey="weather-station-analytics"
+											chartKey="weather-analytics"
 											type="line"
 											options={lineChartOptions}
 											series={lineSeries}

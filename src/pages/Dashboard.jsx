@@ -15,7 +15,7 @@ const DASHBOARD_CONFIG = {
 	FUEL: FuelDashboard,
 	STP: STPDashboard,
 	FLOWMETER: FlowMeterDashboard,
-	WEATHER_STATION: WeatherStationDashboard,
+	WEATHER: WeatherStationDashboard,
 };
 
 const Dashboard = () => {

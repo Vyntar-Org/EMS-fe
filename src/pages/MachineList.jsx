@@ -25,7 +25,7 @@ const MACHINE_LIST_CONFIG = {
 	STP: STPMachineList,
 	FLOWMETER: FlowMeterMachineList,
 	SPINNING: SpinningMachineList,
-	WEATHER_STATION: WeatherStationMachineList,
+	WEATHER: WeatherStationMachineList,
 };
 
 const MachineList = () => {

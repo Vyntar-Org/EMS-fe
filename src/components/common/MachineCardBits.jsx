@@ -30,7 +30,7 @@ export const APP_ICONS = {
 	'FIRE-SAFETY': LocalFireDepartmentIcon,
 	FLOWMETER: SpeedIcon,
 	COMPRESSOR: CompressIcon,
-	WEATHER_STATION: AirIcon,
+	WEATHER: AirIcon,
 };
 
 // Each app's identity color — drives the icon chip, card wash/border and
@@ -46,7 +46,7 @@ export const APP_ACCENT_COLOR = {
 	'FIRE-SAFETY': '#DC2626',
 	FLOWMETER: '#7C3AED',
 	COMPRESSOR: '#16A34A',
-	WEATHER_STATION: '#0EA5E9',
+	WEATHER: '#0EA5E9',
 };
 
 /**

@@ -1,9 +1,11 @@
-import { useTheme } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import { useMemo } from 'react';
 
 import { getAxisConfig } from '../../../helpers/weatherStationChartAxis';
 import { mergeChartOptions } from '../../../helpers/weatherStationChartTheme';
 import { useChartHeight } from '../../../hooks/useWeatherStationChartHeight';
+import NoDataFound from '../../common/errors/NoDataFound';
+
 import ApexChart from './ApexChart';
 import DashboardCard from './DashboardCard';
 
@@ -16,6 +18,9 @@ function SolarIrradianceEnergyChart({ data }) {
 		md: 315,
 		lg: 300,
 	});
+	const hasIrradiance =
+		Array.isArray(data?.irradiance) && data.irradiance.length > 0;
+	const hasEnergy = Array.isArray(data?.energy) && data.energy.length > 0;
 
 	const irradianceAxis = getAxisConfig(data?.irradiance, {
 		forceZero: true,
@@ -110,18 +115,22 @@ function SolarIrradianceEnergyChart({ data }) {
 					},
 					...irradianceAxis,
 				},
-				{
-					seriesName: 'Energy kWh',
-					opposite: true,
-					title: {
-						text: 'Energy (kWh)',
-						style: { color: '#C2410C' },
-					},
-					labels: {
-						style: { colors: '#C2410C' },
-					},
-					...energyAxis,
-				},
+				...(hasEnergy
+					? [
+							{
+								seriesName: 'Energy kWh',
+								opposite: true,
+								title: {
+									text: 'Energy (kWh)',
+									style: { color: '#C2410C' },
+								},
+								labels: {
+									style: { colors: '#C2410C' },
+								},
+								...energyAxis,
+							},
+					  ]
+					: []),
 			],
 
 			grid: {
@@ -144,33 +153,50 @@ function SolarIrradianceEnergyChart({ data }) {
 				text: 'No solar data available',
 			},
 		});
-	}, [data, theme, xTickAmount]);
+	}, [data, energyAxis, hasEnergy, irradianceAxis, theme, xTickAmount]);
 
 	const series = useMemo(() => {
 		if (!data) {
 			return [];
 		}
 
-		return [
+		const nextSeries = [
 			{
 				name: 'Irradiance W/m²',
 				type: 'column',
 				data: data.irradiance ?? [],
 			},
-			{
+		];
+
+		if (hasEnergy) {
+			nextSeries.push({
 				name: 'Energy kWh',
 				type: 'line',
 				data: data.energy ?? [],
-			},
-		];
-	}, [data]);
+			});
+		}
 
-	if (!data || !options) {
-		return null;
+		return nextSeries;
+	}, [data, hasEnergy]);
+
+	if ((!hasIrradiance && !hasEnergy) || !options) {
+		return (
+			<DashboardCard title="Solar Irradiance Trend">
+				<Box height={height}>
+					<NoDataFound message="No solar-irradiance readings are available." />
+				</Box>
+			</DashboardCard>
+		);
 	}
 
 	return (
-		<DashboardCard title="Solar Irradiance vs Energy Generation">
+		<DashboardCard
+			title={
+				hasEnergy
+					? 'Solar Irradiance vs Energy Generation'
+					: 'Solar Irradiance Trend'
+			}
+		>
 			<ApexChart
 				chartKey="solar-irradiance-energy"
 				options={options}

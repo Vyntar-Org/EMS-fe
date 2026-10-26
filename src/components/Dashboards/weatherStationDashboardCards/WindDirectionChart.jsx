@@ -3,6 +3,8 @@ import { useMemo } from 'react';
 
 import { mergeChartOptions } from '../../../helpers/weatherStationChartTheme';
 import { useChartHeight } from '../../../hooks/useWeatherStationChartHeight';
+import NoDataFound from '../../common/errors/NoDataFound';
+
 import ApexChart from './ApexChart';
 import DashboardCard from './DashboardCard';
 
@@ -28,6 +30,7 @@ function WindDirectionChart({ data, isTrend = false, minHeight = null }) {
 			return Number.isFinite(num) ? Math.round(num) : 0;
 		});
 	}, [data]);
+	const hasData = series.length > 0;
 
 	const options = useMemo(() => {
 		if (!data) {
@@ -128,8 +131,23 @@ function WindDirectionChart({ data, isTrend = false, minHeight = null }) {
 		});
 	}, [data, theme]);
 
-	if (!data) {
-		return null;
+	if (!hasData) {
+		const emptyState = (
+			<Box height={minHeight || height}>
+				<NoDataFound message="No wind-direction observations are available." />
+			</Box>
+		);
+
+		return isTrend ? (
+			emptyState
+		) : (
+			<DashboardCard
+				title="Wind Direction Distribution"
+				sx={{ height: '100%' }}
+			>
+				{emptyState}
+			</DashboardCard>
+		);
 	}
 
 	return isTrend ? (

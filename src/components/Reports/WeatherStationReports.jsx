@@ -9,60 +9,70 @@ import {
 	tabsClasses,
 	Tooltip,
 } from '@mui/material';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
-	parameterConfig,
-	WEATHER_SOLAR_REPORTS_ALLOW_MONTH,
-	WEATHER_SOLAR_REPORTS_API_DATA_KEY_CONFIG,
-	WEATHER_SOLAR_REPORTS_TAB_OPTIONS,
+	WEATHER_REPORT_TABS,
+	WEATHER_REPORT_TYPES,
 } from '../../constants/weatherStationReports';
-import { weatherStationApi as api } from '../../helpers/api';
-import { API_URLS } from '../../helpers/apiUrls';
+import { triggerFileDownload } from '../../helpers/common';
 import {
-	transformDynamicDataToDailyMatrix,
-	triggerFileDownload,
-} from '../../helpers/common';
+	getDownloadFileName,
+	getWeatherStationErrorMessage,
+	weatherStationApi,
+} from '../../helpers/weatherStationApi';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import { CustomTable } from '../common/CustomTable';
 import NoDataFound from '../common/errors/NoDataFound';
-import PremiumLoader from '../Dashboards/weatherStationDashboardCards/PremiumLoader';
 import { useToast } from '../common/PremiumToast';
+import PremiumLoader from '../Dashboards/weatherStationDashboardCards/PremiumLoader';
+
+const getDefaultPayload = () => ({
+	month: dayjs(),
+	year: dayjs(),
+});
+
+const formatReportParams = (payload) => ({
+	month: payload?.month?.isValid?.() ? payload.month.format('M') : '',
+	year: payload?.year?.isValid?.() ? payload.year.format('YYYY') : '',
+});
+
+const getReportRows = (response) => {
+	if (Array.isArray(response)) {
+		return response;
+	}
+	return Array.isArray(response?.rows) ? response.rows : [];
+};
+
+const formatColumnLabel = (key) => {
+	if (key === 'rainfall_mm') {
+		return 'Rainfall (mm)';
+	}
+	return key
+		.split('_')
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(' ');
+};
 
 const ReportsHeader = ({
 	selectedTab,
-	handleTabChange,
+	onTabChange,
 	payload,
 	setPayload,
-	handleSearch,
-	handleExcelDownload,
-	isDownloadLoading,
+	onSearch,
+	onDownload,
 	loading,
+	downloadLoading,
 }) => {
-	const handleFieldCh = (key, value) => {
-		setPayload((prev) => ({
-			...prev,
-			[key]: value,
-		}));
-	};
+	const isDaywise = selectedTab === WEATHER_REPORT_TYPES.DAYWISE;
 
 	return (
-		<Box
-			sx={{
-				pb: 1,
-				borderBottom: '2px dashed',
-				borderColor: 'divider',
-			}}
-		>
+		<Box sx={{ pb: 1, borderBottom: '2px dashed', borderColor: 'divider' }}>
 			<Tabs
 				value={selectedTab}
-				onChange={(e, val) => {
-					if (!val) {
-						return;
-					}
-					handleTabChange(val);
-				}}
+				onChange={(_event, value) => onTabChange(value)}
 				variant="scrollable"
 				scrollButtons="auto"
 				allowScrollButtonsMobile
@@ -70,49 +80,39 @@ const ReportsHeader = ({
 					[`& .${tabsClasses.scrollButtons}`]: {
 						'&.Mui-disabled': { opacity: 0.3 },
 					},
-					'& .MuiTabs-scroller': {
-						height: '40px',
-					},
+					'& .MuiTabs-scroller': { height: '40px' },
 					'& .MuiTab-root': {
 						textTransform: 'none',
 						fontSize: '0.95rem',
 						color: 'text.secondary',
 						minHeight: '40px',
-						transition: 'all 0.3s ease',
 						p: 0,
 						mr: 3,
-						'&.Mui-selected': {
-							color: 'primary.main',
-							fontWeight: 1000,
-						},
+						'&.Mui-selected': { color: 'primary.main', fontWeight: 1000 },
 					},
-					'& .MuiTabs-indicator': {
-						backgroundColor: 'secondary.main',
-					},
+					'& .MuiTabs-indicator': { backgroundColor: 'secondary.main' },
 				}}
 			>
-				{WEATHER_SOLAR_REPORTS_TAB_OPTIONS.map((app) => (
+				{WEATHER_REPORT_TABS.map((tab) => (
 					<Tab
 						disableRipple
-						key={app.tab}
-						label={
-							<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-								{app.label}
-							</Box>
-						}
-						value={app.tab}
+						key={tab.value}
+						label={tab.label}
+						value={tab.value}
 					/>
 				))}
 			</Tabs>
 
 			<Grid container gap={2} alignItems="center" mt={0.5}>
-				{WEATHER_SOLAR_REPORTS_ALLOW_MONTH.includes(selectedTab) && (
+				{isDaywise && (
 					<Grid item xs sm md={2}>
 						<CustomDatePicker
 							label="Select Month"
 							mode="monthpicker"
-							onChange={(val) => handleFieldCh('month', val)}
-							value={payload?.month || ''}
+							onChange={(month) =>
+								setPayload((previous) => ({ ...previous, month }))
+							}
+							value={payload.month}
 						/>
 					</Grid>
 				)}
@@ -121,8 +121,10 @@ const ReportsHeader = ({
 					<CustomDatePicker
 						label="Select Year"
 						mode="yearpicker"
-						onChange={(val) => handleFieldCh('year', val)}
-						value={payload?.year || ''}
+						onChange={(year) =>
+							setPayload((previous) => ({ ...previous, year }))
+						}
+						value={payload.year}
 					/>
 				</Grid>
 
@@ -132,16 +134,13 @@ const ReportsHeader = ({
 							<Button
 								disabled={loading}
 								variant="contained"
-								onClick={handleSearch}
+								onClick={onSearch}
 								sx={{
 									width: 40,
 									height: 40,
 									minWidth: 0,
 									p: 0,
 									borderRadius: 2,
-									boxShadow: 'none',
-									color: '#fff',
-									bgcolor: 'primary.main',
 								}}
 							>
 								<Search sx={{ fontSize: 20, color: '#fff' }} />
@@ -150,50 +149,30 @@ const ReportsHeader = ({
 					</Tooltip>
 				</Grid>
 
-				<Grid
-					item
-					xs={12}
-					md={4}
-					display="flex"
-					gap={2}
-					ml="auto"
-					justifyContent="end"
-				>
+				<Grid item xs={12} md={4} display="flex" ml="auto" justifyContent="end">
 					<Button
 						disableElevation
-						disabled={isDownloadLoading || loading}
+						disabled={downloadLoading || loading}
 						variant="contained"
 						startIcon={
-							isDownloadLoading ? (
+							downloadLoading ? (
 								<CircularProgress size={18} thickness={5} color="inherit" />
 							) : (
 								<FileDownload sx={{ fontSize: 20 }} />
 							)
 						}
-						onClick={handleExcelDownload}
+						onClick={onDownload}
 						sx={{
 							height: 42,
 							px: 2.5,
 							borderRadius: '12px',
 							textTransform: 'none',
 							fontWeight: 600,
-							fontSize: '0.9rem',
-							letterSpacing: '0.2px',
 							color: '#fff',
-							bgcolor: 'primary.main',
 							minWidth: 180,
-
-							'&:hover': {
-								bgcolor: 'primary.dark',
-							},
-
-							'&.Mui-disabled': {
-								bgcolor: 'brand.navySoft',
-								color: '#fff',
-							},
 						}}
 					>
-						{isDownloadLoading ? 'Preparing Excel...' : 'Download Excel'}
+						{downloadLoading ? 'Preparing Excel...' : 'Download Excel'}
 					</Button>
 				</Grid>
 			</Grid>
@@ -201,213 +180,160 @@ const ReportsHeader = ({
 	);
 };
 
-const WeatherSolarReports = () => {
+const WeatherStationReports = () => {
 	const { showToast } = useToast();
-	const [selectedTab, setSelectedTab] = useState(
-		'WEATHER_SOLAR_REPORTS_DATE_WISE_CONSUMPTION_DATA'
+	const [selectedTab, setSelectedTab] = useState(WEATHER_REPORT_TYPES.DAYWISE);
+	const [payload, setPayload] = useState(getDefaultPayload);
+	const [submittedParams, setSubmittedParams] = useState(() =>
+		formatReportParams(getDefaultPayload())
 	);
-	const [loading, setLoading] = useState(true);
-	const [reportsData, setReportsData] = useState(null);
-	const [payload, setPayload] = useState({
-		month: dayjs(new Date()),
-		year: dayjs(new Date()),
+	const isDaywise = selectedTab === WEATHER_REPORT_TYPES.DAYWISE;
+	const paramsAreValid = Boolean(
+		submittedParams.year && (!isDaywise || submittedParams.month)
+	);
+
+	const reportQuery = useQuery({
+		queryKey: ['weather', 'reports', selectedTab, submittedParams],
+		queryFn: ({ signal }) =>
+			isDaywise
+				? weatherStationApi.getDaywiseRainfallReport(submittedParams, {
+						signal,
+				  })
+				: weatherStationApi.getMonthwiseRainfallReport(submittedParams, {
+						signal,
+				  }),
+		enabled: paramsAreValid,
+		placeholderData: (previousData) => previousData,
 	});
-	const [isDownloadLoading, setIsDownloadLoading] = useState(null);
 
-	const { tableData, tableColumns } = useMemo(() => {
-		const config = WEATHER_SOLAR_REPORTS_API_DATA_KEY_CONFIG[selectedTab];
+	const rows = useMemo(
+		() => getReportRows(reportQuery.data),
+		[reportQuery.data]
+	);
+	const columns = useMemo(() => {
+		const keys = Array.from(
+			new Set(rows.flatMap((row) => Object.keys(row || {})))
+		);
+		const preferredFirstKey = isDaywise ? 'date' : 'month';
+		keys.sort((a, b) => {
+			if (a === preferredFirstKey) {
+				return -1;
+			}
+			if (b === preferredFirstKey) {
+				return 1;
+			}
+			return 0;
+		});
 
-		const firstResult = transformDynamicDataToDailyMatrix(
-			reportsData,
-			{
-				dateKey: config.dateKey,
-				valueKey: config.valueKey,
+		return keys.map((key) => ({
+			accessorKey: key,
+			header: formatColumnLabel(key),
+			size: 150,
+			cell: (info) => {
+				const value = info.getValue();
+				if (key === 'date' && value && dayjs(value).isValid()) {
+					return dayjs(value).format('DD MMM YYYY');
+				}
+				return value === null || value === undefined || value === ''
+					? '—'
+					: String(value);
 			},
-			{
-				accessorKey: 'parameter',
-				header: 'Parameter',
-				size: 160,
-			}
-		);
+		}));
+	}, [isDaywise, rows]);
 
-		const tableData = [
-			...firstResult.tableData.map((row) => ({
-				...row,
-				parameter: parameterConfig?.[config.valueKey],
-			})),
-		];
-
-		if (config.valueKey1) {
-			const secondResult = transformDynamicDataToDailyMatrix(reportsData, {
-				dateKey: config.dateKey,
-				valueKey: config.valueKey1,
-			});
-
-			tableData.push(
-				...secondResult.tableData.map((row) => ({
-					...row,
-					parameter: parameterConfig?.[config.valueKey1],
-				}))
+	const downloadMutation = useMutation({
+		mutationFn: () => {
+			const params = formatReportParams(payload);
+			return isDaywise
+				? weatherStationApi.downloadDaywiseRainfallReport(params)
+				: weatherStationApi.downloadMonthwiseRainfallReport(params);
+		},
+		onSuccess: (response) => {
+			const label = isDaywise ? 'daywise' : 'monthwise';
+			const url = URL.createObjectURL(response.data);
+			triggerFileDownload(
+				url,
+				getDownloadFileName(
+					response.headers,
+					`weather_${label}_rainfall_${dayjs().format('YYYY-MM-DD')}.xlsx`
+				)
 			);
+			URL.revokeObjectURL(url);
+		},
+		onError: (error) =>
+			showToast(
+				getWeatherStationErrorMessage(error, 'Unable to download report.'),
+				'error'
+			),
+	});
+
+	const validateAndFormatPayload = () => {
+		const params = formatReportParams(payload);
+		if (!params.year || (isDaywise && !params.month)) {
+			showToast(
+				isDaywise ? 'Select a valid month and year.' : 'Select a valid year.',
+				'error'
+			);
+			return null;
 		}
-
-		return {
-			tableData,
-			tableColumns: firstResult.tableColumns,
-		};
-	}, [reportsData, selectedTab]);
-	const fetchReportsData = async (curTab, newPayload, isDownload = false) => {
-		if (!curTab) {
-			return;
-		}
-
-		const isMonthAllowed = WEATHER_SOLAR_REPORTS_ALLOW_MONTH.includes(curTab);
-
-		if (isMonthAllowed && (!newPayload?.month || !newPayload?.year)) {
-			if (!isDownload) {
-				return;
-			}
-			showToast('Missing month or year', 'error');
-			return;
-		}
-
-		if (!isMonthAllowed && !newPayload?.year) {
-			if (!isDownload) {
-				return;
-			}
-			showToast('Missing year', 'error');
-			return;
-		}
-
-		if (isDownload) {
-			setIsDownloadLoading(true);
-		} else {
-			setLoading(true);
-		}
-
-		try {
-			const monthObj = newPayload?.month;
-			const yearObj = newPayload?.year;
-			const formattedMonthObj = monthObj?.isValid?.()
-				? monthObj.format('M')
-				: '';
-			const formattedYearObj = yearObj?.isValid?.()
-				? yearObj.format('YYYY')
-				: '';
-
-			const newApiUrl = isDownload
-				? API_URLS[`${curTab}_DOWNLOAD`](formattedYearObj, formattedMonthObj)
-				: API_URLS[curTab](formattedYearObj, formattedMonthObj);
-
-			const res = await api.get(newApiUrl, {
-				responseType: isDownload ? 'blob' : 'json',
-			});
-
-			if (isDownload) {
-				return res;
-			}
-			// if (res?.success) {
-
-			setReportsData(res?.rows || null);
-			// }
-		} catch (error) {
-			console.error(`API Error:`, error);
-		} finally {
-			if (isDownload) {
-				setIsDownloadLoading(false);
-			} else {
-				setLoading(false);
-			}
-		}
+		return params;
 	};
 
-	const handleTabChange = (tabVal) => {
-		setSelectedTab(tabVal);
-		setPayload({
-			month: dayjs(new Date()),
-			year: dayjs(new Date()),
-		});
-		setReportsData(null);
-		fetchReportsData(tabVal, {
-			month: dayjs(new Date()),
-			year: dayjs(new Date()),
-		});
+	const handleTabChange = (nextTab) => {
+		const nextPayload = getDefaultPayload();
+		setSelectedTab(nextTab);
+		setPayload(nextPayload);
+		setSubmittedParams(formatReportParams(nextPayload));
 	};
 
-	const handleSearch = () => {
-		fetchReportsData(selectedTab, payload);
-	};
-
-	const handleExcelDownload = async () => {
-		const response = await fetchReportsData(selectedTab, payload, true);
-
-		if (!response) {
-			return;
-		}
-
-		const blob = response.data;
-
-		const url = URL.createObjectURL(blob);
-
-		triggerFileDownload(
-			url,
-			`${
-				WEATHER_SOLAR_REPORTS_TAB_OPTIONS?.find((w) => w.tab === selectedTab)
-					?.label
-			} Reports ${dayjs().format('YYYY-MM-DD')}.xlsx`
-		);
-
-		URL.revokeObjectURL(url);
-	};
-
-	useEffect(() => {
-		fetchReportsData(selectedTab, payload);
-	}, []);
+	const loading = reportQuery.isLoading || reportQuery.isFetching;
 
 	return (
 		<Box
-			sx={{
-				height: {
-					xs: 'calc(100vh - 56px - 24px)',
-					sm: 'calc(100vh - 64px - 24px)',
-				},
-			}}
+			sx={{ height: { xs: 'calc(100vh - 80px)', sm: 'calc(100vh - 88px)' } }}
 		>
 			<ReportsHeader
 				selectedTab={selectedTab}
-				handleTabChange={handleTabChange}
-				handleSearch={handleSearch}
+				onTabChange={handleTabChange}
 				payload={payload}
 				setPayload={setPayload}
-				handleExcelDownload={handleExcelDownload}
-				isDownloadLoading={isDownloadLoading}
+				onSearch={() => {
+					const params = validateAndFormatPayload();
+					if (params) {
+						setSubmittedParams(params);
+					}
+				}}
+				onDownload={() => {
+					if (validateAndFormatPayload()) {
+						downloadMutation.mutate();
+					}
+				}}
 				loading={loading}
-				// slavesId={slavesId}
-				// setSlavesId={setSlavesId}
-				// slavesData={slavesData}
+				downloadLoading={downloadMutation.isPending}
 			/>
 
 			<Box
-				height={{
-					xs: 'calc(100% - 158px)',
-					md: 'calc(100% - 101px)',
-				}}
+				height={{ xs: 'calc(100% - 158px)', md: 'calc(100% - 101px)' }}
 				pt={1}
 				overflow="auto"
 			>
 				{loading ? (
 					<PremiumLoader />
-				) : !reportsData || !tableData?.length ? (
+				) : reportQuery.error ? (
 					<NoDataFound
-						message="No report data"
-						description="No records for the selected period — try a different month or year."
+						message={getWeatherStationErrorMessage(
+							reportQuery.error,
+							'Unable to load the rainfall report.'
+						)}
 					/>
+				) : !rows.length ? (
+					<NoDataFound message="No rainfall report data exists for the selected period." />
 				) : (
-					<CustomTable data={tableData} columns={tableColumns} />
+					<CustomTable data={rows} columns={columns} fillWidth />
 				)}
 			</Box>
 		</Box>
 	);
 };
 
-export default WeatherSolarReports;
+export default WeatherStationReports;

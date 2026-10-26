@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="70" height="70" viewBox="0 0 70 70" fill="none" role="img" aria-label="Ambient Pressure" shape-rendering="geometricPrecision">
+
+<defs>
+  <linearGradient id="bg" x1="8" y1="7" x2="62" y2="63" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#F8FCFF"/>
+    <stop offset="1" stop-color="#EAF4FF"/>
+  </linearGradient>
+  <linearGradient id="blue" x1="18" y1="8" x2="52" y2="60" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#72B7FF"/>
+    <stop offset="1" stop-color="#1D63C8"/>
+  </linearGradient>
+  <linearGradient id="deepBlue" x1="13" y1="10" x2="56" y2="62" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#2D7DD8"/>
+    <stop offset="1" stop-color="#0B3561"/>
+  </linearGradient>
+  <linearGradient id="gold" x1="18" y1="8" x2="56" y2="62" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#FFE078"/>
+    <stop offset="1" stop-color="#F4A51C"/>
+  </linearGradient>
+  <linearGradient id="orange" x1="14" y1="9" x2="58" y2="62" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#FFB45C"/>
+    <stop offset="1" stop-color="#E45A20"/>
+  </linearGradient>
+  <linearGradient id="green" x1="12" y1="12" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#83D88C"/>
+    <stop offset="1" stop-color="#23934E"/>
+  </linearGradient>
+  <linearGradient id="leaf" x1="36" y1="28" x2="55" y2="52" gradientUnits="userSpaceOnUse">
+    <stop stop-color="#86D989"/>
+    <stop offset="1" stop-color="#1F8F49"/>
+  </linearGradient>
+</defs>
+<circle cx="35" cy="35" r="31" fill="url(#bg)"/>
+
+
+<!-- Pressure gauge -->
+<circle cx="35" cy="35" r="23" fill="#DFF0FF" stroke="#0B3561" stroke-width="4"/>
+<circle cx="35" cy="35" r="4" fill="#0B3561"/>
+<path d="M35 35l13-10" stroke="#2D7DD8" stroke-width="4" stroke-linecap="round"/>
+<path d="M35 14v6M35 50v6M14 35h6M50 35h6M20 20l4.5 4.5M50 20l-4.5 4.5M20 50l4.5-4.5M50 50l-4.5-4.5" stroke="#2D7DD8" stroke-width="3" stroke-linecap="round"/>
+<path d="M25 46c5 4.2 15 4.2 20 0" stroke="#1F65C8" stroke-width="3" stroke-linecap="round"/>
+
+</svg>

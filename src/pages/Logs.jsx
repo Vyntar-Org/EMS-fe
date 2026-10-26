@@ -25,7 +25,7 @@ const LOGS_CONFIG = {
 	STP: STPLogs,
 	FLOWMETER: FlowMeterLogs,
 	SPINNING: SpinningLogs,
-	WEATHER_STATION: WeatherStationLogs,
+	WEATHER: WeatherStationLogs,
 };
 
 const Logs = () => {

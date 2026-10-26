@@ -1,9 +1,11 @@
-import { useTheme } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import { useMemo } from 'react';
 
 import { getAxisConfig } from '../../../helpers/weatherStationChartAxis';
 import { mergeChartOptions } from '../../../helpers/weatherStationChartTheme';
 import { useChartHeight } from '../../../hooks/useWeatherStationChartHeight';
+import NoDataFound from '../../common/errors/NoDataFound';
+
 import ApexChart from './ApexChart';
 import DashboardCard from './DashboardCard';
 
@@ -16,6 +18,9 @@ function AirQualityChart({ data }) {
 		md: 260,
 		lg: 260,
 	});
+	const hasData = [data?.aqi, data?.pm2_5].some(
+		(values) => Array.isArray(values) && values.length > 0
+	);
 
 	const aqiAxis = getAxisConfig(data?.aqi);
 
@@ -154,8 +159,14 @@ function AirQualityChart({ data }) {
 		];
 	}, [data]);
 
-	if (!data || !options) {
-		return null;
+	if (!hasData || !options) {
+		return (
+			<DashboardCard title="Air Quality Analysis" sx={{ height: '100%' }}>
+				<Box height={height}>
+					<NoDataFound message="No air-quality readings are available." />
+				</Box>
+			</DashboardCard>
+		);
 	}
 
 	return (

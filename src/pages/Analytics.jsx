@@ -25,7 +25,7 @@ const ANALYTICS_CONFIG = {
 	STP: STPAnalytics,
 	FLOWMETER: FlowMeterAnalytics,
 	SPINNING: SpinningAnalytics,
-	WEATHER_STATION: WeatherStationAnalytics,
+	WEATHER: WeatherStationAnalytics,
 };
 
 const Analytics = () => {

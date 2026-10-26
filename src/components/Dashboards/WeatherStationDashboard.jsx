@@ -3,20 +3,16 @@ import { Box, Grid, Typography } from '@mui/material';
 import { useWeatherStation } from '../../hooks/useWeatherStation';
 
 import AirQualityChart from './weatherStationDashboardCards/AirQualityChart';
-import AnalyticsLogic from './weatherStationDashboardCards/AnalyticsLogic';
 import MetricCardsRow from './weatherStationDashboardCards/MetricCardsRow';
-import PredictionsAlerts from './weatherStationDashboardCards/PredictionsAlerts';
 import PremiumLoader from './weatherStationDashboardCards/PremiumLoader';
 import RainfallTempPressureChart from './weatherStationDashboardCards/RainfallTempPressureChart';
-import SensorIntegrationMap from './weatherStationDashboardCards/SensorIntegrationMap';
 import SiteLocationMap from './weatherStationDashboardCards/SiteLocationMap';
 import SiteLocationSummary from './weatherStationDashboardCards/SiteLocationSummary';
 import SolarIrradianceEnergyChart from './weatherStationDashboardCards/SolarIrradianceEnergyChart';
 import WindDirectionChart from './weatherStationDashboardCards/WindDirectionChart';
 
 const WeatherStationDashboard = () => {
-	const { loading, error, coords, kpiCardsData, chartData } =
-		useWeatherStation();
+	const { loading, error, kpiCardsData, chartData } = useWeatherStation();
 
 	return (
 		<Box
@@ -27,13 +23,6 @@ const WeatherStationDashboard = () => {
 				},
 			}}
 		>
-			{/* <DashboardHeader
-        lastUpdated={lastUpdated}
-        onRefresh={refresh}
-        onUseLocation={useMyLocation}
-        loading={loading}
-      /> */}
-
 			{loading && (
 				<Box sx={{ height: '100%' }}>
 					<PremiumLoader message="Loading live station data" />
@@ -64,7 +53,7 @@ const WeatherStationDashboard = () => {
 					</Grid>
 
 					<Grid xs={12} sm={12} md={7.9}>
-						<SolarIrradianceEnergyChart data={chartData?.solarIrradiance} />
+						<RainfallTempPressureChart data={chartData?.rainfall} />
 					</Grid>
 
 					<Grid xs={12} sm={12} md={4} lg={4}>
@@ -72,27 +61,15 @@ const WeatherStationDashboard = () => {
 					</Grid>
 
 					<Grid xs={12} sm={12} md={7.9}>
-						<RainfallTempPressureChart data={chartData?.rainfall} />
+						<SolarIrradianceEnergyChart data={chartData?.solarIrradiance} />
 					</Grid>
 
 					<Grid xs={12} sm={12} md={4} lg={4}>
 						<AirQualityChart data={chartData?.airQuality} />
 					</Grid>
 
-					<Grid xs={12} sm={12} md={3.9} lg={3.9}>
-						<PredictionsAlerts />
-					</Grid>
-
-					<Grid xs={12} sm={12} md={3.9} lg={3.9}>
-						<AnalyticsLogic />
-					</Grid>
-
-					<Grid xs={12} sm={12} md={3.9} lg={4}>
-						<SensorIntegrationMap />
-					</Grid>
-
 					<Grid xs={12} sm={12} md={7.9}>
-						<SiteLocationMap lat={coords.latitude} lon={coords.longitude} />
+						<SiteLocationMap />
 					</Grid>
 
 					<Grid xs={12} sm={12} md={4} lg={4}>

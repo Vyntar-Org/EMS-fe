@@ -1,11 +1,9 @@
 import {
 	Air,
 	AirOutlined,
-	CurrencyRupee,
 	DeviceThermostat,
 	Explore,
 	Opacity,
-	SolarPower,
 	Speed,
 	WaterDrop,
 	WbSunny,
@@ -100,24 +98,24 @@ const METRIC_CONFIG = [
 		labelIcon: WbSunny,
 		iconColor: '#FF9800',
 	},
-	{
-		key: 'solar_energy',
-		label: 'Solar Energy Today',
-		unit: 'kWh',
-		// getLabel: (val) => {
-		//   return `Expected: ${val} kWh`;
-		// },
-		accent: 'metric--green',
-		labelIcon: SolarPower,
-		iconColor: '#4CAF50',
-	},
-	{
-		key: 'revenue',
-		label: 'Revenue',
-		accent: 'metric--green',
-		labelIcon: CurrencyRupee,
-		iconColor: '#059669',
-	},
+	// {
+	// 	key: 'solar_energy',
+	// 	label: 'Solar Energy Today',
+	// 	unit: 'kWh',
+	// 	// getLabel: (val) => {
+	// 	//   return `Expected: ${val} kWh`;
+	// 	// },
+	// 	accent: 'metric--green',
+	// 	labelIcon: SolarPower,
+	// 	iconColor: '#4CAF50',
+	// },
+	// {
+	// 	key: 'revenue',
+	// 	label: 'Revenue',
+	// 	accent: 'metric--green',
+	// 	labelIcon: CurrencyRupee,
+	// 	iconColor: '#059669',
+	// },
 	{
 		key: 'temperature',
 		label: 'Temperature',
@@ -203,36 +201,30 @@ const METRIC_CONFIG = [
 	},
 ];
 
-const HALF_WIDTH_KEYS = [
-	'solar_indura',
-	'rainfall',
-	'temperature',
-	'humidity',
-	'solar_energy',
-	'revenue',
-];
-
 function MetricCardsRow({ kpiCardsData }) {
 	return (
 		<Grid container justifyContent="space-between" rowGap={1.5}>
 			{METRIC_CONFIG.map(({ key, label, unit, labelIcon }) => {
-				const value = `${
+				const rawValue =
 					key === 'pressure'
-						? kpiCardsData?.temperature?.pressure || 0
-						: kpiCardsData?.[key]?.today || 0
-				} ${unit || ''}`;
+						? kpiCardsData?.temperature?.pressure
+						: kpiCardsData?.[key]?.today;
+				const hasValue =
+					rawValue !== null && rawValue !== undefined && rawValue !== '';
+				const value = hasValue ? `${rawValue}${unit ? ` ${unit}` : ''}` : '—';
 				const IconComponent = labelIcon;
 				const colors = CARD_COLORS?.[key] || CARD_COLORS?.rainfall;
-				const isHalfWidth = HALF_WIDTH_KEYS.includes(key);
 
 				return (
 					<Grid
 						key={key}
 						// xs={isHalfWidth ? 5.88 : 12}
 						// sm={isHalfWidth ? 2.88 : 5.93}
+						// xs={5.88}
+						// md={2.3}
+						// lg={isHalfWidth ? 1.92 : 2.93}
 						xs={5.88}
-						md={2.3}
-						lg={isHalfWidth ? 1.92 : 2.93}
+						md={2.92}
 					>
 						<Card
 							elevation={0}
@@ -254,7 +246,7 @@ function MetricCardsRow({ kpiCardsData }) {
 
 								// background: colors.bg,
 								// border: `1px solid ${colors.border}`,
-								borderRadius: 4,
+								borderRadius: 2,
 								transition: 'all .25s ease',
 
 								boxShadow: (theme) =>

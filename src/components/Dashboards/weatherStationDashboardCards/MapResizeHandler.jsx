@@ -1,13 +1,13 @@
 import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 
-function MapResizeHandler({ mapHeight, breakpoint }) {
+const MapResizeHandler = ({ mapHeight, breakpoint }) => {
 	const map = useMap();
 
 	useEffect(() => {
-		const timer = setTimeout(() => map.invalidateSize(), 150);
-		return () => clearTimeout(timer);
-	}, [map, mapHeight, breakpoint]);
+		const timer = window.setTimeout(() => map.invalidateSize(), 150);
+		return () => window.clearTimeout(timer);
+	}, [breakpoint, map, mapHeight]);
 
 	useEffect(() => {
 		const container = map.getContainer()?.parentElement;
@@ -15,14 +15,13 @@ function MapResizeHandler({ mapHeight, breakpoint }) {
 			return undefined;
 		}
 
-		const observer = new ResizeObserver(() => {
-			map.invalidateSize();
-		});
+		const observer = new ResizeObserver(() => map.invalidateSize());
 		observer.observe(container);
+
 		return () => observer.disconnect();
 	}, [map]);
 
 	return null;
-}
+};
 
 export default MapResizeHandler;
