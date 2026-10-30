@@ -176,11 +176,20 @@ export const AuthProvider = ({ children }) => {
 	};
 
 	const logout = async () => {
+		const accessToken = storage.getLocal('access_token');
 		const refreshToken = storage.getLocal('refresh_token');
 
-		if (refreshToken) {
+		if (accessToken && refreshToken) {
 			try {
-				await api.post(API_URLS.LOGOUT, { refresh: refreshToken });
+				await api.post(
+					API_URLS.LOGOUT,
+					{ refresh: refreshToken },
+					{
+						headers: {
+							Authorization: `Bearer ${accessToken}`,
+						},
+					}
+				);
 			} catch (error) {
 				// Logout request failed, clearing local auth state anyway
 			}
