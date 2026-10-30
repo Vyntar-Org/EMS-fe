@@ -15,7 +15,7 @@ import NoDataFound from '../../common/errors/NoDataFound';
 
 const ENERGYConsumptionLastSixHours = () => {
 	const [consumption, setConsumption] = useState(null);
-		const [consumptionMeta, setConsumptionMeta] = useState(null);
+	const [consumptionMeta, setConsumptionMeta] = useState(null);
 
 	const [chartType, setChartType] = useState('line');
 
@@ -26,7 +26,7 @@ const ENERGYConsumptionLastSixHours = () => {
 			);
 			if (getConsumptionData?.success) {
 				setConsumption(getConsumptionData?.data);
-				setConsumptionMeta(getConsumptionData?.meta)
+				setConsumptionMeta(getConsumptionData?.meta);
 			}
 		} catch (error) {
 			console.error('One of the API calls failed:', error);
@@ -54,8 +54,7 @@ const ENERGYConsumptionLastSixHours = () => {
 			setChartType(val);
 		}
 	};
-	
-	
+
 	const chartToggle = (
 		<ToggleButtonGroup
 			value={chartType}
