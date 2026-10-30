@@ -125,6 +125,8 @@ export const ApplicationProvider = ({ children }) => {
 		const fetchApplications = async () => {
 			if (!user) {
 				setApplications([]);
+				setSelectedApp(null);
+				setAppError(null);
 				setAppLoading(false);
 				return;
 			}

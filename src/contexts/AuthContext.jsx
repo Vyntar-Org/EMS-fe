@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
+import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useState, useEffect } from 'react';
 
 import { api, ensureFreshAccessToken } from '../helpers/api';
@@ -91,6 +92,7 @@ const fetchCurrentUser = async (accessToken = null) => {
 };
 
 export const AuthProvider = ({ children }) => {
+	const queryClient = useQueryClient();
 	const [user, setUser] = useState(null);
 	const [permissions, setPermissions] = useState([]);
 	const [loading, setLoading] = useState(true);
@@ -198,6 +200,10 @@ export const AuthProvider = ({ children }) => {
 		setUser(null);
 		setPermissions([]);
 		clearAuthData();
+		// The query client survives SPA navigation. Remove data from the previous
+		// authenticated session so a new login cannot reuse fresh protected data
+		// (notably the five-minute slaves cache) and will issue new API requests.
+		queryClient.clear();
 	};
 
 	const hasPermission = (permissionKey) => {
