@@ -15,6 +15,8 @@ import NoDataFound from '../../common/errors/NoDataFound';
 
 const ENERGYConsumptionLastSixHours = () => {
 	const [consumption, setConsumption] = useState(null);
+		const [consumptionMeta, setConsumptionMeta] = useState(null);
+
 	const [chartType, setChartType] = useState('line');
 
 	const fetchConsumptionData = async () => {
@@ -24,6 +26,7 @@ const ENERGYConsumptionLastSixHours = () => {
 			);
 			if (getConsumptionData?.success) {
 				setConsumption(getConsumptionData?.data);
+				setConsumptionMeta(getConsumptionData?.meta)
 			}
 		} catch (error) {
 			console.error('One of the API calls failed:', error);
@@ -40,7 +43,7 @@ const ENERGYConsumptionLastSixHours = () => {
 		hourlyData,
 		{
 			actual: 'consumption',
-			actualLabel: '(kWh)',
+			actualLabel: consumptionMeta?.unit,
 			includeTarget: false,
 		},
 		50
@@ -51,7 +54,8 @@ const ENERGYConsumptionLastSixHours = () => {
 			setChartType(val);
 		}
 	};
-
+	
+	
 	const chartToggle = (
 		<ToggleButtonGroup
 			value={chartType}
@@ -100,7 +104,7 @@ const ENERGYConsumptionLastSixHours = () => {
 							colors={[CHART_COLORS.consumption6h]}
 							xAxesType="datetime"
 							granularity="hour"
-							unit="kWh"
+							unit={consumptionMeta?.unit}
 							showToolbar={false}
 							height="100%"
 						/>

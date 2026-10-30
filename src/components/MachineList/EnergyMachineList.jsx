@@ -489,6 +489,8 @@ const EnergyMachineList = () => {
 											<PremiumEnergyMachineCard
 												title={mc?.name || ''}
 												status={mc?.status}
+												isDeviceConnected={mc?.is_device_connected}
+												units={mc?.units}
 												lastUpdated={mc?.latest?.last_ts || 0}
 												total={mc?.latest?.acte_im || 0}
 												phaseRV={mc?.latest?.rv || 0}

@@ -2,6 +2,7 @@ import {
 	ElectricMeterRounded,
 	ShowChartRounded,
 	SpeedRounded,
+	WarningAmberRounded,
 } from '@mui/icons-material';
 import {
 	Box,
@@ -18,6 +19,12 @@ import { formatNumber } from '../../../helpers/formatters';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import ResponsiveTextWrapper from '../../common/ResponsiveTextWrapper';
 
+import {
+	ENERGY_MACHINE_UNIT_KEYS,
+	resolveEnergyMachineUnit,
+	withEnergyMachineUnit,
+} from './energyMachineCardUnits';
+
 // 3-phase R/Y/B voltage+current table — unique to Energy, kept as its own
 // dedicated visual rather than folded into the generic metric panel.
 const PhaseTable = ({
@@ -27,6 +34,7 @@ const PhaseTable = ({
 	phaseYA,
 	phaseBV,
 	phaseBA,
+	units,
 }) => (
 	<Box
 		sx={{
@@ -65,7 +73,7 @@ const PhaseTable = ({
 						<ResponsiveTextWrapper
 							fontSize="9.5px"
 							fontWeight="bold"
-							value="V (Voltage)"
+							value="Voltage"
 						/>
 					</TableCell>
 					<TableCell
@@ -75,16 +83,61 @@ const PhaseTable = ({
 						<ResponsiveTextWrapper
 							fontSize="9.5px"
 							fontWeight="bold"
-							value="A (Current)"
+							value="Current"
 						/>
 					</TableCell>
 				</TableRow>
 			</TableHead>
 			<TableBody>
 				{[
-					{ name: 'Phase R', v: phaseRV, a: phaseRA, color: '#d32f2f' },
-					{ name: 'Phase Y', v: phaseYV, a: phaseYA, color: '#fbc02d' },
-					{ name: 'Phase B', v: phaseBV, a: phaseBA, color: '#1976d2' },
+					{
+						name: 'Phase R',
+						v: phaseRV,
+						a: phaseRA,
+						voltageUnit: resolveEnergyMachineUnit(
+							units,
+							ENERGY_MACHINE_UNIT_KEYS.phaseRV,
+							'V'
+						),
+						currentUnit: resolveEnergyMachineUnit(
+							units,
+							ENERGY_MACHINE_UNIT_KEYS.phaseRA,
+							'A'
+						),
+						color: '#d32f2f',
+					},
+					{
+						name: 'Phase Y',
+						v: phaseYV,
+						a: phaseYA,
+						voltageUnit: resolveEnergyMachineUnit(
+							units,
+							ENERGY_MACHINE_UNIT_KEYS.phaseYV,
+							'V'
+						),
+						currentUnit: resolveEnergyMachineUnit(
+							units,
+							ENERGY_MACHINE_UNIT_KEYS.phaseYA,
+							'A'
+						),
+						color: '#fbc02d',
+					},
+					{
+						name: 'Phase B',
+						v: phaseBV,
+						a: phaseBA,
+						voltageUnit: resolveEnergyMachineUnit(
+							units,
+							ENERGY_MACHINE_UNIT_KEYS.phaseBV,
+							'V'
+						),
+						currentUnit: resolveEnergyMachineUnit(
+							units,
+							ENERGY_MACHINE_UNIT_KEYS.phaseBA,
+							'A'
+						),
+						color: '#1976d2',
+					},
 				].map((row) => (
 					<TableRow key={row.name}>
 						<TableCell sx={{ py: 0.55, width: '40%', borderColor: 'divider' }}>
@@ -113,7 +166,10 @@ const PhaseTable = ({
 								fontSize="10.5px"
 								fontWeight={700}
 								color={row.color}
-								value={formatNumber(row.v, 2, { fallback: '0' })}
+								value={withEnergyMachineUnit(
+									formatNumber(row.v, 2, { fallback: '0' }),
+									row.voltageUnit
+								)}
 							/>
 						</TableCell>
 						<TableCell
@@ -124,7 +180,10 @@ const PhaseTable = ({
 								fontSize="10.5px"
 								fontWeight={700}
 								color={row.color}
-								value={formatNumber(row.a, 2, { fallback: '0' })}
+								value={withEnergyMachineUnit(
+									formatNumber(row.a, 2, { fallback: '0' }),
+									row.currentUnit
+								)}
 							/>
 						</TableCell>
 					</TableRow>
@@ -203,6 +262,8 @@ const StatCell = ({ label, value, index }) => {
 const PremiumEnergyMachineCard = ({
 	title,
 	status,
+	isDeviceConnected,
+	units,
 	lastUpdated,
 	total,
 	phaseRV,
@@ -219,67 +280,120 @@ const PremiumEnergyMachineCard = ({
 	slaveId,
 	trendUrl,
 	onOpenTrend,
-}) => (
-	<PremiumMachineCard
-		app="ENERGY"
-		title={title}
-		status={status}
-		lastUpdated={lastUpdated}
-		todayMtd={{ todayValue: `${today} kWh`, mtdValue: `${mtd} kWh` }}
-		trend={slaveId ? { url: trendUrl } : null}
-		onOpenTrend={onOpenTrend}
-	>
-		<Box
-			display="flex"
-			justifyContent="space-between"
-			alignItems="baseline"
-			my={0.25}
-			gap={1}
-			sx={{ borderLeft: '3px solid #E5485D', pl: 1 }}
+}) => {
+	const isDisconnected = isDeviceConnected === false;
+	const card = (
+		<PremiumMachineCard
+			app="ENERGY"
+			title={title}
+			status={status}
+			lastUpdated={lastUpdated}
+			warningState={isDisconnected}
+			statusMessage={isDisconnected ? 'Device not connected' : null}
+			headerIcon={
+				isDisconnected ? (
+					<WarningAmberRounded
+						aria-hidden="true"
+						sx={{ fontSize: 36, color: 'warning.main' }}
+					/>
+				) : null
+			}
+			todayMtd={{
+				todayValue: withEnergyMachineUnit(
+					today,
+					resolveEnergyMachineUnit(units, ENERGY_MACHINE_UNIT_KEYS.today, 'kWh')
+				),
+				mtdValue: withEnergyMachineUnit(
+					mtd,
+					resolveEnergyMachineUnit(units, ENERGY_MACHINE_UNIT_KEYS.mtd, 'kWh')
+				),
+			}}
+			trend={slaveId ? { url: trendUrl } : null}
+			onOpenTrend={onOpenTrend}
 		>
-			<Box minWidth={0} flex={1}>
-				<ResponsiveTextWrapper
-					value="Total Energy"
-					fontSize="12.5px"
-					color="text.secondary"
-					fontWeight={600}
-				/>
+			<Box
+				display="flex"
+				justifyContent="space-between"
+				alignItems="baseline"
+				my={0.25}
+				gap={1}
+				sx={{ borderLeft: '3px solid #E5485D', pl: 1 }}
+			>
+				<Box minWidth={0} flex={1}>
+					<ResponsiveTextWrapper
+						value="Total Energy"
+						fontSize="12.5px"
+						color="text.secondary"
+						fontWeight={600}
+					/>
+				</Box>
+				<Box flexShrink={0}>
+					<ResponsiveTextWrapper
+						value={withEnergyMachineUnit(
+							formatNumber(total, 2, { fallback: '0' }),
+							resolveEnergyMachineUnit(
+								units,
+								ENERGY_MACHINE_UNIT_KEYS.totalEnergy,
+								'kWh'
+							)
+						)}
+						fontSize="16px"
+						color="text.primary"
+						fontWeight={700}
+					/>
+				</Box>
 			</Box>
-			<Box flexShrink={0}>
-				<ResponsiveTextWrapper
-					value={`${formatNumber(total, 2, { fallback: '0' })} kWh`}
-					fontSize="16px"
-					color="text.primary"
-					fontWeight={700}
+			<PhaseTable
+				phaseRV={phaseRV}
+				phaseRA={phaseRA}
+				phaseYV={phaseYV}
+				phaseYA={phaseYA}
+				phaseBV={phaseBV}
+				phaseBA={phaseBA}
+				units={units}
+			/>
+			<Grid container spacing={0.6} mt={0.1} mb={0.6}>
+				<StatCell
+					index={0}
+					label="Active power"
+					value={withEnergyMachineUnit(
+						formatNumber(activePower, 2, { fallback: '0' }),
+						resolveEnergyMachineUnit(
+							units,
+							ENERGY_MACHINE_UNIT_KEYS.activePower,
+							'kW'
+						)
+					)}
 				/>
-			</Box>
-		</Box>
-		<PhaseTable
-			phaseRV={phaseRV}
-			phaseRA={phaseRA}
-			phaseYV={phaseYV}
-			phaseYA={phaseYA}
-			phaseBV={phaseBV}
-			phaseBA={phaseBA}
-		/>
-		<Grid container spacing={0.6} mt={0.1} mb={0.6}>
-			<StatCell
-				index={0}
-				label="Active power"
-				value={`${formatNumber(activePower, 2, { fallback: '0' })} kW`}
-			/>
-			<StatCell
-				index={1}
-				label="Power factor"
-				value={`${formatNumber(powerFactor, 2, { fallback: '0' })} PF`}
-			/>
-			<StatCell
-				index={2}
-				label="Frequency"
-				value={`${formatNumber(frequency, 2, { fallback: '0' })} Hz`}
-			/>
-		</Grid>
-	</PremiumMachineCard>
-);
+				<StatCell
+					index={1}
+					label="Power factor"
+					value={withEnergyMachineUnit(
+						formatNumber(powerFactor, 2, { fallback: '0' }),
+						resolveEnergyMachineUnit(
+							units,
+							ENERGY_MACHINE_UNIT_KEYS.powerFactor,
+							'PF'
+						)
+					)}
+				/>
+				<StatCell
+					index={2}
+					label="Frequency"
+					value={withEnergyMachineUnit(
+						formatNumber(frequency, 2, { fallback: '0' }),
+						resolveEnergyMachineUnit(
+							units,
+							ENERGY_MACHINE_UNIT_KEYS.frequency,
+							'Hz'
+						)
+					)}
+				/>
+			</Grid>
+		</PremiumMachineCard>
+	);
+
+	return card;
+};
 
 export default PremiumEnergyMachineCard;

@@ -22,6 +22,9 @@ const PremiumMachineCard = ({
 	onOpenTrend,
 	footer,
 	accentColor,
+	headerIcon,
+	warningState = false,
+	statusMessage,
 	headerCaption,
 	headerTagline,
 	children,
@@ -30,6 +33,8 @@ const PremiumMachineCard = ({
 	const statusColor = isOnline ? '#16A34A' : '#EF3340';
 	const statusLabel = isOnline ? 'ONLINE' : 'OFFLINE';
 	const accent = accentColor || APP_ACCENT_COLOR[app] || statusColor;
+	const getVisualColor = (theme) =>
+		warningState ? theme.palette.warning.main : statusColor;
 
 	return (
 		<Box
@@ -40,9 +45,20 @@ const PremiumMachineCard = ({
 				p: MACHINE_CARD_DESIGN.cardPadding,
 				borderRadius: MACHINE_CARD_DESIGN.cardRadius,
 				border: '1px solid',
-				borderColor: (t) => alpha(t.palette.primary.main, 0.11),
-				bgcolor: 'background.paper',
-				boxShadow: '0 12px 35px rgba(37,69,111,.10)',
+				borderColor: (t) =>
+					warningState
+						? alpha(getVisualColor(t), 0.7)
+						: alpha(t.palette.primary.main, 0.11),
+				background: (t) =>
+					warningState
+						? `linear-gradient(155deg, ${alpha(getVisualColor(t), 0.1)} 0%, ${
+								t.palette.background.paper
+						  } 38%)`
+						: t.palette.background.paper,
+				boxShadow: (t) =>
+					warningState
+						? `0 12px 35px ${alpha(getVisualColor(t), 0.18)}`
+						: '0 12px 35px rgba(37,69,111,.10)',
 				display: 'flex',
 				flexDirection: 'column',
 				gap: MACHINE_CARD_DESIGN.cardGap,
@@ -53,8 +69,12 @@ const PremiumMachineCard = ({
 					}),
 				'&:hover': {
 					transform: 'translateY(-2px)',
-					boxShadow: `0 16px 34px ${alpha(statusColor, 0.18)}`,
-					borderColor: alpha(statusColor, 0.28),
+					boxShadow: (t) =>
+						`0 16px 34px ${alpha(
+							getVisualColor(t),
+							warningState ? 0.24 : 0.18
+						)}`,
+					borderColor: (t) => alpha(getVisualColor(t), warningState ? 1 : 0.28),
 				},
 			}}
 		>
@@ -64,12 +84,14 @@ const PremiumMachineCard = ({
 					overflow: 'hidden',
 					minHeight: MACHINE_CARD_DESIGN.headerMinHeight,
 					borderRadius: MACHINE_CARD_DESIGN.sectionRadius,
-					border: `1px solid ${alpha(statusColor, 0.42)}`,
-					background: `linear-gradient(120deg, ${alpha(
-						statusColor,
-						0.16
-					)}, ${alpha(statusColor, 0.04)} 72%)`,
-					boxShadow: `0 7px 18px ${alpha(statusColor, 0.12)}`,
+					border: '1px solid',
+					borderColor: (t) => alpha(getVisualColor(t), 0.42),
+					background: (t) =>
+						`linear-gradient(120deg, ${alpha(getVisualColor(t), 0.16)}, ${alpha(
+							getVisualColor(t),
+							0.04
+						)} 72%)`,
+					boxShadow: (t) => `0 7px 18px ${alpha(getVisualColor(t), 0.12)}`,
 					'&::after': {
 						content: '""',
 						position: 'absolute',
@@ -78,10 +100,11 @@ const PremiumMachineCard = ({
 						width: 190,
 						height: 100,
 						borderRadius: '50%',
-						background: `radial-gradient(circle, ${alpha(
-							statusColor,
-							0.2
-						)} 1px, transparent 1.5px)`,
+						background: (t) =>
+							`radial-gradient(circle, ${alpha(
+								getVisualColor(t),
+								0.2
+							)} 1px, transparent 1.5px)`,
 						backgroundSize: '9px 9px',
 						transform: 'rotate(-12deg)',
 					},
@@ -115,9 +138,11 @@ const PremiumMachineCard = ({
 							},
 						}}
 					>
-						<AnimatedMachineAvatar app={app} isOnline={isOnline} />
+						{headerIcon || (
+							<AnimatedMachineAvatar app={app} isOnline={isOnline} />
+						)}
 					</Box>
-					<Box minWidth={0} flex={1} zIndex={1} pt={2}>
+					<Box minWidth={0} flex={1} zIndex={1} pt={statusMessage ? 0 : 2}>
 						<ResponsiveTextWrapper
 							value={title}
 							fontSize={MACHINE_CARD_DESIGN.titleSize}
@@ -128,6 +153,8 @@ const PremiumMachineCard = ({
 								whiteSpace: 'nowrap',
 								overflow: 'hidden',
 								textOverflow: 'ellipsis',
+								boxSizing: 'border-box',
+								pr: statusMessage ? '82px' : 0,
 							}}
 						/>
 						<Stack
@@ -145,6 +172,22 @@ const PremiumMachineCard = ({
 								sx={{ whiteSpace: 'normal', lineHeight: 1.15 }}
 							/>
 						</Stack>
+						{statusMessage && (
+							<Typography
+								role="status"
+								sx={{
+									display: 'block',
+									mt: 0.25,
+									fontSize: '0.52rem',
+									fontWeight: 800,
+									lineHeight: 1.1,
+									whiteSpace: 'nowrap',
+									color: (t) => getVisualColor(t),
+								}}
+							>
+								{statusMessage}
+							</Typography>
+						)}
 						{headerCaption && (
 							<Typography
 								noWrap
@@ -177,30 +220,41 @@ const PremiumMachineCard = ({
 						{headerTagline}
 					</Typography>
 				)}
-				<Stack
-					direction="row"
-					alignItems="center"
-					spacing={0.6}
+				<Box
 					sx={{
 						position: 'absolute',
 						top: 9,
 						right: 9,
-						px: 0.8,
-						py: 0.35,
-						borderRadius: '999px',
-						color: statusColor,
-						bgcolor: alpha(statusColor, 0.07),
-						border: `1px solid ${alpha(statusColor, 0.35)}`,
+						zIndex: 1,
 					}}
 				>
-					<Box width={9} height={9} borderRadius="50%" bgcolor={statusColor} />
-					<Typography
-						fontSize={MACHINE_CARD_DESIGN.statusSize}
-						fontWeight={800}
+					<Stack
+						direction="row"
+						alignItems="center"
+						spacing={0.6}
+						sx={{
+							px: 0.8,
+							py: 0.35,
+							borderRadius: '999px',
+							color: statusColor,
+							bgcolor: alpha(statusColor, 0.07),
+							border: `1px solid ${alpha(statusColor, 0.35)}`,
+						}}
 					>
-						{statusLabel}
-					</Typography>
-				</Stack>
+						<Box
+							width={9}
+							height={9}
+							borderRadius="50%"
+							bgcolor={statusColor}
+						/>
+						<Typography
+							fontSize={MACHINE_CARD_DESIGN.statusSize}
+							fontWeight={800}
+						>
+							{statusLabel}
+						</Typography>
+					</Stack>
+				</Box>
 			</Box>
 
 			<Box width="100%" minWidth={0}>
@@ -232,16 +286,17 @@ const PremiumMachineCard = ({
 								borderLeft: index ? '1px solid' : 0,
 								borderColor: 'divider',
 								background: (t) =>
-									`linear-gradient(155deg, ${alpha(statusColor, 0.035)}, ${
-										t.palette.background.paper
-									} 65%)`,
+									`linear-gradient(155deg, ${alpha(
+										getVisualColor(t),
+										0.035
+									)}, ${t.palette.background.paper} 65%)`,
 							}}
 						>
 							<Stack
 								direction="row"
 								alignItems="center"
 								spacing={0.55}
-								color={statusColor}
+								sx={{ color: (t) => getVisualColor(t) }}
 							>
 								<CalendarMonthRounded sx={{ fontSize: 15 }} />
 								<ResponsiveTextWrapper
@@ -282,15 +337,21 @@ const PremiumMachineCard = ({
 							borderRadius: '10px',
 							fontSize: MACHINE_CARD_DESIGN.actionSize,
 							fontWeight: 800,
-							background: isOnline
-								? 'linear-gradient(105deg,#16A34A 0%,#22C55E 100%)'
-								: 'linear-gradient(105deg,#F23857 0%,#FF5A24 100%)',
-							boxShadow: `0 6px 14px ${alpha(statusColor, 0.22)}`,
+							background: (t) =>
+								warningState
+									? `linear-gradient(105deg,${t.palette.warning.dark} 0%,${t.palette.warning.main} 100%)`
+									: isOnline
+									  ? 'linear-gradient(105deg,#16A34A 0%,#22C55E 100%)'
+									  : 'linear-gradient(105deg,#F23857 0%,#FF5A24 100%)',
+							boxShadow: (t) => `0 6px 14px ${alpha(getVisualColor(t), 0.22)}`,
 							'& .MuiButton-endIcon': { position: 'absolute', right: 14 },
 							'&:hover': {
-								background: isOnline
-									? 'linear-gradient(105deg,#138A3F 0%,#1DAA50 100%)'
-									: 'linear-gradient(105deg,#DB2947 0%,#E84B19 100%)',
+								background: (t) =>
+									warningState
+										? `linear-gradient(105deg,${t.palette.warning.dark} 0%,${t.palette.warning.dark} 100%)`
+										: isOnline
+										  ? 'linear-gradient(105deg,#138A3F 0%,#1DAA50 100%)'
+										  : 'linear-gradient(105deg,#DB2947 0%,#E84B19 100%)',
 							},
 						}}
 					>
