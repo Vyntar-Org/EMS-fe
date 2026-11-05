@@ -98,6 +98,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	const { slavesData } = useCommonData();
 	const [mode, setMode] = useState(1);
 	const [machineConsumption, setMachineConsumption] = useState(null);
+	const [machineConsumptionUnit, setMachineConsumptionUnit] = useState('');
 	const [searchDevices, setSearchDevices] = useState(null);
 
 	const slavesDisplayName = useMemo(() => {
@@ -125,12 +126,30 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	const fetchMachineConsumption = async () => {
 		try {
 			const getMachineConsumptionData = await api.get(
-				`${API_URLS.EMS_DASHBOARD_MACHINE_CONSUMPTION}?slave_id=${
-					slavesId || 0
+				`${API_URLS.EMS_DASHBOARD_MACHINE_CONSUMPTION}?slave_id=${slavesId || 0
 				}`
 			);
 			if (getMachineConsumptionData?.success) {
-				setMachineConsumption(getMachineConsumptionData?.data?.data);
+				const responseData = getMachineConsumptionData?.data;
+				const values = Array.isArray(responseData)
+					? responseData
+					: responseData?.data;
+				const valueWithUnit = Array.isArray(values)
+					? values.find((item) => item?.unit || item?.preferred_unit)
+					: null;
+				setMachineConsumption(Array.isArray(values) ? values : []);
+				setMachineConsumptionUnit(
+					responseData?.unit ||
+					responseData?.preferred_unit ||
+					responseData?.display_unit ||
+					responseData?.meta?.unit ||
+					responseData?.meta?.preferred_unit ||
+					getMachineConsumptionData?.meta?.unit ||
+					getMachineConsumptionData?.meta?.preferred_unit ||
+					valueWithUnit?.unit ||
+					valueWithUnit?.preferred_unit ||
+					''
+				);
 			}
 		} catch (error) {
 			console.error('One of the API calls failed:', error);
@@ -158,7 +177,9 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 
 	const series = getChartSeries(chartData, {
 		actual: 'value',
-		actualLabel: '(kWh)',
+		actualLabel: machineConsumptionUnit
+			? `Power Consumption (${machineConsumptionUnit})`
+			: 'Power Consumption',
 		includeTarget: false,
 	});
 
@@ -218,6 +239,7 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 							type={mode === 1 ? 'bar' : 'line'}
 							colors={[CHART_COLORS.machinePower]}
 							xAxesType="datetime"
+							unit={machineConsumptionUnit}
 							height="100%"
 						/>
 					</Box>

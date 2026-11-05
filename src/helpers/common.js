@@ -99,6 +99,43 @@ export const transformDynamicDataToDailyMatrix = (
 ) => {
 	const { dateKey, valueKey, valueKeys = [] } = keyConfig;
 	const hasMultipleValues = Array.isArray(valueKeys) && valueKeys.length > 0;
+	const unitKeys = [
+		'unit',
+		'preferred_unit',
+		'display_unit',
+		'measurement_unit',
+		'unit_name',
+	];
+	const getUnit = (value) => {
+		if (!value || typeof value !== 'object' || Array.isArray(value)) {
+			return '';
+		}
+
+		for (const key of unitKeys) {
+			if (value[key] !== undefined && value[key] !== null && value[key] !== '') {
+				return String(value[key]);
+			}
+		}
+
+		return '';
+	};
+	const getMetricValue = (item, key) => {
+		const metric = item?.[key];
+		return metric && typeof metric === 'object' && !Array.isArray(metric)
+			? metric.value
+			: metric;
+	};
+	const getItemUnit = (item) => {
+		const directUnit = getUnit(item);
+		if (directUnit) {
+			return directUnit;
+		}
+
+		const metricKeys = hasMultipleValues
+			? valueKeys.map(({ key }) => key)
+			: [valueKey];
+		return metricKeys.map((key) => getUnit(item?.[key])).find(Boolean) || '';
+	};
 	const toFiniteNumber = (value) => {
 		const numericValue = Number(value);
 		return Number.isFinite(numericValue) ? numericValue : 0;
@@ -107,6 +144,37 @@ export const transformDynamicDataToDailyMatrix = (
 	if (!apiData || typeof apiData !== 'object' || Array.isArray(apiData)) {
 		return { tableData: [], tableColumns: [] };
 	}
+
+	// Report endpoints are not fully uniform: some return the device map
+	// directly, while others wrap it with response-level unit metadata. Unwrap
+	// only recognised report envelopes so a device whose name happens to be
+	// "data" is not mistaken for metadata.
+	const reportDataKeys = ['data', 'rows', 'reports', 'report_data', 'devices'];
+	const reportMetadataKeys = new Set([...unitKeys, ...reportDataKeys]);
+	let reportData = apiData;
+	let reportUnit = getUnit(apiData);
+
+	// A response can contain both the API client's `data` envelope and a
+	// domain-level `data` envelope. Limit the loop to known wrappers.
+	for (let depth = 0; depth < 3; depth += 1) {
+		const currentKeys = Object.keys(reportData);
+		const reportDataKey = reportDataKeys.find(
+			(key) =>
+				reportData[key] &&
+				typeof reportData[key] === 'object' &&
+				!Array.isArray(reportData[key]) &&
+				currentKeys.every((apiKey) => reportMetadataKeys.has(apiKey))
+		);
+		if (!reportDataKey) {
+			break;
+		}
+
+		reportData = reportData[reportDataKey];
+		reportUnit ||= getUnit(reportData);
+	}
+	const reportEntries = Object.entries(reportData).filter(([, value]) =>
+		Array.isArray(value)
+	);
 
 	const monthLookup = [
 		'',
@@ -125,7 +193,7 @@ export const transformDynamicDataToDailyMatrix = (
 	];
 
 	const uniqueDates = new Set();
-	Object.values(apiData).forEach((dataArray) => {
+	reportEntries.forEach(([, dataArray]) => {
 		if (Array.isArray(dataArray)) {
 			dataArray.forEach((item) => {
 				if (item && item[dateKey] !== undefined && item[dateKey] !== null) {
@@ -145,8 +213,15 @@ export const transformDynamicDataToDailyMatrix = (
 	const tableColumns = [
 		{
 			accessorKey: 'device',
-			header: 'Device',
+			header: 'Device Name',
 			size: 160,
+			meta: { sticky: 'left', fixedExport: true },
+		},
+		{
+			accessorKey: 'unit',
+			header: 'Unit',
+			size: 90,
+			meta: { fixedExport: true },
 		},
 		...sortedDates.map((dateString) => {
 			let headerLabel = dateString;
@@ -197,8 +272,15 @@ export const transformDynamicDataToDailyMatrix = (
 		}),
 	];
 
-	const tableData = Object.entries(apiData).map(([deviceName, dataArray]) => {
-		const row = { device: deviceName };
+	const tableData = reportEntries.map(([deviceName, dataArray]) => {
+		const row = {
+			device: deviceName,
+			unit:
+				(Array.isArray(dataArray) &&
+					dataArray.map(getItemUnit).find(Boolean)) ||
+				reportUnit ||
+				'—',
+		};
 
 		sortedDates.forEach((dateStr) => {
 			if (hasMultipleValues) {
@@ -218,10 +300,12 @@ export const transformDynamicDataToDailyMatrix = (
 				if (itemDate && sortedDates.includes(itemDate)) {
 					if (hasMultipleValues) {
 						valueKeys.forEach(({ key }) => {
-							row[`${itemDate}__${key}`] = toFiniteNumber(item?.[key]);
+							row[`${itemDate}__${key}`] = toFiniteNumber(
+								getMetricValue(item, key)
+							);
 						});
 					} else {
-						const itemValue = item?.[valueKey];
+						const itemValue = getMetricValue(item, valueKey);
 						row[itemDate] = toFiniteNumber(itemValue);
 					}
 				}

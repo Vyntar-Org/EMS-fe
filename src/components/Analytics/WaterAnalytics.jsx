@@ -173,13 +173,16 @@ const DeviceFilterRow = memo(
 				</Grid>
 				<Grid item xs={12} md={4.5}>
 					<CustomAutocomplete
-						multiple
 						options={parameterOptions}
 						onChange={(val) =>
-							handleFieldChange(comparisonId, 'parameters', val)
+							handleFieldChange(
+								comparisonId,
+								'parameters',
+								val ? [val] : []
+							)
 						}
-						value={payload?.parameters || []}
-						label="Select Parameters"
+						value={payload?.parameters?.[0] || ''}
+						label="Select Parameter"
 						size="small"
 						sx={basePickerStyles}
 					/>

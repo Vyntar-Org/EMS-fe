@@ -296,7 +296,18 @@ const WaterReports = () => {
 
 			const res = await api.get(newApiUrl);
 			if (res?.success) {
-				setReportsData(res?.data || null);
+				const responseUnit =
+					res?.meta?.unit ||
+					res?.meta?.preferred_unit ||
+					res?.meta?.display_unit ||
+					res?.unit ||
+					res?.preferred_unit ||
+					res?.display_unit;
+				setReportsData(
+					responseUnit
+						? { data: res?.data || null, unit: responseUnit }
+						: res?.data || null
+				);
 			}
 		} catch (error) {
 			console.error(`API Error:`, error);
@@ -373,13 +384,6 @@ const WaterReports = () => {
 				}}
 				pt={1}
 				overflow="auto"
-				// sx={{
-				//   "& .MuiTableCell-root:first-of-type": {
-				//     position: "sticky",
-				//     left: 0,
-				//     zIndex: 3,
-				//   },
-				// }}
 			>
 				{loading ? (
 					<Loading />

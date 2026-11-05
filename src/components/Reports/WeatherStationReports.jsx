@@ -40,10 +40,48 @@ const formatReportParams = (payload) => ({
 });
 
 const getReportRows = (response) => {
+	let rows = [];
 	if (Array.isArray(response)) {
-		return response;
+		rows = response;
+	} else if (Array.isArray(response?.rows)) {
+		rows = response.rows;
 	}
-	return Array.isArray(response?.rows) ? response.rows : [];
+	const responseUnit =
+		response?.unit ||
+		response?.preferred_unit ||
+		response?.display_unit ||
+		response?.meta?.unit ||
+		response?.meta?.preferred_unit ||
+		response?.meta?.display_unit;
+
+	return rows.map((row) => {
+		const {
+			preferred_unit: preferredUnit,
+			display_unit: displayUnit,
+			measurement_unit: measurementUnit,
+			unit_name: unitName,
+			...values
+		} = row || {};
+		const inferredUnit = Object.prototype.hasOwnProperty.call(
+			row || {},
+			'rainfall_mm'
+		)
+			? 'mm'
+			: '';
+
+		return {
+			...values,
+			unit:
+				row?.unit ||
+				preferredUnit ||
+				displayUnit ||
+				measurementUnit ||
+				unitName ||
+				responseUnit ||
+				inferredUnit ||
+				'—',
+		};
+	});
 };
 
 const formatColumnLabel = (key) => {
@@ -220,6 +258,12 @@ const WeatherStationReports = () => {
 				return -1;
 			}
 			if (b === preferredFirstKey) {
+				return 1;
+			}
+			if (a === 'unit') {
+				return -1;
+			}
+			if (b === 'unit') {
 				return 1;
 			}
 			return 0;

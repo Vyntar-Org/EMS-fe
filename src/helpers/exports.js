@@ -49,20 +49,27 @@ export const exportToPDF = (
 	const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
 
 	const exportColumns = flattenExportColumns(tableColumns);
-	const fixedColumn = exportColumns[0];
-	const timelineColumns = exportColumns.slice(1);
+	const fixedColumns = exportColumns.filter(
+		(column) => column.meta?.fixedExport
+	);
+	const timelineColumns = exportColumns.filter(
+		(column) => !column.meta?.fixedExport
+	);
 
 	const COLUMNS_PER_PAGE = 11;
 	const totalTimelineCols = timelineColumns.length;
-	const totalChunks = Math.ceil(totalTimelineCols / COLUMNS_PER_PAGE);
+	const totalChunks = Math.max(
+		1,
+		Math.ceil(totalTimelineCols / COLUMNS_PER_PAGE)
+	);
 
 	for (let i = 0; i < totalChunks; i++) {
 		const startIdx = i * COLUMNS_PER_PAGE;
 		const endIdx = Math.min(startIdx + COLUMNS_PER_PAGE, totalTimelineCols);
 		const activeTimelineChunk = timelineColumns.slice(startIdx, endIdx);
 
-		// Combine the fixed 'Device' column with the active group of days
-		const currentViewColumns = [fixedColumn, ...activeTimelineChunk];
+		// Repeat identity columns (Device Name and Unit) on every timeline page.
+		const currentViewColumns = [...fixedColumns, ...activeTimelineChunk];
 
 		// 4. Build headers and body rows for the current chunk
 		const pdfHeaders = [currentViewColumns.map((col) => col.header)];

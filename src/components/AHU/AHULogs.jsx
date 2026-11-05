@@ -11,7 +11,11 @@ import { SOLAR_LOG_COLUMN_MAPPING } from '../../constants/solarLogs';
 import { CustomTable } from '../common/CustomTable';
 import dayjs from 'dayjs';
 import VyntarButtons from '../common/VyntarButtons';
-import { LogUrlBuilder } from '../../helpers/logs';
+import {
+	filterLogRowsForDisplay,
+	getLogColumnKeys,
+	LogUrlBuilder,
+} from '../../helpers/logs';
 import { formatNumber } from '../../helpers/formatters';
 
 const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
@@ -195,12 +199,7 @@ const AHULogs = () => {
 			return [];
 		}
 
-		const availableKeys = Object.keys(logsData[0]);
-		// Timestamp is always the anchor column for a log row — pin it first
-		// regardless of whatever order the API happens to return keys in.
-		const orderedKeys = availableKeys.includes('timestamp')
-			? ['timestamp', ...availableKeys.filter((k) => k !== 'timestamp')]
-			: availableKeys;
+		const orderedKeys = getLogColumnKeys(logsData);
 
 		const columnDef = orderedKeys.map((c) => ({
 			accessorKey: c,
@@ -241,7 +240,13 @@ const AHULogs = () => {
 			});
 			const res = await api.get(url);
 			if (res?.success) {
-				setLogsData(res?.data?.logs || []);
+				setLogsData(
+					filterLogRowsForDisplay(
+						res?.data?.logs || [],
+						payload?.parameters,
+						Object.keys(SOLAR_LOG_COLUMN_MAPPING)
+					)
+				);
 				setBackendTotalRowsCount(res?.meta?.total || 0);
 			}
 		} catch (error) {

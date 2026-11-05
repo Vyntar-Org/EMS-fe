@@ -20,6 +20,23 @@ import {
 import { List } from 'react-window';
 import ResponsiveTextWrapper from './ResponsiveTextWrapper';
 
+const getStickyCellSx = (column, isHeader = false) => {
+	const stickySide = column?.columnDef?.meta?.sticky;
+	if (stickySide !== 'left') {
+		return {};
+	}
+
+	return {
+		position: 'sticky',
+		left: column.columnDef.meta?.stickyOffset || 0,
+		zIndex: isHeader ? 4 : 1,
+		backgroundColor: isHeader
+			? 'primary.main'
+			: 'var(--sticky-cell-background)',
+		boxShadow: (theme) => `2px 0 4px -2px ${theme.palette.divider}`,
+	};
+};
+
 export const CustomTable = ({
 	data,
 	columns,
@@ -69,6 +86,10 @@ export const CustomTable = ({
 	});
 
 	const { rows } = table.getRowModel();
+	const tableWidth = fillWidth ? '100%' : table.getTotalSize();
+	const hasStickyColumns = table
+		.getAllLeafColumns()
+		.some((column) => column.columnDef.meta?.sticky);
 
 	const cellWidthSx = fillWidth
 		? { flex: 1, minWidth: 0 }
@@ -85,6 +106,14 @@ export const CustomTable = ({
 		({ index, style }) => {
 			const row = rows[index];
 			if (!row) return null;
+			const rowBackgroundColor =
+				index % 2 === 0
+					? theme.palette.background.paper
+					: theme.palette.surface.zebra;
+			const stickyCellBackgroundColor =
+				index % 2 === 0
+					? theme.palette.background.paper
+					: theme.palette.surface.muted;
 
 			return (
 				<TableRow
@@ -92,16 +121,15 @@ export const CustomTable = ({
 					style={{
 						...style,
 						display: 'flex',
-						width: fillWidth ? '100%' : undefined,
-						backgroundColor:
-							index % 2 === 0
-								? theme.palette.background.paper
-								: theme.palette.surface.zebra,
+						width: tableWidth,
+						backgroundColor: rowBackgroundColor,
+						'--sticky-cell-background': stickyCellBackgroundColor,
 					}}
 					sx={{
 						transition: 'background-color 0.15s ease',
 						'&:hover': {
 							backgroundColor: `${theme.palette.action.hover} !important`,
+							'--sticky-cell-background': theme.palette.surface.tableHead,
 						},
 					}}
 					key={row.id}
@@ -121,6 +149,7 @@ export const CustomTable = ({
 								p: 1,
 								border: '1px solid',
 								borderColor: 'divider',
+								...getStickyCellSx(cell.column),
 							}}
 						>
 							<ResponsiveTextWrapper
@@ -136,7 +165,7 @@ export const CustomTable = ({
 				</TableRow>
 			);
 		},
-		[rows, fillWidth, theme]
+		[rows, fillWidth, tableWidth, theme]
 	);
 
 	const handleLocalPageChange = (event, newPage) => {
@@ -159,7 +188,7 @@ export const CustomTable = ({
 			}}
 		>
 			<Box height="100%" width="100%" overflow="auto">
-				<Table component="div" sx={{ width: '100%' }}>
+				<Table component="div" sx={{ width: tableWidth }}>
 					<TableHead
 						component="div"
 						sx={{
@@ -167,7 +196,7 @@ export const CustomTable = ({
 							position: 'sticky',
 							top: 0,
 							zIndex: 2,
-							width: '100%',
+							width: tableWidth,
 						}}
 					>
 						{table.getHeaderGroups().map((headerGroup) => (
@@ -176,7 +205,7 @@ export const CustomTable = ({
 								key={headerGroup.id}
 								sx={{
 									display: 'flex',
-									width: '100%',
+									width: tableWidth,
 									backgroundColor: 'primary.main',
 								}}
 							>
@@ -200,6 +229,7 @@ export const CustomTable = ({
 											color: 'primary.contrastText',
 											border: '1px solid',
 											borderColor: 'divider',
+											...getStickyCellSx(header.column, true),
 										}}
 									>
 										<ResponsiveTextWrapper
@@ -219,14 +249,24 @@ export const CustomTable = ({
 							</TableRow>
 						))}
 					</TableHead>
-					<TableBody component="div" sx={{ width: '100%' }}>
-						<List
-							rowCount={rows.length}
-							rowHeight={32}
-							rowComponent={RenderRow}
-							rowProps={{}}
-							style={{ width: '100%' }}
-						/>
+					<TableBody component="div" sx={{ width: tableWidth }}>
+						{hasStickyColumns ? (
+							rows.map((row, index) => (
+								<RenderRow
+									key={row.id}
+									index={index}
+									style={{ height: 32 }}
+								/>
+							))
+						) : (
+							<List
+								rowCount={rows.length}
+								rowHeight={32}
+								rowComponent={RenderRow}
+								rowProps={{}}
+								style={{ width: tableWidth }}
+							/>
+						)}
 					</TableBody>
 				</Table>
 			</Box>

@@ -6,7 +6,11 @@ import { useMemo, useState } from 'react';
 import { FLOWMETER_LOG_COLUMN_MAPPING } from '../../constants/flowMeterLogs';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
-import { LogUrlBuilder } from '../../helpers/logs';
+import {
+	filterLogRowsForDisplay,
+	getLogColumnKeys,
+	LogUrlBuilder,
+} from '../../helpers/logs';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import { CustomTable } from '../common/CustomTable';
@@ -218,12 +222,7 @@ const FlowMeterLogs = () => {
 			return [];
 		}
 
-		const availableKeys = Object.keys(logsData[0]);
-		// Timestamp is always the anchor column for a log row — pin it first
-		// regardless of whatever order the API happens to return keys in.
-		const orderedKeys = availableKeys.includes('timestamp')
-			? ['timestamp', ...availableKeys.filter((k) => k !== 'timestamp')]
-			: availableKeys;
+		const orderedKeys = getLogColumnKeys(logsData);
 
 		const columnDef = orderedKeys.map((c) => ({
 			accessorKey: c,
@@ -260,7 +259,13 @@ const FlowMeterLogs = () => {
 			});
 			const res = await api.get(newApiUrl);
 			if (res?.success) {
-				setLogsData(res?.data?.logs || []);
+				setLogsData(
+					filterLogRowsForDisplay(
+						res?.data?.logs || [],
+						payload?.parameters,
+						Object.keys(FLOWMETER_LOG_COLUMN_MAPPING)
+					)
+				);
 				setBackendTotalRowsCount(res?.meta?.total || 0);
 			}
 		} catch (error) {

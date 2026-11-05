@@ -205,12 +205,24 @@ const WeatherStationLogs = () => {
 		};
 	}, [logsQuery.data]);
 
-	const columns = useMemo(
-		() =>
-			[
-				{ key: 'timestamp', label: 'Timestamp', unit: '' },
-				...logsData.columns,
-			].map((column) => ({
+	const columns = useMemo(() => {
+		const selectedParameterValues = submittedFilters.parameters
+			.split(',')
+			.map((value) => value.trim())
+			.filter(Boolean);
+		const selectedKeys = submittedFilters.parameters === 'all'
+			? null
+			: new Set(selectedParameterValues);
+		const visibleColumns = logsData.columns.filter(
+			(column) =>
+				column.key !== 'timestamp' &&
+				(!selectedKeys || selectedKeys.has(column.key))
+		);
+
+		return [
+			{ key: 'timestamp', label: 'Timestamp', unit: '' },
+			...visibleColumns,
+		].map((column) => ({
 				accessorKey: column.key,
 				header: column.label,
 				size: column.key === 'timestamp' ? 150 : 110,
@@ -226,9 +238,8 @@ const WeatherStationLogs = () => {
 						? `${value}${column.unit ? ` ${column.unit}` : ''}`
 						: '—';
 				},
-			})),
-		[logsData.columns]
-	);
+			}));
+	}, [logsData.columns, submittedFilters.parameters]);
 
 	const downloadMutation = useMutation({
 		mutationFn: (filters) => weatherStationApi.downloadLogs(filters),
