@@ -210,9 +210,10 @@ const WeatherStationLogs = () => {
 			.split(',')
 			.map((value) => value.trim())
 			.filter(Boolean);
-		const selectedKeys = submittedFilters.parameters === 'all'
-			? null
-			: new Set(selectedParameterValues);
+		const selectedKeys =
+			submittedFilters.parameters === 'all'
+				? null
+				: new Set(selectedParameterValues);
 		const visibleColumns = logsData.columns.filter(
 			(column) =>
 				column.key !== 'timestamp' &&
@@ -223,22 +224,22 @@ const WeatherStationLogs = () => {
 			{ key: 'timestamp', label: 'Timestamp', unit: '' },
 			...visibleColumns,
 		].map((column) => ({
-				accessorKey: column.key,
-				header: column.label,
-				size: column.key === 'timestamp' ? 150 : 110,
-				cell: (info) => {
-					const value = info.getValue();
-					if (column.key === 'timestamp' && value) {
-						const date = dayjs(value);
-						return date.isValid()
-							? date.format('DD MMM YYYY HH:mm:ss')
-							: String(value);
-					}
-					return value !== null && value !== undefined && value !== ''
-						? `${value}${column.unit ? ` ${column.unit}` : ''}`
-						: '—';
-				},
-			}));
+			accessorKey: column.key,
+			header: column.label,
+			size: column.key === 'timestamp' ? 150 : 110,
+			cell: (info) => {
+				const value = info.getValue();
+				if (column.key === 'timestamp' && value) {
+					const date = dayjs(value);
+					return date.isValid()
+						? date.format('DD MMM YYYY HH:mm:ss')
+						: String(value);
+				}
+				return value !== null && value !== undefined && value !== ''
+					? `${value}${column.unit ? ` ${column.unit}` : ''}`
+					: '—';
+			},
+		}));
 	}, [logsData.columns, submittedFilters.parameters]);
 
 	const downloadMutation = useMutation({

@@ -175,11 +175,7 @@ const DeviceFilterRow = memo(
 					<CustomAutocomplete
 						options={parameterOptions}
 						onChange={(val) =>
-							handleFieldChange(
-								comparisonId,
-								'parameters',
-								val ? [val] : []
-							)
+							handleFieldChange(comparisonId, 'parameters', val ? [val] : [])
 						}
 						value={payload?.parameters?.[0] || ''}
 						label="Select Parameter"

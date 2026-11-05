@@ -126,7 +126,8 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 	const fetchMachineConsumption = async () => {
 		try {
 			const getMachineConsumptionData = await api.get(
-				`${API_URLS.EMS_DASHBOARD_MACHINE_CONSUMPTION}?slave_id=${slavesId || 0
+				`${API_URLS.EMS_DASHBOARD_MACHINE_CONSUMPTION}?slave_id=${
+					slavesId || 0
 				}`
 			);
 			if (getMachineConsumptionData?.success) {
@@ -140,15 +141,15 @@ const ENERGYMachinePowerConsumption = ({ slavesId, setSlavesId }) => {
 				setMachineConsumption(Array.isArray(values) ? values : []);
 				setMachineConsumptionUnit(
 					responseData?.unit ||
-					responseData?.preferred_unit ||
-					responseData?.display_unit ||
-					responseData?.meta?.unit ||
-					responseData?.meta?.preferred_unit ||
-					getMachineConsumptionData?.meta?.unit ||
-					getMachineConsumptionData?.meta?.preferred_unit ||
-					valueWithUnit?.unit ||
-					valueWithUnit?.preferred_unit ||
-					''
+						responseData?.preferred_unit ||
+						responseData?.display_unit ||
+						responseData?.meta?.unit ||
+						responseData?.meta?.preferred_unit ||
+						getMachineConsumptionData?.meta?.unit ||
+						getMachineConsumptionData?.meta?.preferred_unit ||
+						valueWithUnit?.unit ||
+						valueWithUnit?.preferred_unit ||
+						''
 				);
 			}
 		} catch (error) {

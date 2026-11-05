@@ -112,7 +112,11 @@ export const transformDynamicDataToDailyMatrix = (
 		}
 
 		for (const key of unitKeys) {
-			if (value[key] !== undefined && value[key] !== null && value[key] !== '') {
+			if (
+				value[key] !== undefined &&
+				value[key] !== null &&
+				value[key] !== ''
+			) {
 				return String(value[key]);
 			}
 		}

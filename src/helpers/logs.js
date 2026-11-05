@@ -4,8 +4,8 @@ const getParameterKeys = (parameters) => {
 	const values = Array.isArray(parameters)
 		? parameters
 		: parameters
-		? [parameters]
-		: [];
+		  ? [parameters]
+		  : [];
 
 	return values
 		.flatMap((parameter) => {
@@ -55,9 +55,7 @@ export const filterLogRowsForDisplay = (
 export const getLogColumnKeys = (rows) => {
 	const availableKeys = Array.from(
 		new Set(
-			(Array.isArray(rows) ? rows : []).flatMap((row) =>
-				Object.keys(row || {})
-			)
+			(Array.isArray(rows) ? rows : []).flatMap((row) => Object.keys(row || {}))
 		)
 	);
 

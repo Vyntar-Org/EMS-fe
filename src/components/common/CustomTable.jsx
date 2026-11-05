@@ -252,11 +252,7 @@ export const CustomTable = ({
 					<TableBody component="div" sx={{ width: tableWidth }}>
 						{hasStickyColumns ? (
 							rows.map((row, index) => (
-								<RenderRow
-									key={row.id}
-									index={index}
-									style={{ height: 32 }}
-								/>
+								<RenderRow key={row.id} index={index} style={{ height: 32 }} />
 							))
 						) : (
 							<List
