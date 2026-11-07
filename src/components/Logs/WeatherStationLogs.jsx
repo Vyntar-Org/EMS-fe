@@ -227,8 +227,7 @@ const WeatherStationLogs = () => {
 			accessorKey: column.key,
 			header: column.label,
 			size: column.key === 'timestamp' ? 150 : 110,
-			meta:
-				column.key === 'timestamp' ? { sticky: 'left' } : undefined,
+			meta: column.key === 'timestamp' ? { sticky: 'left' } : undefined,
 			cell: (info) => {
 				const value = info.getValue();
 				if (column.key === 'timestamp' && value) {
