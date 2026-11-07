@@ -21,6 +21,8 @@ import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import { transformDynamicDataToDailyMatrix } from '../../helpers/common';
 import { exportToCSV, exportToPDF } from '../../helpers/exports';
+import { reportDeviceNamesMatch } from '../../helpers/reportUnits';
+import { useReportMachineList } from '../../hooks/useReportMachineList';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import { CustomTable } from '../common/CustomTable';
@@ -246,6 +248,7 @@ const ReportsHeader = ({
 
 const FlowMeterReports = () => {
 	const { slavesData } = useCommonData();
+	const { data: machineListData } = useReportMachineList('FLOWMETER');
 	const [slavesId, setSlavesId] = useState(null);
 	const [selectedTab, setSelectedTab] = useState(
 		'FLOWMETER_REPORTS_DATE_WISE_CONSUMPTION_DATA'
@@ -264,15 +267,16 @@ const FlowMeterReports = () => {
 	const { tableData, tableColumns } = useMemo(() => {
 		const { tableData, tableColumns } = transformDynamicDataToDailyMatrix(
 			reportsData,
-			FLOWMETER_REPORTS_API_DATA_KEY_CONFIG[selectedTab]
+			FLOWMETER_REPORTS_API_DATA_KEY_CONFIG[selectedTab],
+			machineListData
 		);
 
 		const filteredData = slaveName
-			? tableData.filter((row) => row.device === slaveName)
+			? tableData.filter((row) => reportDeviceNamesMatch(row.device, slaveName))
 			: tableData;
 
 		return { tableData: filteredData, tableColumns };
-	}, [reportsData, selectedTab, slaveName]);
+	}, [machineListData, reportsData, selectedTab, slaveName]);
 
 	const fetchReportsData = async (curTab, newPayload) => {
 		if (!curTab) {

@@ -1,4 +1,11 @@
 import {
+	Check,
+	Description,
+	FileDownload,
+	FileUploadRounded,
+	Search,
+} from '@mui/icons-material';
+import {
 	Box,
 	Button,
 	ClickAwayListener,
@@ -15,30 +22,26 @@ import {
 	Tooltip,
 	Typography,
 } from '@mui/material';
+import dayjs from 'dayjs';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+
 import {
 	ENERGY_REPORTS_ALLOW_MONTH,
 	ENERGY_REPORTS_API_DATA_KEY_CONFIG,
 	ENERGY_REPORTS_TAB_OPTIONS,
 } from '../../constants/energyReports';
-import { CustomDatePicker } from '../common/CustomDatePicker';
-import {
-	Check,
-	Description,
-	FileDownload,
-	FileUploadRounded,
-	Search,
-} from '@mui/icons-material';
-import { Loading } from '../common/Loading';
-import NoDataFound from '../common/errors/NoDataFound';
-import { CustomTable } from '../common/CustomTable';
-import dayjs from 'dayjs';
-import { API_URLS } from '../../helpers/apiUrls';
+import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
+import { API_URLS } from '../../helpers/apiUrls';
 import { transformDynamicDataToDailyMatrix } from '../../helpers/common';
 import { exportToCSV, exportToPDF } from '../../helpers/exports';
+import { reportDeviceNamesMatch } from '../../helpers/reportUnits';
+import { useReportMachineList } from '../../hooks/useReportMachineList';
 import { CustomAutocomplete } from '../common/CustomAutocomplete';
-import { useCommonData } from '../../contexts/CommonDataContext';
+import { CustomDatePicker } from '../common/CustomDatePicker';
+import { CustomTable } from '../common/CustomTable';
+import NoDataFound from '../common/errors/NoDataFound';
+import { Loading } from '../common/Loading';
 
 const ReportsHeader = ({
 	selectedTab,
@@ -63,7 +66,9 @@ const ReportsHeader = ({
 	);
 
 	const openTabMenu = (event, tab) => {
-		if (!menuTabs.includes(tab)) return;
+		if (!menuTabs.includes(tab)) {
+			return;
+		}
 		window.clearTimeout(closeTimerRef.current);
 		setMenuAnchor(event.currentTarget);
 		setHoveredTab(tab);
@@ -106,7 +111,9 @@ const ReportsHeader = ({
 			<Tabs
 				value={selectedTab}
 				onChange={(e, val) => {
-					if (!val) return;
+					if (!val) {
+						return;
+					}
 
 					handleTabChange(val);
 				}}
@@ -429,6 +436,7 @@ const ReportsHeader = ({
 
 const EnergyReports = () => {
 	const { slavesData } = useCommonData();
+	const { data: machineListData } = useReportMachineList('ENERGY');
 	const [slavesId, setSlavesId] = useState(null);
 	const [selectedTab, setSelectedTab] = useState(
 		'EMS_REPORTS_DATE_WISE_CONSUMPTION_DATA'
@@ -452,28 +460,35 @@ const EnergyReports = () => {
 	const { tableData, tableColumns } = useMemo(() => {
 		const { tableData, tableColumns } = transformDynamicDataToDailyMatrix(
 			reportsData,
-			ENERGY_REPORTS_API_DATA_KEY_CONFIG[selectedTab]
+			ENERGY_REPORTS_API_DATA_KEY_CONFIG[selectedTab],
+			machineListData
 		);
 
 		const filteredData = slaveName
-			? tableData.filter((row) => row.device === slaveName)
+			? tableData.filter((row) => reportDeviceNamesMatch(row.device, slaveName))
 			: tableData;
 
 		return { tableData: filteredData, tableColumns };
-	}, [reportsData, selectedTab, slaveName]);
+	}, [machineListData, reportsData, selectedTab, slaveName]);
 
 	const fetchReportsData = async (
 		curTab,
 		newPayload,
 		mode = reportModes[curTab] || 'import'
 	) => {
-		if (!curTab) return;
+		if (!curTab) {
+			return;
+		}
 
 		const isMonthAllowed = ENERGY_REPORTS_ALLOW_MONTH.includes(curTab);
 
-		if (isMonthAllowed && (!newPayload?.month || !newPayload?.year)) return;
+		if (isMonthAllowed && (!newPayload?.month || !newPayload?.year)) {
+			return;
+		}
 
-		if (!isMonthAllowed && !newPayload?.year) return;
+		if (!isMonthAllowed && !newPayload?.year) {
+			return;
+		}
 
 		setLoading(true);
 		try {

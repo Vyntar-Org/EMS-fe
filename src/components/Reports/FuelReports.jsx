@@ -1,10 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useCommonData } from '../../contexts/CommonDataContext';
-import { transformDynamicDataToDailyMatrix } from '../../helpers/common';
-import { exportToCSV, exportToPDF } from '../../helpers/exports';
-import { API_URLS } from '../../helpers/apiUrls';
-import { api } from '../../helpers/api';
-import dayjs from 'dayjs';
+import { Description, FileDownload, Search } from '@mui/icons-material';
 import {
 	Box,
 	Button,
@@ -14,17 +8,26 @@ import {
 	tabsClasses,
 	Tooltip,
 } from '@mui/material';
-import NoDataFound from '../common/errors/NoDataFound';
-import { Loading } from '../common/Loading';
-import { CustomTable } from '../common/CustomTable';
-import { CustomDatePicker } from '../common/CustomDatePicker';
-import { Description, FileDownload, Search } from '@mui/icons-material';
-import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import dayjs from 'dayjs';
+import { useEffect, useMemo, useState } from 'react';
+
 import {
 	FUEL_REPORTS_ALLOW_MONTH,
 	FUEL_REPORTS_API_DATA_KEY_CONFIG,
 	FUEL_REPORTS_TAB_OPTIONS,
 } from '../../constants/fuelReports';
+import { useCommonData } from '../../contexts/CommonDataContext';
+import { api } from '../../helpers/api';
+import { API_URLS } from '../../helpers/apiUrls';
+import { transformDynamicDataToDailyMatrix } from '../../helpers/common';
+import { exportToCSV, exportToPDF } from '../../helpers/exports';
+import { reportDeviceNamesMatch } from '../../helpers/reportUnits';
+import { useReportMachineList } from '../../hooks/useReportMachineList';
+import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import { CustomDatePicker } from '../common/CustomDatePicker';
+import { CustomTable } from '../common/CustomTable';
+import NoDataFound from '../common/errors/NoDataFound';
+import { Loading } from '../common/Loading';
 
 const ReportsHeader = ({
 	selectedTab,
@@ -57,7 +60,9 @@ const ReportsHeader = ({
 			<Tabs
 				value={selectedTab}
 				onChange={(e, val) => {
-					if (!val) return;
+					if (!val) {
+						return;
+					}
 
 					handleTabChange(val);
 				}}
@@ -244,6 +249,7 @@ const ReportsHeader = ({
 
 const FuelReports = () => {
 	const { slavesData } = useCommonData();
+	const { data: machineListData } = useReportMachineList('FUEL');
 	const [slavesId, setSlavesId] = useState(null);
 	const [selectedTab, setSelectedTab] = useState(
 		'FUEL_REPORTS_DATE_WISE_CONSUMPTION_DATA'
@@ -262,24 +268,31 @@ const FuelReports = () => {
 	const { tableData, tableColumns } = useMemo(() => {
 		const { tableData, tableColumns } = transformDynamicDataToDailyMatrix(
 			reportsData,
-			FUEL_REPORTS_API_DATA_KEY_CONFIG[selectedTab]
+			FUEL_REPORTS_API_DATA_KEY_CONFIG[selectedTab],
+			machineListData
 		);
 
 		const filteredData = slaveName
-			? tableData.filter((row) => row.device === slaveName)
+			? tableData.filter((row) => reportDeviceNamesMatch(row.device, slaveName))
 			: tableData;
 
 		return { tableData: filteredData, tableColumns };
-	}, [reportsData, selectedTab, slaveName]);
+	}, [machineListData, reportsData, selectedTab, slaveName]);
 
 	const fetchReportsData = async (curTab, newPayload) => {
-		if (!curTab) return;
+		if (!curTab) {
+			return;
+		}
 
 		const isMonthAllowed = FUEL_REPORTS_ALLOW_MONTH.includes(curTab);
 
-		if (isMonthAllowed && (!newPayload?.month || !newPayload?.year)) return;
+		if (isMonthAllowed && (!newPayload?.month || !newPayload?.year)) {
+			return;
+		}
 
-		if (!isMonthAllowed && !newPayload?.year) return;
+		if (!isMonthAllowed && !newPayload?.year) {
+			return;
+		}
 
 		setLoading(true);
 		try {

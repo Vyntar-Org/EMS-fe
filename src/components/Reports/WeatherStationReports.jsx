@@ -19,10 +19,16 @@ import {
 } from '../../constants/weatherStationReports';
 import { triggerFileDownload } from '../../helpers/common';
 import {
+	getReportDisplayUnit,
+	resolveReportDeviceUnit,
+	resolveUnambiguousReportUnit,
+} from '../../helpers/reportUnits';
+import {
 	getDownloadFileName,
 	getWeatherStationErrorMessage,
 	weatherStationApi,
 } from '../../helpers/weatherStationApi';
+import { useReportMachineList } from '../../hooks/useReportMachineList';
 import { CustomDatePicker } from '../common/CustomDatePicker';
 import { CustomTable } from '../common/CustomTable';
 import NoDataFound from '../common/errors/NoDataFound';
@@ -39,7 +45,14 @@ const formatReportParams = (payload) => ({
 	year: payload?.year?.isValid?.() ? payload.year.format('YYYY') : '',
 });
 
-const getReportRows = (response) => {
+const WEATHER_REPORT_MACHINE_UNIT_KEYS = [
+	'rainfall',
+	'rainfall_mm',
+	'rain_gauge',
+	'precipitation',
+];
+
+const getReportRows = (response, machineListData) => {
 	let rows = [];
 	if (Array.isArray(response)) {
 		rows = response;
@@ -47,38 +60,46 @@ const getReportRows = (response) => {
 		rows = response.rows;
 	}
 	const responseUnit =
-		response?.unit ||
-		response?.preferred_unit ||
-		response?.display_unit ||
-		response?.meta?.unit ||
-		response?.meta?.preferred_unit ||
-		response?.meta?.display_unit;
+		getReportDisplayUnit(response) || getReportDisplayUnit(response?.meta);
+	const unambiguousMachineUnit = resolveUnambiguousReportUnit(
+		machineListData,
+		WEATHER_REPORT_MACHINE_UNIT_KEYS
+	);
 
 	return rows.map((row) => {
 		const {
+			unit: rowUnit,
 			preferred_unit: preferredUnit,
 			display_unit: displayUnit,
 			measurement_unit: measurementUnit,
 			unit_name: unitName,
 			...values
 		} = row || {};
-		const inferredUnit = Object.prototype.hasOwnProperty.call(
-			row || {},
-			'rainfall_mm'
-		)
-			? 'mm'
-			: '';
+		const deviceName =
+			row?.machine_name ||
+			row?.slave_name ||
+			row?.device_name ||
+			row?.card_name ||
+			row?.name;
+		const machineUnit = deviceName
+			? resolveReportDeviceUnit(
+					machineListData,
+					deviceName,
+					WEATHER_REPORT_MACHINE_UNIT_KEYS
+			  )
+			: unambiguousMachineUnit;
 
 		return {
 			...values,
 			unit:
-				row?.unit ||
-				preferredUnit ||
 				displayUnit ||
+				preferredUnit ||
+				rowUnit ||
 				measurementUnit ||
 				unitName ||
+				(deviceName ? machineUnit : responseUnit) ||
 				responseUnit ||
-				inferredUnit ||
+				machineUnit ||
 				'—',
 		};
 	});
@@ -86,7 +107,7 @@ const getReportRows = (response) => {
 
 const formatColumnLabel = (key) => {
 	if (key === 'rainfall_mm') {
-		return 'Rainfall (mm)';
+		return 'Rainfall';
 	}
 	return key
 		.split('_')
@@ -220,6 +241,7 @@ const ReportsHeader = ({
 
 const WeatherStationReports = () => {
 	const { showToast } = useToast();
+	const { data: machineListData } = useReportMachineList('WEATHER');
 	const [selectedTab, setSelectedTab] = useState(WEATHER_REPORT_TYPES.DAYWISE);
 	const [payload, setPayload] = useState(getDefaultPayload);
 	const [submittedParams, setSubmittedParams] = useState(() =>
@@ -245,13 +267,14 @@ const WeatherStationReports = () => {
 	});
 
 	const rows = useMemo(
-		() => getReportRows(reportQuery.data),
-		[reportQuery.data]
+		() => getReportRows(reportQuery.data, machineListData),
+		[machineListData, reportQuery.data]
 	);
 	const columns = useMemo(() => {
+		const hasUnits = rows.some((row) => row.unit && row.unit !== '—');
 		const keys = Array.from(
 			new Set(rows.flatMap((row) => Object.keys(row || {})))
-		);
+		).filter((key) => key !== 'unit' || hasUnits);
 		const preferredFirstKey = isDaywise ? 'date' : 'month';
 		keys.sort((a, b) => {
 			if (a === preferredFirstKey) {

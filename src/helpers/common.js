@@ -1,6 +1,11 @@
 import dayjs from 'dayjs';
 
 import { formatNumber } from './formatters';
+import {
+	createReportDeviceUnitMap,
+	getReportDisplayUnit,
+	normalizeReportDeviceName,
+} from './reportUnits';
 
 export const formatTimestamp = (tsString) => {
 	if (!tsString) {
@@ -95,34 +100,11 @@ export const basePickerStyles = {
 
 export const transformDynamicDataToDailyMatrix = (
 	apiData,
-	keyConfig = { dateKey: 'date', valueKey: 'consumption' }
+	keyConfig = { dateKey: 'date', valueKey: 'consumption' },
+	machineListData
 ) => {
-	const { dateKey, valueKey, valueKeys = [] } = keyConfig;
+	const { dateKey, valueKey, valueKeys = [], machineUnitKeys = [] } = keyConfig;
 	const hasMultipleValues = Array.isArray(valueKeys) && valueKeys.length > 0;
-	const unitKeys = [
-		'unit',
-		'preferred_unit',
-		'display_unit',
-		'measurement_unit',
-		'unit_name',
-	];
-	const getUnit = (value) => {
-		if (!value || typeof value !== 'object' || Array.isArray(value)) {
-			return '';
-		}
-
-		for (const key of unitKeys) {
-			if (
-				value[key] !== undefined &&
-				value[key] !== null &&
-				value[key] !== ''
-			) {
-				return String(value[key]);
-			}
-		}
-
-		return '';
-	};
 	const getMetricValue = (item, key) => {
 		const metric = item?.[key];
 		return metric && typeof metric === 'object' && !Array.isArray(metric)
@@ -130,7 +112,7 @@ export const transformDynamicDataToDailyMatrix = (
 			: metric;
 	};
 	const getItemUnit = (item) => {
-		const directUnit = getUnit(item);
+		const directUnit = getReportDisplayUnit(item);
 		if (directUnit) {
 			return directUnit;
 		}
@@ -138,7 +120,11 @@ export const transformDynamicDataToDailyMatrix = (
 		const metricKeys = hasMultipleValues
 			? valueKeys.map(({ key }) => key)
 			: [valueKey];
-		return metricKeys.map((key) => getUnit(item?.[key])).find(Boolean) || '';
+		return (
+			metricKeys
+				.map((key) => getReportDisplayUnit(item?.[key]))
+				.find(Boolean) || ''
+		);
 	};
 	const toFiniteNumber = (value) => {
 		const numericValue = Number(value);
@@ -154,9 +140,16 @@ export const transformDynamicDataToDailyMatrix = (
 	// only recognised report envelopes so a device whose name happens to be
 	// "data" is not mistaken for metadata.
 	const reportDataKeys = ['data', 'rows', 'reports', 'report_data', 'devices'];
-	const reportMetadataKeys = new Set([...unitKeys, ...reportDataKeys]);
+	const reportUnitKeys = [
+		'unit',
+		'preferred_unit',
+		'display_unit',
+		'measurement_unit',
+		'unit_name',
+	];
+	const reportMetadataKeys = new Set([...reportUnitKeys, ...reportDataKeys]);
 	let reportData = apiData;
-	let reportUnit = getUnit(apiData);
+	let reportUnit = getReportDisplayUnit(apiData);
 
 	// A response can contain both the API client's `data` envelope and a
 	// domain-level `data` envelope. Limit the loop to known wrappers.
@@ -174,10 +167,14 @@ export const transformDynamicDataToDailyMatrix = (
 		}
 
 		reportData = reportData[reportDataKey];
-		reportUnit ||= getUnit(reportData);
+		reportUnit ||= getReportDisplayUnit(reportData);
 	}
 	const reportEntries = Object.entries(reportData).filter(([, value]) =>
 		Array.isArray(value)
+	);
+	const deviceUnitMap = createReportDeviceUnitMap(
+		machineListData,
+		machineUnitKeys
 	);
 
 	const monthLookup = [
@@ -277,11 +274,15 @@ export const transformDynamicDataToDailyMatrix = (
 	];
 
 	const tableData = reportEntries.map(([deviceName, dataArray]) => {
+		const machineUnit = deviceUnitMap.get(
+			normalizeReportDeviceName(deviceName)
+		);
 		const row = {
 			device: deviceName,
 			unit:
 				(Array.isArray(dataArray) &&
 					dataArray.map(getItemUnit).find(Boolean)) ||
+				machineUnit ||
 				reportUnit ||
 				'—',
 		};
@@ -319,7 +320,12 @@ export const transformDynamicDataToDailyMatrix = (
 		return row;
 	});
 
-	return { tableData, tableColumns };
+	const hasUnits = tableData.some((row) => row.unit && row.unit !== '—');
+	const visibleColumns = hasUnits
+		? tableColumns
+		: tableColumns.filter((column) => column.accessorKey !== 'unit');
+
+	return { tableData, tableColumns: visibleColumns };
 };
 
 export const triggerFileDownload = (
