@@ -195,6 +195,7 @@ const FireSafetyLogs = () => {
 		return orderedKeys.map((c) => ({
 			accessorKey: c,
 			header: FIRE_SAFETY_LOG_COLUMN_MAPPING[c] ?? c,
+			meta: c === 'timestamp' ? { sticky: 'left' } : undefined,
 			cell: (info) => {
 				const value = info.getValue();
 

@@ -235,6 +235,7 @@ const STPLogs = () => {
 			accessorKey: c,
 			header: STP_LOG_COLUMN_MAPPING?.[c],
 			// size: c === 'timestamp' ? 150 : 130,
+			meta: c === 'timestamp' ? { sticky: 'left' } : undefined,
 			cell: (info) => {
 				const value = info.getValue();
 

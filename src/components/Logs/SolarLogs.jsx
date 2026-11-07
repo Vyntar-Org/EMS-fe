@@ -204,6 +204,7 @@ const SolarLogs = () => {
 		const columnDef = orderedKeys.map((c) => ({
 			accessorKey: c,
 			header: SOLAR_LOG_COLUMN_MAPPING?.[c] ?? c,
+			meta: c === 'timestamp' ? { sticky: 'left' } : undefined,
 			cell: (info) => {
 				const value = info.getValue();
 

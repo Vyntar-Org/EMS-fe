@@ -227,6 +227,7 @@ const FlowMeterLogs = () => {
 		const columnDef = orderedKeys.map((c) => ({
 			accessorKey: c,
 			header: FLOWMETER_LOG_COLUMN_MAPPING?.[c],
+			meta: c === 'timestamp' ? { sticky: 'left' } : undefined,
 			cell: (info) => {
 				const value = info.getValue();
 

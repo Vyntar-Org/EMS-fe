@@ -226,6 +226,7 @@ const EnergyLogs = () => {
 			accessorKey: c,
 			header: KEY_PARAMETER_OPTIONS_MAPPING?.[c],
 			size: c === 'timestamp' ? 150 : 130,
+			meta: c === 'timestamp' ? { sticky: 'left' } : undefined,
 			cell: (info) => {
 				const value = info.getValue();
 
