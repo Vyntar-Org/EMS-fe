@@ -44,7 +44,7 @@ export const ENERGY_REPORTS_API_DATA_KEY_CONFIG = {
 	},
 	EMS_REPORTS_MONTH_WISE_CONSUMPTION_DATA: {
 		dateKey: 'month',
-		valueKey: 'consumption_kwh',
+		valueKey: 'consumption',
 		machineUnitKeys: [
 			'power_consumption',
 			'monthly_consumption',
