@@ -1,0 +1,1528 @@
+/* WATER_MONITOR only. Shared artwork is supplied by WaterMonitorPage. */
+.wm-list {
+	height: 100%;
+	min-height: 0;
+	min-width: 0;
+	overflow: auto;
+	container: water-list / inline-size;
+	font-family: inherit;
+}
+.wm-list *,
+.wm-machine-card * {
+	box-sizing: border-box;
+}
+.wm-list .wm-api-status {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	margin-left: auto;
+	font-size: 10px;
+	color: #486581;
+}
+.wm-api-status svg {
+	font-size: 16px;
+}
+.wm-list .wm-api-error {
+	color: #9a5b14;
+}
+.wm-machine-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	align-items: stretch;
+	gap: 12px;
+}
+@container water-list (min-width: 600px) {
+	.wm-machine-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@container water-list (min-width: 800px) {
+	.wm-machine-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+@container water-list (min-width: 960px) {
+	.wm-machine-grid {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+.wm-machine-card {
+	--wm-accent: #0284c7;
+	--wm-tint: #eaf7fd;
+	--wm-line: #c2dfed;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	width: 100%;
+	padding: 9px;
+	border-radius: 26px;
+	border: 1px solid #dce6f1;
+	background: #fff;
+	box-shadow: 0 8px 24px #25456f16;
+	transition:
+		transform 0.2s,
+		box-shadow 0.2s;
+}
+.wm-card-online {
+	--wm-accent: #16a34a;
+	--wm-tint: #e6f6ec;
+	--wm-line: #8ed5a5;
+}
+.wm-card-offline {
+	--wm-accent: #f23857;
+	--wm-tint: #ffedf0;
+	--wm-line: #ff9aaa;
+}
+.wm-machine-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 12px 28px #25456f22;
+}
+.wm-card-header {
+	position: relative;
+	display: grid;
+	grid-template-columns: 46px minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 8px;
+	min-height: 88px;
+	padding: 10px 8px;
+	border: 1px solid var(--wm-line);
+	border-radius: 18px;
+	background: linear-gradient(120deg, var(--wm-tint), #fff 95%);
+	overflow: hidden;
+}
+.wm-card-header::after {
+	content: '';
+	position: absolute;
+	right: -25px;
+	bottom: -40px;
+	width: 150px;
+	height: 88px;
+	transform: rotate(-14deg);
+	background: radial-gradient(circle, var(--wm-line) 1px, transparent 1.5px);
+	background-size: 9px 9px;
+	pointer-events: none;
+	opacity: 0.5;
+}
+.wm-water-avatar {
+	display: grid;
+	place-items: center;
+	width: 46px;
+	height: 46px;
+	border-radius: 50%;
+	background: #fff;
+	color: #2898ed;
+	box-shadow: 0 5px 12px #25456f22;
+}
+.wm-water-avatar svg {
+	font-size: 29px;
+}
+.wm-machine-identity {
+	position: relative;
+	z-index: 1;
+	min-width: 0;
+}
+.wm-machine-identity h2 {
+	margin-bottom: 4px;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+.wm-machine-card .wm-location,
+.wm-machine-card .wm-reading-time {
+	display: flex;
+	align-items: flex-start;
+	gap: 4px;
+	color: #54708c;
+	overflow-wrap: anywhere;
+	font-size: 10px;
+	line-height: 1.4;
+}
+.wm-location svg,
+.wm-reading-time svg {
+	font-size: 13px;
+	flex-shrink: 0;
+}
+.wm-connection {
+	position: relative;
+	align-self: start;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	border-radius: 12px;
+	font-weight: 600;
+	border: 1px solid var(--wm-line);
+	color: #486581;
+	background: #ffffffb8;
+	font-size: 10px;
+	padding: 3px 6px;
+}
+.wm-connection i {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+}
+.wm-connection-online {
+	color: #15803d;
+}
+.wm-connection-offline {
+	color: #dc2848;
+}
+.wm-card-body {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	gap: 7px;
+	padding-top: 8px;
+	min-width: 0;
+}
+.wm-instruments {
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+}
+.wm-tank-panel {
+	padding: 0 5px;
+}
+.wm-tank-heading {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	align-items: baseline;
+}
+.wm-tank-heading .MuiTypography-root {
+	font-size: 11px;
+	color: #486581;
+}
+.wm-tank {
+	display: block;
+	height: 85px;
+	width: 100%;
+	overflow: hidden;
+}
+.wm-machine-card:hover .wm-tank {
+	filter: drop-shadow(0 2px 4px #06b6d426);
+}
+.wm-tank-wave {
+	animation: wm-wave 6s linear infinite;
+}
+.wm-machine-card:hover .wm-tank-wave {
+	animation-duration: 3s;
+}
+.wm-bubble {
+	animation: wm-bubble 4s ease-in infinite;
+}
+.wm-tank-glint {
+	stroke-dasharray: 22 90;
+	animation: wm-glass 4s ease-in-out infinite;
+}
+.wm-measurements {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 6px;
+}
+.wm-metric {
+	position: relative;
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	min-width: 0;
+	min-height: 66px;
+	padding: 8px;
+	border: 1px solid #dce6f1;
+	border-radius: 16px;
+	background: #fff;
+	box-shadow: 0 3px 10px #25456f08;
+}
+.wm-metric::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 8px;
+	bottom: 8px;
+	width: 3px;
+	background: #14b8a6;
+}
+.wm-metric + .wm-metric::before {
+	background: #7c3aed;
+}
+.wm-metric-icon {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 18px;
+	height: 20px;
+	color: #0284c7;
+}
+.wm-metric-icon svg {
+	font-size: 17px;
+}
+.wm-metric-copy {
+	min-width: 0;
+	overflow-x: auto;
+}
+.wm-metric-copy h3 {
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1.3;
+	color: #54708c;
+}
+.wm-machine-card .wm-metric-value {
+	font-size: 19px;
+	font-weight: 600;
+	line-height: 1.4;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.3px;
+	color: #102a43;
+}
+.wm-machine-card .wm-metric-unit {
+	font-size: 10px;
+	color: #54708c;
+	overflow-wrap: anywhere;
+}
+.wm-status-panel {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+	min-height: 60px;
+	padding: 8px 10px;
+	border: 1px solid #dce6f1;
+	border-radius: 16px;
+	background: #fbfdff;
+}
+.wm-mode-section,
+.wm-motor-section {
+	display: flex;
+	align-items: center;
+	min-width: 0;
+}
+.wm-motor-section {
+	padding-left: 8px;
+	border-left: 1px solid #dce6f1;
+}
+.wm-status-icon {
+	display: none !important;
+}
+.wm-machine-card .wm-status-label {
+	font-weight: 500;
+	color: #54708c;
+	font-size: 10px;
+	margin-bottom: 4px;
+}
+.wm-mode-section .MuiChip-root {
+	height: 22px;
+	font-size: 10px;
+	font-weight: 500;
+}
+.wm-mode-section .MuiChip-icon {
+	font-size: 14px;
+}
+.wm-motor-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 7px;
+	border-radius: 12px;
+	background: #e5edf3;
+	color: #486581;
+	font-size: 10px;
+	white-space: nowrap;
+}
+.wm-motor-status svg {
+	font-size: 13px;
+}
+.wm-motor-running {
+	color: #15803d;
+	background: #e6f6ec;
+}
+.wm-motor-running:not(.wm-motor-preview) svg {
+	animation: wm-spin 4s linear infinite;
+}
+.wm-motor-control {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	min-height: 44px;
+	padding: 0 10px;
+	border: 1px solid #dce6f1;
+	border-radius: 16px;
+	background: #fbfdff;
+}
+.wm-control-label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: #486581;
+}
+.wm-control-label svg {
+	font-size: 17px;
+}
+.wm-control-label .MuiTypography-root,
+.wm-toggle-state.MuiTypography-root {
+	font-size: 11px;
+}
+.wm-toggle-target {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	min-height: 44px;
+	border-radius: 20px;
+	cursor: not-allowed;
+	transition: box-shadow 0.2s;
+}
+.wm-toggle-state {
+	min-width: 24px;
+	color: #62788a;
+	text-align: right;
+}
+.wm-toggle-target .MuiSwitch-track {
+	border-radius: 12px;
+	background-color: #64748b;
+}
+.wm-toggle-target .MuiSwitch-switchBase.Mui-checked.Mui-disabled {
+	color: #87b8a6;
+}
+.wm-toggle-target
+	.MuiSwitch-switchBase.Mui-checked.Mui-disabled
+	+ .MuiSwitch-track {
+	background-color: #059669;
+	opacity: 0.3;
+}
+.wm-toggle-target:hover {
+	box-shadow: 0 0 0 3px #0284c70a;
+}
+.wm-machine-card .wm-trend-button {
+	margin-top: auto;
+	min-height: 44px;
+	padding: 5px 15px;
+	border-radius: 11px;
+	font-size: 11px;
+	font-weight: 700;
+	color: #fff;
+	background: linear-gradient(100deg, #0284c7, #0891b2);
+	box-shadow: 0 4px 10px #0284c71a;
+}
+.wm-card-online .wm-trend-button {
+	background: linear-gradient(100deg, #109e43, #19c359);
+}
+.wm-card-offline .wm-trend-button {
+	background: linear-gradient(100deg, #f23857, #ff5722);
+}
+.wm-machine-card .wm-trend-button:hover {
+	filter: brightness(0.96);
+	box-shadow: 0 5px 14px #25456f26;
+}
+.wm-trend-button .MuiButton-startIcon svg {
+	font-size: 19px;
+}
+.wm-trend-button .MuiButton-endIcon {
+	position: absolute;
+	right: 12px;
+}
+.wm-machine-card .MuiButton-root:focus-visible,
+.wm-toggle-target:focus-visible {
+	outline: 3px solid #0284c7;
+	outline-offset: 2px;
+}
+.wm-machine-card .wm-data-warning {
+	font-size: 11px;
+	color: #9a5b14;
+}
+.wm-empty-state {
+	padding: 32px 16px;
+	text-align: center;
+	background: #ffffffed;
+	border: 1px dashed #c2dfed;
+	border-radius: 18px;
+}
+.wm-skeleton-card .MuiSkeleton-root {
+	max-width: 100%;
+}
+@keyframes wm-wave {
+	to {
+		transform: translateX(-120px);
+	}
+}
+@keyframes wm-bubble {
+	0% {
+		opacity: 0;
+		transform: translateY(0);
+	}
+	25% {
+		opacity: 0.6;
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(calc(-1 * var(--bubble-rise)));
+	}
+}
+@keyframes wm-glass {
+	from {
+		stroke-dashoffset: 112;
+		opacity: 0.1;
+	}
+	50% {
+		opacity: 0.65;
+	}
+	to {
+		stroke-dashoffset: -112;
+		opacity: 0.1;
+	}
+}
+@keyframes wm-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+@container water-list (max-width: 767px) {
+	.wm-list .wm-api-status {
+		width: 100%;
+		margin-left: 0;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.wm-list *,
+	.wm-machine-card * {
+		animation: none !important;
+		transition: none !important;
+	}
+	.wm-machine-card:hover {
+		transform: none;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.wm-skeleton-card .MuiSkeleton-root::after {
+		animation: none !important;
+	}
+}
+/* Cylindrical vessel and equipment-style motor panel. */
+.wm-tank {
+	height: 94px;
+}
+.wm-motor-control {
+	min-height: 60px;
+	padding: 6px 9px;
+	border-radius: 14px;
+	background: linear-gradient(135deg, #f8fbfd, #edf3f7);
+	box-shadow:
+		inset 0 1px 0 #fff,
+		0 2px 5px #25456f06;
+}
+.wm-control-label {
+	gap: 7px;
+	min-width: 0;
+}
+.wm-control-label .wm-control-motor {
+	width: 44px;
+	height: 36px;
+	flex-shrink: 0;
+	color: #6f8595;
+	filter: drop-shadow(0 2px 1px #25456f1a);
+}
+.wm-control-label .MuiTypography-root {
+	font-weight: 600;
+	white-space: nowrap;
+	font-size: 11px;
+}
+.wm-control-label .wm-control-caption {
+	font-weight: 400;
+	color: #62788a;
+	font-size: 9px;
+	margin-top: 2px;
+}
+.wm-toggle-target {
+	gap: 5px;
+	padding-left: 3px;
+}
+.wm-toggle-state.MuiTypography-root {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 10px;
+	font-weight: 600;
+}
+.wm-control-led {
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: #94a3b8;
+	box-shadow: inset 0 1px 1px #0002;
+}
+.wm-control-running .wm-control-led {
+	background: #379a78;
+	box-shadow: 0 0 4px #05966933;
+}
+.wm-toggle-target .wm-industrial-switch {
+	width: 64px;
+	height: 36px;
+	padding: 4px;
+	overflow: visible;
+}
+.wm-industrial-switch .MuiSwitch-switchBase {
+	padding: 4px;
+}
+.wm-industrial-switch .MuiSwitch-switchBase.Mui-checked {
+	transform: translateX(28px);
+}
+.wm-toggle-target .wm-industrial-switch .MuiSwitch-track {
+	border-radius: 20px;
+	background: linear-gradient(#c6d1db, #e0e7ed);
+	border: 1px solid #aebdca;
+	opacity: 1;
+	box-shadow: inset 0 2px 4px #25456f26;
+}
+.wm-toggle-target
+	.wm-industrial-switch
+	.MuiSwitch-switchBase.Mui-checked
+	+ .MuiSwitch-track {
+	background: linear-gradient(#83b5a3, #c3ddd2);
+	border-color: #89b4a3;
+	opacity: 0.7;
+}
+.wm-power-thumb {
+	display: grid;
+	place-items: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	background: linear-gradient(#fff, #dce5ec);
+	border: 1px solid #b0bfcb;
+	box-shadow:
+		0 2px 4px #25456f40,
+		inset 0 1px 0 #fff;
+	color: #7c8d9c;
+}
+.wm-power-thumb svg {
+	font-size: 15px;
+}
+.wm-industrial-switch .Mui-checked .wm-power-thumb {
+	color: #4f8a74;
+	border-color: #9abcae;
+}
+.wm-control-rotor {
+	transform-box: fill-box;
+	transform-origin: center;
+}
+.wm-control-motor-active .wm-control-rotor {
+	animation: wm-spin 2s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+	.wm-control-motor-active .wm-control-rotor {
+		animation: none;
+	}
+}
+.wm-motor-control {
+	flex-wrap: wrap;
+}
+.wm-motor-control .wm-toggle-target {
+	margin-left: auto;
+}
+/* Compact overview above the search row. */
+.wm-motor-running.wm-motor-preview > svg {
+	animation: wm-spin 5s linear infinite;
+}
+.wm-control-running .wm-control-led {
+	animation: wm-running-glow 2.5s ease-in-out infinite;
+}
+.wm-status-demo {
+	font-size: 9px;
+	opacity: 0.8;
+	padding-left: 4px;
+	border-left: 1px solid #15803d33;
+}
+@keyframes wm-running-glow {
+	50% {
+		box-shadow:
+			0 0 0 3px #05966916,
+			0 0 7px #05966955;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.wm-motor-running.wm-motor-preview > svg,
+	.wm-control-running .wm-control-led,
+	.wm-control-motor-active .wm-control-rotor {
+		animation: none !important;
+	}
+}
+/* Simple single-row toolbar, wrapping naturally on small screens. */
+.wm-toolbar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px 18px;
+	padding: 8px 10px;
+	margin-bottom: 12px;
+	border: 1px solid #d8e8f2;
+	border-radius: 12px;
+	background: #fffffff0;
+}
+.wm-counts {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 14px;
+}
+.wm-count {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 32px;
+	color: #486581;
+	border-radius: 5px;
+}
+.wm-count-copy {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 6px;
+}
+.wm-count .MuiTypography-root {
+	font-size: 11px;
+}
+.wm-count strong.MuiTypography-root {
+	font-size: 15px;
+	font-weight: 700;
+	color: #102a43;
+	font-variant-numeric: tabular-nums;
+}
+.wm-count-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: #0284c7;
+}
+.wm-count-running .wm-count-dot {
+	background: #16a34a;
+}
+.wm-count-stopped .wm-count-dot {
+	background: #64748b;
+}
+.wm-count:focus-visible {
+	outline: 2px solid #0284c7;
+	outline-offset: 3px;
+}
+.wm-page-tools {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	flex: 1;
+	min-width: 0;
+	gap: 8px;
+}
+.wm-page-tools .MuiChip-root {
+	height: 22px;
+	font-size: 10px;
+}
+.wm-page-tools .MuiTextField-root {
+	width: 260px;
+	max-width: 100%;
+}
+.wm-page-tools .MuiOutlinedInput-root {
+	font-size: 12px;
+	min-height: 38px;
+	border-radius: 9px;
+	background: #f8fbfe;
+}
+.wm-page-tools .MuiOutlinedInput-notchedOutline {
+	border-color: #d8e8f2;
+}
+.wm-page-tools .MuiIconButton-root {
+	width: 44px;
+	height: 44px;
+	border-radius: 9px;
+	color: #075985;
+}
+@container water-list (max-width: 767px) {
+	.wm-page-tools {
+		flex-basis: 100%;
+	}
+	.wm-page-tools .MuiTextField-root {
+		flex: 1;
+		min-width: 130px;
+	}
+}
+.wm-metric-comparison {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 3px 5px;
+	margin-top: 5px;
+}
+.wm-change {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	border-radius: 6px;
+	padding: 2px 4px;
+	background: #eaf3f8;
+	color: #54708c;
+	font-size: 10px;
+	white-space: nowrap;
+}
+.wm-change svg {
+	font-size: 13px;
+}
+.wm-change-up {
+	color: #087c76;
+	background: #e6f7f2;
+}
+.wm-change-down {
+	color: #a75c17;
+	background: #fff3e5;
+}
+.wm-machine-card .wm-previous {
+	font-size: 9px;
+	color: #62788a;
+	overflow-wrap: anywhere;
+}
+.wm-toolbar {
+	display: block;
+	padding: 10px 12px;
+	background: #ffffffed;
+}
+.wm-counts {
+	padding-bottom: 8px;
+	margin-bottom: 10px;
+	border-bottom: 1px solid #e7eff5;
+	gap: 18px;
+}
+.wm-page-tools {
+	gap: 10px;
+}
+.wm-page-tools .wm-location-filter {
+	width: 190px;
+}
+.wm-page-tools .wm-result-count {
+	font-size: 11px;
+	color: #54708c;
+}
+.wm-page-tools .MuiButton-root {
+	min-height: 40px;
+	font-size: 11px;
+}
+@container water-list (max-width: 767px) {
+	.wm-page-tools .wm-location-filter {
+		flex: 1;
+		min-width: 140px;
+	}
+}
+/* Reference-style paired metrics: reading at left, change and period at right. */
+.wm-metric-inline {
+	justify-content: space-between;
+	align-items: center;
+	gap: 5px;
+	padding: 7px 7px 7px 9px;
+	min-height: 58px;
+}
+.wm-metric-inline .wm-metric-copy {
+	flex: 1;
+	min-width: 0;
+}
+.wm-metric-inline .wm-metric-copy h3 {
+	line-height: 1.3;
+	font-size: 10px;
+	font-weight: 500;
+}
+.wm-value-line {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 3px;
+}
+.wm-metric-inline .wm-metric-value {
+	font-size: 15px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.wm-metric-inline .wm-metric-unit {
+	font-size: 9px;
+	font-weight: 400;
+}
+.wm-metric-inline .wm-metric-comparison {
+	flex: 0 0 auto;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 3px;
+	margin: 0;
+}
+.wm-metric-inline .wm-change {
+	border-radius: 10px;
+	gap: 1px;
+	font-size: 9px;
+	font-weight: 400;
+	padding: 3px 4px;
+}
+.wm-metric-inline .wm-change svg {
+	font-size: 12px;
+}
+.wm-metric-inline .wm-comparison-range {
+	color: #62788a;
+	white-space: nowrap;
+	font-size: 8px;
+	line-height: 1.4;
+}
+/* Compact overhead-tank layout: tank left; flow above totalizer at right. */
+.wm-machine-card {
+	padding: 10px;
+	border-radius: 18px;
+	box-shadow: 0 8px 24px #25456f16;
+}
+.wm-card-header {
+	background: #f3faff;
+	border-color: #d8e8f2;
+	min-height: 74px;
+	grid-template-columns: 34px minmax(0, 1fr) auto;
+	gap: 8px;
+	padding: 8px;
+	border-radius: 12px;
+}
+.wm-card-header::after {
+	content: none;
+}
+.wm-water-avatar {
+	box-shadow: 0 2px 6px #25456f12;
+	width: 34px;
+	height: 34px;
+}
+.wm-water-avatar svg {
+	font-size: 23px;
+}
+.wm-machine-identity h2 {
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1.3;
+	letter-spacing: normal;
+	margin-bottom: 2px;
+}
+.wm-card-body {
+	gap: 6px;
+	padding-top: 7px;
+}
+.wm-instruments {
+	display: grid;
+	align-items: stretch;
+	grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+	gap: 6px;
+}
+.wm-tank-panel {
+	display: flex;
+	flex-direction: column;
+	padding: 0;
+	min-width: 0;
+}
+.wm-tank-heading {
+	justify-content: center;
+}
+.wm-tank-heading .MuiTypography-root {
+	font-weight: 500;
+	font-size: 10px;
+	line-height: 1.4;
+}
+.wm-home-tank {
+	width: 100%;
+	min-height: 0;
+	height: 146px;
+	flex: 1;
+}
+.wm-measurements {
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: repeat(2, minmax(0, 1fr));
+	gap: 6px;
+}
+.wm-metric-inline {
+	min-height: 72px;
+	padding: 7px;
+	border-radius: 11px;
+}
+.wm-metric-inline .wm-metric-value {
+	font-size: 17px;
+	font-weight: 600;
+	line-height: 1.4;
+	letter-spacing: -0.3px;
+}
+.wm-status-panel {
+	min-height: 54px;
+	padding: 6px 8px;
+	border-radius: 11px;
+}
+.wm-motor-control {
+	min-height: 50px;
+	padding: 3px 8px;
+	border-radius: 11px;
+}
+.wm-control-label .wm-control-motor {
+	width: 36px;
+	height: 30px;
+}
+.wm-machine-card .wm-trend-button {
+	background: linear-gradient(100deg, #0284c7, #0891b2);
+	min-height: 44px;
+	font-size: 11px;
+	font-weight: 700;
+	border-radius: 11px;
+	padding: 5px 15px;
+}
+/* Search, all-machine counts and refresh share a single wrapping row. */
+.wm-toolbar {
+	display: block;
+	padding: 8px 10px;
+}
+.wm-page-tools {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px 14px;
+}
+.wm-page-tools .MuiTextField-root {
+	width: 240px;
+	flex: 0 1 240px;
+}
+.wm-page-tools .MuiOutlinedInput-root {
+	background: #fff;
+}
+.wm-counts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 14px;
+	border: 0;
+	padding: 0;
+	margin: 0;
+}
+.wm-count {
+	min-height: 32px;
+}
+.wm-count-total strong.MuiTypography-root {
+	color: #0284c7;
+}
+.wm-count-running strong.MuiTypography-root {
+	color: #15803d;
+}
+.wm-count-stopped strong.MuiTypography-root {
+	color: #64748b;
+}
+.wm-page-tools .wm-api-status {
+	margin-left: auto;
+}
+@container water-list (max-width: 767px) {
+	.wm-page-tools .MuiTextField-root {
+		flex: 1 1 200px;
+	}
+	.wm-counts {
+		flex: 1 1 auto;
+	}
+}
+
+/* Laptop density: preserve metric room when four cards share a narrower row. */
+@container water-list (min-width: 960px) and (max-width: 1279px) {
+	.wm-machine-grid {
+		gap: 10px;
+	}
+	.wm-machine-card {
+		padding: 7px;
+	}
+	.wm-card-header {
+		grid-template-columns: 28px minmax(0, 1fr);
+		gap: 5px 7px;
+		padding: 7px;
+	}
+	.wm-water-avatar {
+		width: 28px;
+		height: 28px;
+	}
+	.wm-water-avatar svg {
+		font-size: 21px;
+	}
+	.wm-machine-identity h2 {
+		font-size: 13px;
+	}
+	.wm-card-header .wm-connection {
+		grid-column: 2;
+		justify-self: start;
+	}
+	.wm-instruments {
+		grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+		gap: 4px;
+	}
+	.wm-home-tank g text {
+		font-size: 12px;
+	}
+	.wm-metric-inline {
+		padding: 6px;
+		gap: 3px;
+	}
+	.wm-metric-inline .wm-metric-value {
+		font-size: 13px;
+	}
+	.wm-metric-inline .wm-change {
+		font-size: 9px;
+	}
+	.wm-control-label .wm-control-motor {
+		width: 24px;
+		height: 24px;
+	}
+	.wm-control-label {
+		gap: 4px;
+	}
+	.wm-motor-control {
+		gap: 4px;
+		padding: 0 6px;
+	}
+}
+/* Daily/monthly comparison panels and compact supplied volume statistics. */
+.wm-period-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 6px;
+}
+.wm-period-panel {
+	position: relative;
+	min-width: 0;
+	border: 1px solid #dce6f1;
+	border-radius: 12px;
+	background: #fff;
+	overflow: hidden;
+}
+.wm-period-panel .wm-metric {
+	border: 0;
+	box-shadow: none;
+	border-radius: 0;
+	min-height: 58px;
+	padding: 6px 6px 23px;
+}
+.wm-period-panel .wm-metric::before {
+	content: none;
+}
+.wm-period-panel .wm-metric-copy h3 {
+	padding-left: 15px;
+}
+.wm-period-panel .wm-metric-value {
+	font-size: 14px;
+	font-weight: 700;
+}
+.wm-period-panel .wm-metric-unit {
+	font-size: 9px;
+}
+.wm-period-panel .wm-metric-inline .wm-change {
+	font-size: 9px;
+}
+.wm-period-sparkline {
+	display: block;
+	position: absolute;
+	bottom: 3px;
+	left: 7px;
+	width: calc(100% - 14px);
+	height: 20px;
+}
+/* OFF remains visibly red even when remote control is disabled. */
+/* Visible running feedback, with the demo marker retained for sample animation. */
+.wm-control-motor-active .wm-control-rotor {
+	animation-duration: 0.9s;
+}
+.wm-control-running .wm-control-motor {
+	color: #17815d;
+	animation: wm-motor-motion 0.6s ease-in-out infinite;
+}
+.wm-control-running .wm-control-led {
+	background: #16a34a;
+	animation-duration: 1.3s;
+}
+.wm-motor-running:not(.wm-motor-preview) svg,
+.wm-motor-running.wm-motor-preview > svg {
+	animation-duration: 1.6s;
+}
+@keyframes wm-motor-motion {
+	50% {
+		transform: translateY(-0.6px);
+	}
+}
+@container water-list (max-width: 1279px) {
+	.wm-period-panel .wm-metric-value {
+		font-size: 13px;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.wm-control-running .wm-control-motor {
+		animation: none !important;
+	}
+}
+/* One aligned measurement row: household tank | live readings | consumption. */
+.wm-machine-card {
+	container: water-card / inline-size;
+	border-color: #d8e8f2;
+	transition:
+		border-color 0.25s ease,
+		box-shadow 0.25s ease,
+		transform 0.25s ease;
+}
+.wm-machine-card:hover,
+.wm-machine-card:focus-within {
+	border-color: #0284c7;
+	box-shadow: 0 8px 24px #0284c724;
+}
+.wm-machine-card:hover {
+	transform: translateY(-2px);
+}
+.wm-instruments {
+	grid-template-columns: minmax(65px, 0.75fr) repeat(2, minmax(0, 1fr));
+	gap: 5px;
+	align-items: stretch;
+}
+.wm-tank-panel {
+	justify-content: center;
+	align-items: center;
+}
+.wm-home-tank {
+	width: 100%;
+	max-width: 85px;
+	height: 105px;
+	flex: none;
+}
+.wm-instruments .wm-measurements,
+.wm-instruments .wm-period-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: repeat(2, minmax(0, 1fr));
+	gap: 5px;
+}
+.wm-instruments .wm-metric-inline {
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: center;
+	gap: 4px;
+	min-height: 68px;
+	padding: 6px;
+}
+.wm-instruments .wm-metric-copy {
+	flex: none;
+	width: 100%;
+	overflow: visible;
+}
+.wm-instruments .wm-metric-copy h3 {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	font-size: 10px;
+	font-weight: 500;
+	padding-left: 0;
+}
+.wm-instruments .wm-metric-copy h3 svg {
+	font-size: 12px;
+	flex-shrink: 0;
+	color: #0284c7;
+}
+.wm-instruments .wm-metric-value {
+	font-size: 15px;
+	line-height: 1.3;
+}
+.wm-instruments .wm-metric-unit {
+	font-size: 10px;
+}
+.wm-instruments .wm-metric-comparison {
+	flex: none;
+	align-items: flex-start;
+	gap: 2px;
+}
+.wm-instruments .wm-change {
+	font-size: 10px;
+}
+.wm-instruments .wm-comparison-range {
+	white-space: normal;
+	font-size: 9px;
+}
+.wm-instruments .wm-period-panel .wm-metric {
+	height: 100%;
+	padding-bottom: 6px;
+}
+.wm-instruments .wm-period-sparkline {
+	display: none;
+}
+/* The same layout rearranges, rather than squeezing, in exceptionally narrow cards. */
+@container water-card (max-width: 200px) {
+	.wm-instruments {
+		grid-template-columns: 65px minmax(0, 1fr);
+	}
+	.wm-instruments .wm-period-grid {
+		grid-column: 1 / -1;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-rows: auto;
+	}
+}
+/* Feedback stays independent of command availability. */
+.wm-motor-stopped {
+	color: #52677c;
+	background: #eef2f6;
+	border: 1px solid #d5dfe7;
+}
+.wm-control-stopped .wm-control-led {
+	background: #8293a2;
+	box-shadow: none;
+}
+.wm-control-stopped .wm-toggle-state {
+	color: #52677c;
+}
+.wm-control-stopped .wm-control-label .wm-control-motor {
+	color: #7c8d9b;
+}
+.wm-toggle-target .wm-industrial-switch .MuiSwitch-track,
+.wm-toggle-target
+	.wm-industrial-switch
+	.MuiSwitch-switchBase.Mui-disabled
+	+ .MuiSwitch-track {
+	background: #a6b2bf;
+	border-color: #91a1b0;
+	opacity: 0.65;
+	box-shadow: inset 0 1px 3px #102a4320;
+}
+.wm-toggle-target
+	.wm-industrial-switch
+	.MuiSwitch-switchBase.Mui-checked
+	+ .MuiSwitch-track {
+	background: #16a34a;
+	border-color: #15803d;
+	opacity: 0.8;
+	box-shadow: 0 0 6px #16a34a20;
+}
+.wm-power-thumb,
+.wm-industrial-switch .Mui-checked .wm-power-thumb {
+	background: #fff;
+	border-color: #d3dce4;
+	color: #64748b;
+}
+.wm-control-running .Mui-checked .wm-power-thumb {
+	color: #15803d;
+}
+.wm-control-mode-manual .wm-control-label .wm-control-motor,
+.wm-control-mode-unknown .wm-control-label .wm-control-motor {
+	color: #8a99a7;
+	animation: none;
+}
+.wm-control-mode-manual .wm-control-led,
+.wm-control-mode-unknown .wm-control-led {
+	background: #94a3b8;
+	box-shadow: none;
+	animation: none;
+}
+.wm-control-mode-manual .wm-toggle-state,
+.wm-control-mode-unknown .wm-toggle-state {
+	color: #6e7f90;
+}
+.wm-control-mode-manual
+	.wm-industrial-switch
+	.MuiSwitch-switchBase.Mui-disabled
+	+ .MuiSwitch-track,
+.wm-control-mode-unknown
+	.wm-industrial-switch
+	.MuiSwitch-switchBase.Mui-disabled
+	+ .MuiSwitch-track {
+	background: #a6b2bf;
+	border-color: #91a1b0;
+	box-shadow: none;
+	opacity: 0.5;
+}
+.wm-control-mode-manual .wm-power-thumb,
+.wm-control-mode-unknown .wm-power-thumb {
+	color: #94a3b8;
+	border-color: #d3dce4;
+	box-shadow: 0 1px 2px #102a4320;
+}
+@media (prefers-reduced-motion: reduce) {
+	.wm-machine-card:hover {
+		transform: none;
+	}
+}
+.wm-control-mode-manual .Mui-checked .wm-power-thumb,
+.wm-control-mode-unknown .Mui-checked .wm-power-thumb {
+	color: #94a3b8;
+	box-shadow: 0 1px 2px #102a4320;
+}
+/* Use the full reading width; comparisons sit against the right-hand edge. */
+.wm-instruments .wm-measurements .wm-metric-copy {
+	width: 100%;
+}
+.wm-instruments .wm-measurements .wm-metric-comparison {
+	align-self: flex-end;
+	align-items: flex-end;
+	margin-left: auto;
+	text-align: right;
+}
+.wm-instruments .wm-period-panel .wm-metric-comparison {
+	align-self: flex-end;
+	align-items: flex-end;
+	margin-left: auto;
+	text-align: right;
+}
+@container water-card (min-width: 350px) {
+	.wm-instruments .wm-measurements .wm-metric-inline {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+	}
+	.wm-instruments .wm-measurements .wm-metric-copy {
+		width: auto;
+	}
+	.wm-instruments .wm-measurements .wm-metric-comparison {
+		align-self: center;
+	}
+}
+/* Auto OFF is red, even while unavailable for commands. Manual stays muted. */
+.wm-control-mode-auto.wm-control-stopped .wm-control-led {
+	background: #e14756;
+	box-shadow: 0 0 4px #e1475626;
+}
+.wm-control-mode-auto.wm-control-stopped .wm-toggle-state {
+	color: #bc3044;
+}
+.wm-control-mode-auto.wm-control-stopped .wm-control-label .wm-control-motor {
+	color: #b76f79;
+}
+.wm-control-mode-auto.wm-control-stopped
+	.wm-industrial-switch
+	.MuiSwitch-switchBase.Mui-disabled
+	+ .MuiSwitch-track {
+	background: #e26978;
+	border-color: #c54b5d;
+	opacity: 0.75;
+	box-shadow: none;
+}
+.wm-control-mode-auto.wm-control-stopped .wm-power-thumb {
+	color: #bc3044;
+	background: #fff;
+	border-color: #e7c3ca;
+}
+.wm-instruments .wm-metric-value {
+	font-size: clamp(13px, 4cqi, 15px);
+}
+/* Today and MTD form their own paired row below the primary readings. */
+.wm-instruments {
+	grid-template-columns: minmax(65px, 0.7fr) minmax(0, 1.3fr);
+}
+.wm-card-body > .wm-period-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-template-rows: auto;
+	gap: 6px;
+}
+.wm-card-body > .wm-period-grid .wm-metric-inline {
+	align-items: center;
+	min-height: 64px;
+	padding: 6px;
+}
+.wm-card-body > .wm-period-grid .wm-metric-comparison {
+	align-items: flex-end;
+	margin-left: auto;
+	text-align: right;
+}
+.wm-period-panel .wm-metric-copy h3 {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	padding-left: 0;
+}
+.wm-period-panel .wm-metric-copy h3 svg {
+	font-size: 12px;
+	flex-shrink: 0;
+	color: #0284c7;
+}
+/* Keep the two primary panels proportional to the tank instead of stacking captions. */
+.wm-instruments .wm-measurements {
+	align-self: stretch;
+	grid-template-rows: repeat(2, minmax(0, 1fr));
+	gap: 5px;
+}
+.wm-instruments .wm-measurements .wm-metric-inline {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	min-height: 52px;
+	padding: 4px 6px;
+	gap: 4px;
+}
+.wm-instruments .wm-measurements .wm-metric-copy {
+	width: auto;
+}
+.wm-instruments .wm-measurements .wm-metric-comparison {
+	align-self: center;
+	align-items: flex-end;
+	gap: 1px;
+	margin-left: auto;
+}
+.wm-instruments .wm-measurements .wm-comparison-range {
+	line-height: 1.2;
+}
+/* Give the tank more room and use compact instrument tiles without color stripes. */
+.wm-instruments {
+	grid-template-columns: minmax(85px, 0.95fr) minmax(0, 1.05fr);
+	gap: 7px;
+}
+.wm-home-tank {
+	max-width: 110px;
+	height: 125px;
+}
+.wm-instruments .wm-measurements {
+	gap: 6px;
+}
+.wm-instruments .wm-measurements .wm-metric-inline {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 3px 5px;
+	min-height: 60px;
+	padding: 6px 7px;
+	border: 1px solid #dce9f2;
+	border-radius: 12px;
+	background: linear-gradient(145deg, #fff, #f0f7fc);
+	box-shadow:
+		inset 0 1px 0 #fff,
+		0 3px 8px #25456f08;
+}
+.wm-instruments .wm-measurements .wm-metric-inline::before {
+	content: none;
+}
+.wm-instruments .wm-measurements .wm-metric-copy {
+	flex: 1 0 60px;
+	width: auto;
+	min-width: 0;
+}
+.wm-instruments .wm-measurements .wm-metric-copy h3 {
+	gap: 4px;
+	color: #486581;
+}
+.wm-instruments .wm-measurements .wm-metric-copy h3 svg {
+	width: 19px;
+	height: 19px;
+	padding: 3px;
+	color: #0284c7;
+	background: #e0f2fe;
+	border-radius: 5px;
+}
+.wm-instruments .wm-measurements .wm-metric-comparison {
+	flex: 0 0 auto;
+	align-self: center;
+	align-items: flex-end;
+	margin-left: auto;
+}
+.wm-instruments .wm-measurements .wm-metric-unit {
+	padding: 1px 3px;
+	border-radius: 4px;
+	background: #e9f1f7;
+	color: #486581;
+}
+.wm-instruments .wm-measurements .wm-metric-inline:focus-within {
+	border-color: #83c5e8;
+}
+@container water-card (max-width: 200px) {
+	.wm-instruments {
+		grid-template-columns: 75px minmax(0, 1fr);
+		gap: 5px;
+	}
+	.wm-home-tank {
+		max-width: 90px;
+		height: 115px;
+	}
+}

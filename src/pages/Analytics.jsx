@@ -1,3 +1,4 @@
+import WaterMonitorPage from '../components/waterMonitor/WaterMonitorPage';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
@@ -11,10 +12,12 @@ import SpinningAnalytics from '../components/Analytics/SpinningAnalytics.jsx';
 import STPAnalytics from '../components/Analytics/STPAnalytics';
 import TemperatureAnalytics from '../components/Analytics/TemperatureAnalytics';
 import WaterAnalytics from '../components/Analytics/WaterAnalytics';
+import WaterMonitorAnalytics from '../components/waterMonitor/WaterMonitorAnalytics';
 import WeatherStationAnalytics from '../components/Analytics/WeatherStationAnalytics';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const ANALYTICS_CONFIG = {
+	WATER_MONITOR: WaterMonitorAnalytics,
 	ENERGY: EnergyAnalytics,
 	SOLAR: SolarAnalytics,
 	TEMPERATURE: TemperatureAnalytics,
@@ -38,9 +41,11 @@ const Analytics = () => {
 	const AnalyticsComponent = ANALYTICS_CONFIG[appCode];
 
 	return (
-		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-			{AnalyticsComponent ? <AnalyticsComponent /> : <>Analytics not found</>}
-		</Box>
+		<WaterMonitorPage appCode={appCode}>
+			<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+				{AnalyticsComponent ? <AnalyticsComponent /> : <>Analytics not found</>}
+			</Box>
+		</WaterMonitorPage>
 	);
 };
 

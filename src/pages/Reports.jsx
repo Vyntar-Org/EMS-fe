@@ -1,3 +1,4 @@
+import WaterMonitorPage from '../components/waterMonitor/WaterMonitorPage';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
@@ -26,9 +27,11 @@ const Reports = () => {
 	const ReportsComponent = REPORTS_CONFIG[appCode];
 
 	return (
-		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-			{ReportsComponent ? <ReportsComponent /> : <>Reports not found</>}
-		</Box>
+		<WaterMonitorPage appCode={appCode}>
+			<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+				{ReportsComponent ? <ReportsComponent /> : <>Reports not found</>}
+			</Box>
+		</WaterMonitorPage>
 	);
 };
 

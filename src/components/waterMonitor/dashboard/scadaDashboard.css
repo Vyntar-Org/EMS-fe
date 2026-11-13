@@ -1,0 +1,949 @@
+﻿.sc-dashboard {
+	container: scada / inline-size;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	min-height: 730px;
+	height: 100%;
+	color: #102a43;
+	font-family: inherit;
+}
+.sc-dashboard *,
+.sc-dashboard *::before,
+.sc-dashboard *::after {
+	box-sizing: border-box;
+}
+.sc-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 4px 2px;
+	flex-wrap: wrap;
+}
+.sc-heading-icon {
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	color: #0284c7;
+	background: #e3f4fc;
+	border: 1px solid #cbe6f4;
+	border-radius: 13px;
+}
+.sc-heading {
+	flex: 1;
+	min-width: 210px;
+}
+.sc-heading h1 {
+	font-size: 23px;
+	font-weight: 700;
+	letter-spacing: -0.6px;
+	margin: 0;
+}
+.sc-heading p {
+	color: #647e94;
+	font-size: 11px;
+	margin: 3px 0 0;
+}
+.sc-header .MuiChip-root {
+	font-size: 10px;
+	background: #ffffffc9;
+}
+.sc-mode-badge {
+	font-size: 10px;
+	font-weight: 600;
+	padding: 6px 10px;
+	border-radius: 8px;
+	border: 1px solid #d6e5ef;
+	background: #fff;
+	color: #54728b;
+}
+.sc-mode-monitor {
+	background: #e6f5fc;
+	color: #087aac;
+	border-color: #b6deef;
+}
+.sc-toolbar {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+	background: #ffffffed;
+	border: 1px solid #d5e5ef;
+	border-radius: 13px;
+	padding: 10px;
+}
+.sc-toolbar > .MuiTextField-root {
+	width: 200px;
+}
+.sc-toolbar > .MuiTextField-root:first-child {
+	width: 170px;
+}
+.sc-dashboard .MuiOutlinedInput-root {
+	font-size: 12px;
+	border-radius: 9px;
+	background: #fff;
+}
+.sc-dashboard .MuiInputLabel-root {
+	font-size: 12px;
+}
+.sc-dashboard .MuiButton-root {
+	text-transform: none;
+	font-size: 11px;
+	border-radius: 8px;
+	min-height: 36px;
+	box-shadow: none;
+}
+.sc-dashboard .MuiButton-contained {
+	background: #0284c7;
+}
+.sc-toolbar-modes {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+.sc-layout-status {
+	font-size: 10px;
+	color: #647e94;
+	margin-left: auto;
+}
+.sc-preview-note {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 10px;
+	color: #8a672b;
+	padding: 0 3px;
+}
+.sc-preview-note > span {
+	width: 6px;
+	height: 6px;
+	background: #d19b31;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+.sc-editor-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+.sc-editor-actions > span {
+	font-size: 10px;
+	color: #647e94;
+	margin-left: auto;
+}
+.sc-editor-actions .MuiButton-root {
+	min-height: 32px;
+}
+.sc-workspace {
+	position: relative;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	min-height: 560px;
+	flex: 1;
+	border: 1px solid #d3e3ee;
+	border-radius: 15px;
+	background: #fff;
+	overflow: hidden;
+	box-shadow: 0 6px 22px #25456f0a;
+}
+.sc-workspace.sc-with-library {
+	grid-template-columns: 230px minmax(0, 1fr);
+}
+.sc-workspace.sc-with-inspector {
+	grid-template-columns: minmax(0, 1fr) 265px;
+}
+.sc-workspace.sc-with-library.sc-with-inspector {
+	grid-template-columns: 230px minmax(0, 1fr) 265px;
+}
+.sc-library,
+.sc-inspector {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 14px 12px;
+	min-width: 0;
+	background: #fff;
+	max-height: 72vh;
+	overflow-y: auto;
+	z-index: 3;
+}
+.sc-library {
+	border-right: 1px solid #dce8f0;
+}
+.sc-panel-title {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+.sc-panel-title strong {
+	font-size: 12px;
+	font-weight: 700;
+}
+.sc-panel-title small {
+	display: block;
+	margin-top: 3px;
+	font-size: 9px;
+	color: #758a9b;
+}
+.sc-library-count {
+	display: grid;
+	place-items: center;
+	width: 25px;
+	height: 25px;
+	font-size: 10px;
+	color: #0284c7;
+	background: #eaf7fd;
+	border-radius: 7px;
+}
+.sc-library-groups {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	flex: 1;
+}
+.sc-group-heading {
+	width: 100%;
+	display: flex;
+	justify-content: space-between;
+	padding: 5px 0;
+	border: 0;
+	background: transparent;
+	font-size: 10px;
+	color: #58758e;
+	font-weight: 700;
+	cursor: pointer;
+	text-align: left;
+}
+.sc-library-item {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	min-height: 56px;
+	padding: 5px;
+	margin-top: 5px;
+	border: 1px solid #e0ebf3;
+	border-radius: 10px;
+	background: #fbfdff;
+	cursor: grab;
+	transition:
+		border-color 0.15s,
+		background 0.15s;
+}
+.sc-library-item:hover {
+	border-color: #8ac8e7;
+	background: #f0f9ff;
+}
+.sc-library-item > .sc-art {
+	width: 49px;
+	height: 41px;
+	flex-shrink: 0;
+}
+.sc-library-item > div {
+	min-width: 0;
+	flex: 1;
+}
+.sc-library-item strong {
+	display: block;
+	font-size: 10px;
+	font-weight: 600;
+}
+.sc-library-item small {
+	font-size: 9px;
+	color: #7e91a0;
+}
+.sc-library-item > button {
+	width: 28px;
+	height: 32px;
+	border: 0;
+	border-radius: 7px;
+	color: #0284c7;
+	font-size: 20px;
+	background: #e6f4fc;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+.sc-library-item > button:disabled {
+	color: #9aabba;
+	background: #f0f3f6;
+	cursor: not-allowed;
+}
+.sc-unavailable {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+.sc-library-footer {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	border-top: 1px solid #e0ebf3;
+	padding-top: 10px;
+}
+.sc-library-footer small,
+.sc-muted {
+	font-size: 10px;
+	color: #7e91a0;
+	line-height: 1.5;
+}
+.sc-canvas-shell {
+	position: relative;
+	min-width: 0;
+	min-height: 560px;
+	overflow: hidden;
+}
+.sc-canvas {
+	position: absolute;
+	inset: 0;
+	touch-action: none;
+	overflow: hidden;
+	background-color: #f8fcff;
+	background-image: radial-gradient(#c6dce9 1px, transparent 1px);
+	outline: none;
+	cursor: grab;
+}
+.sc-canvas:active {
+	cursor: grabbing;
+}
+.sc-canvas:focus-visible {
+	outline: 2px solid #0284c7;
+	outline-offset: -3px;
+}
+.sc-world {
+	position: absolute;
+	top: 0;
+	left: 0;
+	transform-origin: 0 0;
+	pointer-events: none;
+}
+.sc-pipelines {
+	position: absolute;
+	inset: 0;
+	overflow: visible;
+	pointer-events: none;
+}
+.sc-pipe-body {
+	stroke: #9eb6c7;
+	stroke-width: 6;
+	fill: none;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.sc-pipe-hit {
+	fill: none;
+	stroke: transparent;
+	stroke-width: 24;
+	pointer-events: stroke;
+	cursor: pointer;
+}
+.sc-pipe-hit:focus-visible {
+	stroke: #0284c72a;
+	outline: none;
+}
+.sc-pipe-flowing .sc-pipe-body {
+	stroke: #128ac3;
+}
+.sc-pipe-stopped .sc-pipe-body {
+	stroke: #91bdd3;
+}
+.sc-pipe-unknown .sc-pipe-body {
+	stroke-dasharray: 8 5;
+}
+.sc-pipe-flow {
+	fill: none;
+	stroke: #b8f6ff;
+	stroke-width: 2.5;
+	stroke-dasharray: 7 12;
+	stroke-linejoin: round;
+	animation: sc-water-flow 1.6s linear infinite;
+}
+.sc-pipe-selected .sc-pipe-body {
+	stroke: #0284c7;
+	filter: drop-shadow(0 0 3px #38bdf8);
+}
+.sc-pipe-signal .sc-pipe-body {
+	stroke: #8ba5b8;
+	stroke-width: 2;
+	stroke-dasharray: 4 5;
+}
+.sc-connection-ghost {
+	fill: none;
+	stroke: #06b6d4;
+	stroke-width: 3;
+	stroke-dasharray: 5 5;
+}
+.sc-node {
+	position: absolute;
+	top: 0;
+	left: 0;
+	padding: 8px;
+	border: 1px solid #cfe1ed;
+	border-radius: 14px;
+	background: #ffffffed;
+	box-shadow: 0 4px 15px #25456f0e;
+	pointer-events: auto;
+	cursor: default;
+}
+.sc-node-selected {
+	border-color: #0284c7;
+	box-shadow:
+		0 0 0 3px #0284c71a,
+		0 4px 15px #25456f14;
+}
+.sc-node-running {
+	border-color: #a4d8c2;
+}
+.sc-node-running.sc-node-selected {
+	border-color: #0284c7;
+}
+.sc-node-title {
+	display: block;
+	width: 100%;
+	min-height: 26px;
+	max-height: 34px;
+	padding: 0 2px;
+	border: 0;
+	background: transparent;
+	color: #183c59;
+	font-size: 11px;
+	font-weight: 700;
+	text-align: center;
+	cursor: grab;
+	overflow: hidden;
+	line-height: 1.4;
+	touch-action: none;
+}
+.sc-node-art {
+	height: 86px;
+}
+.sc-art {
+	display: block;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+}
+.sc-node-readings {
+	text-align: center;
+	min-height: 34px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.sc-node-readings strong {
+	font-size: 12px;
+	font-weight: 700;
+	color: #1c4b6b;
+}
+.sc-node-readings small {
+	font-size: 9px;
+	color: #688298;
+}
+.sc-node-readings .sc-text-green {
+	color: #16996b;
+}
+.sc-node-connection {
+	position: absolute;
+	bottom: 6px;
+	left: 8px;
+	font-size: 8px;
+	color: #7e91a0;
+}
+.sc-node-connection.sc-good {
+	color: #16996b;
+}
+.sc-port {
+	position: absolute;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	cursor: crosshair;
+	z-index: 2;
+}
+.sc-port::after {
+	content: '';
+	position: absolute;
+	inset: 7px;
+	border: 2px solid #fff;
+	border-radius: 50%;
+	background: #118aca;
+	box-shadow: 0 0 0 1px #118aca;
+}
+.sc-port-signal::after {
+	background: #8b9eb0;
+	box-shadow: 0 0 0 1px #8b9eb0;
+}
+.sc-port-left {
+	left: -12px;
+	top: 74px;
+}
+.sc-port-right {
+	right: -12px;
+	top: 74px;
+}
+.sc-port-top {
+	top: -12px;
+	left: calc(50% - 12px);
+}
+.sc-port-bottom {
+	bottom: -12px;
+	left: calc(50% - 12px);
+}
+.sc-port:disabled {
+	cursor: default;
+}
+.sc-port:disabled::after {
+	opacity: 0.45;
+}
+.sc-motor-switch {
+	position: absolute;
+	bottom: 4px;
+	right: 6px;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	min-width: 57px;
+	height: 24px;
+	padding: 3px 5px 3px 7px;
+	border: 1px solid #b6c6d2;
+	border-radius: 15px;
+	background: #dce6ed;
+	color: #526e83;
+	font-size: 9px;
+	font-weight: 700;
+}
+.sc-motor-switch i {
+	width: 15px;
+	height: 15px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 3px #25456f25;
+}
+.sc-switch-on {
+	background: #daf4e7;
+	border-color: #9bcdb5;
+	color: #148359;
+}
+.sc-motor-switch:disabled {
+	cursor: not-allowed;
+	opacity: 0.65;
+}
+.sc-inspector {
+	border-left: 1px solid #dce8f0;
+}
+.sc-panel-title > button {
+	border: 0;
+	background: #edf5fa;
+	border-radius: 7px;
+	width: 28px;
+	height: 28px;
+	color: #5a778d;
+	font-size: 20px;
+	cursor: pointer;
+}
+.sc-inspector h3 {
+	font-size: 15px;
+	margin: 0;
+}
+.sc-inspector p {
+	font-size: 11px;
+	line-height: 1.6;
+	margin: 0;
+}
+.sc-inspector small {
+	color: #748b9d;
+	font-size: 10px;
+	line-height: 1.5;
+}
+.sc-property-type {
+	font-size: 10px;
+	align-self: flex-start;
+	padding: 5px 8px;
+	background: #eaf6fd;
+	border-radius: 6px;
+	color: #277da9;
+}
+.sc-position-fields {
+	display: flex;
+	gap: 8px;
+}
+.sc-position-fields .MuiTextField-root {
+	min-width: 0;
+	flex: 1;
+}
+.sc-inspector dl {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	margin: 0;
+	gap: 10px;
+	font-size: 10px;
+}
+.sc-inspector dt {
+	color: #7890a3;
+}
+.sc-inspector dd {
+	margin: 0;
+	overflow-wrap: anywhere;
+	color: #254e6b;
+}
+.sc-canvas-empty {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	pointer-events: none;
+	padding: 20px;
+}
+.sc-empty-symbol {
+	display: grid;
+	place-items: center;
+	width: 68px;
+	height: 68px;
+	border: 1px dashed #acd0e4;
+	border-radius: 18px;
+	color: #59a0c9;
+	background: #edf8fe;
+	font-size: 32px;
+	margin-bottom: 15px;
+}
+.sc-canvas-empty h2 {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 600;
+	color: #285573;
+	letter-spacing: -0.4px;
+}
+.sc-canvas-empty p {
+	font-size: 12px;
+	color: #7491a7;
+	margin: 8px 0;
+}
+.sc-canvas-empty small {
+	font-size: 10px;
+	color: #9ab1c1;
+}
+.sc-canvas-controls {
+	position: absolute;
+	bottom: 16px;
+	left: 16px;
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	padding: 4px;
+	border: 1px solid #d2e4ef;
+	border-radius: 10px;
+	background: #fffffff2;
+	box-shadow: 0 2px 12px #25456f12;
+}
+.sc-canvas-controls button {
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	padding: 7px 9px;
+	min-height: 34px;
+	color: #52748e;
+	font-size: 11px;
+	cursor: pointer;
+}
+.sc-canvas-controls button:hover,
+.sc-canvas-controls .sc-control-active {
+	color: #0284c7;
+	background: #eaf7fd;
+}
+.sc-canvas-controls > span {
+	font-size: 9px;
+	color: #7893a6;
+	padding: 0 3px;
+}
+.sc-canvas-caption {
+	position: absolute;
+	bottom: 27px;
+	right: 14px;
+	font-size: 8px;
+	color: #91a9ba;
+	pointer-events: none;
+}
+.sc-connect-hint {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	right: 10px;
+	font-size: 11px;
+	color: #0979aa;
+	background: #e4f6ffed;
+	border: 1px solid #bce4f6;
+	border-radius: 8px;
+	padding: 9px;
+}
+.sc-connect-hint button {
+	margin-left: 8px;
+	border: 0;
+	background: transparent;
+	color: #28698e;
+	text-decoration: underline;
+	cursor: pointer;
+}
+.sc-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	padding: 0 3px;
+	color: #7f98aa;
+	font-size: 9px;
+}
+.sc-footer > span:first-child {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+.sc-footer i {
+	display: inline-block;
+	width: 17px;
+	height: 3px;
+	border-radius: 2px;
+	margin-left: 5px;
+}
+.sc-legend-flow {
+	background: #149ed0;
+}
+.sc-legend-still {
+	background: #91bdd3;
+}
+.sc-legend-unknown {
+	background: repeating-linear-gradient(
+		90deg,
+		#9eb6c7 0 4px,
+		transparent 4px 6px
+	);
+}
+.sc-impeller {
+	transform-box: fill-box;
+	transform-origin: center;
+}
+.sc-art-running .sc-impeller {
+	animation: sc-spin 1.6s linear infinite;
+}
+.sc-water-wave {
+	animation: sc-wave 3s linear infinite;
+}
+.sc-water-bubble {
+	animation: sc-bubble 3.5s ease-in infinite;
+}
+@keyframes sc-water-flow {
+	to {
+		stroke-dashoffset: -38;
+	}
+}
+@keyframes sc-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+@keyframes sc-wave {
+	to {
+		transform: translateX(-40px);
+	}
+}
+@keyframes sc-bubble {
+	from {
+		opacity: 0;
+		transform: translateY(0);
+	}
+	30% {
+		opacity: 0.5;
+	}
+	to {
+		opacity: 0;
+		transform: translateY(calc(-1 * var(--rise)));
+	}
+}
+.sc-dashboard button:focus-visible,
+.sc-dashboard input:focus-visible,
+.sc-dashboard select:focus-visible {
+	outline: 2px solid #0284c7;
+	outline-offset: 2px;
+}
+@container scada (max-width: 1050px) {
+	.sc-workspace.sc-with-library.sc-with-inspector {
+		grid-template-columns: 220px minmax(0, 1fr);
+	}
+	.sc-with-inspector .sc-inspector {
+		position: absolute;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		width: 265px;
+		max-height: none;
+		box-shadow: -8px 0 25px #25456f16;
+	}
+	.sc-canvas-caption {
+		display: none;
+	}
+}
+@container scada (max-width: 750px) {
+	.sc-workspace.sc-with-library,
+	.sc-workspace.sc-with-inspector,
+	.sc-workspace.sc-with-library.sc-with-inspector {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.sc-library {
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 220px;
+		max-height: none;
+		box-shadow: 6px 0 20px #25456f16;
+	}
+	.sc-header {
+		gap: 8px;
+	}
+	.sc-heading h1 {
+		font-size: 20px;
+	}
+	.sc-heading-icon {
+		width: 36px;
+		height: 36px;
+	}
+	.sc-layout-status {
+		margin-left: 0;
+	}
+	.sc-toolbar > .MuiTextField-root {
+		flex: 1 1 160px;
+		width: auto;
+	}
+	.sc-toolbar-modes {
+		flex-basis: 100%;
+	}
+	.sc-dashboard {
+		min-height: 780px;
+	}
+	.sc-editor-actions > span {
+		display: none;
+	}
+}
+@media (pointer: coarse) {
+	.sc-port {
+		width: 32px;
+		height: 32px;
+	}
+	.sc-port-left {
+		left: -16px;
+		top: 70px;
+	}
+	.sc-port-right {
+		right: -16px;
+		top: 70px;
+	}
+	.sc-port-top {
+		top: -16px;
+		left: calc(50% - 16px);
+	}
+	.sc-port-bottom {
+		bottom: -16px;
+		left: calc(50% - 16px);
+	}
+	.sc-port::after {
+		inset: 11px;
+	}
+	.sc-library-item > button {
+		width: 36px;
+		height: 36px;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.sc-dashboard *,
+	.sc-dashboard *::before,
+	.sc-dashboard *::after {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+.sc-motor-switch .sc-command-spinner {
+	background: transparent;
+	border: 2px solid #a9c8d9;
+	border-top-color: #0284c7;
+	box-shadow: none;
+	animation: sc-spin 1s linear infinite;
+}
+.sc-switch-manual,
+.sc-switch-manual.sc-switch-on {
+	color: #7b8d9d;
+	border-color: #c7d2dc;
+	background: #e2e9ef;
+	box-shadow: none;
+}
+.sc-motor-switch::before {
+	content: '';
+	position: absolute;
+	inset: -10px -4px;
+}
+@media (pointer: coarse) {
+	.sc-canvas-controls button,
+	.sc-panel-title > button {
+		min-width: 44px;
+		min-height: 44px;
+	}
+	.sc-library-item > button {
+		width: 44px;
+		height: 44px;
+	}
+	.sc-port {
+		width: 44px;
+		height: 44px;
+	}
+	.sc-port-left {
+		left: -22px;
+		top: 64px;
+	}
+	.sc-port-right {
+		right: -22px;
+		top: 64px;
+	}
+	.sc-port-top {
+		top: -22px;
+		left: calc(50% - 22px);
+	}
+	.sc-port-bottom {
+		bottom: -22px;
+		left: calc(50% - 22px);
+	}
+	.sc-port::after {
+		inset: 17px;
+	}
+}
+/* Keep the light HMI surface legible without changing the application's theme. */
+.sc-dashboard .MuiInputBase-input {
+	color: #183c59;
+}
+.sc-dashboard .MuiInputBase-input.Mui-disabled {
+	-webkit-text-fill-color: #6f8598;
+}
+.sc-dashboard .MuiInputLabel-root,
+.sc-dashboard .MuiSelect-icon {
+	color: #647e94;
+}
+.sc-header .MuiChip-root {
+	color: #8a672b;
+}
+.sc-header .MuiChip-colorInfo {
+	color: #087aac;
+}
+.sc-dashboard .MuiButton-text,
+.sc-dashboard .MuiButton-outlined {
+	color: #087aac;
+}
+.sc-dashboard .MuiButton-colorError {
+	color: #b3394a;
+}
+.sc-dashboard .MuiButton-root.Mui-disabled {
+	color: #94a8b8;
+}

@@ -8,6 +8,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import PauseRoundedIcon from '@mui/icons-material/PauseRounded';
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import SensorsIcon from '@mui/icons-material/Sensors';
+import WaterTankIcon from '../waterMonitor/WaterTankIcon';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import {
 	AppBar,
@@ -298,7 +299,11 @@ export const Header = ({
 							>
 								{applications.map((app) => {
 									const appCode = app.code?.toUpperCase();
-									const AppIcon = APP_ICONS[appCode] || SensorsIcon;
+									const isWaterMonitor = appCode === 'WATER_MONITOR';
+									const appLabel = isWaterMonitor ? 'UG/OH-T' : app.name;
+									const AppIcon = isWaterMonitor
+										? WaterTankIcon
+										: APP_ICONS[appCode] || SensorsIcon;
 									// Each app tab lights up in that app's own identity color
 									// when selected (same palette used on its cards/charts
 									// everywhere else) instead of one generic accent for every
@@ -323,7 +328,7 @@ export const Header = ({
 													}}
 												>
 													<AppIcon className="app-tab-icon" />
-													{app.name}
+													{appLabel}
 												</Box>
 											}
 											value={app.code}
