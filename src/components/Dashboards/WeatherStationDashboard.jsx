@@ -1,5 +1,6 @@
 import { Box, Grid, Typography } from '@mui/material';
 
+import { useWeatherSiteLocation } from '../../hooks/useWeatherSiteLocation';
 import { useWeatherStation } from '../../hooks/useWeatherStation';
 
 import AirQualityChart from './weatherStationDashboardCards/AirQualityChart';
@@ -13,6 +14,7 @@ import WindDirectionChart from './weatherStationDashboardCards/WindDirectionChar
 
 const WeatherStationDashboard = () => {
 	const { loading, error, kpiCardsData, chartData } = useWeatherStation();
+	const siteLocation = useWeatherSiteLocation();
 
 	return (
 		<Box
@@ -69,11 +71,23 @@ const WeatherStationDashboard = () => {
 					</Grid>
 
 					<Grid xs={12} sm={12} md={7.9}>
-						<SiteLocationMap />
+						{/* <SiteLocationMap /> */}
+						<SiteLocationMap
+							lat={siteLocation.latitude}
+							lon={siteLocation.longitude}
+							name={siteLocation.site?.name}
+							loading={siteLocation.loading}
+						/>
 					</Grid>
 
 					<Grid xs={12} sm={12} md={4} lg={4}>
-						<SiteLocationSummary />
+						{/* <SiteLocationSummary /> */}
+						<SiteLocationSummary
+							site={siteLocation.site}
+							latitude={siteLocation.latitude}
+							longitude={siteLocation.longitude}
+							loading={siteLocation.loading}
+						/>
 					</Grid>
 				</Grid>
 			)}

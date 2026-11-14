@@ -105,6 +105,14 @@ export const weatherStationApi = {
 		getJson(API_URLS.WEATHER_DASHBOARD_AIR_QUALITY, undefined, options),
 	getSolarIrradianceTrend: (options) =>
 		getJson(API_URLS.WEATHER_DASHBOARD_IRRADIANCE, undefined, options),
+	getSiteLocations: async (options) => {
+		const response = await getJson(
+			API_URLS.WEATHER_DASHBOARD_SITE_LOCATION,
+			undefined,
+			options
+		);
+		return getCollection(response, 'locations');
+	},
 	getLogsParameters: (options) =>
 		getParameterOptions(API_URLS.WEATHER_LOGS_PARAMETERS_DATA, options),
 	getLogs: (
