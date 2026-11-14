@@ -1,9 +1,25 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from 'react';
 
+import { isAdminUser } from '../helpers/userRole';
+
 import { useAuth } from './AuthContext';
 
 const ApplicationContext = createContext();
+
+// Water admins manage their dashboard's KPI cards on the Settings page, but
+// /auth/me can't grant a Settings page yet: its PAGE_MAP has no settings
+// flag. So the page is added here for ADMINs, the only role the KPI-card API
+// accepts. If the API starts sending SETTINGS itself, its value is used as-is.
+const APPS_WITH_ADMIN_SETTINGS = ['WATER'];
+
+const withAdminSettingsPage = (app, user) =>
+	APPS_WITH_ADMIN_SETTINGS.includes(app.code) &&
+	isAdminUser(user) &&
+	!app.pages.includes('SETTINGS')
+		? { ...app, pages: [...app.pages, 'SETTINGS'] }
+		: app;
+
 const WEATHER_STATION_APP_CODE = 'WEATHER_STATION';
 const WEATHER_STATION_APPLICATION = Object.freeze({
 	code: WEATHER_STATION_APP_CODE,
@@ -139,15 +155,20 @@ export const ApplicationProvider = ({ children }) => {
 				let appData = user?.applications || [];
 
 				// Ensure pages is always an array and normalize page codes
-				appData = appData.map((app) => ({
-					...app,
-					code: app.code?.toUpperCase(),
-					pages: Array.isArray(app.pages)
-						? app.pages.map((p) =>
-								typeof p === 'string' ? p.toUpperCase() : p
-						  )
-						: [],
-				}));
+				appData = appData.map((app) =>
+					withAdminSettingsPage(
+						{
+							...app,
+							code: app.code?.toUpperCase(),
+							pages: Array.isArray(app.pages)
+								? app.pages.map((p) =>
+										typeof p === 'string' ? p.toUpperCase() : p
+								  )
+								: [],
+						},
+						user
+					)
+				);
 
 				if (Array.isArray(appData) && appData.length > 0) {
 					setApplications(appData);

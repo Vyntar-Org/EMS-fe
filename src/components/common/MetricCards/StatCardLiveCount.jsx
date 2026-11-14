@@ -1,4 +1,4 @@
-import { Box, Stack, alpha } from '@mui/material';
+import { Box, Stack, Typography, alpha } from '@mui/material';
 
 import ResponsiveTextWrapper from '../ResponsiveTextWrapper';
 
@@ -6,6 +6,10 @@ import ResponsiveTextWrapper from '../ResponsiveTextWrapper';
 // that have no "today vs yesterday" reading and no volume unit — forcing
 // those into the Today/Yesterday KLD card shape misrepresents the metric,
 // so this shows the number itself as the single visual focus instead.
+//
+// Also used for any value that has no comparison (an API `previous` of
+// null): `unit` adds a unit after the number, and `statusLabel` (the compact
+// variant's green-dot badge) can be set to null for non-station values.
 const StatCardLiveCount = ({
 	value,
 	label,
@@ -13,6 +17,8 @@ const StatCardLiveCount = ({
 	asOf,
 	compact = false,
 	icon: Icon,
+	unit = '',
+	statusLabel = 'Connected',
 }) => (
 	<Box
 		sx={{
@@ -95,18 +101,49 @@ const StatCardLiveCount = ({
 					: undefined
 			}
 		>
-			<ResponsiveTextWrapper
-				value={String(value ?? 0)}
-				fontWeight={800}
-				fontSize={
-					compact
-						? { xs: '22px', md: '24px' }
-						: { xs: '30px', sm: '36px', md: '44px', lg: '50px' }
-				}
-				color={accent}
-				sx={{ lineHeight: 1, textAlign: compact ? 'left' : 'center' }}
-			/>
-			{compact && (
+			{unit ? (
+				<Stack
+					direction="row"
+					alignItems="baseline"
+					justifyContent={compact ? 'flex-start' : 'center'}
+					gap={0.5}
+					minWidth={0}
+				>
+					<ResponsiveTextWrapper
+						value={String(value ?? 0)}
+						fontWeight={800}
+						fontSize={
+							compact
+								? { xs: '22px', md: '24px' }
+								: { xs: '30px', sm: '36px', md: '44px', lg: '50px' }
+						}
+						color={accent}
+						sx={{ lineHeight: 1, minWidth: 0 }}
+					/>
+					<Typography
+						component="span"
+						fontSize={compact ? '10px' : '12px'}
+						fontWeight={700}
+						color="text.secondary"
+						flexShrink={0}
+					>
+						{unit}
+					</Typography>
+				</Stack>
+			) : (
+				<ResponsiveTextWrapper
+					value={String(value ?? 0)}
+					fontWeight={800}
+					fontSize={
+						compact
+							? { xs: '22px', md: '24px' }
+							: { xs: '30px', sm: '36px', md: '44px', lg: '50px' }
+					}
+					color={accent}
+					sx={{ lineHeight: 1, textAlign: compact ? 'left' : 'center' }}
+				/>
+			)}
+			{compact && statusLabel && (
 				<Stack
 					direction="row"
 					alignItems="center"
@@ -125,7 +162,7 @@ const StatCardLiveCount = ({
 						}}
 					/>
 					<ResponsiveTextWrapper
-						value="Connected"
+						value={statusLabel}
 						color="text.secondary"
 						fontSize="9px"
 						fontWeight={600}
