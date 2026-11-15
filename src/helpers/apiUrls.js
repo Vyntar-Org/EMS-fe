@@ -360,6 +360,8 @@ const WEATHER_DASHBOARD = {
 		'/applications/weather/dashboard/air-quality-trend/',
 	WEATHER_DASHBOARD_IRRADIANCE:
 		'/applications/weather/dashboard/solar-irradiance-trend/',
+	WEATHER_DASHBOARD_SITE_LOCATION:
+		'/applications/weather/dashboard/site-location/',
 };
 
 const WEATHER_MACHINE_LIST = {
