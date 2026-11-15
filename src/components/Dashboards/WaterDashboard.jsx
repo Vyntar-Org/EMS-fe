@@ -232,7 +232,13 @@ const WaterDashboard = () => {
 	const visuals = useMemo(() => getCardVisuals(cards), [cards]);
 	const topRowCards = cards.slice(0, KPI_TOP_ROW_SLOTS);
 	const sideCards = cards.slice(KPI_TOP_ROW_SLOTS);
+	const sideCount = sideCards.length;
 	const canManageCards = isAdminUser(user);
+
+	// With an odd count, the last card of a two-per-row layout takes the
+	// whole row instead of sitting at half width next to an empty gap.
+	const isLoneLastCard = (index, count) =>
+		count % 2 === 1 && index === count - 1;
 
 	const renderTopRowNotice = () => {
 		if (loadFailed) {
@@ -301,13 +307,14 @@ const WaterDashboard = () => {
 					height={{ xs: 'auto', md: 215 }}
 					flexShrink={0}
 				>
-					{/* Fewer than 4 cards share the row instead of leaving gaps. */}
+					{/* Fewer than 4 cards share the row instead of leaving gaps;
+					    on tablets an odd last card spans the full row. */}
 					{topRowCards.map((card, index) => (
 						<Grid
 							key={card.id}
 							item
 							xs={12}
-							sm={topRowCards.length === 1 ? 12 : 6}
+							sm={isLoneLastCard(index, topRowCards.length) ? 12 : 6}
 							md={12 / topRowCards.length}
 							height={{ md: '100%' }}
 						>
@@ -322,40 +329,58 @@ const WaterDashboard = () => {
 			)}
 
 			<Grid container spacing={1.5} sx={{ mt: 0 }} flex={1} minHeight={0}>
-				{sideCards.length > 0 && (
+				{sideCount > 0 && (
 					<Grid item xs={12} sm={12} md={3} height={{ md: '100%' }}>
-						{/* Always 4 equal slots, filled from the top: compact tiles are
-						    designed for this height and look wrong stretched. */}
-						<Grid
-							container
-							rowGap={{ md: 1.5 }}
-							spacing={{ xs: 1.5, md: 0 }}
-							height={{ md: 'calc(100% - 36px)' }}
+						{/* The column is split into one equal row per visible card, so
+						    each card is (100% − gaps) / count tall: 1 card fills the
+						    column, 2 take half each, and so on. Fixed 25% slots left
+						    the spare height spread between the cards whenever fewer
+						    than 4 were shown. The compact tiles scale their value text
+						    with their own height, so taller slots don't look empty. */}
+						<Box
+							sx={{
+								display: 'grid',
+								gap: 1.5,
+								height: { md: '100%' },
+								gridTemplateColumns: {
+									// Phone: two per row. Tablet: all on one row.
+									// Desktop: one column beside the chart.
+									xs: `repeat(${Math.min(sideCount, 2)}, minmax(0, 1fr))`,
+									sm: `repeat(${sideCount}, minmax(0, 1fr))`,
+									md: 'minmax(0, 1fr)',
+								},
+								gridTemplateRows: {
+									md: `repeat(${sideCount}, minmax(0, 1fr))`,
+								},
+								gridAutoRows: '120px',
+							}}
 						>
 							{sideCards.map((card, index) => (
-								<Grid
+								<Box
 									key={card.id}
-									item
-									xs={6}
-									sm={3}
-									md={12}
-									height={{ xs: 120, md: '25%' }}
+									height="100%"
+									minWidth={0}
+									minHeight={0}
+									gridColumn={{
+										xs: isLoneLastCard(index, sideCount) ? '1 / -1' : 'auto',
+										sm: 'auto',
+									}}
 								>
 									<WaterKpiCard
 										card={card}
 										visual={visuals[KPI_TOP_ROW_SLOTS + index]}
 										variant="compact"
 									/>
-								</Grid>
+								</Box>
 							))}
-						</Grid>
+						</Box>
 					</Grid>
 				)}
 
 				<Grid
 					item
 					xs={12}
-					md={sideCards.length > 0 ? 9 : 12}
+					md={sideCount > 0 ? 9 : 12}
 					height={{ xs: 400, md: '100%' }}
 				>
 					<WATERMonthlyConsumption

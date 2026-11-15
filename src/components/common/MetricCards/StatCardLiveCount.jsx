@@ -10,6 +10,12 @@ import ResponsiveTextWrapper from '../ResponsiveTextWrapper';
 // Also used for any value that has no comparison (an API `previous` of
 // null): `unit` adds a unit after the number, and `statusLabel` (the compact
 // variant's green-dot badge) can be set to null for non-station values.
+// The compact value is 24px at the standard 4-tile height (unchanged) and
+// grows with the tile's own height (`cqh`) up to 36px when fewer stacked
+// tiles give each one a taller slot.
+const COMPACT_VALUE_FONT_SIZE = { xs: '22px', md: 'clamp(24px, 15cqh, 36px)' };
+const HERO_VALUE_FONT_SIZE = { xs: '30px', sm: '36px', md: '44px', lg: '50px' };
+
 const StatCardLiveCount = ({
 	value,
 	label,
@@ -31,6 +37,10 @@ const StatCardLiveCount = ({
 			width: '100%',
 			minWidth: 0,
 			px: compact ? 0.5 : 2,
+			// Only the compact tile always has a fixed slot height; the hero
+			// variant can be content-sized (phone top row), where size
+			// containment would collapse it.
+			containerType: compact ? 'size' : undefined,
 		}}
 	>
 		{compact && label ? (
@@ -112,11 +122,7 @@ const StatCardLiveCount = ({
 					<ResponsiveTextWrapper
 						value={String(value ?? 0)}
 						fontWeight={800}
-						fontSize={
-							compact
-								? { xs: '22px', md: '24px' }
-								: { xs: '30px', sm: '36px', md: '44px', lg: '50px' }
-						}
+						fontSize={compact ? COMPACT_VALUE_FONT_SIZE : HERO_VALUE_FONT_SIZE}
 						color={accent}
 						sx={{ lineHeight: 1, minWidth: 0 }}
 					/>
@@ -134,11 +140,7 @@ const StatCardLiveCount = ({
 				<ResponsiveTextWrapper
 					value={String(value ?? 0)}
 					fontWeight={800}
-					fontSize={
-						compact
-							? { xs: '22px', md: '24px' }
-							: { xs: '30px', sm: '36px', md: '44px', lg: '50px' }
-					}
+					fontSize={compact ? COMPACT_VALUE_FONT_SIZE : HERO_VALUE_FONT_SIZE}
 					color={accent}
 					sx={{ lineHeight: 1, textAlign: compact ? 'left' : 'center' }}
 				/>
