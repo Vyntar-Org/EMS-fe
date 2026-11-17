@@ -1,23 +1,25 @@
-﻿import { memo } from 'react';
-import { Box, Button, Chip, Tooltip, Typography } from '@mui/material';
-import {
+﻿import {
 	AutorenewRounded,
 	CalendarMonthOutlined,
 	ChevronRightRounded,
-	LocationOnOutlined,
 	MemoryRounded,
 	SettingsRounded,
 	SpeedRounded,
 	TrendingUpRounded,
 	WaterDropRounded,
 } from '@mui/icons-material';
+import { Box, Button, Chip, Tooltip, Typography } from '@mui/material';
+import { memo } from 'react';
+
 import { formatTimestamp } from '../../helpers/common';
-import { metricReading } from './waterMonitorApi';
+
+import { tankLevelState } from './tankLevelState';
 import { waterMachineState } from './waterMachinePresentation';
-import WaterTankGraphic from './WaterTankGraphic';
-import WaterMotorControl from './WaterMotorControl';
-import WaterMetric from './WaterMetric';
 import WaterMachineSummary from './WaterMachineSummary';
+import WaterMetric from './WaterMetric';
+import { metricReading } from './waterMonitorApi';
+import WaterMotorControl from './WaterMotorControl';
+import WaterTankGraphic from './WaterTankGraphic';
 
 import './waterMonitor.css';
 
@@ -29,6 +31,7 @@ const WaterMachineCard = memo(function WaterMachineCard({
 	onTrend,
 	trendEnabled,
 	preview = false,
+	commandControl,
 }) {
 	const state = waterMachineState(machine, {
 		now,
@@ -37,6 +40,16 @@ const WaterMachineCard = memo(function WaterMachineCard({
 		preview,
 	});
 	const tank = metricReading(machine, 'TankLevel', state.unavailable);
+	const tankFill = tankLevelState({
+		level: machine.latest?.TankLevel,
+		fillPercent: machine.fill_percent,
+		capacity: machine.capacity,
+		unit: tank.unit,
+		// OHTTankConfig.capacity declares the same unit as tank_level.
+		capacityUnitMatchesLevel: Object.hasOwn(machine, 'latest_ts'),
+		unavailable: state.unavailable,
+	});
+	tank.percentage = tankFill.percentage;
 	const flow = metricReading(machine, 'flowrate', state.unavailable);
 	const total = metricReading(machine, 'totalizer', state.unavailable);
 	const title =
@@ -46,6 +59,21 @@ const WaterMachineCard = memo(function WaterMachineCard({
 			component="article"
 			className={`wm-machine-card wm-card-${state.connection.toLowerCase()}`}
 			aria-label={title}
+			sx={(theme) => ({
+				'--wm-card-surface': theme.palette.background.paper,
+				'--wm-card-text': theme.palette.text.primary,
+				'--wm-card-muted': theme.palette.text.secondary,
+				'--wm-status-fill':
+					state.connection === 'Online'
+						? theme.palette.mode === 'dark'
+							? '#16352a'
+							: '#ecfdf5'
+						: state.connection === 'Offline'
+						  ? theme.palette.mode === 'dark'
+								? '#3d2026'
+								: '#fff1f2'
+						  : theme.palette.action.hover,
+			})}
 		>
 			<Box component="header" className="wm-card-header">
 				<span className="wm-water-avatar">
@@ -53,12 +81,6 @@ const WaterMachineCard = memo(function WaterMachineCard({
 				</span>
 				<Box className="wm-machine-identity">
 					<Typography component="h2">{title}</Typography>
-					<Typography className="wm-location">
-						<LocationOnOutlined />
-						{machine.details?.location ||
-							machine.device_code ||
-							`Slave ${machine.slave_id}`}
-					</Typography>
 					<Typography className="wm-reading-time">
 						<CalendarMonthOutlined />
 						{Number.isFinite(state.timestamp)
@@ -101,22 +123,31 @@ const WaterMachineCard = memo(function WaterMachineCard({
 						<WaterTankGraphic
 							percentage={tank.percentage}
 							rawValue={tank.value}
-							unavailable={tank.number === null}
+							unavailable={
+								state.unavailable ||
+								(tank.number === null && tank.percentage === null)
+							}
+							unit={tank.unit === 'Unit unverified' ? '' : tank.unit}
 						/>
 					</Box>
 					<Box className="wm-measurements">
 						<WaterMetric
 							label="Flow Rate"
+							changePct={
+								state.unavailable ? null : machine.flowrate_change_pct ?? null
+							}
+							comparisonLabel="vs. one hour ago"
 							labelIcon={<SpeedRounded />}
-							comparisonLabel={machine.previous?.comparison_label}
 							previous={state.unavailable ? null : machine.previous?.flowrate}
 							reading={flow}
-							flow
 						/>
 						<WaterMetric
 							label="Totalizer"
+							changePct={
+								state.unavailable ? null : machine.totalizer_change_pct ?? null
+							}
+							comparisonLabel="vs. one hour ago"
 							labelIcon={<WaterDropRounded />}
-							comparisonLabel={machine.previous?.comparison_label}
 							previous={state.unavailable ? null : machine.previous?.totalizer}
 							reading={total}
 						/>
@@ -165,7 +196,28 @@ const WaterMachineCard = memo(function WaterMachineCard({
 						</Box>
 					</Box>
 				</Box>
-				<WaterMotorControl state={state} title={title} preview={preview} />
+				{state.connection === 'Offline' && (
+					<Typography variant="caption">
+						Offline — showing last reported readings and motor feedback.
+					</Typography>
+				)}
+				{machine.alerts?.map((alert) => (
+					<Chip
+						key={alert}
+						label={alert.replaceAll('_', ' ')}
+						color="warning"
+						variant="outlined"
+						size="small"
+					/>
+				))}
+				<WaterMotorControl
+					machine={machine}
+					state={state}
+					title={title}
+					preview={preview}
+					control={commandControl}
+					failed={failed}
+				/>
 				{(preview || trendEnabled) && (
 					<Tooltip
 						title={

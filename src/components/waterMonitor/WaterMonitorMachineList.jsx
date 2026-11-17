@@ -1,8 +1,12 @@
-﻿import { useQuery } from '@tanstack/react-query';
+﻿import {
+	AccessTimeRounded,
+	RefreshRounded,
+	SearchRounded,
+} from '@mui/icons-material';
 import {
 	Box,
 	Button,
-	Chip,
+	Alert,
 	CircularProgress,
 	Dialog,
 	DialogActions,
@@ -14,52 +18,104 @@ import {
 	Tooltip,
 	Typography,
 } from '@mui/material';
-import {
-	AccessTimeRounded,
-	RefreshRounded,
-	SearchRounded,
-} from '@mui/icons-material';
-import { useState } from 'react';
-import { getWaterDashboard } from './waterMonitorApi';
-import { waterMonitorMockMachines } from './waterMonitorMockData';
-import {
-	matchesWaterMachine,
-	waterMachineState,
-} from './waterMachinePresentation';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
+import { useAuth } from '../../contexts/AuthContext';
+
+import { waterApiError } from './motorCommandState';
+import { useWaterConfig } from './useWaterMachines';
 import WaterMachineCard from './WaterMachineCard';
+import { matchesWaterMachine } from './waterMachinePresentation';
+import WaterMachineTrend from './WaterMachineTrend';
+import { getWaterMachines } from './waterMonitorApi';
 import WaterMonitorMachineListSkeleton from './WaterMonitorMachineListSkeleton';
+import { useWaterMotorOperations } from './WaterMotorOperations';
 import './waterMonitor.css';
 
+function DeviceMachineCards({ machines, failed, search, onTrend }) {
+	const { controls } = useWaterMotorOperations();
+	const control = controls[machines[0].device_uid];
+	return machines
+		.filter((machine) => matchesWaterMachine(machine, search))
+		.map((machine) => (
+			<WaterMachineCard
+				key={machine.slave_id}
+				machine={machine}
+				failed={failed}
+				commandControl={control}
+				trendEnabled
+				onTrend={() => onTrend(machine)}
+			/>
+		));
+}
+
 export default function WaterMonitorMachineList() {
+	const { user } = useAuth();
+	const config = useWaterConfig();
+	const scope = String(
+		user?.id ?? user?.username ?? user?.email ?? 'authenticated'
+	);
+	const listKey = ['water-monitor', scope, 'machine-list'];
 	const [search, setSearch] = useState('');
 	const [trendMachine, setTrendMachine] = useState(null);
 	const dashboard = useQuery({
-		queryKey: ['water-monitor', 'dashboard-preview-check'],
-		queryFn: ({ signal }) => getWaterDashboard({ signal }),
+		queryKey: listKey,
+		queryFn: ({ signal }) => getWaterMachines({ signal }),
 		retry: false,
-		refetchOnWindowFocus: false,
+		refetchOnWindowFocus: true,
+		refetchInterval:
+			Number.isFinite(config.poll_interval_seconds) &&
+			config.poll_interval_seconds >= 5
+				? config.poll_interval_seconds * 1000
+				: 30000,
+		refetchIntervalInBackground: false,
 	});
-	const machines = waterMonitorMockMachines.filter((machine) =>
+	const { register } = useWaterMotorOperations();
+	useEffect(() => {
+		const entries = {};
+		for (const machine of dashboard.data?.machines ?? []) {
+			if (!machine.device_uid) {
+				continue;
+			}
+			const uid = machine.device_uid;
+			entries[uid] ??= {
+				deviceUid: uid,
+				machines: [],
+				scope,
+				listKey: ['water-monitor', scope, 'machine-list'],
+				failed: dashboard.isError,
+			};
+			entries[uid].machines.push(machine);
+		}
+		register(entries);
+	}, [register, scope, dashboard.data, dashboard.isError]);
+	const allMachines = dashboard.data?.machines ?? [];
+	const machines = allMachines.filter((machine) =>
 		matchesWaterMachine(machine, search)
 	);
-	const motorStates = waterMonitorMockMachines.map(
-		(machine) => waterMachineState(machine, { preview: true }).motor
-	);
+	const devices = new Map();
+	for (const machine of allMachines) {
+		const key = machine.device_uid || 'unmapped-' + machine.slave_id;
+		if (!devices.has(key)) {
+			devices.set(key, []);
+		}
+		devices.get(key).push(machine);
+	}
 	const summary = [
 		{
 			label: 'Total Machines',
-			count: waterMonitorMockMachines.length,
+			count: dashboard.data?.summary?.total ?? 'N/A',
 			tone: 'total',
 		},
 		{
 			label: 'Running',
-			count: motorStates.filter((motor) => motor === 'Running').length,
+			count: dashboard.data?.summary?.running ?? 'N/A',
 			tone: 'running',
 		},
 		{
 			label: 'Stopped',
-			count: motorStates.filter((motor) => motor === 'Stopped').length,
+			count: dashboard.data?.summary?.stopped ?? 'N/A',
 			tone: 'stopped',
 		},
 	];
@@ -92,12 +148,12 @@ export default function WaterMonitorMachineList() {
 					<Box
 						className="wm-counts"
 						role="group"
-						aria-label="Demo machine totals, before search filtering"
+						aria-label="Machine totals, before search filtering"
 					>
 						{summary.map(({ label, count, tone }) => (
 							<Tooltip
 								key={tone}
-								title="Demo totals across all machines, before search filtering. These are simulated motor states, not live telemetry."
+								title="Backend totals across all machines, before search filtering."
 							>
 								<Box className={'wm-count wm-count-' + tone} tabIndex={0}>
 									<span className="wm-count-dot" aria-hidden="true" />
@@ -109,11 +165,8 @@ export default function WaterMonitorMachineList() {
 							</Tooltip>
 						))}
 					</Box>
-					<Tooltip title="Demo values: Totalizer in KL and Flow Rate in m³. Tank percentage units apply to demo data only; connectivity remains unverified.">
-						<Chip size="small" label="Demo" variant="outlined" tabIndex={0} />
-					</Tooltip>
 					<Typography className="wm-result-count" role="status">
-						{machines.length} of {waterMonitorMockMachines.length} machines
+						{machines.length} of {allMachines.length} machines
 					</Typography>
 					{search && (
 						<Button
@@ -125,10 +178,10 @@ export default function WaterMonitorMachineList() {
 							Clear
 						</Button>
 					)}
-					<Tooltip title="Refresh dashboard API; cards retain static values">
+					<Tooltip title="Refresh machines">
 						<span>
 							<IconButton
-								aria-label="Refresh dashboard API"
+								aria-label="Refresh machines"
 								disabled={dashboard.isFetching}
 								onClick={() => dashboard.refetch({ cancelRefetch: false })}
 							>
@@ -148,19 +201,19 @@ export default function WaterMonitorMachineList() {
 					>
 						<AccessTimeRounded />
 						{dashboard.isFetching
-							? 'Checking dashboard...'
+							? 'Loading machines...'
 							: dashboard.isError
 							  ? 'API unavailable - retry refresh'
 							  : checked
-							    ? `API checked: ${checked}`
+							    ? `Updated: ${checked}`
 							    : 'No API update yet'}
 					</Typography>
 				</Box>
 			</Box>
-			{!machines.length && (
+			{!dashboard.isPending && !dashboard.isError && !machines.length && (
 				<Box className="wm-empty-state">
 					<Typography>
-						{waterMonitorMockMachines.length
+						{allMachines.length
 							? 'No matching units. Try a different name, device or location.'
 							: 'No machines available.'}
 					</Typography>
@@ -173,17 +226,27 @@ export default function WaterMonitorMachineList() {
 					</Button>
 				</Box>
 			)}
+			{dashboard.isError && (
+				<Alert
+					severity="error"
+					action={<Button onClick={() => dashboard.refetch()}>Retry</Button>}
+				>
+					{waterApiError(dashboard.error, 'Unable to load machines.')}
+				</Alert>
+			)}
 			{dashboard.isPending && dashboard.isFetching ? (
 				<WaterMonitorMachineListSkeleton />
 			) : (
 				<Box className="wm-machine-grid">
-					{machines.map((machine) => (
-						<WaterMachineCard
-							key={machine.slave_id}
-							machine={machine}
-							preview
-							trendEnabled={false}
-							onTrend={() => setTrendMachine(machine)}
+					{[...devices].map(([uid, deviceMachines]) => (
+						<DeviceMachineCards
+							key={scope + uid}
+							machines={deviceMachines}
+							scope={scope}
+							listKey={listKey}
+							failed={dashboard.isError}
+							search={search}
+							onTrend={setTrendMachine}
 						/>
 					))}
 				</Box>
@@ -191,16 +254,18 @@ export default function WaterMonitorMachineList() {
 			<Dialog
 				open={Boolean(trendMachine)}
 				onClose={() => setTrendMachine(null)}
-				maxWidth="sm"
+				maxWidth="md"
 				fullWidth
 			>
 				<DialogTitle>{trendMachine?.name} - Trend</DialogTitle>
 				<DialogContent>
-					<Typography>
-						No historical readings are connected for this static preview. Actual
-						machine history will appear here after the backend history
-						integration is configured.
-					</Typography>
+					{trendMachine && (
+						<WaterMachineTrend
+							key={scope + trendMachine.slave_id}
+							machine={trendMachine}
+							scope={scope}
+						/>
+					)}
 				</DialogContent>
 				<DialogActions>
 					<Button onClick={() => setTrendMachine(null)}>Close</Button>

@@ -1,4 +1,21 @@
 /* WATER_MONITOR only. Shared artwork is supplied by WaterMonitorPage. */
+.wm-command {
+	padding: 8px 10px;
+	border-radius: 8px;
+	background: var(--wm-soft, rgba(100, 116, 139, 0.08));
+	overflow-wrap: anywhere;
+}
+.wm-command-pending,
+.wm-command-published {
+	border-left: 3px solid #b7791f;
+}
+.wm-command-failed,
+.wm-command-timed_out {
+	border-left: 3px solid #b91c1c;
+}
+.wm-command-acked {
+	border-left: 3px solid #64748b;
+}
 .wm-list {
 	height: 100%;
 	min-height: 0;
@@ -165,7 +182,7 @@
 	background: currentColor;
 }
 .wm-connection-online {
-	color: #15803d;
+	color: #0369a1;
 }
 .wm-connection-offline {
 	color: #dc2848;
@@ -1524,5 +1541,205 @@
 	.wm-home-tank {
 		max-width: 90px;
 		height: 115px;
+	}
+}
+/* Water Monitoring only: one feedback-driven toggle; disabled never looks active. */
+.wm-motor-user-control
+	.wm-toggle-target
+	.wm-industrial-switch
+	.MuiSwitch-track {
+	background: #94a3b8;
+	border-color: #8291a5;
+	box-shadow: none;
+}
+.wm-motor-user-control
+	.wm-toggle-target
+	.wm-industrial-switch
+	.MuiSwitch-switchBase.Mui-checked:not(.Mui-disabled)
+	+ .MuiSwitch-track {
+	background: #16a34a;
+	border-color: #15803d;
+	box-shadow: 0 0 6px #16a34a20;
+}
+.wm-motor-user-control
+	.wm-toggle-target
+	.wm-industrial-switch
+	.MuiSwitch-switchBase.Mui-disabled
+	+ .MuiSwitch-track {
+	background: #a6b2bf;
+	border-color: #91a1b0;
+	opacity: 0.55;
+	box-shadow: none;
+}
+.wm-motor-user-control
+	.wm-toggle-target
+	.wm-industrial-switch
+	.MuiSwitch-switchBase.Mui-disabled
+	.wm-power-thumb,
+.wm-motor-user-control:has(.MuiSwitch-switchBase.Mui-disabled)
+	.wm-control-motor {
+	color: #94a3b8;
+	animation: none;
+	box-shadow: none;
+}
+.wm-motor-user-control.wm-control-stopped .wm-toggle-state {
+	color: #64748b;
+}
+.wm-motor-user-control.wm-control-stopped .wm-control-led {
+	background: #94a3b8;
+	box-shadow: none;
+}
+/* Status-driven Water Monitoring cards; API connectivity and tank fill remain authoritative. */
+.wm-list .wm-machine-card {
+	border-color: var(--wm-line);
+	background: linear-gradient(
+		180deg,
+		var(--wm-status-fill, var(--wm-tint)),
+		var(--wm-card-surface, #fff) 180px
+	);
+	box-shadow: 0 7px 22px #0f172a0c;
+}
+.wm-list .wm-machine-card:hover,
+.wm-list .wm-machine-card:focus-within {
+	border-color: var(--wm-accent);
+	box-shadow: 0 10px 26px #0f172a14;
+}
+.wm-list .wm-card-online {
+	--wm-accent: #16a34a;
+	--wm-line: #a7dfb9;
+	--wm-tint: #ecfdf5;
+}
+.wm-list .wm-card-offline {
+	--wm-accent: #f43f5e;
+	--wm-line: #fda4af;
+	--wm-tint: #fff1f2;
+}
+.wm-list .wm-card-header {
+	grid-template-columns: 40px minmax(0, 1fr);
+	min-height: 94px;
+	padding: 28px 10px 12px;
+	border-color: var(--wm-line);
+	background: linear-gradient(
+		120deg,
+		var(--wm-status-fill, var(--wm-tint)),
+		var(--wm-card-surface, #fff)
+	);
+}
+.wm-list .wm-card-header::after {
+	content: '';
+	right: -20px;
+	bottom: -40px;
+	opacity: 0.28;
+}
+.wm-list .wm-card-header .wm-connection {
+	position: absolute;
+	top: 7px;
+	right: 9px;
+	grid-column: auto;
+	margin: 0;
+	font-size: 9px;
+	text-transform: uppercase;
+	font-weight: 750;
+}
+.wm-list .wm-card-online .wm-connection {
+	color: #15803d;
+	border-color: #86d7a2;
+	background: #f0fdf4;
+}
+.wm-list .wm-card-offline .wm-connection {
+	color: #dc2626;
+	border-color: #fda4af;
+	background: #fff1f2;
+}
+.wm-list .wm-machine-identity h2 {
+	color: var(--wm-card-text, #172f26);
+	font-size: 13px;
+	font-weight: 750;
+	line-height: 1.35;
+	margin-bottom: 5px;
+}
+.wm-list .wm-machine-identity .wm-reading-time {
+	color: var(--wm-card-muted, #64748b);
+	font-size: 9px;
+	line-height: 1.5;
+}
+.wm-list .wm-card-online .wm-trend-button {
+	background: linear-gradient(110deg, #119b45, #22c55e);
+}
+.wm-list .wm-card-offline .wm-trend-button {
+	background: linear-gradient(110deg, #ef3159, #ff5c29);
+}
+.wm-list .wm-tank-panel {
+	gap: 8px;
+	align-items: center;
+	padding: 8px 3px;
+}
+.wm-tank-visual {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	max-width: 145px;
+	min-width: 0;
+	margin: 0 auto;
+}
+.wm-tank-visual .wm-home-tank {
+	display: block;
+	flex: none;
+	width: 100%;
+	max-width: 140px;
+	height: auto;
+	min-height: 0;
+	aspect-ratio: 140 / 144;
+	overflow: visible;
+}
+.wm-tank-reading {
+	display: flex;
+	justify-content: center;
+	min-width: 62px;
+	max-width: 100%;
+	padding: 5px 10px;
+	border: 1px solid var(--wm-level-line, #dce5ef);
+	border-radius: 10px;
+	color: var(--wm-level-color, #64748b);
+	background: var(--wm-level-bg, #f1f5f9);
+	text-align: center;
+}
+.wm-tank-value {
+	font-size: 19px;
+	font-weight: 800;
+	line-height: 1.15;
+	font-variant-numeric: tabular-nums;
+	overflow-wrap: anywhere;
+}
+.wm-level-red {
+	--wm-level-color: #dc2626;
+	--wm-level-bg: #fff1f2;
+	--wm-level-line: #fecdd3;
+}
+.wm-level-orange {
+	--wm-level-color: #c2410c;
+	--wm-level-bg: #fff7ed;
+	--wm-level-line: #fed7aa;
+}
+.wm-level-yellow {
+	--wm-level-color: #a16207;
+	--wm-level-bg: #fefce8;
+	--wm-level-line: #fde68a;
+}
+.wm-level-green {
+	--wm-level-color: #15803d;
+	--wm-level-bg: #f0fdf4;
+	--wm-level-line: #bbf7d0;
+}
+.wm-level-unavailable .wm-tank-value {
+	font-size: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+	.wm-tank-visual *,
+	.wm-list .wm-machine-card {
+		animation: none !important;
+		transition: none !important;
 	}
 }

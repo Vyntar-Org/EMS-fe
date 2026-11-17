@@ -1,21 +1,32 @@
-import { Box, Tooltip, Typography } from '@mui/material';
 import {
 	TrendingUpRounded,
 	TrendingDownRounded,
 	TrendingFlatRounded,
 } from '@mui/icons-material';
+import { Box, Tooltip, Typography } from '@mui/material';
+
 import { compareWaterReading } from './waterMachinePresentation';
+import { numericReading } from './waterMonitorApi';
 
 export default function WaterMetric({
 	label,
 	reading,
-	flow,
+	changePct,
 	previous,
 	comparisonLabel,
 	hideEmptyComparison = false,
 	labelIcon,
 }) {
-	const comparison = compareWaterReading(reading.number, previous);
+	const percent = numericReading(changePct);
+	const supplied = changePct !== undefined;
+	const comparison = supplied
+		? percent === null
+			? null
+			: {
+					percent,
+					direction: percent > 0 ? 'up' : percent < 0 ? 'down' : 'flat',
+			  }
+		: compareWaterReading(reading.number, previous);
 	const ChangeIcon =
 		comparison?.direction === 'up'
 			? TrendingUpRounded
@@ -37,14 +48,17 @@ export default function WaterMetric({
 			  ? '0%'
 			  : 'New value'
 		: 'N/A';
-	const explanation = comparison
-		? 'Previous: ' +
-		  comparison.previous +
-		  '. ' +
-		  (comparison.direction === 'down' && label === 'Totalizer'
-				? 'Totalizer decreased; check for reset, rollover or correction.'
-				: 'Numeric change from the comparison reading.')
-		: 'No previous reading is available.';
+	const explanation =
+		supplied && comparison
+			? 'Percentage change reported by the backend.'
+			: comparison
+			  ? 'Previous: ' +
+			    comparison.previous +
+			    '. ' +
+			    (comparison.direction === 'down' && label === 'Totalizer'
+						? 'Totalizer decreased; check for reset, rollover or correction.'
+						: 'Numeric change from the comparison reading.')
+			  : 'No previous reading is available.';
 	return (
 		<Box className="wm-metric wm-metric-inline">
 			<Box className="wm-metric-copy">
@@ -78,12 +92,14 @@ export default function WaterMetric({
 								'wm-change wm-change-' + (comparison?.direction || 'flat')
 							}
 						>
-							<ChangeIcon />
+							{comparison && <ChangeIcon />}
 							{changeText}
 						</span>
 					</Tooltip>
 					<Typography className="wm-comparison-range">
-						{comparison ? comparisonLabel || 'vs. previous' : 'No history'}
+						{comparison
+							? comparisonLabel || 'vs. previous'
+							: 'No comparison available'}
 					</Typography>
 				</Box>
 			)}

@@ -2,6 +2,32 @@ export function waterMachineState(
 	machine,
 	{ preview = false, failed = false, now = Date.now(), staleAfter } = {}
 ) {
+	// OHT REST contract: connectivity is decided by the backend. Retain last
+	// reported readings/feedback even when offline; controls check connectivity.
+	if (Object.hasOwn(machine, 'latest_ts')) {
+		const connection = String(machine.status ?? '').toUpperCase();
+		const mode = String(machine.control_mode ?? '')
+			.trim()
+			.toLowerCase();
+		const motor = String(machine.motor_run_state ?? '').toLowerCase();
+		return {
+			connection:
+				connection === 'ONLINE'
+					? 'Online'
+					: connection === 'OFFLINE'
+					  ? 'Offline'
+					  : 'Unknown',
+			timestamp: Date.parse(machine.latest_ts),
+			stale: false,
+			unavailable: failed,
+			mode: mode === 'auto' ? 'Auto' : mode === 'manual' ? 'Manual' : 'Unknown',
+			motor: ['1', 'true', 'running', 'on'].includes(motor)
+				? 'Running'
+				: ['0', 'false', 'stopped', 'off'].includes(motor)
+				  ? 'Stopped'
+				  : 'Unknown',
+		};
+	}
 	const latest = machine.latest ?? {};
 	const timestamp = Date.parse(latest.timestamp);
 	const stale =
@@ -48,6 +74,9 @@ export function matchesWaterMachine(machine, search) {
 		machine.slave_id,
 		machine.device_name,
 		machine.device_code,
+		machine.device_uid,
+		machine.device_id,
+		machine.slave_index,
 		machine.details?.gateway,
 		machine.details?.location,
 		machine.details?.sensor_label,

@@ -1,7 +1,8 @@
-﻿import { Box } from '@mui/material';
-import { CalendarMonthOutlined } from '@mui/icons-material';
-import { metricReading, numericReading } from './waterMonitorApi';
+﻿import { CalendarMonthOutlined } from '@mui/icons-material';
+import { Box } from '@mui/material';
+
 import WaterMetric from './WaterMetric';
+import { metricReading, numericReading } from './waterMonitorApi';
 
 // Supplied summaries only: never infer daily/monthly aggregates from a single reading.
 function summaryReading(summary, unit, unavailable) {
@@ -21,8 +22,9 @@ function Sparkline({ values, label }) {
 		!Array.isArray(values) ||
 		values.length < 2 ||
 		values.some((value) => numericReading(value) === null)
-	)
+	) {
 		return null;
+	}
 	const points = values.map(Number);
 	const min = Math.min(...points),
 		max = Math.max(...points);
@@ -74,6 +76,7 @@ export default function WaterMachineSummary({ machine, unavailable, preview }) {
 								labelIcon={<CalendarMonthOutlined />}
 								reading={reading}
 								previous={unavailable ? null : data?.previous}
+								changePct={unavailable ? null : data?.change_pct}
 								comparisonLabel={data?.comparison_label}
 							/>
 							{reading.number !== null && (
