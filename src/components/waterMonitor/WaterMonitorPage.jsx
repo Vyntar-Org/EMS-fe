@@ -3,7 +3,7 @@ import { layoutBackgroundSx } from '../../helpers/layoutImages';
 
 // One local page surface; unrelated application layouts pass through unchanged.
 export default function WaterMonitorPage({ appCode, children }) {
-	if (appCode !== 'WATER_MONITOR') return children;
+	if (appCode !== 'WATER_MONITOR' && appCode !== 'OHT') return children;
 	return (
 		<Box
 			className="wm-page"

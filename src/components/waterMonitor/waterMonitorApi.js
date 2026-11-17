@@ -11,7 +11,7 @@ export function waterDashboardPath(
 	).pathname.replace(/\/$/, '');
 	return `${
 		basePath.endsWith('/api') ? '' : '/api'
-	}/applications/water-monitoring/dashboard/`;
+	}/applications/oht/dashboard/`;
 }
 
 export async function getWaterDashboard({ signal } = {}) {

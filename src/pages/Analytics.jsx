@@ -17,6 +17,7 @@ import WeatherStationAnalytics from '../components/Analytics/WeatherStationAnaly
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const ANALYTICS_CONFIG = {
+	OHT: WaterMonitorAnalytics,
 	WATER_MONITOR: WaterMonitorAnalytics,
 	ENERGY: EnergyAnalytics,
 	SOLAR: SolarAnalytics,

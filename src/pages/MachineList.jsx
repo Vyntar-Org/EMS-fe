@@ -17,6 +17,7 @@ import WeatherStationMachineList from '../components/MachineList/WeatherStationM
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const MACHINE_LIST_CONFIG = {
+	OHT: WaterMonitorMachineList,
 	WATER_MONITOR: WaterMonitorMachineList,
 	ENERGY: EnergyMachineList,
 	TEMPERATURE: TemperatureMachineList,

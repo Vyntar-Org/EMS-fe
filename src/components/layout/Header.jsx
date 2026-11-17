@@ -299,7 +299,8 @@ export const Header = ({
 							>
 								{applications.map((app) => {
 									const appCode = app.code?.toUpperCase();
-									const isWaterMonitor = appCode === 'WATER_MONITOR';
+									const isWaterMonitor =
+										appCode === 'WATER_MONITOR' || appCode === 'OHT';
 									const appLabel = isWaterMonitor ? 'UG/OH-T' : app.name;
 									const AppIcon = isWaterMonitor
 										? WaterTankIcon

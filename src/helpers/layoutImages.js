@@ -37,7 +37,9 @@ export const getLayoutImage = (section, appCode, mode = 'light') => {
 	const tint = mode === 'dark' ? darkTint(section) : null;
 	// Water Monitoring reuses the existing Water artwork for all shell sections.
 	const imageAppCode = appCode?.toUpperCase();
-	const artworkCode = imageAppCode === 'WATER_MONITOR' ? 'WATER' : imageAppCode;
+	const artworkCode = ['WATER_MONITOR', 'OHT'].includes(imageAppCode)
+		? 'WATER'
+		: imageAppCode;
 	const folder = artworkCode ? `/assets/${artworkCode}-LAYOUT-IMAGES` : null;
 	const appLayers = folder
 		? [`url("${folder}/${section}.svg")`, `url("${folder}/${section}.png")`]

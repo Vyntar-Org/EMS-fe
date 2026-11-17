@@ -22,18 +22,18 @@ delete globalThis.__waterMonitorTestApi;
 test('dashboard path includes /api exactly once', () => {
 	assert.equal(
 		api.waterDashboardPath('https://example.test/api/'),
-		'/applications/water-monitoring/dashboard/'
+		'/applications/oht/dashboard/'
 	);
 	assert.equal(
 		api.waterDashboardPath('https://example.test/'),
-		'/api/applications/water-monitoring/dashboard/'
+		'/api/applications/oht/dashboard/'
 	);
 });
 test('dashboard GET forwards cancellation and preserves the unmapped response', async () => {
 	const signal = new AbortController().signal;
 	const response = { success: true, data: { actual_backend_field: 42 } };
 	handler = async (path, options) => {
-		assert.equal(path, '/applications/water-monitoring/dashboard/');
+		assert.equal(path, '/applications/oht/dashboard/');
 		assert.equal(options.signal, signal);
 		return response;
 	};

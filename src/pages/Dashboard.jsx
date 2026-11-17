@@ -28,6 +28,7 @@ function WaterMonitorDashboard() {
 }
 
 const DASHBOARD_CONFIG = {
+	OHT: WaterMonitorDashboard,
 	WATER_MONITOR: WaterMonitorDashboard,
 	ENERGY: EnergyDashboard,
 	WATER: WaterDashboard,
