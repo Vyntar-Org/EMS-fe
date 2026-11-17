@@ -1,4 +1,3 @@
-import WaterMonitorPage from '../components/waterMonitor/WaterMonitorPage';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
@@ -7,9 +6,13 @@ import FlowMeterReports from '../components/Reports/FlowMeterReports';
 import FuelReports from '../components/Reports/FuelReports';
 import WaterReports from '../components/Reports/WaterReports';
 import WeatherStationReports from '../components/Reports/WeatherStationReports';
+import WaterMonitorPage from '../components/waterMonitor/WaterMonitorPage';
+import WaterMonitorReports from '../components/waterMonitor/WaterMonitorReports';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const REPORTS_CONFIG = {
+	OHT: WaterMonitorReports,
+	WATER_MONITOR: WaterMonitorReports,
 	ENERGY: EnergyReports,
 	WATER: WaterReports,
 	FUEL: FuelReports,
