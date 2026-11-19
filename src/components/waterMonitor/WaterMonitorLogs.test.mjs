@@ -25,6 +25,7 @@ function harness() {
 					flowrate: 0,
 					totalizer: null,
 					control_mode: 'manual',
+					control_strategy: 'LEVEL',
 					motor_run_state: '0',
 				},
 			],
@@ -51,8 +52,7 @@ function search(h) {
 	h.render();
 }
 
-test('Logs mirror the Water Logs 24-hour range without selecting a machine or loading cached records', () => {
-	const before = dayjs();
+test('Logs default to month-to-date without selecting a machine or loading cached records', () => {
 	const h = harness();
 	const tree = h.render();
 	assert.equal(h.options.enabled, false);
@@ -65,11 +65,8 @@ test('Logs mirror the Water Logs 24-hour range without selecting a machine or lo
 		(props) => props.mode === 'datetimerangepicker'
 	).value;
 	assert.ok(start.isValid() && end.isValid());
-	assert.ok(start.valueOf() >= before.subtract(24, 'hour').valueOf());
+	assert.equal(start.valueOf(), end.startOf('month').valueOf());
 	assert.ok(end.valueOf() <= dayjs().valueOf());
-	assert.ok(
-		Math.abs(end.diff(start, 'millisecond') - 24 * 60 * 60 * 1000) < 1000
-	);
 	assert.deepEqual(
 		findProps(tree, (props) => props.label === 'Select Parameters').value,
 		[]
@@ -169,6 +166,8 @@ test('searched Logs retain shared table/badges, has_more, loading, and empty/err
 	assert.match(html, /1450\.123456/);
 	assert.match(html, />0<\/p>/);
 	assert.match(html, /Manual|Stopped/);
+	assert.match(html, /Control Mode[\s\S]*Control Strategy[\s\S]*Motor Status/);
+	assert.match(html, />Level<\/p>/);
 	assert.match(html, /MuiChip-colorWarning/);
 	assert.match(html, /Rows per page/);
 	assert.doesNotMatch(html, /role="switch"|Turn ON|Tank Level \(%\)/);

@@ -6,10 +6,11 @@ export function waterMachineState(
 	// reported readings/feedback even when offline; controls check connectivity.
 	if (Object.hasOwn(machine, 'latest_ts')) {
 		const connection = String(machine.status ?? '').toUpperCase();
-		const mode = String(machine.control_mode ?? '')
-			.trim()
-			.toLowerCase();
-		const motor = String(machine.motor_run_state ?? '').toLowerCase();
+		const mode =
+			typeof machine.control_mode === 'string'
+				? machine.control_mode.trim().toLowerCase()
+				: '';
+		const motor = machine.motor_run_state;
 		return {
 			connection:
 				connection === 'ONLINE'
@@ -21,9 +22,9 @@ export function waterMachineState(
 			stale: false,
 			unavailable: failed,
 			mode: mode === 'auto' ? 'Auto' : mode === 'manual' ? 'Manual' : 'Unknown',
-			motor: ['1', 'true', 'running', 'on'].includes(motor)
+			motor: ['1', 1, true].includes(motor)
 				? 'Running'
-				: ['0', 'false', 'stopped', 'off'].includes(motor)
+				: ['0', 0, false].includes(motor)
 				  ? 'Stopped'
 				  : 'Unknown',
 		};

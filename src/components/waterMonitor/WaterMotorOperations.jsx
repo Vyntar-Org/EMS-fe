@@ -10,14 +10,12 @@ import {
 } from 'react';
 
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../common/PremiumToast';
 
 import useWaterMotorCommand from './useWaterMotorCommand';
 
 const OperationsContext = createContext(null);
 
 function DeviceOperation({ entry, publish }) {
-	const notify = useToast();
 	const latest = useQuery({ queryKey: entry.listKey, enabled: false });
 	const machines = useMemo(
 		() =>
@@ -26,7 +24,7 @@ function DeviceOperation({ entry, publish }) {
 			) ?? entry.machines,
 		[latest.data, entry.deviceUid, entry.machines]
 	);
-	const control = useWaterMotorCommand({ ...entry, machines, notify });
+	const control = useWaterMotorCommand({ ...entry, machines });
 	useEffect(() => {
 		publish(entry.deviceUid, control);
 	}, [
@@ -37,6 +35,7 @@ function DeviceOperation({ entry, publish }) {
 		control.command,
 		control.error,
 		control.blockedReason,
+		control.dialog,
 		machines,
 		entry.failed,
 	]);

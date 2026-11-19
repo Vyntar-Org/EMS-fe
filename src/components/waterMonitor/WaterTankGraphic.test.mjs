@@ -30,6 +30,16 @@ const { default: Graphic } = await import(
 const render = (props) => renderToStaticMarkup(createElement(Graphic, props));
 
 test('tank SVG renders valid and zero percentages distinctly from unavailable readings', () => {
+	const html = render({ percentage: 88.2 });
+	assert.deepEqual(
+		Array.from(
+			html.matchAll(/wm-tank-scale-text">(\d+%)<\/text>/g),
+			([, mark]) => mark
+		),
+		['100%', '75%', '50%', '25%', '0%']
+	);
+	assert.match(html, /wm-tank-reading-icon/);
+	assert.match(html, />88\.2%<\/span>/);
 	assert.match(
 		render({ percentage: 47.5, rawValue: '47.5', unit: '%' }),
 		/47\.5% full/

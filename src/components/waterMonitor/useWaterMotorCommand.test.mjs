@@ -26,11 +26,10 @@ async function harness() {
 	const queries = new Map();
 	const runtime = {
 		refreshes: 0,
+		statusRefreshes: 0,
 		updates: 0,
 		timers: [],
 		posts: [],
-		notifications: [],
-		dismissed: [],
 		options: null,
 		setTimeout: (callback, delay) => {
 			const timer = { callback, delay, active: true };
@@ -84,13 +83,16 @@ async function harness() {
 			} else {
 				runtime.feedbackOptions = options;
 			}
-			return (
-				queries.get(JSON.stringify(options.queryKey)) ?? {
+			return {
+				refetch: async () => {
+					runtime.statusRefreshes++;
+				},
+				...(queries.get(JSON.stringify(options.queryKey)) ?? {
 					isSuccess: false,
 					isError: false,
 					data: undefined,
-				}
-			);
+				}),
+			};
 		},
 		useMutation: (options) => ({
 			mutateAsync: (body) => options.mutationFn(body),
@@ -99,6 +101,10 @@ async function harness() {
 		client: {
 			invalidateQueries: async () => {
 				runtime.refreshes++;
+			},
+			fetchQuery: async ({ queryFn }) => {
+				runtime.refreshes++;
+				return queryFn({});
 			},
 		},
 	};
@@ -119,7 +125,9 @@ async function harness() {
 		latest_ts: new Date(Date.now() - 60000).toISOString(),
 		status: 'ONLINE',
 		slave_name: 'STP Garden Outlet',
-		control_mode: 'AUTO',
+		control_mode: 'auto',
+		remote_control_eligible: true,
+		control_strategy: 'REMOTE',
 		motor_run_state: 0,
 		last_command: null,
 	};
@@ -129,11 +137,6 @@ async function harness() {
 		scope: 'user',
 		listKey: ['list'],
 		failed: false,
-		notify: {
-			showToast: (message, severity, options) =>
-				runtime.notifications.push({ message, severity, ...options }),
-			dismissToast: (id) => runtime.dismissed.push(id),
-		},
 	};
 	return {
 		runtime,
@@ -199,11 +202,7 @@ test('202 submission locks sibling motors synchronously and resolves only from b
 	state = h.render();
 	assert.equal(state.locked, true); // ACK alone never confirms the physical motor
 	assert.equal(h.machine.motor_run_state, 0);
-	assert.equal(
-		h.runtime.notifications.filter((notice) => notice.severity === 'success')
-			.length,
-		0
-	);
+	assert.equal(state.dialog?.message, undefined);
 	h.machine.motor_run_state = 1;
 	h.machine.latest_ts = new Date(Date.now() + 1000).toISOString();
 	h.feedback([h.machine]);
@@ -212,10 +211,11 @@ test('202 submission locks sibling motors synchronously and resolves only from b
 	state = h.render();
 	assert.equal(state.locked, false);
 	assert.ok(h.runtime.refreshes >= 1);
-	assert.equal(
-		h.runtime.notifications.at(-1).message,
-		'STP Garden Outlet motor turned ON successfully.'
-	);
+	assert.equal(state.dialog.message, 'Motor Started Successfully');
+	assert.equal(state.dialog.severity, 'success');
+	assert.equal(h.runtime.timers.at(-1).delay, 1200);
+	h.runtime.timers.at(-1).callback();
+	assert.equal(h.render().dialog, null);
 	h.unmount();
 });
 
@@ -231,14 +231,10 @@ test('409 and 502 reconcile device status without retrying POST or unlocking unr
 		assert.equal(state.locked, true);
 		assert.match(state.error, code === 409 ? /already in progress/ : /MQTT/);
 		assert.match(
-			h.runtime.notifications.at(-1).message,
+			state.dialog.message,
 			code === 409
 				? /Another motor operation is in progress/
-				: /could not be delivered/
-		);
-		assert.equal(
-			h.runtime.notifications.at(-1).id,
-			h.runtime.notifications[0].id
+				: /could not be sent/
 		);
 		assert.match(String(h.runtime.options.queryKey.at(-1)), /device-/);
 		h.status({ id: 8, status: code === 409 ? 'PUBLISHED' : 'FAILED' });
@@ -304,12 +300,11 @@ test('a newer backend command replaces a prior null device reconciliation and lo
 	h.unmount();
 });
 
-test('AUTO-mode ON and OFF requests use the verified device channel without changing feedback', async () => {
+test('eligible REMOTE ON and OFF requests use the verified device channel without changing feedback', async () => {
 	for (const command of [1, 0]) {
 		const h = await harness();
 		delete h.machine.motor_id;
 		h.machine.slave_index = 2;
-		h.machine.control_mode = ' AUTO ';
 		h.machine.motor_run_state = command === 0 ? 1 : 0;
 		const initialFeedback = h.machine.motor_run_state;
 		await h.render().submit(h.machine, command);
@@ -322,30 +317,20 @@ test('AUTO-mode ON and OFF requests use the verified device channel without chan
 	}
 });
 
-test('missing mapping, offline feedback and unknown mode never submit commands', async () => {
-	for (const condition of [
-		'mapping',
-		'offline',
-		'mode',
-		'manual',
-		'null-mode',
+test('submit rejects unavailable motor control even when invoked directly', async () => {
+	for (const changes of [
+		{ motor_id: undefined },
+		{ status: 'OFFLINE' },
+		{ motor_run_state: null },
+		{ control_mode: 'manual' },
+		{ control_mode: 'manual', control_strategy: null },
+		{ control_mode: null },
+		{ control_mode: undefined },
+		{ remote_control_eligible: false },
+		{ remote_control_eligible: undefined },
 	]) {
 		const h = await harness();
-		if (condition === 'mapping') {
-			delete h.machine.motor_id;
-		}
-		if (condition === 'offline') {
-			h.machine.status = 'OFFLINE';
-		}
-		if (condition === 'mode') {
-			h.machine.control_mode = 'unknown';
-		}
-		if (condition === 'manual') {
-			h.machine.control_mode = 'manual';
-		}
-		if (condition === 'null-mode') {
-			h.machine.control_mode = null;
-		}
+		Object.assign(h.machine, changes);
 		await h.render().submit(h.machine, 1);
 		assert.equal(h.runtime.posts.length, 0);
 		h.unmount();
@@ -367,78 +352,59 @@ test('backend-prohibited remote commands remain disabled and are never retried a
 	h.unmount();
 });
 
-test('AUTO operation uses existing backend authorization without an undocumented eligibility flag', async () => {
+test('eligible Auto operation opens the command dialog regardless of strategy', async () => {
 	const h = await harness();
+	h.machine.control_strategy = 'LEVEL';
 	const state = h.render();
 	assert.equal(state.blockedReason, '');
 	await state.submit(h.machine, 1);
 	assert.equal(h.runtime.posts.length, 1);
-	assert.equal(h.runtime.notifications[0].loading, true);
+	assert.equal(h.render().dialog?.action, 1);
 	h.unmount();
 });
 
-test('ACK without fresh physical feedback keeps loading and lock until the confirmation window ends', async () => {
+test('ACK alone stays pending until the 15-second deadline', async () => {
 	const h = await harness();
 	await h.render().submit(h.machine, 1);
-	h.render();
-	const loading = h.runtime.notifications[0];
-	assert.equal(
-		loading.message,
-		'Starting STP Garden Outlet motor... Please wait.'
-	);
-	assert.equal(loading.loading, true);
+	assert.equal(h.render().dialog.name, 'STP Garden Outlet');
+	assert.equal(h.runtime.feedbackOptions.enabled, true);
 	h.status({ id: 5, status: 'ACKED', requested_at: new Date().toISOString() });
 	h.render();
 	await Promise.resolve();
-	h.render();
 	assert.equal(h.render().locked, true);
-	assert.equal(h.runtime.feedbackOptions.enabled, true);
-	assert.equal(h.runtime.notifications.length, 1);
-	const timer = h.runtime.timers.findLast(
-		(item) => item.active && item.delay <= 30000
-	);
-	assert.ok(timer.delay <= 30000 && timer.delay > 0);
+	const timer = h.runtime.timers.findLast((item) => item.active);
+	assert.ok(timer.delay <= 15000 && timer.delay > 0);
 	timer.callback();
 	const result = h.render();
-	assert.equal(result.locked, false);
 	assert.equal(h.runtime.feedbackOptions.enabled, false);
-	assert.equal(h.runtime.notifications.at(-1).id, loading.id);
-	assert.equal(h.runtime.notifications.at(-1).severity, 'warning');
-	assert.match(h.runtime.notifications.at(-1).message, /not yet confirmed/);
-	assert.equal(h.machine.motor_run_state, 0);
+	assert.equal(result.dialog.severity, 'warning');
+	assert.equal(
+		result.dialog.message,
+		'Motor is not responding. Please try again.'
+	);
 	assert.equal(h.runtime.posts.length, 1);
 	h.unmount();
 });
 
-test('a running AUTO motor can request OFF and only fresh Stopped feedback completes its loading toast', async () => {
+test('a running AUTO motor can request OFF and fresh Stopped feedback closes the modal', async () => {
 	const h = await harness();
 	h.machine.motor_run_state = 1;
 	await h.render().submit(h.machine, 0);
-	h.render();
+	assert.equal(h.render().dialog.action, 0);
 	assert.equal(h.runtime.posts[0].command, 0);
 	assert.equal(h.machine.motor_run_state, 1);
-	assert.equal(
-		h.runtime.notifications[0].message,
-		'Stopping STP Garden Outlet motor... Please wait.'
-	);
-	h.status({ id: 5, status: 'ACKED', requested_at: new Date().toISOString() });
+	h.status({ id: 5, status: 'ACKED' });
 	h.render();
 	await Promise.resolve();
-	h.render();
-	assert.equal(h.runtime.notifications.length, 1);
+	assert.equal(h.render().dialog.message, undefined);
 	h.machine.motor_run_state = 0;
 	h.machine.latest_ts = new Date(Date.now() + 1000).toISOString();
 	h.feedback([h.machine]);
 	h.render();
-	h.render();
-	assert.equal(
-		h.runtime.notifications.at(-1).message,
-		'STP Garden Outlet motor turned OFF successfully.'
-	);
-	assert.equal(
-		h.runtime.notifications.at(-1).id,
-		h.runtime.notifications[0].id
-	);
+	assert.equal(h.render().dialog.message, 'Motor Stopped Successfully');
+	assert.equal(h.render().dialog.severity, 'success');
+	h.runtime.timers.at(-1).callback();
+	assert.equal(h.render().dialog, null);
 	assert.equal(
 		h.runtime.timers.every((timer) => !timer.active),
 		true
@@ -446,91 +412,94 @@ test('a running AUTO motor can request OFF and only fresh Stopped feedback compl
 	h.unmount();
 });
 
-test('backend timeout and delivery failure dismiss loading without changing actual motor feedback', async () => {
+test('backend failures and HTTP or network errors show friendly modal messages', async () => {
 	for (const status of ['TIMED_OUT', 'FAILED']) {
 		const h = await harness();
 		await h.render().submit(h.machine, 1);
 		h.render();
 		h.status({ id: 5, status });
 		h.render();
-		await Promise.resolve();
-		h.render();
-		assert.equal(h.runtime.notifications.at(-1).severity, 'error');
 		assert.match(
-			h.runtime.notifications.at(-1).message,
+			h.render().dialog.message,
 			status === 'TIMED_OUT'
-				? /response was not received/
-				: /could not be delivered/
+				? /^Motor is not responding\. Please try again\.$/
+				: /^Motor operation failed\. Please try again\.$/
 		);
 		assert.equal(h.machine.motor_run_state, 0);
+		h.unmount();
+	}
+	for (const [failure, message] of [
+		[{ status: 500 }, /^Internal server error\. Please try again\.$/],
+		[
+			new TypeError('Failed to fetch'),
+			/^Unable to connect to the server\. Please try again\.$/,
+		],
+	]) {
+		const h = await harness();
+		h.runtime.post = async () => {
+			throw failure;
+		};
+		await h.render().submit(h.machine, 1);
+		assert.match(h.render().dialog.message, message);
+		assert.equal(h.runtime.timers.at(-1).delay, 2500);
+		h.runtime.timers.at(-1).callback();
+		assert.equal(h.render().dialog, null);
 		assert.equal(h.runtime.posts.length, 1);
 		h.unmount();
 	}
 });
 
-test('unmount while waiting for physical feedback dismisses loading and clears confirmation timer', async () => {
+test('unmount clears the pending deadline and suppresses late updates', async () => {
 	const h = await harness();
 	await h.render().submit(h.machine, 1);
 	h.render();
-	h.status({ id: 5, status: 'ACKED' });
-	h.render();
-	h.render();
-	const count = h.runtime.notifications.length;
 	h.unmount();
-	assert.equal(h.runtime.dismissed.length, 1);
 	assert.equal(
 		h.runtime.timers.every((timer) => !timer.active),
 		true
 	);
-	for (const timer of h.runtime.timers) {
-		timer.callback();
-	}
-	assert.equal(h.runtime.notifications.length, count);
+	const count = h.runtime.updates;
+	h.runtime.timers.forEach((timer) => timer.callback());
+	assert.equal(h.runtime.updates, count);
 });
 
-test('status verification errors end the loading notification without retrying the physical command', async () => {
+test('transient status errors keep checking until the deadline without resending', async () => {
 	const h = await harness();
 	await h.render().submit(h.machine, 1);
 	h.render();
 	h.status(undefined, new Error('Temporary network failure'));
-	h.render();
-	assert.equal(h.runtime.notifications.at(-1).severity, 'warning');
-	assert.equal(h.runtime.posts.length, 1);
+	assert.equal(h.render().dialog.message, undefined);
+	h.runtime.timers.findLast((item) => item.active).callback();
+	const state = h.render();
+	assert.equal(state.dialog.severity, 'warning');
+	assert.equal(state.locked, true);
+	await state.refreshStatus();
+	assert.equal(h.runtime.statusRefreshes, 1);
+	assert.equal(h.runtime.refreshes, 1);
+	const dismissal = h.runtime.timers.findLast((item) => item.active);
+	assert.equal(dismissal.delay, 2500);
+	dismissal.callback();
+	assert.equal(h.runtime.refreshes, 2);
+	assert.equal(h.render().dialog, null);
 	assert.equal(h.render().locked, true);
+	await h.render().submit(h.machine, 1);
+	assert.equal(h.runtime.posts.length, 1);
 	h.unmount();
 });
 
-test('a superseding backend command ends the prior user operation but keeps the device locked', async () => {
+test('a superseding command ends the prior modal wait while keeping the device locked', async () => {
 	const h = await harness();
 	await h.render().submit(h.machine, 1);
 	h.render();
 	h.machine.last_command = { id: 6, motor_id: 3, status: 'PUBLISHED' };
 	h.render();
-	h.render();
-	assert.equal(h.runtime.notifications.at(-1).severity, 'warning');
-	assert.equal(h.runtime.posts.length, 1);
+	assert.equal(h.render().dialog.severity, 'warning');
 	assert.equal(h.render().locked, true);
-	h.unmount();
-});
-
-test('frontend deadline ends a stalled acknowledgment once, retaining backend lock without resending', async () => {
-	const h = await harness();
-	await h.render().submit(h.machine, 1);
-	h.render();
-	const timer = h.runtime.timers.findLast(
-		(item) => item.active && item.delay > 30000
-	);
-	assert.ok(timer.delay <= 120000);
-	timer.callback();
-	const state = h.render();
-	assert.equal(h.runtime.notifications.at(-1).severity, 'warning');
-	assert.match(h.runtime.notifications.at(-1).message, /STP Garden Outlet/);
-	assert.equal(state.locked, true);
 	assert.equal(h.runtime.posts.length, 1);
 	h.unmount();
 });
 
-test('a late POST response cannot revive a loading toast after the frontend deadline', async () => {
+test('a late POST response continues tracking without reviving the loading modal', async () => {
 	const h = await harness();
 	let finish;
 	h.runtime.post = () =>
@@ -539,14 +508,21 @@ test('a late POST response cannot revive a loading toast after the frontend dead
 		});
 	const request = h.render().submit(h.machine, 1);
 	h.render();
-	h.runtime.timers.findLast((item) => item.active).callback();
-	h.render();
-	const notices = h.runtime.notifications.length;
+	const timer = h.runtime.timers.findLast((item) => item.active);
+	assert.ok(timer.delay <= 15000 && timer.delay > 0);
+	timer.callback();
+	const result = h.render().dialog;
+	assert.equal(result.severity, 'warning');
 	finish({ id: 5, status: 'PENDING' });
 	await request;
+	assert.deepEqual(h.render().dialog, result);
 	assert.equal(h.render().locked, true);
-	assert.equal(h.runtime.notifications.length, notices);
-	assert.equal(h.runtime.notifications.at(-1).severity, 'warning');
+	assert.equal(h.runtime.options.queryKey.at(-1), 5);
+	h.runtime.timers.findLast((item) => item.active).callback();
+	assert.equal(h.render().dialog, null);
+	assert.equal(h.render().locked, true);
+	assert.equal(h.machine.motor_run_state, 0);
+	await h.render().submit(h.machine, 1);
 	assert.equal(h.runtime.posts.length, 1);
 	h.unmount();
 });

@@ -1,29 +1,25 @@
-import {
-	Alert,
-	Box,
-	Button,
-	CircularProgress,
-	MenuItem,
-	TextField,
-	Typography,
-	useTheme,
-} from '@mui/material';
+﻿import { Alert, Box, Button, MenuItem, Stack, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import ReactApexChart from 'react-apexcharts';
+
+import { smartParseDate } from '../../helpers/dateParse';
+import CustomApexChart from '../common/CustomApexChart';
+import NoDataFound from '../common/errors/NoDataFound';
+import { Loading } from '../common/Loading';
+import { APP_ACCENT_COLOR } from '../common/MachineCardBits';
 
 import { waterApiError } from './motorCommandState';
-import { formatTrendTimestamp } from './trendTimestamp';
+import { waterMachineTitle } from './waterMachinePresentation';
 import { getWaterTrend } from './waterMonitorApi';
 
 const parameters = [
 	{ label: 'Tank Level', value: 'tank_level' },
-	{ label: 'Flowrate', value: 'flowrate' },
+	{ label: 'Flow Rate', value: 'flowrate' },
 	{ label: 'Totalizer', value: 'totalizer' },
 ];
+const colors = [APP_ACCENT_COLOR.WATER];
 
 export default function WaterMachineTrend({ machine, scope }) {
-	const theme = useTheme();
 	const [parameter, setParameter] = useState('tank_level');
 	const [hours, setHours] = useState(24);
 	const trend = useQuery({
@@ -40,175 +36,79 @@ export default function WaterMachineTrend({ machine, scope }) {
 		retry: false,
 	});
 	const label = parameters.find((item) => item.value === parameter).label;
-	const points = (trend.data?.points ?? []).filter((point) =>
-		Number.isFinite(Date.parse(point.timestamp))
-	);
 	const unit = trend.data?.meta?.unit;
+	// Preserve missing readings as chart gaps and discard unusable timestamps.
+	const points = (trend.data?.points ?? []).flatMap(({ timestamp, value }) => {
+		const date = smartParseDate(timestamp);
+		return date ? [[date.valueOf(), value]] : [];
+	});
+	const title = waterMachineTitle(machine);
 	return (
-		<Box sx={{ minWidth: 0 }}>
-			<Box
-				sx={{
-					display: 'grid',
-					gridTemplateColumns: {
-						xs: 'minmax(0, 1fr)',
-						sm: 'minmax(160px, 220px) minmax(140px, 180px)',
-					},
-					gap: 2,
-					pt: 1,
-					mb: 2,
-				}}
-			>
-				<Box>
-					<Typography
-						component="label"
-						id="wm-trend-parameter-label"
-						htmlFor="wm-trend-parameter"
-						sx={{
-							display: 'block',
-							mb: 0.75,
-							fontSize: 12,
-							fontWeight: 600,
-							color: 'text.secondary',
-						}}
-					>
-						Parameter
-					</Typography>
-					<TextField
-						select
-						fullWidth
-						id="wm-trend-parameter"
-						SelectProps={{ 'aria-labelledby': 'wm-trend-parameter-label' }}
-						size="small"
-						value={parameter}
-						onChange={(event) => setParameter(event.target.value)}
-					>
-						{parameters.map((item) => (
-							<MenuItem key={item.value} value={item.value}>
-								{item.label}
-							</MenuItem>
-						))}
-					</TextField>
-				</Box>
-				<Box>
-					<Typography
-						component="label"
-						id="wm-trend-period-label"
-						htmlFor="wm-trend-period"
-						sx={{
-							display: 'block',
-							mb: 0.75,
-							fontSize: 12,
-							fontWeight: 600,
-							color: 'text.secondary',
-						}}
-					>
-						Period
-					</Typography>
-					<TextField
-						select
-						fullWidth
-						id="wm-trend-period"
-						SelectProps={{ 'aria-labelledby': 'wm-trend-period-label' }}
-						size="small"
-						value={hours}
-						onChange={(event) => setHours(Number(event.target.value))}
-					>
-						{[6, 12, 24, 48, 168].map((value) => (
-							<MenuItem key={value} value={value}>
-								{value === 168 ? '7 days' : `${value} hours`}
-							</MenuItem>
-						))}
-					</TextField>
-				</Box>
-			</Box>
-			{trend.isPending ? (
-				<Box role="status" sx={{ p: 5, textAlign: 'center' }}>
-					<CircularProgress />
-					<Typography>Loading trend...</Typography>
-				</Box>
-			) : trend.isError ? (
-				<Alert
-					severity="error"
-					action={<Button onClick={() => trend.refetch()}>Retry</Button>}
+		<Box minWidth={0}>
+			<Stack direction="row" spacing={1.5} sx={{ maxWidth: 420, pt: 1 }}>
+				<TextField
+					select
+					fullWidth
+					label="Parameter"
+					size="small"
+					value={parameter}
+					onChange={(event) => setParameter(event.target.value)}
 				>
-					{waterApiError(trend.error, 'Unable to load trend.')}
-				</Alert>
-			) : !points.some((point) => point.value !== null) ? (
-				<Typography role="status">
-					No trend data available for this period.
-				</Typography>
-			) : (
-				<>
-					<Typography variant="subtitle2">
-						{label}
-						{unit ? ` (${unit})` : ''} · Hourly readings
-					</Typography>
-					<ReactApexChart
-						type="line"
-						height={320}
+					{parameters.map(({ value, label: optionLabel }) => (
+						<MenuItem key={value} value={value}>
+							{optionLabel}
+						</MenuItem>
+					))}
+				</TextField>
+				<TextField
+					select
+					fullWidth
+					label="Period"
+					size="small"
+					value={hours}
+					onChange={(event) => setHours(Number(event.target.value))}
+				>
+					{[6, 12, 24, 48, 168].map((value) => (
+						<MenuItem key={value} value={value}>
+							{value === 168 ? '7 days' : `${value} hours`}
+						</MenuItem>
+					))}
+				</TextField>
+			</Stack>
+			<Box
+				height={{
+					xs: 'min(320px, calc(90dvh - 140px))',
+					sm: 'min(500px, calc(80vh - 150px))',
+				}}
+				mt={1}
+			>
+				{trend.isPending ? (
+					<Loading />
+				) : trend.isError ? (
+					<Alert
+						severity="error"
+						action={<Button onClick={() => trend.refetch()}>Retry</Button>}
+					>
+						{waterApiError(trend.error, 'Unable to load trend.')}
+					</Alert>
+				) : points.some(([, value]) => value !== null) ? (
+					<CustomApexChart
 						series={[
 							{
-								name: label,
-								data: points.map((point) => ({
-									x: Date.parse(point.timestamp),
-									y: point.value,
-								})),
+								name: `${title} · ${label}${unit ? ` (${unit})` : ''}`,
+								data: points,
 							},
 						]}
-						options={{
-							chart: {
-								animations: { enabled: false },
-								toolbar: { show: false },
-								background: 'transparent',
-								foreColor: theme.palette.text.secondary,
-							},
-							theme: { mode: theme.palette.mode },
-							colors: [theme.palette.success.main],
-							stroke: { curve: 'straight', width: 2 },
-							markers: { size: 3 },
-							xaxis: { type: 'datetime', labels: { datetimeUTC: false } },
-							yaxis: { title: { text: unit ?? '' } },
-							tooltip: {
-								x: { format: 'dd MMM yyyy HH:mm' },
-								y: {
-									formatter: (value) =>
-										value === null
-											? 'N/A'
-											: `${value}${unit ? ` ${unit}` : ''}`,
-								},
-							},
-							noData: { text: 'No trend data available for this period.' },
-						}}
+						type="line"
+						colors={colors}
+						xAxesType="datetime"
+						height="100%"
+						unit={unit}
 					/>
-					{(trend.data.meta.from || trend.data.meta.to) && (
-						<Box
-							sx={{
-								display: 'flex',
-								flexWrap: 'wrap',
-								gap: 1,
-								mt: 1.5,
-								p: 1.5,
-								bgcolor: 'action.hover',
-								borderRadius: 2,
-								color: 'text.secondary',
-							}}
-						>
-							<Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>
-								From:{' '}
-								<time dateTime={trend.data.meta.from ?? undefined}>
-									{formatTrendTimestamp(trend.data.meta.from)}
-								</time>
-							</Typography>
-							<Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>
-								To:{' '}
-								<time dateTime={trend.data.meta.to ?? undefined}>
-									{formatTrendTimestamp(trend.data.meta.to)}
-								</time>
-							</Typography>
-						</Box>
-					)}
-				</>
-			)}
+				) : (
+					<NoDataFound message="No machine readings received yet — data appears once the device reports" />
+				)}
+			</Box>
 		</Box>
 	);
 }

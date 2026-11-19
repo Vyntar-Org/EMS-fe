@@ -1,17 +1,17 @@
-export const MOTOR_FEEDBACK_CONFIRM_MS = 30000;
 // Independent of backend command acknowledgment timeout.
-export const MOTOR_OPERATION_MAX_MS = 120000;
+export const MOTOR_OPERATION_MAX_MS = 15000;
+export const MOTOR_SUCCESS_DISPLAY_MS = 1200;
+export const MOTOR_FAILURE_DISPLAY_MS = 2500;
 
 export const operationMessages = {
 	requestFailed: 'Unable to send the motor request. Please try again.',
-	conflict:
-		'Another motor operation is in progress. Please try again after it finishes.',
+	server: 'Internal server error. Please try again.',
+	network: 'Unable to connect to the server. Please try again.',
+	conflict: 'Another motor operation is in progress. Please wait.',
 	deliveryFailed:
-		'Motor request could not be delivered. Please check the connection.',
-	timedOut:
-		'Motor response was not received. Please verify the motor status before trying again.',
-	unconfirmed:
-		'The requested motor state is not yet confirmed. Please check its status.',
+		'The motor request could not be sent. Please check the device connection.',
+	commandFailed: 'Motor operation failed. Please try again.',
+	unconfirmed: 'Motor is not responding. Please try again.',
 };
 
 export function feedbackConfirmsOperation(machine, operation, command) {
@@ -52,10 +52,17 @@ export function feedbackConfirmsOperation(machine, operation, command) {
 	);
 }
 
-export function operationFailureMessage(status) {
-	return status === 409
-		? operationMessages.conflict
-		: status === 502
-		  ? operationMessages.deliveryFailed
-		  : operationMessages.requestFailed;
+export function operationFailureMessage(failure) {
+	switch (failure?.status) {
+		case 409:
+			return operationMessages.conflict;
+		case 500:
+			return operationMessages.server;
+		case 502:
+			return operationMessages.deliveryFailed;
+		default:
+			return failure instanceof TypeError
+				? operationMessages.network
+				: operationMessages.requestFailed;
+	}
 }

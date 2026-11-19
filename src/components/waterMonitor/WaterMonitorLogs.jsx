@@ -34,8 +34,10 @@ import {
 } from './ohtLogModel';
 import { getOHTLogs, getOHTMachineList, ohtLogsError } from './ohtLogsApi';
 
-// Mirror WaterLogs.jsx exactly: rolling 24 hours, preserving the current time.
-const defaultRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
+const defaultRange = () => {
+	const now = dayjs();
+	return [now.startOf('month'), now];
+};
 const parameterOptions = OHT_LOG_FIELDS.slice(1).map(({ key, label }) => ({
 	value: key,
 	label,
@@ -287,6 +289,7 @@ export default function WaterMonitorLogs() {
 					<Grid item xs={12} sm md={2.5} lg={2.2}>
 						<CustomAutocomplete
 							multiple
+							selectAll
 							options={parameterOptions}
 							value={parameters ?? []}
 							onChange={(selected) => {

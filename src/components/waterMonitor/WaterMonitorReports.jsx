@@ -31,8 +31,18 @@ import {
 } from './waterReportModel';
 import { getWaterReport, waterReportError } from './waterReportsApi';
 
+const DEFAULT_TAB = 'daily-consumption';
+
 function initialPayload() {
-	return { month: dayjs(new Date()), year: dayjs(new Date()) };
+	const now = dayjs();
+	return { month: now, year: now };
+}
+
+function periodFilters(type, { month, year }) {
+	return reportParams(type, {
+		month: month?.isValid?.() ? month.month() + 1 : null,
+		year: year?.isValid?.() ? year.year() : null,
+	});
 }
 
 function ReportAction({
@@ -72,11 +82,19 @@ function ReportAction({
 
 export default function WaterMonitorReports() {
 	const { user } = useAuth();
-	const [selectedTab, setSelectedTab] = useState('daily-consumption');
+	const scope = String(
+		user?.id ?? user?.username ?? user?.email ?? 'authenticated'
+	);
+	const [selectedTab, setSelectedTab] = useState(DEFAULT_TAB);
 	const [payload, setPayload] = useState(initialPayload);
 	const [search, setSearch] = useState(null);
-	const [submitted, setSubmitted] = useState(null);
-	const [ready, setReady] = useState(false);
+	const [submitted, setSubmitted] = useState(() => ({
+		type: DEFAULT_TAB,
+		filters: periodFilters(reportTypeFor(DEFAULT_TAB), payload),
+		deviceSearch: null,
+		scope,
+		generation: 0,
+	}));
 	const [validation, setValidation] = useState('');
 	const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 50 });
 	const [downloadAnchor, setDownloadAnchor] = useState(null);
@@ -86,21 +104,18 @@ export default function WaterMonitorReports() {
 	const generation = useRef(0);
 	const knownMachines = useRef({ scope: null, rows: [] });
 	const type = reportTypeFor(selectedTab);
-	const scope = String(
-		user?.id ?? user?.username ?? user?.email ?? 'authenticated'
-	);
 	useEffect(
 		() => () => {
 			generation.current++;
 		},
 		[scope]
 	);
-	const active = ready && submitted?.scope === scope;
+	const active = Boolean(user && submitted?.scope === scope);
 	const query = useQuery({
 		queryKey: ['water-monitor', scope, 'reports', active ? submitted : 'idle'],
 		queryFn: ({ signal }) =>
 			getWaterReport(submitted.type, submitted.filters, { signal }),
-		enabled: Boolean(user && active),
+		enabled: active,
 		retry: false,
 		refetchOnWindowFocus: false,
 		refetchOnReconnect: false,
@@ -144,7 +159,7 @@ export default function WaterMonitorReports() {
 	}
 	function clearResults() {
 		generation.current++;
-		setReady(false);
+		setSubmitted(null);
 		setValidation('');
 		resetPage();
 		setExportError('');
@@ -156,31 +171,33 @@ export default function WaterMonitorReports() {
 	}
 	function changeTab(value) {
 		setSelectedTab(value);
-		clearResults();
+		submitReport(value);
 	}
 	function runSearch() {
 		if (loading) {
 			return;
 		}
+		submitReport(selectedTab);
+	}
+	function submitReport(tab) {
+		const reportType = reportTypeFor(tab);
 		try {
-			const filters = reportParams(type, {
-				month: payload.month?.isValid?.() ? payload.month.month() + 1 : null,
-				year: payload.year?.isValid?.() ? payload.year.year() : null,
-			});
+			const filters = periodFilters(reportType, payload);
 			setSubmitted({
-				type: selectedTab,
+				type: tab,
 				filters,
 				deviceSearch: search,
 				scope,
 				generation: ++generation.current,
 			});
-			setReady(true);
 			setValidation('');
 			setExportError('');
+			setDownloadAnchor(null);
 			resetPage();
 		} catch {
+			clearResults();
 			setValidation(
-				type.daily
+				reportType.daily
 					? 'Please select a valid month and year.'
 					: 'Please select a valid year.'
 			);

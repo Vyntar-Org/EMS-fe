@@ -16,9 +16,8 @@ export function motorIdFor(machine) {
 	// Verified backend mapping, not a slave primary-key guess:
 	// apps/applications/oht/apis/motor_control.py resolves
 	// Slave.objects.filter(device=device, slave_index=motor_id).
-	// Use the current device channel before historical command information.
-	const id =
-		machine.motor_id ?? machine.slave_index ?? machine.last_command?.motor_id;
+	// The latest command is device-wide and may refer to another motor.
+	const id = machine.motor_id ?? machine.slave_index;
 	return (typeof id === 'number' ||
 		(typeof id === 'string' && id.trim() !== '')) &&
 		Number.isInteger(Number(id)) &&
@@ -74,34 +73,37 @@ export function commandPollInterval(query) {
 export function motorControlReason(
 	machine,
 	state,
-	{ locked, failed, blockedReason } = {}
+	{ locked, failed, blockedReason, unavailable } = {}
 ) {
 	if (state.mode === 'Manual') {
-		return 'Motor control is disabled in Manual mode. Switch to Auto mode.';
+		return 'Motor control is disabled in Manual mode. Switch to Auto mode to enable remote control.';
 	}
-	if (state.mode !== 'Auto') {
-		return 'Motor control requires confirmed Auto mode.';
+	if (unavailable) {
+		return 'Motor control is unavailable.';
+	}
+	if (machine.status !== 'ONLINE') {
+		return 'Motor control is unavailable while the device is offline.';
 	}
 	if (blockedReason) {
 		return blockedReason;
 	}
 	if (locked) {
-		return 'Another motor command is already in progress for this device, or its status is being checked.';
+		return 'A motor operation is already in progress. Please wait.';
+	}
+	if (state.mode !== 'Auto') {
+		return 'Motor control mode is unavailable.';
+	}
+	if (machine.remote_control_eligible !== true) {
+		return 'Remote motor control is currently unavailable for this machine.';
+	}
+	if (!machine.device_uid || motorIdFor(machine) === null) {
+		return 'Motor configuration is incomplete.';
+	}
+	if (state.motor === 'Unknown') {
+		return 'Current motor status is unavailable.';
 	}
 	if (failed) {
 		return 'Refresh machine information before issuing a command.';
-	}
-	if (!machine.device_uid) {
-		return 'Device UID is unavailable.';
-	}
-	if (motorIdFor(machine) === null) {
-		return 'Motor ID mapping is unavailable for this machine.';
-	}
-	if (state.connection !== 'Online') {
-		return 'Motor control is unavailable while the device is offline.';
-	}
-	if (state.motor === 'Unknown') {
-		return 'Motor feedback is unavailable.';
 	}
 	return '';
 }

@@ -12,8 +12,9 @@ import {
 } from './motorCommandState';
 import {
 	feedbackConfirmsOperation,
-	MOTOR_FEEDBACK_CONFIRM_MS,
+	MOTOR_FAILURE_DISPLAY_MS,
 	MOTOR_OPERATION_MAX_MS,
+	MOTOR_SUCCESS_DISPLAY_MS,
 	operationFailureMessage,
 	operationMessages,
 } from './motorOperation';
@@ -32,36 +33,24 @@ export default function useWaterMotorCommand({
 	scope,
 	listKey,
 	failed,
-	notify,
 }) {
 	const client = useQueryClient();
 	const [local, setLocal] = useState(null);
 	const [error, setError] = useState('');
 	const [refreshed, setRefreshed] = useState('');
 	const [operation, setOperation] = useState(null);
+	const [outcome, setOutcome] = useState(null);
 	const activeOperation = useRef(null);
-	const notices = useRef(notify);
-	notices.current = notify;
-	const toastId = `oht-motor:${scope}:${deviceUid}`;
-	function updateOperation(next) {
+	const updateOperation = (next) => {
 		activeOperation.current = next;
 		setOperation(next);
-	}
-	function completeOperation(current, message, severity) {
+	};
+	function completeOperation(current, message, severity = 'error') {
 		if (!mounted.current || activeOperation.current?.token !== current.token) {
 			return;
 		}
 		updateOperation(null);
-		notices.current?.showToast(
-			severity === 'success'
-				? `${current.name} motor ${message}`
-				: `${current.name} motor: ${message}`,
-			severity,
-			{
-				id: toastId,
-				duration: 4000,
-			}
-		);
+		setOutcome({ ...current, message, severity });
 	}
 	const posting = useRef(false);
 	const mounted = useRef(true);
@@ -70,9 +59,6 @@ export default function useWaterMotorCommand({
 		mounted.current = true;
 		return () => {
 			mounted.current = false;
-			if (activeOperation.current) {
-				notices.current?.dismissToast(toastId);
-			}
 			activeOperation.current = null;
 		};
 	}, []);
@@ -107,13 +93,14 @@ export default function useWaterMotorCommand({
 			command?.status === 'ACKED' &&
 			String(command.id) === String(operation.commandId)
 	);
+	const pollingFeedback = operation?.commandId !== undefined;
 	// Same query key as the page: observers share one authenticated request and
 	// update cards/summary together. No new telemetry endpoint or parameters.
 	const feedback = useQuery({
 		queryKey: listKey,
 		queryFn: ({ signal }) => getWaterMachines({ signal }),
-		enabled: awaitingFeedback,
-		refetchInterval: awaitingFeedback ? 2000 : false,
+		enabled: pollingFeedback,
+		refetchInterval: pollingFeedback ? 2000 : false,
 		refetchIntervalInBackground: false,
 		retry: false,
 	});
@@ -121,8 +108,11 @@ export default function useWaterMotorCommand({
 		if (!operation || operation.commandId === undefined) {
 			return;
 		}
-		if (status.isError) {
+		if (Date.now() - operation.startedAt >= MOTOR_OPERATION_MAX_MS) {
 			completeOperation(operation, operationMessages.unconfirmed, 'warning');
+			return;
+		}
+		if (status.isError) {
 			return;
 		}
 		if (!command) {
@@ -137,13 +127,11 @@ export default function useWaterMotorCommand({
 			return;
 		}
 		if (command.status === 'FAILED' || command.status === 'TIMED_OUT') {
-			completeOperation(
-				operation,
-				command.status === 'TIMED_OUT'
-					? operationMessages.timedOut
-					: operationMessages.deliveryFailed,
-				'error'
-			);
+			if (command.status === 'TIMED_OUT') {
+				completeOperation(operation, operationMessages.unconfirmed, 'warning');
+			} else {
+				completeOperation(operation, operationMessages.commandFailed);
+			}
 			return;
 		}
 		if (!awaitingFeedback) {
@@ -159,13 +147,11 @@ export default function useWaterMotorCommand({
 			completeOperation(
 				operation,
 				operation.action === 1
-					? 'turned ON successfully.'
-					: 'turned OFF successfully.',
+					? 'Motor Started Successfully'
+					: 'Motor Stopped Successfully',
 				'success'
 			);
 			client.invalidateQueries({ queryKey: listKey });
-		} else if (!operation.acknowledgedAt) {
-			updateOperation({ ...operation, acknowledgedAt: Date.now() });
 		}
 	}, [
 		operation,
@@ -175,20 +161,6 @@ export default function useWaterMotorCommand({
 		feedback.isError,
 		machines,
 	]);
-	useEffect(() => {
-		if (!awaitingFeedback || !operation?.acknowledgedAt) {
-			return;
-		}
-		const timer = setTimeout(
-			() =>
-				completeOperation(operation, operationMessages.unconfirmed, 'warning'),
-			Math.max(
-				0,
-				operation.acknowledgedAt + MOTOR_FEEDBACK_CONFIRM_MS - Date.now()
-			)
-		);
-		return () => clearTimeout(timer);
-	}, [awaitingFeedback, operation?.token, operation?.acknowledgedAt]);
 	// A separate frontend deadline covers stalled submission and acknowledgment.
 	useEffect(() => {
 		if (!operation) {
@@ -202,6 +174,24 @@ export default function useWaterMotorCommand({
 		);
 		return () => clearTimeout(timer);
 	}, [operation?.token]);
+	useEffect(() => {
+		if (!outcome) {
+			return;
+		}
+		const timer = setTimeout(
+			dismissDialog,
+			outcome.severity === 'success'
+				? MOTOR_SUCCESS_DISPLAY_MS
+				: MOTOR_FAILURE_DISPLAY_MS
+		);
+		return () => clearTimeout(timer);
+	}, [outcome]);
+	function dismissDialog() {
+		setOutcome(null);
+		if (outcome?.severity === 'warning') {
+			client.invalidateQueries({ queryKey: listKey });
+		}
+	}
 	const resolution =
 		tracking && observed && (command === null || isCommandTerminal(command))
 			? `${target}:${command?.id ?? 'none'}:${command?.status ?? 'none'}`
@@ -245,10 +235,11 @@ export default function useWaterMotorCommand({
 		const currentState = waterMachineState(machine);
 		if (
 			activeOperation.current ||
+			outcome ||
 			![0, 1].includes(action) ||
 			action !== (currentState.motor === 'Running' ? 0 : 1) ||
 			posting.current ||
-			motorControlReason(machine, waterMachineState(machine), {
+			motorControlReason(machine, currentState, {
 				locked,
 				failed,
 			})
@@ -271,13 +262,6 @@ export default function useWaterMotorCommand({
 			startedAt,
 		};
 		updateOperation(started);
-		notices.current?.showToast(
-			action === 1
-				? `Starting ${started.name} motor... Please wait.`
-				: `Stopping ${started.name} motor... Please wait.`,
-			'info',
-			{ id: toastId, loading: true }
-		);
 		setError('');
 		setLocal({ submitting: true });
 		try {
@@ -299,11 +283,7 @@ export default function useWaterMotorCommand({
 			}
 		} catch (failure) {
 			if (mounted.current) {
-				completeOperation(
-					started,
-					operationFailureMessage(failure?.status),
-					failure?.status === 409 ? 'warning' : 'error'
-				);
+				completeOperation(started, operationFailureMessage(failure));
 				setError(
 					failure?.status === 409
 						? 'Another motor command is already in progress for this device.'
@@ -330,6 +310,18 @@ export default function useWaterMotorCommand({
 		}
 	}
 	return {
+		dialog: operation ?? outcome,
+		dismissDialog,
+		refreshStatus: () =>
+			Promise.all([
+				client.fetchQuery({
+					queryKey: listKey,
+					queryFn: ({ signal }) => getWaterMachines({ signal }),
+				}),
+				...(tracking && !local?.submitting
+					? [status.refetch({ cancelRefetch: false, throwOnError: true })]
+					: []),
+			]),
 		command,
 		locked,
 		busy: Boolean(

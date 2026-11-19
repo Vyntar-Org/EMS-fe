@@ -8,10 +8,6 @@ import {
 	Button,
 	Alert,
 	CircularProgress,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogTitle,
 	IconButton,
 	InputAdornment,
 	TextField,
@@ -22,18 +18,30 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 import { useAuth } from '../../contexts/AuthContext';
+import PremiumModal from '../common/PremiumModal';
 
-import { waterApiError } from './motorCommandState';
+import { motorControlReason, waterApiError } from './motorCommandState';
+import MotorOperationDialog from './MotorOperationDialog';
 import { useWaterConfig } from './useWaterMachines';
 import WaterMachineCard from './WaterMachineCard';
-import { matchesWaterMachine } from './waterMachinePresentation';
+import {
+	matchesWaterMachine,
+	waterMachineState,
+	waterMachineTitle,
+} from './waterMachinePresentation';
 import WaterMachineTrend from './WaterMachineTrend';
 import { getWaterMachines } from './waterMonitorApi';
 import WaterMonitorMachineListSkeleton from './WaterMonitorMachineListSkeleton';
 import { useWaterMotorOperations } from './WaterMotorOperations';
 import './waterMonitor.css';
 
-function DeviceMachineCards({ machines, failed, search, onTrend }) {
+function DeviceMachineCards({
+	machines,
+	failed,
+	search,
+	onTrend,
+	onMotorRequest,
+}) {
 	const { controls } = useWaterMotorOperations();
 	const control = controls[machines[0].device_uid];
 	return machines
@@ -46,6 +54,7 @@ function DeviceMachineCards({ machines, failed, search, onTrend }) {
 				commandControl={control}
 				trendEnabled
 				onTrend={() => onTrend(machine)}
+				onMotorRequest={onMotorRequest}
 			/>
 		));
 }
@@ -59,6 +68,7 @@ export default function WaterMonitorMachineList() {
 	const listKey = ['water-monitor', scope, 'machine-list'];
 	const [search, setSearch] = useState('');
 	const [trendMachine, setTrendMachine] = useState(null);
+	const [confirmation, setConfirmation] = useState(null);
 	const dashboard = useQuery({
 		queryKey: listKey,
 		queryFn: ({ signal }) => getWaterMachines({ signal }),
@@ -71,7 +81,16 @@ export default function WaterMonitorMachineList() {
 				: 30000,
 		refetchIntervalInBackground: false,
 	});
-	const { register } = useWaterMotorOperations();
+	const { register, controls } = useWaterMotorOperations();
+	const pendingDialog = Object.values(controls).find(
+		(control) => control.dialog
+	);
+	const operationToken = pendingDialog?.dialog.token;
+	useEffect(() => {
+		if (operationToken) {
+			setConfirmation(null);
+		}
+	}, [operationToken]);
 	useEffect(() => {
 		const entries = {};
 		for (const machine of dashboard.data?.machines ?? []) {
@@ -91,6 +110,34 @@ export default function WaterMonitorMachineList() {
 		register(entries);
 	}, [register, scope, dashboard.data, dashboard.isError]);
 	const allMachines = dashboard.data?.machines ?? [];
+	const target =
+		confirmation &&
+		allMachines.find(
+			(machine) =>
+				machine.slave_id === confirmation.slaveId &&
+				machine.device_uid === confirmation.deviceUid
+		);
+	const targetControl = target && controls[target.device_uid];
+	let confirmationReason = '';
+	if (confirmation) {
+		if (!target || !targetControl) {
+			confirmationReason = 'Motor control is unavailable.';
+		} else {
+			const state = waterMachineState(target);
+			confirmationReason = motorControlReason(target, state, {
+				locked: targetControl.locked,
+				failed: dashboard.isError,
+				blockedReason: targetControl.blockedReason,
+			});
+			if (
+				!confirmationReason &&
+				confirmation.action !== (state.motor === 'Running' ? 0 : 1)
+			) {
+				confirmationReason =
+					'Motor status changed. Review its current status before trying again.';
+			}
+		}
+	}
 	const machines = allMachines.filter((machine) =>
 		matchesWaterMachine(machine, search)
 	);
@@ -247,30 +294,54 @@ export default function WaterMonitorMachineList() {
 							failed={dashboard.isError}
 							search={search}
 							onTrend={setTrendMachine}
+							onMotorRequest={(machine, action) =>
+								setConfirmation({
+									action,
+									slaveId: machine.slave_id,
+									deviceUid: machine.device_uid,
+									name:
+										machine.motor_name ||
+										machine.slave_name ||
+										machine.name ||
+										`Machine ${machine.slave_id}`,
+								})
+							}
 						/>
 					))}
 				</Box>
 			)}
-			<Dialog
+			<PremiumModal
 				open={Boolean(trendMachine)}
 				onClose={() => setTrendMachine(null)}
-				maxWidth="md"
-				fullWidth
+				title={trendMachine ? `${waterMachineTitle(trendMachine)} - Trend` : ''}
+				confirmText={null}
+				cancelText={null}
+				type="chart"
 			>
-				<DialogTitle>{trendMachine?.name} - Trend</DialogTitle>
-				<DialogContent>
-					{trendMachine && (
-						<WaterMachineTrend
-							key={scope + trendMachine.slave_id}
-							machine={trendMachine}
-							scope={scope}
-						/>
-					)}
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setTrendMachine(null)}>Close</Button>
-				</DialogActions>
-			</Dialog>
+				{trendMachine && (
+					<WaterMachineTrend
+						key={scope + trendMachine.slave_id}
+						machine={trendMachine}
+						scope={scope}
+					/>
+				)}
+			</PremiumModal>
+			{(pendingDialog || confirmation) && (
+				<MotorOperationDialog
+					operation={pendingDialog?.dialog}
+					confirmation={confirmation}
+					confirmationReason={confirmationReason}
+					onConfirm={() => {
+						if (!confirmationReason) {
+							targetControl.submit(target, confirmation.action);
+						}
+					}}
+					onClose={
+						pendingDialog?.dismissDialog ?? (() => setConfirmation(null))
+					}
+					onRefresh={pendingDialog?.refreshStatus}
+				/>
+			)}
 		</Box>
 	);
 }

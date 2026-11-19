@@ -19,45 +19,59 @@ test('motor mapping follows verified device slave_index contract, never slave or
 		motorIdFor({ slave_index: 4, last_command: { motor_id: 8 } }),
 		4
 	);
-	assert.equal(motorIdFor({ last_command: { motor_id: 8 } }), 8);
+	assert.equal(motorIdFor({ last_command: { motor_id: 8 } }), null);
 	assert.equal(motorIdFor({ motor_id: 2, last_command: { motor_id: 8 } }), 2);
 	for (const motor_id of [null, '', -1, 0, 1.5, 'bad']) {
 		assert.equal(motorIdFor({ motor_id }), null);
 	}
 });
 
-test('only normalized AUTO mode allows control; Manual and unknown modes stay disabled', () => {
+test('motor control requires Auto mode and strict API permission regardless of strategy', () => {
 	const machine = {
 		device_uid: 'UID',
 		slave_index: 2,
 		status: 'ONLINE',
 		latest_ts: null,
-		motor_run_state: false,
+		motor_run_state: '1',
 	};
-	for (const control_mode of ['auto', 'AUTO', ' Auto ']) {
-		const current = { ...machine, control_mode };
-		assert.equal(motorControlReason(current, waterMachineState(current)), '');
-	}
-	for (const control_mode of [
-		'manual',
-		'MANUAL',
-		' Manual ',
-		null,
-		undefined,
-		'',
-		'unknown',
-		1,
+	for (const [
+		control_mode,
+		control_strategy,
+		remote_control_eligible,
+		reason,
+	] of [
+		['auto', 'REMOTE', true, /^$/],
+		['auto', 'LEVEL', true, /^$/],
+		['auto', null, true, /^$/],
+		['auto', undefined, true, /^$/],
+		[' Auto ', ' remote ', true, /^$/],
+		['manual', 'REMOTE', true, /Manual mode/],
+		['manual', null, true, /Manual mode/],
+		[' MANUAL ', null, false, /Manual mode/],
+		['auto', 'REMOTE', false, /currently unavailable for this machine/],
+		['auto', 'REMOTE', null, /currently unavailable for this machine/],
+		['auto', 'REMOTE', undefined, /currently unavailable for this machine/],
+		['auto', 'REMOTE', 'true', /currently unavailable for this machine/],
+		['auto', 'REMOTE', 1, /currently unavailable for this machine/],
+		[null, 'REMOTE', true, /mode is unavailable/],
+		[undefined, 'REMOTE', true, /mode is unavailable/],
+		['unexpected', 'REMOTE', true, /mode is unavailable/],
+		[['auto'], 'REMOTE', true, /mode is unavailable/],
 	]) {
-		const current = { ...machine, control_mode };
-		assert.match(
-			motorControlReason(current, waterMachineState(current)),
-			/Manual mode|Auto mode/
-		);
+		const current = {
+			...machine,
+			control_mode,
+			control_strategy,
+			remote_control_eligible,
+		};
+		const state = waterMachineState(current);
+		assert.equal(state.motor, 'Running');
+		assert.match(motorControlReason(current, state), reason);
 	}
-	const offline = { ...machine, control_mode: 'auto', status: 'OFFLINE' };
+	const manual = { ...machine, control_mode: 'manual', status: 'OFFLINE' };
 	assert.match(
-		motorControlReason(offline, waterMachineState(offline)),
-		/offline/
+		motorControlReason(manual, waterMachineState(manual), { locked: true }),
+		/Manual mode/
 	);
 });
 
@@ -89,7 +103,10 @@ test('device command lock applies to both motors; connectivity and feedback rema
 		device_uid: 'UID',
 		latest_ts: '2000-01-01T00:00:00Z',
 		status: 'ONLINE',
-		control_mode: 'AUTO',
+		control_mode: 'auto',
+		remote_control_eligible: true,
+		control_strategy: 'REMOTE',
+		slave_index: 2,
 		motor_run_state: 0,
 		last_command: { motor_id: 9, status: 'ACKED', command: 1 },
 	};
@@ -103,14 +120,27 @@ test('device command lock applies to both motors; connectivity and feedback rema
 			/already in progress/
 		);
 	}
-	const offline = waterMachineState({
-		...machine,
-		status: 'OFFLINE',
-		motor_run_state: 1,
-	});
-	assert.equal(offline.motor, 'Running');
-	assert.match(motorControlReason(machine, offline), /offline/);
-	assert.match(motorControlReason({ device_uid: 'UID' }, state), /mapping/);
+	const offline = { ...machine, status: 'OFFLINE', motor_run_state: 1 };
+	assert.equal(waterMachineState(offline).motor, 'Running');
+	assert.match(
+		motorControlReason(offline, waterMachineState(offline), { locked: true }),
+		/offline/
+	);
+	assert.match(
+		motorControlReason({ ...machine, control_strategy: 'LEVEL' }, state, {
+			locked: true,
+		}),
+		/already in progress/
+	);
+	assert.match(
+		motorControlReason({ ...machine, slave_index: undefined }, state),
+		/configuration is incomplete/
+	);
+	const invalid = { ...machine, motor_run_state: 'running' };
+	assert.match(
+		motorControlReason(invalid, waterMachineState(invalid)),
+		/status is unavailable/
+	);
 });
 
 test('most recent device command is reconciled across slave cards', () => {

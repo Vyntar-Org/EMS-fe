@@ -333,6 +333,9 @@ const CustomApexChart = ({
 	tickAmount = 6,
 	showToolbar = true,
 	minimal = false, // strips background grid + intermediate ticks down to baseline X/Y axes with only start/end labels
+	preservePoints = false,
+	csvExport,
+	showSingleSeriesLegend,
 	customOptions = {}, // Only for absolute emergency overrides
 }) => {
 	const chartContainerRef = useRef(null);
@@ -347,8 +350,8 @@ const CustomApexChart = ({
 	);
 
 	const renderSeries = useMemo(
-		() => downsampleSeries(series, pointCount),
-		[series, pointCount]
+		() => (preservePoints ? series : downsampleSeries(series, pointCount)),
+		[series, pointCount, preservePoints]
 	);
 
 	const effectiveXAxesType = useMemo(() => {
@@ -600,10 +603,13 @@ const CustomApexChart = ({
 						return '';
 					}
 					const color = w.globals.colors?.[idx] || '#637381';
+					const shiftDay =
+						w.config.series?.[idx]?.data?.[dataPointIndex]?.shiftDay;
+					const shiftLabel = shiftDay ? ` · Shift day ${shiftDay}` : '';
 					return `<div class="capx-tooltip-row"><span class="capx-tooltip-dot" style="background:${color}"></span><span class="capx-tooltip-name">${escapeHtml(
-						name
-					)}</span><span class="capx-tooltip-value">${formatValue(
-						raw
+						name + shiftLabel
+					)}</span><span class="capx-tooltip-value">${escapeHtml(
+						formatValue(raw)
 					)}</span></div>`;
 				})
 				.join('');
@@ -620,6 +626,7 @@ const CustomApexChart = ({
 				height: chartHeight,
 				toolbar: {
 					show: showToolbar,
+					...(csvExport && { export: { csv: csvExport } }),
 					tools: {
 						download: true,
 						selection: false,
@@ -666,6 +673,7 @@ const CustomApexChart = ({
 			dataLabels: { enabled: false },
 			legend: {
 				show: !useCustomLegend,
+				...(showSingleSeriesLegend && { showForSingleSeries: true }),
 				position: 'bottom',
 				horizontalAlign: 'left',
 				fontSize: '13px',
@@ -776,6 +784,8 @@ const CustomApexChart = ({
 			resolvedTitle,
 			tickAmount,
 			showToolbar,
+			csvExport,
+			showSingleSeriesLegend,
 			pointCount,
 			animationsEnabled,
 			buildTooltip,

@@ -72,15 +72,33 @@ test('numeric zero, raw level and decimal precision remain distinct from unknown
 	assert.equal(ohtControlMode(' AUTO '), 'Auto');
 	assert.equal(ohtControlMode('manual'), 'Manual');
 	assert.equal(ohtControlMode(null), 'Unknown');
+	assert.equal(
+		ohtLogValue(
+			{ control_mode: 'manual', control_strategy: 'LEVEL' },
+			'control_strategy'
+		),
+		'Level'
+	);
+	assert.equal(
+		ohtLogValue({ control_strategy: ' remote ' }, 'control_strategy'),
+		'Remote'
+	);
+	for (const value of [null, undefined, 'unexpected', ['LEVEL']]) {
+		assert.equal(
+			ohtLogValue({ control_strategy: value }, 'control_strategy'),
+			'—'
+		);
+	}
 });
 
 test('only verified units label columns; duplicate slave names use device identity and actual IDs', () => {
 	assert.deepEqual(ohtLogHeaders(ohtLogUnits()), [
 		'Date & Time',
 		'Tank Level',
-		'Flow Rate',
+		'Flow Rate (m³/h)',
 		'Totalizer',
 		'Control Mode',
+		'Control Strategy',
 		'Motor Status',
 	]);
 	assert.equal(

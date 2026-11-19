@@ -59,8 +59,11 @@ const rows = [
 		flowrate: 0,
 		totalizer: 15441.123456,
 		control_mode: 'auto',
+		control_strategy: 'LEVEL',
 		motor_run_state: '1',
 	},
+	{ timestamp: '2026-11-17T19:32:37', control_strategy: 'REMOTE' },
+	{ timestamp: '2026-11-17T19:22:37' },
 ];
 
 test('CSV export contains the selected machine, complete range, ordered columns, raw precision, zero and historical state labels', async () => {
@@ -73,9 +76,10 @@ test('CSV export contains the selected machine, complete range, ordered columns,
 	assert.deepEqual(matrix[3], [
 		'Date & Time',
 		'Tank Level (cm)',
-		'Flow Rate',
+		'Flow Rate (m³/h)',
 		'Totalizer',
 		'Control Mode',
+		'Control Strategy',
 		'Motor Status',
 	]);
 	assert.deepEqual(matrix[4], [
@@ -84,10 +88,13 @@ test('CSV export contains the selected machine, complete range, ordered columns,
 		'0',
 		'15441.123456',
 		'Auto',
+		'Level',
 		'Running',
 	]);
 	assert.equal(matrix[0][1], machine.slave_name);
 	assert.equal(matrix[1][1], filters.start_datetime);
+	assert.equal(matrix[5][5], 'Remote');
+	assert.equal(matrix[6][5], '—');
 });
 
 test('Excel has numeric raw readings and PDF preserves precision rather than rounding via the shared formatter', async () => {
@@ -97,17 +104,23 @@ test('Excel has numeric raw readings and PDF preserves precision rather than rou
 	const sheet = strFromU8(files['xl/worksheets/sheet1.xml']);
 	assert.match(sheet, /<c r="B5" s="1"><v>1450.123456<\/v>/);
 	assert.match(sheet, /<c r="C5" s="1"><v>0<\/v>/);
+	assert.match(sheet, /<c r="F5"[^>]*>.*?Level<\/t>/);
 	downloadOHTLogs('pdf', rows, machine, filters, {});
 	assert.equal(pdf[0][0].tank_level, '1450.123456');
 	assert.equal(pdf[0][0].flowrate, '0');
+	assert.deepEqual(
+		pdf[0].map((row) => row.control_strategy),
+		['Level', 'Remote', '—']
+	);
 	assert.deepEqual(
 		pdf[1].map((column) => column.header),
 		[
 			'Date & Time',
 			'Tank Level',
-			'Flow Rate',
+			'Flow Rate (m³/h)',
 			'Totalizer',
 			'Control Mode',
+			'Control Strategy',
 			'Motor Status',
 		]
 	);

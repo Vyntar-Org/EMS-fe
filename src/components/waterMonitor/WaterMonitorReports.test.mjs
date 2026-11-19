@@ -36,69 +36,65 @@ function fill(h) {
 	);
 }
 
-test('Reports default to the current month/year while cached results remain hidden until Search', () => {
+test('Reports load and render the current month and year on first open', async () => {
 	const h = harness();
+	const now = dayjs();
 	const tree = h.render();
 	assert.equal(
 		findProps(tree, (props) => props.label === 'Select Month').value.format(
 			'YYYY-MM'
 		),
-		dayjs(new Date()).format('YYYY-MM')
+		now.format('YYYY-MM')
 	);
 	assert.equal(
 		findProps(tree, (props) => props.label === 'Select Year').value.format(
 			'YYYY'
 		),
-		dayjs(new Date()).format('YYYY')
+		now.format('YYYY')
 	);
-	assert.equal(h.options.enabled, false);
-	assert.equal(tableProps(tree), undefined);
-	assert.equal(
-		findProps(tree, (props) => props.label === 'Download Excel or CSV')
-			.disabled,
-		true
-	);
-	assert.match(
-		h.html(),
-		/Select the required filters and click Search to view data/
-	);
-	assert.doesNotMatch(h.html(), /Pump &lt;North&gt;|Loading\.\.\./);
-	fill(h);
-	h.render();
-	assert.equal(h.options.enabled, false);
-	assert.equal(h.calls.length, 0);
+	assert.equal(h.options.enabled, true);
+	await h.options.queryFn({});
+	assert.deepEqual(h.calls.at(-1).slice(0, 2), [
+		'daily-consumption',
+		{ month: now.month() + 1, year: now.year() },
+	]);
+	h.query.isFetching = true;
+	assert.match(h.html(), /Loading\.\.\./);
+	h.query.isFetching = false;
+	assert.match(h.html(), /Pump &lt;North&gt;/);
 });
 
-test('all five report tabs stay idle until Search and submit only the selected API and required filters', async () => {
+test('all five tabs load the selected period with only the required filters', async () => {
 	const h = harness();
-	findProps(h.render(), (props) => props.label === 'Select Month').onChange(
-		null
-	);
-	findProps(h.render(), (props) => props.label === 'Select Year').onChange(
-		null
-	);
-	search(h);
-	assert.match(h.html(), /Please select a valid month and year/);
-	assert.equal(h.options.enabled, false);
-	for (const type of WATER_REPORT_TYPES) {
+	const selectTab = (id) =>
 		findProps(
 			h.render(),
 			(props) => props['aria-label'] === 'Water Monitoring reports'
-		).onChange(null, type.id);
+		).onChange(null, id);
+	const now = dayjs();
+	for (const type of WATER_REPORT_TYPES) {
+		selectTab(type.id);
 		h.render();
-		assert.equal(h.options.enabled, false);
-		fill(h);
-		h.render();
-		assert.equal(h.options.enabled, false);
-		search(h);
 		assert.equal(h.options.enabled, true);
 		await h.options.queryFn({});
 		assert.equal(h.calls.at(-1)[0], type.id);
 		assert.deepEqual(
 			h.calls.at(-1)[1],
-			type.daily ? { month: 11, year: 2026 } : { year: 2026 }
+			type.daily
+				? { month: now.month() + 1, year: now.year() }
+				: { year: now.year() }
 		);
 	}
+	selectTab('daily-consumption');
+	findProps(h.render(), (props) => props.label === 'Select Month').onChange(
+		null
+	);
+	search(h);
+	assert.match(h.html(), /Please select a valid month and year/);
+	assert.equal(h.options.enabled, false);
+	selectTab('monthly-consumption');
+	h.render();
+	assert.equal(h.options.enabled, true);
 });
 
 test('Reports hide old results on filter changes; Search enables shared table and downloads', () => {

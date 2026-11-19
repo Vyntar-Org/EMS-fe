@@ -1,18 +1,11 @@
 import { PowerSettingsNewRounded } from '@mui/icons-material';
 import {
-	Alert,
 	Box,
-	Button,
 	CircularProgress,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogTitle,
 	Switch,
 	Tooltip,
 	Typography,
 } from '@mui/material';
-import { useState } from 'react';
 
 import { motorControlReason } from './motorCommandState';
 
@@ -24,16 +17,21 @@ export default function WaterMotorControl({
 	preview,
 	control,
 	failed,
+	onRequest,
 }) {
-	const [confirm, setConfirm] = useState(null);
-	const reason =
-		preview || !control
-			? 'Motor control is unavailable.'
-			: motorControlReason(machine, state, {
-					locked: control.locked,
-					failed,
-					blockedReason: control.blockedReason,
-			  });
+	const waiting = Boolean(
+		control?.dialog &&
+			!control.dialog.message &&
+			String(control.dialog.slaveId) === String(machine.slave_id)
+	);
+	const reason = motorControlReason(machine, state, {
+		unavailable: preview || !control || !onRequest,
+		locked: control?.locked,
+		failed,
+		onRequest,
+		blockedReason: control?.blockedReason,
+	});
+	const canControlMotor = !reason;
 	const label =
 		state.motor === 'Running'
 			? 'ON'
@@ -43,14 +41,12 @@ export default function WaterMotorControl({
 	return (
 		<>
 			<Box
-				className={`wm-motor-control wm-motor-user-control wm-control-${state.motor.toLowerCase()} wm-control-mode-${state.mode.toLowerCase()}`}
+				className={`wm-motor-control wm-motor-user-control wm-control-${state.motor.toLowerCase()}`}
 			>
 				<Box className="wm-control-label">
 					<svg
 						className={`wm-control-motor ${
-							state.mode === 'Auto' && state.motor === 'Running'
-								? 'wm-control-motor-active'
-								: ''
+							state.motor === 'Running' ? 'wm-control-motor-active' : ''
 						}`}
 						viewBox="0 0 64 48"
 						aria-hidden="true"
@@ -96,11 +92,17 @@ export default function WaterMotorControl({
 					<Box>
 						<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
 							<Typography>Motor Control</Typography>
-							{control?.busy && (
+							{waiting && (
 								<CircularProgress
 									size={14}
-									color="inherit"
-									aria-label="Updating motor status"
+									color="info"
+									aria-label="Awaiting motor confirmation"
+									sx={{
+										'@media (prefers-reduced-motion: reduce)': {
+											animation: 'none',
+											'& circle': { animation: 'none' },
+										},
+									}}
 								/>
 							)}
 						</Box>
@@ -108,8 +110,10 @@ export default function WaterMotorControl({
 				</Box>
 				<Tooltip title={reason} describeChild>
 					<span
-						className="wm-toggle-target"
-						tabIndex={0}
+						className={`wm-toggle-target${
+							canControlMotor ? ' wm-toggle-enabled' : ''
+						}`}
+						tabIndex={canControlMotor ? undefined : 0}
 						role="group"
 						aria-label={`${title}: Motor control ${label}. ${reason}`}
 					>
@@ -130,82 +134,14 @@ export default function WaterMotorControl({
 							}
 							className="wm-industrial-switch"
 							color="success"
-							disabled={Boolean(reason)}
-							onChange={(_, checked) => setConfirm(checked ? 1 : 0)}
+							disabled={!canControlMotor}
+							onChange={(_, checked) => onRequest(machine, checked ? 1 : 0)}
 							checked={state.motor === 'Running'}
 							inputProps={{ 'aria-label': `${title} motor control` }}
 						/>
 					</span>
 				</Tooltip>
 			</Box>
-			<Dialog
-				open={confirm !== null}
-				onClose={() => setConfirm(null)}
-				maxWidth="xs"
-				fullWidth
-				aria-labelledby="motor-confirm-title"
-				PaperProps={{ sx: { borderRadius: 3 } }}
-			>
-				<DialogTitle
-					id="motor-confirm-title"
-					sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}
-				>
-					<PowerSettingsNewRounded
-						sx={{
-							color: confirm === 1 ? 'success.main' : 'warning.main',
-							bgcolor: 'action.hover',
-							borderRadius: 2,
-							p: 0.75,
-							width: 40,
-							height: 40,
-						}}
-					/>
-					{confirm === 1 ? 'Turn ON Motor?' : 'Turn OFF Motor?'}
-				</DialogTitle>
-				<DialogContent>
-					<Typography sx={{ mb: 1 }}>
-						{confirm === 1
-							? 'Are you sure you want to start this motor?'
-							: 'Are you sure you want to stop this motor?'}
-					</Typography>
-					<Typography fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>
-						{title}
-					</Typography>
-					{(reason ||
-						(confirm !== null &&
-							confirm !== (state.motor === 'Running' ? 0 : 1))) && (
-						<Alert severity="warning" sx={{ mt: 2 }}>
-							{reason ||
-								'Motor status changed. Review its current status before trying again.'}
-						</Alert>
-					)}
-				</DialogContent>
-				<DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-					<Button onClick={() => setConfirm(null)} color="inherit">
-						Cancel
-					</Button>
-					<Button
-						variant="contained"
-						color={confirm === 1 ? 'success' : 'warning'}
-						disabled={
-							Boolean(reason) || confirm !== (state.motor === 'Running' ? 0 : 1)
-						}
-						onClick={() => {
-							const action = confirm;
-							setConfirm(null);
-							if (
-								!reason &&
-								action !== null &&
-								action === (state.motor === 'Running' ? 0 : 1)
-							) {
-								control.submit(machine, action);
-							}
-						}}
-					>
-						{confirm === 1 ? 'Yes, Turn ON' : 'Yes, Turn OFF'}
-					</Button>
-				</DialogActions>
-			</Dialog>
 		</>
 	);
 }

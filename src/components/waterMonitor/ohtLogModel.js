@@ -1,9 +1,10 @@
 export const OHT_LOG_FIELDS = [
 	{ key: 'timestamp', label: 'Date & Time', size: 220 },
 	{ key: 'tank_level', label: 'Tank Level', size: 130 },
-	{ key: 'flowrate', label: 'Flow Rate', size: 130 },
+	{ key: 'flowrate', label: 'Flow Rate (m³/h)', size: 130 },
 	{ key: 'totalizer', label: 'Totalizer', size: 130 },
 	{ key: 'control_mode', label: 'Control Mode', size: 130 },
+	{ key: 'control_strategy', label: 'Control Strategy', size: 145 },
 	{ key: 'motor_run_state', label: 'Motor Status', size: 130 },
 ];
 
@@ -20,6 +21,18 @@ export function ohtMotorStatus(value) {
 		: [false, 0, '0'].includes(value)
 		  ? 'Stopped'
 		  : 'Unknown';
+}
+
+function formatControlStrategy(value) {
+	const strategy = typeof value === 'string' ? value.trim().toUpperCase() : '';
+	switch (strategy) {
+		case 'LEVEL':
+			return 'Level';
+		case 'REMOTE':
+			return 'Remote';
+		default:
+			return '—';
+	}
 }
 
 export function ohtLogTimestamp(value) {
@@ -61,6 +74,9 @@ export function ohtLogValue(row, key) {
 	}
 	if (key === 'control_mode') {
 		return ohtControlMode(row[key]);
+	}
+	if (key === 'control_strategy') {
+		return formatControlStrategy(row[key]);
 	}
 	if (key === 'motor_run_state') {
 		return ohtMotorStatus(row[key]);
