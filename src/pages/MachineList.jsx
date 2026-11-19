@@ -1,4 +1,3 @@
-import WaterMonitorPage from '../components/waterMonitor/WaterMonitorPage';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 
@@ -12,13 +11,14 @@ import SpinningMachineList from '../components/MachineList/SpinningMachineList.j
 import STPMachineList from '../components/MachineList/STPMachineList';
 import TemperatureMachineList from '../components/MachineList/TemperatureMachineList';
 import WaterMachineList from '../components/MachineList/WaterMachineList';
-import WaterMonitorMachineList from '../components/waterMonitor/WaterMonitorMachineList';
+import WaterMonitoringMachineList from '../components/MachineList/WaterMonitoring/WaterMonitoringMachineList';
 import WeatherStationMachineList from '../components/MachineList/WeatherStationMachineList';
+import WaterMonitoringPage from '../components/WaterMonitoring/WaterMonitoringPage';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const MACHINE_LIST_CONFIG = {
-	OHT: WaterMonitorMachineList,
-	WATER_MONITOR: WaterMonitorMachineList,
+	OHT: WaterMonitoringMachineList,
+	WATER_MONITOR: WaterMonitoringMachineList,
 	ENERGY: EnergyMachineList,
 	TEMPERATURE: TemperatureMachineList,
 	SOLAR: SolarMachineList,
@@ -42,7 +42,7 @@ const MachineList = () => {
 	const MachineListComponent = MACHINE_LIST_CONFIG[appCode];
 
 	return (
-		<WaterMonitorPage appCode={appCode}>
+		<WaterMonitoringPage appCode={appCode}>
 			<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
 				{MachineListComponent ? (
 					<MachineListComponent />
@@ -50,7 +50,7 @@ const MachineList = () => {
 					<>Machine List not found</>
 				)}
 			</Box>
-		</WaterMonitorPage>
+		</WaterMonitoringPage>
 	);
 };
 

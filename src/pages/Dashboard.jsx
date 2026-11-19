@@ -1,6 +1,5 @@
-import { lazy, Suspense } from 'react';
-import WaterMonitorPage from '../components/waterMonitor/WaterMonitorPage';
 import { Box } from '@mui/material';
+import { lazy, Suspense } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import EnergyDashboard from '../components/Dashboards/EnergyDashboard';
@@ -9,27 +8,28 @@ import FuelDashboard from '../components/Dashboards/FuelDashboard';
 import STPDashboard from '../components/Dashboards/STPDashboard';
 import WaterDashboard from '../components/Dashboards/WaterDashboard';
 import WeatherStationDashboard from '../components/Dashboards/WeatherStationDashboard';
+import WaterMonitoringPage from '../components/WaterMonitoring/WaterMonitoringPage';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
-const WaterDistributionDashboard = lazy(
+const WaterMonitoringDashboard = lazy(
 	() =>
-		import('../components/waterMonitor/dashboard/WaterDistributionDashboard')
+		import('../components/Dashboards/WaterMonitoring/WaterMonitoringDashboard')
 );
-function WaterMonitorDashboard() {
+function LazyWaterMonitoringDashboard() {
 	return (
 		<Suspense
 			fallback={
-				<Box sx={{ p: 2 }}>Loading Water Distribution dashboard...</Box>
+				<Box sx={{ p: 2 }}>Loading Water Monitoring dashboard...</Box>
 			}
 		>
-			<WaterDistributionDashboard />
+			<WaterMonitoringDashboard />
 		</Suspense>
 	);
 }
 
 const DASHBOARD_CONFIG = {
-	OHT: WaterMonitorDashboard,
-	WATER_MONITOR: WaterMonitorDashboard,
+	OHT: LazyWaterMonitoringDashboard,
+	WATER_MONITOR: LazyWaterMonitoringDashboard,
 	ENERGY: EnergyDashboard,
 	WATER: WaterDashboard,
 	FUEL: FuelDashboard,
@@ -48,11 +48,11 @@ const Dashboard = () => {
 	const DashboardComponent = DASHBOARD_CONFIG[appCode];
 
 	return (
-		<WaterMonitorPage appCode={appCode}>
+		<WaterMonitoringPage appCode={appCode}>
 			<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
 				{DashboardComponent ? <DashboardComponent /> : <>Dashboard not found</>}
 			</Box>
-		</WaterMonitorPage>
+		</WaterMonitoringPage>
 	);
 };
 

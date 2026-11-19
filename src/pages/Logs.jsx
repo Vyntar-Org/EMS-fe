@@ -11,13 +11,13 @@ import SpinningLogs from '../components/Logs/SpinningLogs.jsx';
 import STPLogs from '../components/Logs/STPLogs';
 import TemperatureLogs from '../components/Logs/TemperatureLogs';
 import WaterLogs from '../components/Logs/WaterLogs';
+import WaterMonitoringLogs from '../components/Logs/WaterMonitoring/WaterMonitoringLogs';
 import WeatherStationLogs from '../components/Logs/WeatherStationLogs';
-import WaterMonitorLogs from '../components/waterMonitor/WaterMonitorLogs';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const LOGS_CONFIG = {
-	OHT: WaterMonitorLogs,
-	WATER_MONITOR: WaterMonitorLogs,
+	OHT: WaterMonitoringLogs,
+	WATER_MONITOR: WaterMonitoringLogs,
 	ENERGY: EnergyLogs,
 	SOLAR: SolarLogs,
 	TEMPERATURE: TemperatureLogs,

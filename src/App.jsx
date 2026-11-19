@@ -1,7 +1,7 @@
 import { BrowserRouter } from 'react-router-dom';
 
 import { ToastProvider } from './components/common/PremiumToast';
-import WaterMotorOperations from './components/waterMonitor/WaterMotorOperations';
+import WaterMonitoringMotorOperations from './components/WaterMonitoring/WaterMonitoringMotorOperations';
 import { ApplicationProvider } from './contexts/ApplicationContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { CommonDataContextProvider } from './contexts/CommonDataContext';
@@ -14,9 +14,9 @@ function App() {
 				<ApplicationProvider>
 					<CommonDataContextProvider>
 						<ToastProvider>
-							<WaterMotorOperations>
+							<WaterMonitoringMotorOperations>
 								<AppRoutes />
-							</WaterMotorOperations>
+							</WaterMonitoringMotorOperations>
 						</ToastProvider>
 					</CommonDataContextProvider>
 				</ApplicationProvider>
