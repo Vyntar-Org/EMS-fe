@@ -1,5 +1,8 @@
 import { api } from '../../../helpers/api';
-import { numericReading, waterMonitoringEndpoint } from '../../WaterMonitoring/waterMonitoringService';
+import {
+	numericReading,
+	waterMonitoringEndpoint,
+} from '../../WaterMonitoring/waterMonitoringService';
 
 export async function getWaterMonitoringAnalytics(
 	{ slave_id, parameters, start_datetime, end_datetime },
@@ -11,9 +14,12 @@ export async function getWaterMonitoringAnalytics(
 		start_datetime,
 		end_datetime,
 	});
-	const response = await api.get(`${waterMonitoringEndpoint('analytics/')}?${query}`, {
-		signal,
-	});
+	const response = await api.get(
+		`${waterMonitoringEndpoint('analytics/')}?${query}`,
+		{
+			signal,
+		}
+	);
 	const readings = response?.data?.data;
 	if (response?.success !== true || !Array.isArray(readings)) {
 		throw { data: response };

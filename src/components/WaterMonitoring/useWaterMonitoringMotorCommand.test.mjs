@@ -5,7 +5,10 @@ import test from 'node:test';
 // Exercise the production hook's transitions with deterministic hook/query
 // adapters. Transport is mocked; no command is sent to equipment.
 const source = (
-	await readFile(new URL('./useWaterMonitoringMotorCommand.js', import.meta.url), 'utf8')
+	await readFile(
+		new URL('./useWaterMonitoringMotorCommand.js', import.meta.url),
+		'utf8'
+	)
 ).replace(/import\s+({[\s\S]*?})\s+from\s+'([^']+)';/g, (_, names, path) => {
 	if (path === 'react' || path === '@tanstack/react-query') {
 		return `const ${names} = globalThis.__motorHookRuntime;`;

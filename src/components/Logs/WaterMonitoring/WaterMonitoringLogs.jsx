@@ -40,10 +40,12 @@ const defaultRange = () => {
 	const now = dayjs();
 	return [now.startOf('month'), now];
 };
-const parameterOptions = WATER_MONITORING_LOG_FIELDS.slice(1).map(({ key, label }) => ({
-	value: key,
-	label,
-}));
+const parameterOptions = WATER_MONITORING_LOG_FIELDS.slice(1).map(
+	({ key, label }) => ({
+		value: key,
+		label,
+	})
+);
 const autocompleteSx = {
 	'& .MuiOutlinedInput-root': {
 		borderRadius: 2,
@@ -202,20 +204,26 @@ export default function WaterMonitoringLogs() {
 		setProgress({ count: 0, total: logs.data?.meta.total ?? 0 });
 		setExportError('');
 		try {
-			const result = await collectWaterMonitoringLogPages(getWaterMonitoringLogs, filters, {
-				signal: controller.signal,
-				onProgress: (next) => {
-					if (exportController.current === controller) {
-						setProgress(next);
-					}
-				},
-			});
+			const result = await collectWaterMonitoringLogPages(
+				getWaterMonitoringLogs,
+				filters,
+				{
+					signal: controller.signal,
+					onProgress: (next) => {
+						if (exportController.current === controller) {
+							setProgress(next);
+						}
+					},
+				}
+			);
 			if (!result.rows.length) {
 				throw new Error(
 					'No readings found for the selected machine and date range.'
 				);
 			}
-			const { downloadWaterMonitoringLogs } = await import('./waterMonitoringLogDownloads');
+			const { downloadWaterMonitoringLogs } = await import(
+				'./waterMonitoringLogDownloads'
+			);
 			if (!controller.signal.aborted) {
 				downloadWaterMonitoringLogs(
 					'xlsx',

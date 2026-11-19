@@ -16,9 +16,12 @@ export async function getWaterMonitoringLogs(filters, { signal } = {}) {
 		throw new Error('Invalid logs pagination.');
 	}
 	const query = new URLSearchParams({ ...selected, limit, offset });
-	const response = await api.get(`${waterMonitoringEndpoint('logs/')}?${query}`, {
-		signal,
-	});
+	const response = await api.get(
+		`${waterMonitoringEndpoint('logs/')}?${query}`,
+		{
+			signal,
+		}
+	);
 	// The shared authenticated client returns the JSON envelope, not an Axios wrapper.
 	if (response?.success !== true) {
 		throw {

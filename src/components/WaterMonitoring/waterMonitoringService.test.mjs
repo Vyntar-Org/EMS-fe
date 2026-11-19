@@ -5,7 +5,10 @@ import test from 'node:test';
 // Inject only the transport: exercise the production API functions without
 // requiring Vite, browser authentication, or a live organization account.
 const source = (
-	await readFile(new URL('./waterMonitoringService.js', import.meta.url), 'utf8')
+	await readFile(
+		new URL('./waterMonitoringService.js', import.meta.url),
+		'utf8'
+	)
 )
 	.replace(
 		"import { api } from '../../helpers/api';",

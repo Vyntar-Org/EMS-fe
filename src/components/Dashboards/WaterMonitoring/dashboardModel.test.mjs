@@ -121,8 +121,9 @@ test('telemetry freshness and verified units gate physical feedback and tank fil
 		{ is_stale: true },
 		{ timestamp: '2026-11-12T00:00:00Z' },
 		{ timestamp: '2026-11-14T00:00:00Z' },
-	])
-		{assert.equal(readingState({ ...live, ...change }, { now }).ready, false);}
+	]) {
+		assert.equal(readingState({ ...live, ...change }, { now }).ready, false);
+	}
 	assert.equal(
 		readingState({ ...live, motorRunState: 'bad' }, { now }).motor,
 		'Unknown'
@@ -169,8 +170,9 @@ test('every control capability is mandatory; Manual, preview and pending always 
 		{ preview: true },
 		{ pending: true },
 		{ pathsReady: false },
-	])
-		{assert.ok(commandBlock(live, { now, pathsReady: true, ...options }));}
+	]) {
+		assert.ok(commandBlock(live, { now, pathsReady: true, ...options }));
+	}
 	assert.match(
 		commandBlock(
 			{ ...live, controlMode: 'manual', motorRunState: '1' },

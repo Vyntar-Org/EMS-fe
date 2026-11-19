@@ -27,7 +27,10 @@ export const waterMonitoringEndpoint = (endpoint) =>
 	waterDashboardPath().replace(/dashboard\/$/, endpoint);
 
 export async function getWaterMonitoringMachines({ signal } = {}) {
-	const payload = await getWaterData(waterMonitoringEndpoint('machine-list/'), signal);
+	const payload = await getWaterData(
+		waterMonitoringEndpoint('machine-list/'),
+		signal
+	);
 	const machines = normalizeMachines(payload).map((machine) => ({
 		...machine,
 		latest_ts: machine.latest_ts ?? null,
@@ -127,7 +130,9 @@ export async function postWaterMotorCommand(body) {
 	) {
 		throw new Error('Device UID and a valid backend motor ID are required.');
 	}
-	return commandResponse(await api.post(waterMonitoringEndpoint('motor-control/'), body));
+	return commandResponse(
+		await api.post(waterMonitoringEndpoint('motor-control/'), body)
+	);
 }
 
 export async function getWaterMotorStatus({ commandId, deviceUid, signal }) {

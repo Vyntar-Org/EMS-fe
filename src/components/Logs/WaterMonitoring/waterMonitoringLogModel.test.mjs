@@ -23,7 +23,10 @@ test('picker filters use the established local ISO format and reject missing dev
 		start_datetime: '2026-11-01T07:43:00',
 		end_datetime: '2026-11-17T19:43:00',
 	});
-	assert.throws(() => makeWaterMonitoringLogFilters('', range), /select a machine/);
+	assert.throws(
+		() => makeWaterMonitoringLogFilters('', range),
+		/select a machine/
+	);
 	assert.throws(
 		() => makeWaterMonitoringLogFilters(12, [null, range[1]]),
 		/valid start and end/
@@ -43,7 +46,10 @@ test('picker filters use the established local ISO format and reject missing dev
 });
 
 test('timestamps retain naive device wall clocks and explicitly retain UTC/offset instants', () => {
-	assert.equal(waterMonitoringLogTimestamp('2026-11-17T19:42:37'), '17 Nov 2026 19:42:37');
+	assert.equal(
+		waterMonitoringLogTimestamp('2026-11-17T19:42:37'),
+		'17 Nov 2026 19:42:37'
+	);
 	assert.equal(
 		waterMonitoringLogTimestamp('2026-11-17T14:12:37Z'),
 		'17 Nov 2026 14:12:37 UTC'
@@ -80,7 +86,10 @@ test('numeric zero, raw level and decimal precision remain distinct from unknown
 		'Level'
 	);
 	assert.equal(
-		waterMonitoringLogValue({ control_strategy: ' remote ' }, 'control_strategy'),
+		waterMonitoringLogValue(
+			{ control_strategy: ' remote ' },
+			'control_strategy'
+		),
 		'Remote'
 	);
 	for (const value of [null, undefined, 'unexpected', ['LEVEL']]) {
@@ -103,7 +112,9 @@ test('only verified units label columns; duplicate slave names use device identi
 	]);
 	assert.equal(
 		waterMonitoringLogHeaders(
-			waterMonitoringLogUnits({ units: { tank_level: 'cm', flowrate: 'L/min' } })
+			waterMonitoringLogUnits({
+				units: { tank_level: 'cm', flowrate: 'L/min' },
+			})
 		)[1],
 		'Tank Level (cm)'
 	);

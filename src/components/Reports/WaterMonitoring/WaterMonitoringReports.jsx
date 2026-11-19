@@ -217,7 +217,9 @@ export default function WaterMonitoringReports() {
 		setExporting(true);
 		setExportError('');
 		try {
-			const { downloadWaterReport } = await import('./waterMonitoringReportExports');
+			const { downloadWaterReport } = await import(
+				'./waterMonitoringReportExports'
+			);
 			if (generation.current === submitted.generation) {
 				downloadWaterReport(
 					format,
@@ -369,7 +371,9 @@ export default function WaterMonitoringReports() {
 							onClick={(event) => setDownloadAnchor(event.currentTarget)}
 							aria-haspopup="menu"
 							aria-expanded={Boolean(downloadAnchor)}
-							aria-controls={downloadAnchor ? 'water-monitoring-download-menu' : undefined}
+							aria-controls={
+								downloadAnchor ? 'water-monitoring-download-menu' : undefined
+							}
 						>
 							<FileDownload sx={{ fontSize: 20, color: '#fff' }} />
 						</ReportAction>

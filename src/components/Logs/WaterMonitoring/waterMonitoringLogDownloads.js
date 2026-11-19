@@ -53,7 +53,9 @@ export function downloadWaterMonitoringLogs(
 			'All readings in the selected range; newest first. Timestamp zones are preserved.',
 		],
 		columns.map((column) => column.header),
-		...rows.map((row) => fields.map(({ key }) => waterMonitoringLogValue(row, key))),
+		...rows.map((row) =>
+			fields.map(({ key }) => waterMonitoringLogValue(row, key))
+		),
 	];
 	const blob =
 		format === 'xlsx'

@@ -193,8 +193,9 @@ export default function EquipmentNode({
 				if (
 					node.data.orientation === 'left' &&
 					(side === 'left' || side === 'right')
-				)
-					{side = side === 'left' ? 'right' : 'left';}
+				) {
+					side = side === 'left' ? 'right' : 'left';
+				}
 				return (
 					<button
 						key={port.id}

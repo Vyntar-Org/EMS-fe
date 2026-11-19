@@ -54,8 +54,16 @@ test('search includes names, device identifiers, gateway and distribution zone',
 		device_code: 'CODE-A',
 		details: { location: 'Zone South', gateway: 'GW-09' },
 	};
-	for (const search of ['pump', '42', 'code-a', 'south', 'gw-09', '  NORTH  '])
-		{assert.equal(matchesWaterMachine(machine, search), true);}
+	for (const search of [
+		'pump',
+		'42',
+		'code-a',
+		'south',
+		'gw-09',
+		'  NORTH  ',
+	]) {
+		assert.equal(matchesWaterMachine(machine, search), true);
+	}
 	assert.equal(matchesWaterMachine(machine, 'absent'), false);
 	assert.equal(
 		waterMachineTitle({ name: 'Water Monitoring Unit - Sample4' }, true),

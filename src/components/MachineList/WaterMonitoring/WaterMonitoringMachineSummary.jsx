@@ -1,7 +1,10 @@
 ﻿import { CalendarMonthOutlined } from '@mui/icons-material';
 import { Box } from '@mui/material';
 
-import { metricReading, numericReading } from '../../WaterMonitoring/waterMonitoringService';
+import {
+	metricReading,
+	numericReading,
+} from '../../WaterMonitoring/waterMonitoringService';
 
 import WaterMonitoringMetric from './WaterMonitoringMetric';
 
@@ -58,7 +61,11 @@ function Sparkline({ values, label }) {
 		</svg>
 	);
 }
-export default function WaterMonitoringMachineSummary({ machine, unavailable, preview }) {
+export default function WaterMonitoringMachineSummary({
+	machine,
+	unavailable,
+	preview,
+}) {
 	const summary = machine.summary ?? {};
 	return (
 		<>

@@ -18,9 +18,7 @@ const WaterMonitoringDashboard = lazy(
 function LazyWaterMonitoringDashboard() {
 	return (
 		<Suspense
-			fallback={
-				<Box sx={{ p: 2 }}>Loading Water Monitoring dashboard...</Box>
-			}
+			fallback={<Box sx={{ p: 2 }}>Loading Water Monitoring dashboard...</Box>}
 		>
 			<WaterMonitoringDashboard />
 		</Suspense>

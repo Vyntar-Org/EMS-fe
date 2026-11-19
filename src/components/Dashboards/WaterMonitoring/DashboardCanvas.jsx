@@ -63,7 +63,9 @@ export default function DashboardCanvas({
 		});
 	const fit = () => {
 		const rect = root.current?.getBoundingClientRect();
-		if (!rect) {return;}
+		if (!rect) {
+			return;
+		}
 		if (!layout.nodes.length) {
 			setView({ x: 40, y: 40, zoom: 0.85 });
 			return;
@@ -94,18 +96,19 @@ export default function DashboardCanvas({
 		const wheel = (event) => {
 			event.preventDefault();
 			const rect = element.getBoundingClientRect();
-			if (event.ctrlKey || event.metaKey)
-				{zoomAt(
+			if (event.ctrlKey || event.metaKey) {
+				zoomAt(
 					Math.exp(-event.deltaY * 0.003),
 					event.clientX - rect.left,
 					event.clientY - rect.top
-				);}
-			else
-				{setView((current) => ({
+				);
+			} else {
+				setView((current) => ({
 					...current,
 					x: current.x - event.deltaX,
 					y: current.y - event.deltaY,
-				}));}
+				}));
+			}
 		};
 		element.addEventListener('wheel', wheel, { passive: false });
 		return () => element.removeEventListener('wheel', wheel);
@@ -117,7 +120,9 @@ export default function DashboardCanvas({
 		}
 	}, [monitoring]);
 	const startPan = (event) => {
-		if (event.button !== 0 && event.pointerType !== 'touch') {return;}
+		if (event.button !== 0 && event.pointerType !== 'touch') {
+			return;
+		}
 		points.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
 		root.current.setPointerCapture(event.pointerId);
 		if (points.current.size === 2) {
@@ -142,7 +147,9 @@ export default function DashboardCanvas({
 			startPan(event);
 			return;
 		}
-		if (event.button !== 0 && event.pointerType !== 'touch') {return;}
+		if (event.button !== 0 && event.pointerType !== 'touch') {
+			return;
+		}
 		onSelect({ kind: 'node', id: node.id });
 		onMoveStart();
 		const point = world(event.clientX, event.clientY);
@@ -155,7 +162,9 @@ export default function DashboardCanvas({
 	};
 	const startPort = (event, node, port) => {
 		event.stopPropagation();
-		if (port.direction !== 'output') {return;}
+		if (port.direction !== 'output') {
+			return;
+		}
 		setConnection({ node, port });
 		setCursor(portPoint(node, port));
 		gesture.current = { kind: 'connect', node, port };
@@ -176,18 +185,23 @@ export default function DashboardCanvas({
 		return false;
 	};
 	const portClick = (node, port) => {
-		if (Date.now() < suppressClick.current) {return;}
+		if (Date.now() < suppressClick.current) {
+			return;
+		}
 		if (port.direction === 'output') {
 			setConnection({ node, port });
 			setCursor(portPoint(node, port));
-		} else {connectTo(connection, node, port);}
+		} else {
+			connectTo(connection, node, port);
+		}
 	};
 	const pointerMove = (event) => {
-		if (points.current.has(event.pointerId))
-			{points.current.set(event.pointerId, {
+		if (points.current.has(event.pointerId)) {
+			points.current.set(event.pointerId, {
 				x: event.clientX,
 				y: event.clientY,
-			});}
+			});
+		}
 		if (points.current.size === 2 && pinch.current) {
 			const pair = [...points.current.values()],
 				rect = root.current.getBoundingClientRect(),
@@ -213,29 +227,34 @@ export default function DashboardCanvas({
 		}
 		const g = gesture.current;
 		if (!g) {
-			if (connection) {setCursor(world(event.clientX, event.clientY));}
+			if (connection) {
+				setCursor(world(event.clientX, event.clientY));
+			}
 			return;
 		}
-		if (g.kind === 'pan')
-			{setView({
+		if (g.kind === 'pan') {
+			setView({
 				...g.view,
 				x: g.view.x + event.clientX - g.x,
 				y: g.view.y + event.clientY - g.y,
-			});}
-		else if (g.kind === 'node') {
+			});
+		} else if (g.kind === 'node') {
 			const p = world(event.clientX, event.clientY);
 			onMove(g.id, {
 				x: Math.min(WORLD.width - NODE_WIDTH, snap(p.x - g.offset.x)),
 				y: Math.min(WORLD.height - NODE_HEIGHT, snap(p.y - g.offset.y)),
 			});
-		} else if (g.kind === 'connect')
-			{setCursor(world(event.clientX, event.clientY));}
+		} else if (g.kind === 'connect') {
+			setCursor(world(event.clientX, event.clientY));
+		}
 	};
 	const pointerEnd = (event) => {
 		const g = gesture.current;
 		points.current.delete(event.pointerId);
 		pinch.current = null;
-		if (g?.kind === 'node') {onMoveEnd();}
+		if (g?.kind === 'node') {
+			onMoveEnd();
+		}
 		if (g?.kind === 'connect') {
 			const target = document
 				.elementFromPoint(event.clientX, event.clientY)
@@ -248,12 +267,14 @@ export default function DashboardCanvas({
 					portsFor(catalog, node).find(
 						(item) => item.id === target.dataset.portId
 					);
-			if (node && port && connectTo(g, node, port))
-				{suppressClick.current = Date.now() + 500;}
+			if (node && port && connectTo(g, node, port)) {
+				suppressClick.current = Date.now() + 500;
+			}
 		}
 		gesture.current = null;
-		if (root.current.hasPointerCapture(event.pointerId))
-			{root.current.releasePointerCapture(event.pointerId);}
+		if (root.current.hasPointerCapture(event.pointerId)) {
+			root.current.releasePointerCapture(event.pointerId);
+		}
 	};
 	return (
 		<div className="sc-canvas-shell">
@@ -275,7 +296,9 @@ export default function DashboardCanvas({
 				onPointerMove={pointerMove}
 				onPointerUp={pointerEnd}
 				onPointerCancel={(event) => {
-					if (gesture.current?.kind === 'node') {onMoveEnd();}
+					if (gesture.current?.kind === 'node') {
+						onMoveEnd();
+					}
 					gesture.current = null;
 					points.current.delete(event.pointerId);
 					pinch.current = null;
@@ -291,11 +314,15 @@ export default function DashboardCanvas({
 					}
 				}}
 				onDragOver={(event) => {
-					if (!monitoring) {event.preventDefault();}
+					if (!monitoring) {
+						event.preventDefault();
+					}
 				}}
 				onDrop={(event) => {
 					event.preventDefault();
-					if (monitoring) {return;}
+					if (monitoring) {
+						return;
+					}
 					const type = event.dataTransfer.getData(
 						'application/water-equipment'
 					);
@@ -361,7 +388,9 @@ export default function DashboardCanvas({
 									portsFor(catalog, target).find(
 										(port) => port.id === edge.target_port
 									);
-							if (!source || !target || !from || !to) {return null;}
+							if (!source || !target || !from || !to) {
+								return null;
+							}
 							const a = portPoint(source, from),
 								b = portPoint(target, to),
 								mid = (a.x + b.x) / 2,

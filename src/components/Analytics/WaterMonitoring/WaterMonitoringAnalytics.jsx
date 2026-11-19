@@ -16,7 +16,10 @@ import {
 	WaterAnalysisPanel,
 } from '../WaterAnalyticsPanels';
 
-import { getWaterMonitoringAnalytics, waterMonitoringAnalyticsError } from './waterMonitoringAnalyticsApi';
+import {
+	getWaterMonitoringAnalytics,
+	waterMonitoringAnalyticsError,
+} from './waterMonitoringAnalyticsApi';
 
 const PARAMETERS = [
 	{ label: 'Flow Rate', value: 'flow_rate', machineMetric: 'flowrate' },
@@ -357,7 +360,10 @@ export default function WaterMonitoringAnalytics() {
 							{isAnyLoading ? (
 								<Loading />
 							) : comparison ? (
-								<WaterMonitoringChart series={comparison.series} axes={comparison.axes} />
+								<WaterMonitoringChart
+									series={comparison.series}
+									axes={comparison.axes}
+								/>
 							) : (
 								<NoDataFound message="Select devices and parameters, then click Analyze to view the merged comparison" />
 							)}

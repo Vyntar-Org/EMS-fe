@@ -9,7 +9,9 @@ import {
 	tableProps,
 } from '../../WaterMonitoring/test/waterMonitoringSearchTestRuntime.mjs';
 
-const createHarness = await compileSearchComponent(new URL('./WaterMonitoringLogs.jsx', import.meta.url));
+const createHarness = await compileSearchComponent(
+	new URL('./WaterMonitoringLogs.jsx', import.meta.url)
+);
 const machines = [
 	{ slave_id: 12, slave_name: 'Garden Outlet', device_uid: 'UID' },
 	{ slave_id: 15, slave_name: 'Other machine', device_uid: 'B' },
@@ -113,11 +115,17 @@ test('Logs validate only on Search and submit the chosen machine/range without d
 		offset: 0,
 	});
 	assert.equal(h.calls[0][1].signal, signal);
-	const download = findProps(h.render(), (props) => props.label === 'Download Excel');
+	const download = findProps(
+		h.render(),
+		(props) => props.label === 'Download Excel'
+	);
 	assert.equal(download.disabled, false);
 	const exportRequest = download.onClick();
 	assert.deepEqual(h.calls[1][0], { ...h.calls[0][0], limit: 500 });
-	findProps(h.render(), (props) => props.children === 'Cancel export').onClick();
+	findProps(
+		h.render(),
+		(props) => props.children === 'Cancel export'
+	).onClick();
 	await exportRequest;
 	assert.equal(h.calls[1][1].signal.aborted, true);
 });

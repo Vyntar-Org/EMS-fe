@@ -59,7 +59,9 @@ const WaterMonitoringMachineCard = memo(function WaterMonitoringMachineCard({
 	const title = waterMachineTitle(machine);
 	const canViewTrend = preview || trendEnabled;
 	const status = state.connection;
-	const strategy = String(machine.control_strategy ?? '').trim().toUpperCase();
+	const strategy = String(machine.control_strategy ?? '')
+		.trim()
+		.toUpperCase();
 	const showStrategy =
 		state.mode === 'Auto' && (strategy === 'LEVEL' || strategy === 'REMOTE');
 	return (

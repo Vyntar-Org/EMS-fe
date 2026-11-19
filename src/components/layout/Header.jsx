@@ -301,7 +301,9 @@ export const Header = ({
 									const appCode = app.code?.toUpperCase();
 									const isWaterMonitoring =
 										appCode === 'WATER_MONITOR' || appCode === 'OHT';
-									const appLabel = isWaterMonitoring ? 'Water Monitoring' : app.name;
+									const appLabel = isWaterMonitoring
+										? 'Water Monitoring'
+										: app.name;
 									const AppIcon = isWaterMonitoring
 										? WaterMonitoringTankIcon
 										: APP_ICONS[appCode] || SensorsIcon;

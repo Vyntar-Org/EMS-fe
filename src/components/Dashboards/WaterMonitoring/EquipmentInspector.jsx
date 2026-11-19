@@ -71,7 +71,9 @@ export default function EquipmentInspector({
 		edge?.id,
 		edge?.flow_asset_id,
 	]);
-	if (!node && !edge) {return null;}
+	if (!node && !edge) {
+		return null;
+	}
 	const type = node && typeFor(catalog, node.type),
 		asset = node && assetFor(catalog, node.data.asset_id),
 		record = asset ? records[String(asset.asset_id)] : null,
@@ -113,9 +115,12 @@ export default function EquipmentInspector({
 					show_metrics: values.show_metrics !== false,
 				},
 			});
-			if (result) {setError(result);}
-		} else
-			{onEdgeUpdate(edge.id, { flow_asset_id: values.flow_asset_id || null });}
+			if (result) {
+				setError(result);
+			}
+		} else {
+			onEdgeUpdate(edge.id, { flow_asset_id: values.flow_asset_id || null });
+		}
 	};
 	return (
 		<aside className="sc-inspector" aria-label="Equipment properties">

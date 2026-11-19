@@ -2,9 +2,13 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const modelUrl = new URL('./waterMonitoringReportModel.js', import.meta.url).href;
+const modelUrl = new URL('./waterMonitoringReportModel.js', import.meta.url)
+	.href;
 const source = (
-	await readFile(new URL('./waterMonitoringReportsApi.js', import.meta.url), 'utf8')
+	await readFile(
+		new URL('./waterMonitoringReportsApi.js', import.meta.url),
+		'utf8'
+	)
 )
 	.replace(
 		"import { api } from '../../../helpers/api';",
@@ -16,7 +20,9 @@ const source = (
 	)
 	.replace("from './waterMonitoringReportModel'", `from '${modelUrl}'`);
 let handler;
-globalThis.__waterMonitoringReportsTransport = { get: (...args) => handler(...args) };
+globalThis.__waterMonitoringReportsTransport = {
+	get: (...args) => handler(...args),
+};
 const api = await import(
 	`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`
 );

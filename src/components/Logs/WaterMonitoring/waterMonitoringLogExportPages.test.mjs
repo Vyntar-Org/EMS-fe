@@ -3,7 +3,10 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const source = (
-	await readFile(new URL('./waterMonitoringLogExportPages.js', import.meta.url), 'utf8')
+	await readFile(
+		new URL('./waterMonitoringLogExportPages.js', import.meta.url),
+		'utf8'
+	)
 ).replace(
 	"from './waterMonitoringLogModel'",
 	`from '${new URL('./waterMonitoringLogModel.js', import.meta.url).href}'`

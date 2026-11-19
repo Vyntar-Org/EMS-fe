@@ -49,7 +49,10 @@ import { referenceLayout } from './dashboardPreview';
 import EquipmentInspector from './EquipmentInspector';
 import EquipmentLibrary from './EquipmentLibrary';
 import useMotorCommands from './useMotorCommands';
-import { createWaterMonitoringDashboardService, errorMessage } from './waterMonitoringDashboardService';
+import {
+	createWaterMonitoringDashboardService,
+	errorMessage,
+} from './waterMonitoringDashboardService';
 import './waterMonitoringDashboard.css';
 
 export default function WaterMonitoringDashboard() {
@@ -123,8 +126,8 @@ export default function WaterMonitoringDashboard() {
 		setSelection(null);
 	}, [service, identity, tenant]);
 	useEffect(() => {
-		if (catalog && !branch)
-			{setBranch(
+		if (catalog && !branch) {
+			setBranch(
 				String(
 					catalog.branches.find(
 						(item) => String(item.id) === String(config.scada?.branch_id)
@@ -132,7 +135,8 @@ export default function WaterMonitoringDashboard() {
 						catalog.branches[0]?.id ??
 						''
 				)
-			);}
+			);
+		}
 	}, [catalog, branch, config.scada?.branch_id]);
 	const layoutQuery = useQuery({
 		queryKey: [
@@ -226,8 +230,9 @@ export default function WaterMonitoringDashboard() {
 			branchId == null ||
 			layoutQuery.isPending ||
 			layoutQuery.isError
-		)
-			{return;}
+		) {
+			return;
+		}
 		const server = layoutQuery.data;
 		if (server) {
 			const errors = validateLayout(server, catalog, branchId);
@@ -268,8 +273,9 @@ export default function WaterMonitoringDashboard() {
 		future.current = [];
 		setHistoryRevision((value) => value + 1);
 		setFitToken((value) => value + 1);
-		if (restored)
-			{toast('Browser draft restored. It is not saved to the server.');}
+		if (restored) {
+			toast('Browser draft restored. It is not saved to the server.');
+		}
 	}, [layoutQuery.dataUpdatedAt, branchId, catalog]);
 	const recordHistory = (previous) => {
 		past.current = [...past.current.slice(-49), clone(previous)];
@@ -288,8 +294,9 @@ export default function WaterMonitoringDashboard() {
 			!definition ||
 			definition.available === false ||
 			draft.nodes.length >= 200
-		)
-			{return;}
+		) {
+			return;
+		}
 		const index = draft.nodes.length;
 		const node = {
 			id: uid('node'),
@@ -309,7 +316,9 @@ export default function WaterMonitoringDashboard() {
 		setSelection({ kind: 'node', id: node.id });
 	};
 	const connect = (edge) => {
-		if (monitoring || !canEdit) {return;}
+		if (monitoring || !canEdit) {
+			return;
+		}
 		const error = connectionError(draft, catalog, edge);
 		if (error) {
 			toast(error, 'warning');
@@ -324,7 +333,9 @@ export default function WaterMonitoringDashboard() {
 		});
 	};
 	const updateNode = (id, changes) => {
-		if (monitoring || !canEdit) {return 'Layout editing is unavailable.';}
+		if (monitoring || !canEdit) {
+			return 'Layout editing is unavailable.';
+		}
 		const next = {
 			...draft,
 			nodes: draft.nodes.map((node) =>
@@ -332,12 +343,16 @@ export default function WaterMonitoringDashboard() {
 			),
 		};
 		const errors = validateLayout(next, catalog, branchId);
-		if (errors.length) {return errors.join(' ');}
+		if (errors.length) {
+			return errors.join(' ');
+		}
 		apply(next);
 		return null;
 	};
 	const updateEdge = (id, changes) => {
-		if (monitoring || !canEdit) {return;}
+		if (monitoring || !canEdit) {
+			return;
+		}
 		const next = {
 			...draft,
 			edges: draft.edges.map((edge) =>
@@ -352,21 +367,27 @@ export default function WaterMonitoringDashboard() {
 		apply(next);
 	};
 	const undo = () => {
-		if (!past.current.length || monitoring || saving) {return;}
+		if (!past.current.length || monitoring || saving) {
+			return;
+		}
 		future.current.push(clone(draft));
 		setDraft(past.current.pop());
 		setSelection(null);
 		setHistoryRevision((value) => value + 1);
 	};
 	const redo = () => {
-		if (!future.current.length || monitoring || saving) {return;}
+		if (!future.current.length || monitoring || saving) {
+			return;
+		}
 		past.current.push(clone(draft));
 		setDraft(future.current.pop());
 		setSelection(null);
 		setHistoryRevision((value) => value + 1);
 	};
 	const askDelete = (target = selection) => {
-		if (target && !monitoring && canEdit) {setDialog({ kind: 'delete', target });}
+		if (target && !monitoring && canEdit) {
+			setDialog({ kind: 'delete', target });
+		}
 	};
 	const confirmAction = () => {
 		const action = dialog;
@@ -386,7 +407,9 @@ export default function WaterMonitoringDashboard() {
 			setFitToken((value) => value + 1);
 			toast('Reference example loaded as an unsaved simulated draft.');
 		}
-		if (action.kind === 'branch') {setBranch(action.branch);}
+		if (action.kind === 'branch') {
+			setBranch(action.branch);
+		}
 		if (action.kind === 'cancel') {
 			setDraft(clone(checkpoint));
 			past.current = [];
@@ -395,7 +418,9 @@ export default function WaterMonitoringDashboard() {
 			setMode('monitoring');
 			setHistoryRevision((value) => value + 1);
 		}
-		if (action.kind === 'reload') {layoutQuery.refetch();}
+		if (action.kind === 'reload') {
+			layoutQuery.refetch();
+		}
 	};
 	const saveDraft = () => {
 		if (validation.length) {
@@ -434,8 +459,9 @@ export default function WaterMonitoringDashboard() {
 			!canEdit ||
 			service.preview ||
 			validation.length
-		)
-			{return;}
+		) {
+			return;
+		}
 		saveLock.current = true;
 		setSaving(true);
 		const saveBranch = branchId;
@@ -444,10 +470,13 @@ export default function WaterMonitoringDashboard() {
 				draft.id != null
 					? await service.updateDashboardLayout(draft.id, draft)
 					: await service.saveDashboardLayout(draft);
-			if (scope.current !== saveBranch) {return;}
+			if (scope.current !== saveBranch) {
+				return;
+			}
 			const errors = validateLayout(saved, catalog, branchId);
-			if (errors.length)
-				{throw new Error('Saved layout validation failed: ' + errors.join(' '));}
+			if (errors.length) {
+				throw new Error('Saved layout validation failed: ' + errors.join(' '));
+			}
 			setDraft(saved);
 			setCheckpoint(clone(saved));
 			setServerSaved(true);
@@ -470,7 +499,9 @@ export default function WaterMonitoringDashboard() {
 				}
 			}
 		} catch (error) {
-			if (!error?.status || error.status >= 500) {setSaveUncertain(true);}
+			if (!error?.status || error.status >= 500) {
+				setSaveUncertain(true);
+			}
 			toast(errorMessage(error) + ' Your draft has been preserved.', 'error');
 		} finally {
 			saveLock.current = false;
@@ -522,15 +553,16 @@ export default function WaterMonitoringDashboard() {
 			toast(errorMessage(error), 'error');
 		}
 	};
-	if (catalogQuery.isPending)
-		{return (
+	if (catalogQuery.isPending) {
+		return (
 			<Box className="sc-dashboard">
 				<Skeleton height={64} />
 				<Skeleton variant="rounded" height="65vh" />
 			</Box>
-		);}
-	if (catalogQuery.isError)
-		{return (
+		);
+	}
+	if (catalogQuery.isError) {
+		return (
 			<Alert
 				severity="error"
 				action={<Button onClick={() => catalogQuery.refetch()}>Retry</Button>}
@@ -538,7 +570,8 @@ export default function WaterMonitoringDashboard() {
 				Equipment catalog unavailable. {errorMessage(catalogQuery.error)} No
 				preview equipment was substituted.
 			</Alert>
-		);}
+		);
+	}
 	const selectedNode =
 		selection?.kind === 'node'
 			? draft.nodes.find((node) => node.id === selection.id)
@@ -603,8 +636,9 @@ export default function WaterMonitoringDashboard() {
 							<Button
 								startIcon={<VisibilityRounded />}
 								onClick={() => {
-									if (validation.length) {toast(validation.join(' '), 'warning');}
-									else {
+									if (validation.length) {
+										toast(validation.join(' '), 'warning');
+									} else {
 										setMode('monitoring');
 										setSelection(null);
 										setFitToken((value) => value + 1);
@@ -842,15 +876,16 @@ export default function WaterMonitoringDashboard() {
 									if (
 										JSON.stringify(payloadFor(moveSnapshot.current)) !==
 										JSON.stringify(payloadFor(draft))
-									)
-										{recordHistory(moveSnapshot.current);}
+									) {
+										recordHistory(moveSnapshot.current);
+									}
 									moveSnapshot.current = null;
 								}
 							}}
 							onNudge={(id, key) => {
 								const node = draft.nodes.find((item) => item.id === id);
-								if (node)
-									{updateNode(id, {
+								if (node) {
+									updateNode(id, {
 										position: {
 											x: snap(
 												node.position.x +
@@ -872,7 +907,8 @@ export default function WaterMonitoringDashboard() {
 												)
 											),
 										},
-									});}
+									});
+								}
 							}}
 							commands={motor.unresolved}
 							commandPathsReady={commandPathsReady}
@@ -899,8 +935,9 @@ export default function WaterMonitoringDashboard() {
 										monitoring ||
 										saving ||
 										draft.nodes.length >= 200
-									)
-										{return;}
+									) {
+										return;
+									}
 									const copy = {
 										...clone(node),
 										id: uid('node'),

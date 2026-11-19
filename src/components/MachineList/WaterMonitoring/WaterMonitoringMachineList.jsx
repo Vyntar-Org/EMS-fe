@@ -20,7 +20,10 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import PremiumModal from '../../common/PremiumModal';
 import WaterMonitoringMachineListSkeleton from '../../skeletonLoaders/WaterMonitoringMachineListSkeleton';
-import { motorControlReason, waterApiError } from '../../WaterMonitoring/motorCommandState';
+import {
+	motorControlReason,
+	waterApiError,
+} from '../../WaterMonitoring/motorCommandState';
 import { useWaterMonitoringConfig } from '../../WaterMonitoring/useWaterMonitoringConfig';
 import { useWaterMonitoringMotorOperations } from '../../WaterMonitoring/WaterMonitoringMotorOperations';
 import { getWaterMonitoringMachines } from '../../WaterMonitoring/waterMonitoringService';

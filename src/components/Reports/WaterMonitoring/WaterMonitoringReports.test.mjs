@@ -15,7 +15,9 @@ import {
 	WATER_REPORT_TYPES,
 } from './waterMonitoringReportModel.js';
 
-const createHarness = await compileSearchComponent(new URL('./WaterMonitoringReports.jsx', import.meta.url));
+const createHarness = await compileSearchComponent(
+	new URL('./WaterMonitoringReports.jsx', import.meta.url)
+);
 function harness() {
 	return createHarness({
 		data: buildWaterReport(

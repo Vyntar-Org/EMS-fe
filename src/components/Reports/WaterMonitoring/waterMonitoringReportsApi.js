@@ -10,9 +10,12 @@ import {
 export async function getWaterReport(id, filters, { signal } = {}) {
 	const type = reportTypeFor(id);
 	const params = new URLSearchParams(reportParams(type, filters));
-	const response = await api.get(`${waterMonitoringEndpoint(type.endpoint)}?${params}`, {
-		signal,
-	});
+	const response = await api.get(
+		`${waterMonitoringEndpoint(type.endpoint)}?${params}`,
+		{
+			signal,
+		}
+	);
 	// api.get already returns the JSON envelope (the equivalent of Axios response.data).
 	// Unwrap once more here to read the grouped domain data, never the envelope as columns.
 	if (response?.success !== true) {

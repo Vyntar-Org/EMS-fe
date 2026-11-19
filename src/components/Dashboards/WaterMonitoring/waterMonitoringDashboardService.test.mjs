@@ -8,7 +8,10 @@ globalThis.__scadaTransport = {
 	put: (...args) => handler('put', ...args),
 };
 const source = (
-	await readFile(new URL('./waterMonitoringDashboardService.js', import.meta.url), 'utf8')
+	await readFile(
+		new URL('./waterMonitoringDashboardService.js', import.meta.url),
+		'utf8'
+	)
 )
 	.replace(
 		"import { api } from '../../../helpers/api';",

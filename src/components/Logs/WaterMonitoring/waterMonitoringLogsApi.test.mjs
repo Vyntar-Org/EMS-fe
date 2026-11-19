@@ -3,9 +3,14 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 let handler;
-globalThis.__waterMonitoringLogsTransport = { get: (...args) => handler(...args) };
+globalThis.__waterMonitoringLogsTransport = {
+	get: (...args) => handler(...args),
+};
 const source = (
-	await readFile(new URL('./waterMonitoringLogsApi.js', import.meta.url), 'utf8')
+	await readFile(
+		new URL('./waterMonitoringLogsApi.js', import.meta.url),
+		'utf8'
+	)
 )
 	.replace(
 		"import { api } from '../../../helpers/api';",
@@ -76,14 +81,21 @@ test('invalid filters make no request; malformed envelopes and pagination are er
 			meta: { count: 0, total: 0, limit: 50, offset: 100, has_more: false },
 		};
 	};
-	await assert.rejects(service.getWaterMonitoringLogs({ ...filters, slave_id: '' }));
-	await assert.rejects(service.getWaterMonitoringLogs({ ...filters, limit: -1 }));
+	await assert.rejects(
+		service.getWaterMonitoringLogs({ ...filters, slave_id: '' })
+	);
+	await assert.rejects(
+		service.getWaterMonitoringLogs({ ...filters, limit: -1 })
+	);
 	assert.equal(calls, 0);
 	assert.deepEqual((await service.getWaterMonitoringLogs(filters)).logs, []);
 	handler = async () => ({ success: false, message: 'Request failed' });
 	await assert.rejects(service.getWaterMonitoringLogs(filters));
 	handler = async () => ({ success: true, data: { logs: [] }, meta: {} });
-	await assert.rejects(service.getWaterMonitoringLogs(filters), /response is invalid/);
+	await assert.rejects(
+		service.getWaterMonitoringLogs(filters),
+		/response is invalid/
+	);
 });
 
 test('HTTP errors preserve shared authentication behavior and surface friendly messages', async () => {
@@ -96,7 +108,10 @@ test('HTTP errors preserve shared authentication behavior and surface friendly m
 			service.getWaterMonitoringLogs(filters),
 			(error) => error === failure
 		);
-		assert.notEqual(service.waterMonitoringLogsError(failure), 'Internal details');
+		assert.notEqual(
+			service.waterMonitoringLogsError(failure),
+			'Internal details'
+		);
 	}
 	assert.match(service.waterMonitoringLogsError({ status: 403 }), /permission/);
 	assert.equal(

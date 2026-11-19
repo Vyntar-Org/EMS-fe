@@ -7,7 +7,10 @@ import { pathToFileURL } from 'node:url';
 
 import Papa from 'papaparse';
 
-import { buildWaterReport, reportTypeFor } from './waterMonitoringReportModel.js';
+import {
+	buildWaterReport,
+	reportTypeFor,
+} from './waterMonitoringReportModel.js';
 
 const require = createRequire(import.meta.url);
 let downloaded;
@@ -43,7 +46,12 @@ source = source
 	)
 	.replace(
 		"from '../../WaterMonitoring/waterMonitoringReportWorkbook'",
-		`from '${new URL('../../WaterMonitoring/waterMonitoringReportWorkbook.js', import.meta.url).href}'`
+		`from '${
+			new URL(
+				'../../WaterMonitoring/waterMonitoringReportWorkbook.js',
+				import.meta.url
+			).href
+		}'`
 	);
 const { downloadWaterReport } = await import(
 	`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`

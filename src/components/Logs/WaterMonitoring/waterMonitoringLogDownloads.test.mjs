@@ -20,7 +20,10 @@ globalThis.__waterMonitoringLogDownload = {
 	},
 };
 const source = (
-	await readFile(new URL('./waterMonitoringLogDownloads.js', import.meta.url), 'utf8')
+	await readFile(
+		new URL('./waterMonitoringLogDownloads.js', import.meta.url),
+		'utf8'
+	)
 )
 	.replace(
 		"import { triggerFileDownload } from '../../../helpers/common';",
@@ -40,7 +43,12 @@ const source = (
 	)
 	.replace(
 		"from '../../WaterMonitoring/waterMonitoringReportWorkbook'",
-		`from '${new URL('../../WaterMonitoring/waterMonitoringReportWorkbook.js', import.meta.url).href}'`
+		`from '${
+			new URL(
+				'../../WaterMonitoring/waterMonitoringReportWorkbook.js',
+				import.meta.url
+			).href
+		}'`
 	);
 const { downloadWaterMonitoringLogs } = await import(
 	`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`
@@ -67,7 +75,9 @@ const rows = [
 ];
 
 test('CSV export contains the selected machine, complete range, ordered columns, raw precision, zero and historical state labels', async () => {
-	downloadWaterMonitoringLogs('csv', rows, machine, filters, { tank_level: 'cm' });
+	downloadWaterMonitoringLogs('csv', rows, machine, filters, {
+		tank_level: 'cm',
+	});
 	assert.equal(
 		downloaded.filename,
 		'OHT_Garden_Outlet_Logs_2026-11-01_to_2026-11-17.csv'
