@@ -27,11 +27,13 @@ const PremiumMachineCard = ({
 	statusMessage,
 	headerCaption,
 	headerTagline,
+	statusLabel: customStatusLabel,
+	statusColor: customStatusColor,
 	children,
 }) => {
 	const isOnline = status?.toLowerCase() === 'online';
-	const statusColor = isOnline ? '#16A34A' : '#EF3340';
-	const statusLabel = isOnline ? 'ONLINE' : 'OFFLINE';
+	const statusColor = customStatusColor || (isOnline ? '#16A34A' : '#EF3340');
+	const statusLabel = customStatusLabel || (isOnline ? 'ONLINE' : 'OFFLINE');
 	const accent = accentColor || APP_ACCENT_COLOR[app] || statusColor;
 	const getVisualColor = (theme) =>
 		warningState ? theme.palette.warning.main : statusColor;
