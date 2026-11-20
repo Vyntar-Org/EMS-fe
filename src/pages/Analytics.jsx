@@ -6,19 +6,18 @@ import EnergyAnalytics from '../components/Analytics/EnergyAnalytics';
 import FireSafetyAnalytics from '../components/Analytics/FireSafetyAnalytics';
 import FlowMeterAnalytics from '../components/Analytics/FlowMeterAnalytics';
 import FuelAnalytics from '../components/Analytics/FuelAnalytics';
+import OHTAnalytics from '../components/Analytics/OHT/OHTAnalytics';
 import SolarAnalytics from '../components/Analytics/SolarAnalytics';
 import SpinningAnalytics from '../components/Analytics/SpinningAnalytics.jsx';
 import STPAnalytics from '../components/Analytics/STPAnalytics';
 import TemperatureAnalytics from '../components/Analytics/TemperatureAnalytics';
 import WaterAnalytics from '../components/Analytics/WaterAnalytics';
-import WaterMonitoringAnalytics from '../components/Analytics/WaterMonitoring/WaterMonitoringAnalytics';
 import WeatherStationAnalytics from '../components/Analytics/WeatherStationAnalytics';
-import WaterMonitoringPage from '../components/WaterMonitoring/WaterMonitoringPage';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const ANALYTICS_CONFIG = {
-	OHT: WaterMonitoringAnalytics,
-	WATER_MONITOR: WaterMonitoringAnalytics,
+	OHT: OHTAnalytics,
+	WATER_MONITOR: OHTAnalytics,
 	ENERGY: EnergyAnalytics,
 	SOLAR: SolarAnalytics,
 	TEMPERATURE: TemperatureAnalytics,
@@ -42,11 +41,9 @@ const Analytics = () => {
 	const AnalyticsComponent = ANALYTICS_CONFIG[appCode];
 
 	return (
-		<WaterMonitoringPage appCode={appCode}>
-			<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-				{AnalyticsComponent ? <AnalyticsComponent /> : <>Analytics not found</>}
-			</Box>
-		</WaterMonitoringPage>
+		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+			{AnalyticsComponent ? <AnalyticsComponent /> : <>Analytics not found</>}
+		</Box>
 	);
 };
 

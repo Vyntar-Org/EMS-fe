@@ -6,19 +6,18 @@ import EnergyMachineList from '../components/MachineList/EnergyMachineList';
 import FireSafetyMachineList from '../components/MachineList/FireSafetyMachineList';
 import FlowMeterMachineList from '../components/MachineList/FlowMeterMachineList';
 import FuelMachineList from '../components/MachineList/FuelMachineList';
+import OHTMachineList from '../components/MachineList/OHT/OHTMachineList';
 import SolarMachineList from '../components/MachineList/SolarMachineList';
 import SpinningMachineList from '../components/MachineList/SpinningMachineList.jsx';
 import STPMachineList from '../components/MachineList/STPMachineList';
 import TemperatureMachineList from '../components/MachineList/TemperatureMachineList';
 import WaterMachineList from '../components/MachineList/WaterMachineList';
-import WaterMonitoringMachineList from '../components/MachineList/WaterMonitoring/WaterMonitoringMachineList';
 import WeatherStationMachineList from '../components/MachineList/WeatherStationMachineList';
-import WaterMonitoringPage from '../components/WaterMonitoring/WaterMonitoringPage';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const MACHINE_LIST_CONFIG = {
-	OHT: WaterMonitoringMachineList,
-	WATER_MONITOR: WaterMonitoringMachineList,
+	OHT: OHTMachineList,
+	WATER_MONITOR: OHTMachineList,
 	ENERGY: EnergyMachineList,
 	TEMPERATURE: TemperatureMachineList,
 	SOLAR: SolarMachineList,
@@ -42,15 +41,13 @@ const MachineList = () => {
 	const MachineListComponent = MACHINE_LIST_CONFIG[appCode];
 
 	return (
-		<WaterMonitoringPage appCode={appCode}>
-			<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-				{MachineListComponent ? (
-					<MachineListComponent />
-				) : (
-					<>Machine List not found</>
-				)}
-			</Box>
-		</WaterMonitoringPage>
+		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+			{MachineListComponent ? (
+				<MachineListComponent />
+			) : (
+				<>Machine List not found</>
+			)}
+		</Box>
 	);
 };
 

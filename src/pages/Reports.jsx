@@ -4,15 +4,14 @@ import { useLocation } from 'react-router-dom';
 import EnergyReports from '../components/Reports/EnergyReports';
 import FlowMeterReports from '../components/Reports/FlowMeterReports';
 import FuelReports from '../components/Reports/FuelReports';
-import WaterMonitoringReports from '../components/Reports/WaterMonitoring/WaterMonitoringReports';
+import OHTReports from '../components/Reports/OHT/OHTReports';
 import WaterReports from '../components/Reports/WaterReports';
 import WeatherStationReports from '../components/Reports/WeatherStationReports';
-import WaterMonitoringPage from '../components/WaterMonitoring/WaterMonitoringPage';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const REPORTS_CONFIG = {
-	OHT: WaterMonitoringReports,
-	WATER_MONITOR: WaterMonitoringReports,
+	OHT: OHTReports,
+	WATER_MONITOR: OHTReports,
 	ENERGY: EnergyReports,
 	WATER: WaterReports,
 	FUEL: FuelReports,
@@ -30,11 +29,9 @@ const Reports = () => {
 	const ReportsComponent = REPORTS_CONFIG[appCode];
 
 	return (
-		<WaterMonitoringPage appCode={appCode}>
-			<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-				{ReportsComponent ? <ReportsComponent /> : <>Reports not found</>}
-			</Box>
-		</WaterMonitoringPage>
+		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+			{ReportsComponent ? <ReportsComponent /> : <>Reports not found</>}
+		</Box>
 	);
 };
 

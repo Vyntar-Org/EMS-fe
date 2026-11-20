@@ -77,7 +77,6 @@ const LogsFilterHeader = ({
 				<Grid item xs={12} sm md={2.5} lg={2.2}>
 					<CustomAutocomplete
 						multiple
-						selectAll
 						options={parameterOptions}
 						onChange={(val) => handleFieldCh('parameters', val)}
 						value={payload?.parameters || []}
@@ -203,13 +202,9 @@ const WaterLogs = () => {
 	const { slavesData, parametersData } = useCommonData();
 	const filteredParameterOptions = useMemo(
 		() =>
-			(parametersData || [])
-				.filter((option) => option.value !== 'water_consumption')
-				.map((option) =>
-					option.value === 'flowrate'
-						? { ...option, label: WATER_LOG_COLUMN_MAPPING.flowrate }
-						: option
-				),
+			(parametersData || []).filter(
+				(option) => option.value !== 'water_consumption'
+			),
 		[parametersData]
 	);
 	const [loading, setLoading] = useState(null);

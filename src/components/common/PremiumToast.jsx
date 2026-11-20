@@ -1,12 +1,6 @@
-import { Snackbar, Alert, CircularProgress } from '@mui/material';
+import React, { createContext, useContext, useState } from 'react';
+import { Snackbar, Alert } from '@mui/material';
 import { styled, lighten } from '@mui/material/styles';
-import {
-	createContext,
-	useContext,
-	useState,
-	useCallback,
-	useMemo,
-} from 'react';
 
 const StyledAlert = styled(Alert)(({ theme, severity }) => {
 	const severityColor = {
@@ -32,70 +26,41 @@ const StyledAlert = styled(Alert)(({ theme, severity }) => {
 const ToastContext = createContext();
 
 export const ToastProvider = ({ children }) => {
-	const [toasts, setToasts] = useState([]);
-	// Existing two-argument calls still replace the default four-second toast.
-	// Named notifications opt into independent, updateable loading lifecycles.
-	const showToast = useCallback((message, severity = 'info', options = {}) => {
-		const id = options.id ?? 'default';
-		const next = {
-			id,
-			message,
-			severity,
-			loading: options.loading === true,
-			duration: options.loading ? null : options.duration ?? 4000,
-		};
-		setToasts((previous) => {
-			const index = previous.findIndex((item) => item.id === id);
-			return index < 0
-				? [...previous, next]
-				: previous.map((item) => (item.id === id ? next : item));
-		});
-		return id;
-	}, []);
-	const dismissToast = useCallback((id = 'default') => {
-		setToasts((previous) => previous.filter((item) => item.id !== id));
-	}, []);
-	const value = useMemo(
-		() => ({ showToast, dismissToast }),
-		[showToast, dismissToast]
-	);
+	const [toast, setToast] = useState({
+		open: false,
+		message: '',
+		severity: 'info',
+	});
+
+	const showToast = (message, severity = 'info') => {
+		setToast({ open: true, message, severity });
+	};
+
+	const hideToast = () => {
+		setToast({ ...toast, open: false });
+	};
 
 	return (
-		<ToastContext.Provider value={value}>
+		<ToastContext.Provider value={{ showToast }}>
 			{children}
-			{toasts.map((toast, index) => (
-				<Snackbar
-					key={`${toast.id}:${toast.loading ? 'loading' : 'result'}`}
-					open
-					autoHideDuration={toast.duration}
-					onClose={(_, reason) => {
-						if (reason !== 'clickaway' && !toast.loading) {
-							dismissToast(toast.id);
-						}
-					}}
-					anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-					sx={{ top: { xs: 16 + index * 86, sm: 24 + index * 86 } }}
+			<Snackbar
+				open={toast.open}
+				autoHideDuration={4000}
+				onClose={hideToast}
+				anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+			>
+				<StyledAlert
+					onClose={hideToast}
+					severity={toast.severity}
+					variant="filled"
 				>
-					<StyledAlert
-						onClose={toast.loading ? undefined : () => dismissToast(toast.id)}
-						icon={
-							toast.loading ? (
-								<CircularProgress size={20} color="inherit" />
-							) : undefined
-						}
-						severity={toast.severity}
-						variant="filled"
-					>
-						{toast.message}
-					</StyledAlert>
-				</Snackbar>
-			))}
+					{toast.message}
+				</StyledAlert>
+			</Snackbar>
 		</ToastContext.Provider>
 	);
 };
 
-// Existing public hook lives beside its provider for compatibility.
-// eslint-disable-next-line react-refresh/only-export-components
 export const useToast = () => {
 	const context = useContext(ToastContext);
 	if (!context) {

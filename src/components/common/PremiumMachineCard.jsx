@@ -29,7 +29,6 @@ const PremiumMachineCard = ({
 	headerTagline,
 	statusLabel: customStatusLabel,
 	statusColor: customStatusColor,
-	headerColor,
 	children,
 }) => {
 	const isOnline = status?.toLowerCase() === 'online';
@@ -37,7 +36,7 @@ const PremiumMachineCard = ({
 	const statusLabel = customStatusLabel || (isOnline ? 'ONLINE' : 'OFFLINE');
 	const accent = accentColor || APP_ACCENT_COLOR[app] || statusColor;
 	const getVisualColor = (theme) =>
-		warningState ? theme.palette.warning.main : headerColor || statusColor;
+		warningState ? theme.palette.warning.main : statusColor;
 
 	return (
 		<Box

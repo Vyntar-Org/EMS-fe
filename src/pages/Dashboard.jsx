@@ -8,26 +8,24 @@ import FuelDashboard from '../components/Dashboards/FuelDashboard';
 import STPDashboard from '../components/Dashboards/STPDashboard';
 import WaterDashboard from '../components/Dashboards/WaterDashboard';
 import WeatherStationDashboard from '../components/Dashboards/WeatherStationDashboard';
-import WaterMonitoringPage from '../components/WaterMonitoring/WaterMonitoringPage';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
-const WaterMonitoringDashboard = lazy(
-	() =>
-		import('../components/Dashboards/WaterMonitoring/WaterMonitoringDashboard')
+const OHTDashboard = lazy(
+	() => import('../components/Dashboards/OHT/OHTDashboard')
 );
-function LazyWaterMonitoringDashboard() {
+function LazyOHTDashboard() {
 	return (
 		<Suspense
 			fallback={<Box sx={{ p: 2 }}>Loading Water Monitoring dashboard...</Box>}
 		>
-			<WaterMonitoringDashboard />
+			<OHTDashboard />
 		</Suspense>
 	);
 }
 
 const DASHBOARD_CONFIG = {
-	OHT: LazyWaterMonitoringDashboard,
-	WATER_MONITOR: LazyWaterMonitoringDashboard,
+	OHT: LazyOHTDashboard,
+	WATER_MONITOR: LazyOHTDashboard,
 	ENERGY: EnergyDashboard,
 	WATER: WaterDashboard,
 	FUEL: FuelDashboard,
@@ -46,11 +44,9 @@ const Dashboard = () => {
 	const DashboardComponent = DASHBOARD_CONFIG[appCode];
 
 	return (
-		<WaterMonitoringPage appCode={appCode}>
-			<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-				{DashboardComponent ? <DashboardComponent /> : <>Dashboard not found</>}
-			</Box>
-		</WaterMonitoringPage>
+		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+			{DashboardComponent ? <DashboardComponent /> : <>Dashboard not found</>}
+		</Box>
 	);
 };
 

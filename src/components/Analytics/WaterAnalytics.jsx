@@ -1,22 +1,41 @@
-import { Box } from '@mui/material';
+import { RestartAlt, Search, Timeline } from '@mui/icons-material';
+import {
+	Box,
+	Button,
+	Checkbox,
+	FormControlLabel,
+	Grid,
+	Typography,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import dayjs from 'dayjs';
 import { memo, useCallback, useMemo, useState } from 'react';
 
+import { UNIQUE_PASTEL_BGS } from '../../constants/energyAnalytics';
 import { WATER_LOG_COLUMN_MAPPING } from '../../constants/waterLogs';
 import { useCommonData } from '../../contexts/CommonDataContext';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import { buildAnalyticsPointSeries } from '../../helpers/chartConfig';
+import {
+	buildAnalyticsPointSeries,
+	getCategoricalColors,
+} from '../../helpers/chartConfig';
+import { basePickerStyles } from '../../helpers/common';
 import CustomApexChart from '../common/CustomApexChart';
+import { CustomAutocomplete } from '../common/CustomAutocomplete';
+import { CustomDatePicker } from '../common/CustomDatePicker';
 import NoDataFound from '../common/errors/NoDataFound';
 import { Loading } from '../common/Loading';
 
-import { getDefaultDateRange } from './waterAnalyticsDates';
-import {
-	CHART_CANVAS_HEIGHT,
-	GlobalFiltersRow,
-	MergedWaterAnalysisPanel,
-	WaterAnalysisPanel,
-} from './WaterAnalyticsPanels';
+// Same colorblind-safe palette the dashboards use, one accent per
+// comparison row (cycled), so each row's chrome reads as a deliberate
+// identity instead of a random pastel fill.
+const ROW_ACCENTS = getCategoricalColors(6);
+// Distinct from any single row's accent — signals "this combines every row"
+// rather than belonging to one of them.
+const MERGE_ACCENT = getCategoricalColors(7)[6];
+
+const getDefaultDateRange = () => [dayjs().subtract(24, 'hour'), dayjs()];
 
 // Stable module-scope function (not recreated per render) so components
 // that depend on its output can memoize against a real change in selection.
@@ -41,6 +60,196 @@ const getProcessedChartData = (rawAnalytics, activeKeys) => {
 		),
 	};
 };
+
+const GlobalFiltersRow = memo(
+	({
+		dateTime,
+		onDateChange,
+		addNewComparisonRow,
+		mergeCompare,
+		onMergeChange,
+		showMergeOption,
+	}) => (
+		<Box
+			sx={{
+				pb: 2,
+				borderBottom: '1px dashed',
+				borderColor: 'divider',
+				display: 'flex',
+				gap: 2,
+			}}
+		>
+			<Grid container alignItems="end" spacing={2}>
+				<Grid item xs={12} md={8} lg={6}>
+					<CustomDatePicker
+						mode="datetimerangepicker"
+						onChange={onDateChange}
+						value={dateTime || ''}
+					/>
+				</Grid>
+
+				<Grid
+					item
+					xs={12}
+					sm="auto"
+					ml="auto"
+					display="flex"
+					alignItems="center"
+					gap={1.5}
+				>
+					{showMergeOption && (
+						<FormControlLabel
+							control={
+								<Checkbox
+									checked={mergeCompare}
+									onChange={(e) => onMergeChange(e.target.checked)}
+									size="small"
+								/>
+							}
+							label="Merge All Devices into One Chart"
+							sx={{
+								whiteSpace: 'nowrap',
+								mr: 0,
+								'.MuiFormControlLabel-label': {
+									fontSize: '14px',
+									fontWeight: 600,
+								},
+							}}
+						/>
+					)}
+					{!mergeCompare && (
+						<Button
+							fullWidth
+							size="large"
+							disableElevation
+							sx={{
+								fontWeight: 'bold',
+								borderRadius: '16px',
+							}}
+							variant="contained"
+							color="secondary"
+							onClick={addNewComparisonRow}
+						>
+							+ Add Device To Compare
+						</Button>
+					)}
+				</Grid>
+			</Grid>
+		</Box>
+	)
+);
+GlobalFiltersRow.displayName = 'GlobalFiltersRow';
+
+const DeviceFilterRow = memo(
+	({
+		comparisonId,
+		slaveOptions,
+		payload,
+		handleFieldChange,
+		handleSearch,
+		handleReset,
+		showCancel,
+		parameterOptions,
+	}) => (
+		<Box
+			sx={{
+				py: 1.5,
+				px: 2,
+				bgcolor: 'background.paper',
+				borderRadius: 2,
+				mb: 1,
+			}}
+		>
+			<Grid container spacing={2} alignItems="center">
+				<Grid item xs={12} md={3.5}>
+					<CustomAutocomplete
+						options={slaveOptions}
+						onChange={(val) => handleFieldChange(comparisonId, 'slave_id', val)}
+						value={payload?.slave_id || ''}
+						label="Select Device"
+						size="small"
+						sx={basePickerStyles}
+					/>
+				</Grid>
+				<Grid item xs={12} md={4.5}>
+					<CustomAutocomplete
+						options={parameterOptions}
+						onChange={(val) =>
+							handleFieldChange(comparisonId, 'parameters', val ? [val] : [])
+						}
+						value={payload?.parameters?.[0] || ''}
+						label="Select Parameter"
+						size="small"
+						sx={basePickerStyles}
+					/>
+				</Grid>
+				<Grid
+					item
+					xs={12}
+					md={4}
+					display="flex"
+					gap={1}
+					justifyContent="flex-end"
+				>
+					<Button
+						variant="contained"
+						onClick={() => handleSearch(comparisonId)}
+						startIcon={<Search />}
+						size="small"
+						disableElevation
+						sx={{
+							fontWeight: 'bold',
+							borderRadius: '8px',
+						}}
+					>
+						Analyze
+					</Button>
+					<Button
+						variant="outlined"
+						color="inherit"
+						onClick={() => handleReset(comparisonId)}
+						size="small"
+						disableElevation
+						sx={{
+							fontWeight: 'bold',
+							borderRadius: '8px',
+						}}
+					>
+						<RestartAlt fontSize="small" />
+					</Button>
+					{showCancel && (
+						<Button
+							variant="outlined"
+							color="error"
+							onClick={() => handleReset(comparisonId, true)}
+							size="small"
+							disableElevation
+							sx={{
+								fontWeight: 'bold',
+								borderRadius: '8px',
+							}}
+						>
+							Cancel
+						</Button>
+					)}
+				</Grid>
+			</Grid>
+		</Box>
+	)
+);
+DeviceFilterRow.displayName = 'DeviceFilterRow';
+
+// One comparison row: owns its own expensive downsampling + chart-options
+// build behind useMemo, and is itself memo()-wrapped, so a keystroke or
+// state change unrelated to this row (global date picker, another row's
+// device pick, adding a new empty row) no longer re-runs its chart math or
+// forces ApexCharts to re-render this row's SVG.
+// Per-chart canvas height cap — the compact grid relies on every row
+// having the same predictable height so N comparison rows tile into a
+// dense 2-column matrix instead of each stretching to fill leftover
+// vertical space (which is what forced the old full-height stack to
+// scroll for anything beyond a single row).
+const CHART_CANVAS_HEIGHT = 350;
 
 const AnalyticsRow = memo(
 	({
@@ -78,23 +287,88 @@ const AnalyticsRow = memo(
 			[slaveOptions, usedDeviceIds, payload?.slave_id?.value]
 		);
 
+		const uniqueBgColor = UNIQUE_PASTEL_BGS[index % UNIQUE_PASTEL_BGS.length];
+		const accent = ROW_ACCENTS[index % ROW_ACCENTS.length];
+		const deviceLabel = payload?.slave_id?.label || `Device Segment ${id}`;
+
 		return (
-			<WaterAnalysisPanel
-				id={id}
-				index={index}
-				payload={payload}
-				titleSuffix={
-					rawAnalytics?.data?.length > 1200
-						? ` (Downsampled from ${rawAnalytics.data.length} points)`
-						: ' '
-				}
-				slaveOptions={filteredSlaveOptions}
-				handleFieldChange={handleFieldChange}
-				handleSearch={handleSearch}
-				handleReset={handleReset}
-				showCancel={showCancel}
-				parametersData={parametersData}
+			<Box
+				sx={{
+					display: 'flex',
+					flexDirection: 'column',
+					p: 1.25,
+					borderRadius: '18px',
+					bgcolor: uniqueBgColor,
+					border: '1px solid',
+					borderColor: (t) =>
+						alpha(accent, t.palette.mode === 'dark' ? 0.32 : 0.22),
+					boxShadow: (t) =>
+						t.palette.mode === 'dark'
+							? `0 2px 6px ${alpha('#000', 0.3)}, 0 10px 26px ${alpha(
+									'#000',
+									0.22
+							  )}`
+							: `0 1px 3px ${alpha('#0F233E', 0.06)}, 0 8px 22px ${alpha(
+									'#0F233E',
+									0.06
+							  )}`,
+					transition: 'box-shadow 0.25s ease, border-color 0.25s ease',
+					'&:hover': {
+						borderColor: alpha(accent, 0.5),
+					},
+				}}
 			>
+				<Box
+					display="flex"
+					alignItems="center"
+					gap={1}
+					mb={1}
+					minWidth={0}
+					flexShrink={0}
+				>
+					<Box
+						sx={{
+							width: 30,
+							height: 30,
+							borderRadius: '9px',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							flexShrink: 0,
+							bgcolor: alpha(accent, 0.16),
+							color: accent,
+							'& svg': { fontSize: 17 },
+						}}
+					>
+						<Timeline />
+					</Box>
+					<Typography
+						variant="subtitle1"
+						sx={{
+							fontWeight: 700,
+							minWidth: 0,
+							overflow: 'hidden',
+							textOverflow: 'ellipsis',
+							whiteSpace: 'nowrap',
+						}}
+					>
+						{deviceLabel} Analysis{' '}
+						{rawAnalytics?.data?.length > 1200 &&
+							`(Downsampled from ${rawAnalytics.data.length} points)`}
+					</Typography>
+				</Box>
+
+				<DeviceFilterRow
+					comparisonId={id}
+					slaveOptions={filteredSlaveOptions}
+					payload={payload}
+					handleFieldChange={handleFieldChange}
+					handleSearch={handleSearch}
+					handleReset={handleReset}
+					showCancel={showCancel}
+					parameterOptions={parametersData}
+				/>
+
 				<Box height={CHART_CANVAS_HEIGHT}>
 					{isLoading ? (
 						<Loading />
@@ -109,7 +383,7 @@ const AnalyticsRow = memo(
 						/>
 					)}
 				</Box>
-			</WaterAnalysisPanel>
+			</Box>
 		);
 	}
 );
@@ -139,7 +413,65 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 	}, [rows]);
 
 	return (
-		<MergedWaterAnalysisPanel deviceLabels={rows.map((row) => row.deviceLabel)}>
+		<Box
+			sx={{
+				gridColumn: '1 / -1',
+				display: 'flex',
+				flexDirection: 'column',
+				p: 1.25,
+				borderRadius: '18px',
+				bgcolor: 'surface.muted',
+				border: '1px solid',
+				borderColor: (t) =>
+					alpha(MERGE_ACCENT, t.palette.mode === 'dark' ? 0.32 : 0.22),
+				boxShadow: (t) =>
+					t.palette.mode === 'dark'
+						? `0 2px 6px ${alpha('#000', 0.3)}, 0 10px 26px ${alpha(
+								'#000',
+								0.22
+						  )}`
+						: `0 1px 3px ${alpha('#0F233E', 0.06)}, 0 8px 22px ${alpha(
+								'#0F233E',
+								0.06
+						  )}`,
+			}}
+		>
+			<Box
+				display="flex"
+				alignItems="center"
+				gap={1}
+				mb={0.5}
+				minWidth={0}
+				flexShrink={0}
+			>
+				<Box
+					sx={{
+						width: 30,
+						height: 30,
+						borderRadius: '9px',
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						flexShrink: 0,
+						bgcolor: alpha(MERGE_ACCENT, 0.16),
+						color: MERGE_ACCENT,
+						'& svg': { fontSize: 17 },
+					}}
+				>
+					<Timeline />
+				</Box>
+				<Typography variant="subtitle1" sx={{ fontWeight: 700, minWidth: 0 }}>
+					Merged Comparison
+				</Typography>
+			</Box>
+
+			<Typography
+				variant="body2"
+				sx={{ color: 'text.secondary', mb: 1.5, flexShrink: 0 }}
+			>
+				{rows.map((row) => row.deviceLabel).join(' merged ')}
+			</Typography>
+
 			<Box height={CHART_CANVAS_HEIGHT}>
 				{isAnyLoading ? (
 					<Loading />
@@ -154,7 +486,7 @@ const MergedAnalyticsRow = memo(({ rows, isAnyLoading }) => {
 					/>
 				)}
 			</Box>
-		</MergedWaterAnalysisPanel>
+		</Box>
 	);
 });
 MergedAnalyticsRow.displayName = 'MergedAnalyticsRow';

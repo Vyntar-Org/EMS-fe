@@ -37,7 +37,7 @@ import { layoutBackgroundSx } from '../../helpers/layoutImages';
 import { getPagePath } from '../../helpers/pageMapping.jsx';
 import { APP_ICONS } from '../common/MachineCardBits';
 import PremiumModal from '../common/PremiumModal';
-import WaterMonitoringTankIcon from '../WaterMonitoring/WaterMonitoringTankIcon';
+import OHTTankIcon from '../OHT/OHTTankIcon';
 
 const menuItemSx = {
 	borderRadius: '10px',
@@ -305,7 +305,7 @@ export const Header = ({
 										? 'Water Monitoring'
 										: app.name;
 									const AppIcon = isWaterMonitoring
-										? WaterMonitoringTankIcon
+										? OHTTankIcon
 										: APP_ICONS[appCode] || SensorsIcon;
 									// Each app tab lights up in that app's own identity color
 									// when selected (same palette used on its cards/charts
