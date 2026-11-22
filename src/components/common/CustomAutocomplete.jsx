@@ -3,6 +3,7 @@ import {
 	Autocomplete,
 	Box,
 	Checkbox,
+	createFilterOptions,
 	ListSubheader,
 	Popper,
 	TextField,
@@ -16,6 +17,8 @@ import React from 'react';
 import { List, useListRef } from 'react-window';
 
 const LISTBOX_PADDING = 8; // px
+const SELECT_ALL = { value: '__select_all__', label: 'Select All' };
+const filterOptions = createFilterOptions();
 
 function RowComponent({ index, itemData, style }) {
 	const dataSet = itemData[index];
@@ -147,6 +150,7 @@ export const CustomAutocomplete = ({
 	helperText,
 	fullWidth = true,
 	multiple = false,
+	selectAll = false,
 	placeholder = '',
 	...props
 }) => {
@@ -190,6 +194,8 @@ export const CustomAutocomplete = ({
 		: options?.find(
 				(option) => option.value === value || option.value === value.value
 		  ) || null;
+	const canSelectAll = multiple && selectAll && options.length > 0;
+	const allSelected = canSelectAll && selectedValues.length === options.length;
 
 	return (
 		<Box
@@ -205,9 +211,17 @@ export const CustomAutocomplete = ({
 				disableListWrap
 				multiple={multiple}
 				options={options}
-				onChange={(event, newValue) => {
-					if (onChange) {
-						onChange(newValue);
+				{...(canSelectAll && {
+					filterOptions: (items, state) => [
+						SELECT_ALL,
+						...filterOptions(items, state),
+					],
+				})}
+				onChange={(_, newValue) => {
+					if (canSelectAll && newValue.includes(SELECT_ALL)) {
+						onChange?.(allSelected ? [] : options);
+					} else {
+						onChange?.(newValue);
 					}
 				}}
 				onBlur={onBlur}
@@ -257,6 +271,9 @@ export const CustomAutocomplete = ({
 				renderOption={(renderProps, option, { selected }) => (
 					<li
 						{...renderProps}
+						aria-selected={
+							option === SELECT_ALL ? allSelected : renderProps['aria-selected']
+						}
 						key={option.value}
 						style={{
 							paddingLeft: '16px',
@@ -269,7 +286,12 @@ export const CustomAutocomplete = ({
 								icon={<CheckBoxOutlineBlankOutlined fontSize="small" />}
 								checkedIcon={<CheckBox fontSize="small" />}
 								style={{ marginRight: 8, padding: 0 }}
-								checked={selected}
+								checked={option === SELECT_ALL ? allSelected : selected}
+								indeterminate={
+									option === SELECT_ALL &&
+									!allSelected &&
+									selectedValues.length > 0
+								}
 							/>
 						)}
 						<Typography

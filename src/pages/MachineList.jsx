@@ -6,6 +6,7 @@ import EnergyMachineList from '../components/MachineList/EnergyMachineList';
 import FireSafetyMachineList from '../components/MachineList/FireSafetyMachineList';
 import FlowMeterMachineList from '../components/MachineList/FlowMeterMachineList';
 import FuelMachineList from '../components/MachineList/FuelMachineList';
+import OHTMachineList from '../components/MachineList/OHT/OHTMachineList';
 import SolarMachineList from '../components/MachineList/SolarMachineList';
 import SpinningMachineList from '../components/MachineList/SpinningMachineList.jsx';
 import STPMachineList from '../components/MachineList/STPMachineList';
@@ -15,6 +16,8 @@ import WeatherStationMachineList from '../components/MachineList/WeatherStationM
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const MACHINE_LIST_CONFIG = {
+	OHT: OHTMachineList,
+	WATER_MONITOR: OHTMachineList,
 	ENERGY: EnergyMachineList,
 	TEMPERATURE: TemperatureMachineList,
 	SOLAR: SolarMachineList,

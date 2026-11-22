@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import { lazy, Suspense } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import EnergyDashboard from '../components/Dashboards/EnergyDashboard';
@@ -9,7 +10,22 @@ import WaterDashboard from '../components/Dashboards/WaterDashboard';
 import WeatherStationDashboard from '../components/Dashboards/WeatherStationDashboard';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
+const OHTDashboard = lazy(
+	() => import('../components/Dashboards/OHT/OHTDashboard')
+);
+function LazyOHTDashboard() {
+	return (
+		<Suspense
+			fallback={<Box sx={{ p: 2 }}>Loading Water Monitoring dashboard...</Box>}
+		>
+			<OHTDashboard />
+		</Suspense>
+	);
+}
+
 const DASHBOARD_CONFIG = {
+	OHT: LazyOHTDashboard,
+	WATER_MONITOR: LazyOHTDashboard,
 	ENERGY: EnergyDashboard,
 	WATER: WaterDashboard,
 	FUEL: FuelDashboard,

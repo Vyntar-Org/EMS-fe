@@ -37,6 +37,7 @@ import { layoutBackgroundSx } from '../../helpers/layoutImages';
 import { getPagePath } from '../../helpers/pageMapping.jsx';
 import { APP_ICONS } from '../common/MachineCardBits';
 import PremiumModal from '../common/PremiumModal';
+import OHTTankIcon from '../OHT/OHTTankIcon';
 
 const menuItemSx = {
 	borderRadius: '10px',
@@ -298,7 +299,14 @@ export const Header = ({
 							>
 								{applications.map((app) => {
 									const appCode = app.code?.toUpperCase();
-									const AppIcon = APP_ICONS[appCode] || SensorsIcon;
+									const isWaterMonitoring =
+										appCode === 'WATER_MONITOR' || appCode === 'OHT';
+									const appLabel = isWaterMonitoring
+										? 'Water Monitoring'
+										: app.name;
+									const AppIcon = isWaterMonitoring
+										? OHTTankIcon
+										: APP_ICONS[appCode] || SensorsIcon;
 									// Each app tab lights up in that app's own identity color
 									// when selected (same palette used on its cards/charts
 									// everywhere else) instead of one generic accent for every
@@ -323,7 +331,7 @@ export const Header = ({
 													}}
 												>
 													<AppIcon className="app-tab-icon" />
-													{app.name}
+													{appLabel}
 												</Box>
 											}
 											value={app.code}

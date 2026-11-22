@@ -4,11 +4,14 @@ import { useLocation } from 'react-router-dom';
 import EnergyReports from '../components/Reports/EnergyReports';
 import FlowMeterReports from '../components/Reports/FlowMeterReports';
 import FuelReports from '../components/Reports/FuelReports';
+import OHTReports from '../components/Reports/OHT/OHTReports';
 import WaterReports from '../components/Reports/WaterReports';
 import WeatherStationReports from '../components/Reports/WeatherStationReports';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const REPORTS_CONFIG = {
+	OHT: OHTReports,
+	WATER_MONITOR: OHTReports,
 	ENERGY: EnergyReports,
 	WATER: WaterReports,
 	FUEL: FuelReports,

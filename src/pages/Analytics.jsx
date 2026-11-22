@@ -6,6 +6,7 @@ import EnergyAnalytics from '../components/Analytics/EnergyAnalytics';
 import FireSafetyAnalytics from '../components/Analytics/FireSafetyAnalytics';
 import FlowMeterAnalytics from '../components/Analytics/FlowMeterAnalytics';
 import FuelAnalytics from '../components/Analytics/FuelAnalytics';
+import OHTAnalytics from '../components/Analytics/OHT/OHTAnalytics';
 import SolarAnalytics from '../components/Analytics/SolarAnalytics';
 import SpinningAnalytics from '../components/Analytics/SpinningAnalytics.jsx';
 import STPAnalytics from '../components/Analytics/STPAnalytics';
@@ -15,6 +16,8 @@ import WeatherStationAnalytics from '../components/Analytics/WeatherStationAnaly
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const ANALYTICS_CONFIG = {
+	OHT: OHTAnalytics,
+	WATER_MONITOR: OHTAnalytics,
 	ENERGY: EnergyAnalytics,
 	SOLAR: SolarAnalytics,
 	TEMPERATURE: TemperatureAnalytics,
