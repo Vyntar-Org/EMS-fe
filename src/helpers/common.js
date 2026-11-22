@@ -70,7 +70,7 @@ export const downAnalyticsSampleData = (data, threshold, key) => {
 			const area =
 				Math.abs(
 					(pointA_X - avgX) * ((Number(data[j][key]) || 0) - pointA_Y) -
-					(pointA_X - j) * (avgY - pointA_Y)
+						(pointA_X - j) * (avgY - pointA_Y)
 				) * 0.5;
 
 			if (area > maxArea) {
@@ -223,7 +223,6 @@ export const transformDynamicDataToDailyMatrix = (
 			header: 'Unit',
 			size: 90,
 			meta: { sticky: 'left', stickyOffset: 160, fixedExport: true },
-
 		},
 		...sortedDates.map((dateString) => {
 			let headerLabel = dateString;
