@@ -5,11 +5,13 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { Circle, MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 
-import {
-	WEATHER_SITE_LATITUDE,
-	WEATHER_SITE_LONGITUDE,
-} from '../../../constants/weatherStationDashboard';
+// Old static coordinates — now passed in from the site-location API.
+// import {
+// 	WEATHER_SITE_LATITUDE,
+// 	WEATHER_SITE_LONGITUDE,
+// } from '../../../constants/weatherStationDashboard';
 import { useMapHeight } from '../../../hooks/useWeatherStationChartHeight';
+import NoDataFound from '../../common/errors/NoDataFound';
 
 import DashboardCard from './DashboardCard';
 import MapResizeHandler from './MapResizeHandler';
@@ -21,13 +23,30 @@ L.Icon.Default.mergeOptions({
 	shadowUrl: markerShadow,
 });
 
-const SiteLocationMap = ({
-	lat = WEATHER_SITE_LATITUDE,
-	lon = WEATHER_SITE_LONGITUDE,
-}) => {
+// Old signature with static default coordinates:
+// const SiteLocationMap = ({
+// 	lat = WEATHER_SITE_LATITUDE,
+// 	lon = WEATHER_SITE_LONGITUDE,
+// }) => {
+const SiteLocationMap = ({ lat, lon, name, loading = false }) => {
 	const { height: mapHeight, breakpoint } = useMapHeight();
 	const theme = useTheme();
+	const hasPosition = Number.isFinite(lat) && Number.isFinite(lon);
 	const position = [lat, lon];
+
+	if (!hasPosition) {
+		return (
+			<DashboardCard title="Satellite Site Location Map">
+				<Box sx={{ height: mapHeight, width: '100%' }}>
+					<NoDataFound
+						message={
+							loading ? 'Loading site location…' : 'Site location not available'
+						}
+					/>
+				</Box>
+			</DashboardCard>
+		);
+	}
 
 	return (
 		<DashboardCard title="Satellite Site Location Map">
@@ -49,7 +68,8 @@ const SiteLocationMap = ({
 				}}
 			>
 				<MapContainer
-					key={`weather-map-${breakpoint}-${mapHeight}`}
+					// key={`weather-map-${breakpoint}-${mapHeight}`}
+					key={`weather-map-${breakpoint}-${mapHeight}-${lat}-${lon}`}
 					center={position}
 					zoom={16}
 					scrollWheelZoom={false}
@@ -71,7 +91,8 @@ const SiteLocationMap = ({
 					/>
 					<Marker position={position}>
 						<Popup>
-							<strong>Weather Station + Solar PV Site</strong>
+							{/* <strong>Weather Station + Solar PV Site</strong> */}
+							<strong>{name || 'Weather Station Site'}</strong>
 							<br />
 							Lat: {lat}
 							<br />
