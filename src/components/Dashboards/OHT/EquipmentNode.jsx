@@ -119,7 +119,7 @@ export default function EquipmentNode({
 							<strong data-water-ui={running ? 'text-green' : ''}>
 								{state.motor}
 							</strong>
-							<small>{state.mode} mode</small>
+							<small>{state.controlMode} / {state.controlType}</small>
 						</>
 					) : type?.kind === 'meter' ? (
 						<>
@@ -154,7 +154,7 @@ export default function EquipmentNode({
 			{monitoring && type?.kind === 'pump' && (
 				<button
 					data-water-ui={`motor-switch ${running ? 'switch-on' : ''} ${
-						state.mode !== 'Auto' ? 'switch-manual' : ''
+						block ? 'switch-manual' : ''
 					}`}
 					role="switch"
 					aria-checked={running}

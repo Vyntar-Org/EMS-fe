@@ -1,9 +1,66 @@
 import { api } from './api';
 import { API_URLS } from './apiUrls';
 export async function getWaterMonitoringMachines({ signal } = {}) {
-	const response = await api.get(API_URLS.WATER_MONITORING_MACHINE_LIST, {
-		signal,
-	});
+	// const response = await api.get(API_URLS.WATER_MONITORING_MACHINE_LIST, {
+	// 	signal,
+	// });
+
+	const response = {
+		success: true,
+		message: 'OHT machines fetched successfully',
+		data: {
+			machines: [
+				{
+					slave_id: 47551346,
+					slave_name: 'Tank 1',
+					slave_index: 1,
+					device_id: 88,
+					device_uid: 'VRT2026342',
+					status: 'ONLINE',
+					latest_ts: '2026-11-26T15:34:59',
+					tank_level: 25,
+					fill_percent: 25,
+					capacity: 100,
+					flowrate: 0,
+					flowrate_change_pct: null,
+					totalizer: 0,
+					totalizer_change_pct: null,
+					operation_mode: 1,
+					control_type: 0,
+					control_type_switchable: true,
+					remote_control_eligible: true,
+					motor_runstate: true,
+					motor_errorcode: 1,
+					alerts: ['LOW_LEVEL'],
+					consumption: {
+						today: 0,
+						today_change_pct: null,
+						mtd: 0,
+						mtd_change_pct: null,
+					},
+					last_command: {
+						id: 176,
+						motor_id: 1,
+						command: 1,
+						status: 'ACKED',
+						requested_at: '2026-11-26T10:01:24.988583Z',
+						acked_at: '2026-11-26T15:31:15',
+						error_message: null,
+					},
+				},
+			],
+			summary: {
+				total: 1,
+				running: 1,
+				stopped: 0,
+			},
+		},
+		errors: null,
+		meta: {
+			application: 'OHT',
+		},
+	};
+
 	if (response?.success === false) {
 		throw new Error('Unable to load Water Monitoring machines.');
 	}
@@ -18,8 +75,6 @@ export async function getWaterMonitoringMachines({ signal } = {}) {
 			TankLevel: machine.tank_level,
 			flowrate: machine.flowrate,
 			totalizer: machine.totalizer,
-			controlMode: machine.control_mode,
-			motorRunState: machine.motor_run_state,
 		},
 		// Verified in apps/applications/oht/constants.py TREND_PARAMETERS:
 		// the tank_level series selects the raw tank_level column with unit %.
@@ -81,8 +136,7 @@ export function metricReading(machine, key, unavailable) {
 	const number = numericReading(raw);
 	const config = machine.metrics?.[key] ?? {};
 	const precision = config.precision;
-	// Preserve raw measurements, including out-of-range percentages. Only the
-	// graphical fill is clamped by tankLevelState; the displayed reading is not.
+	// Preserve the raw measurement. Tank graphics clamp the fill when rendering.
 	const valid = !unavailable && number !== null;
 	return {
 		value: valid
@@ -99,19 +153,46 @@ export function metricReading(machine, key, unavailable) {
 	};
 }
 
+export const OHT_TELEMETRY_STALE_SECONDS = 60;
+
+export function ohtControlMode(value) {
+	const mode = typeof value === 'string' ? value.trim().toLowerCase() : '';
+	return mode === 'auto' ? 'Auto' : mode === 'manual' ? 'Manual' : 'Unknown';
+}
+
+export function ohtOperationMode(value) {
+	return value === 1 ? 'Remote' : value === 0 ? 'Manual' : 'Unknown';
+}
+
+export function ohtControlType(value) {
+	return value === 0
+		? 'User Control'
+		: value === 1
+		  ? 'Level Control'
+		  : 'Unknown';
+}
+
+export function ohtMotorStatus(value) {
+	return value === true ? 'Running' : value === false ? 'Stopped' : 'Unknown';
+}
+
 export function waterMachineState(
 	machine,
-	{ preview = false, failed = false, now = Date.now(), staleAfter } = {}
+	{
+		preview = false,
+		failed = false,
+		now = Date.now(),
+		staleAfter = OHT_TELEMETRY_STALE_SECONDS,
+	} = {}
 ) {
 	// OHT REST contract: connectivity is decided by the backend. Retain last
 	// reported readings/feedback even when offline; controls check connectivity.
 	if (Object.hasOwn(machine, 'latest_ts')) {
 		const connection = String(machine.status ?? '').toUpperCase();
-		const mode =
-			typeof machine.control_mode === 'string'
-				? machine.control_mode.trim().toLowerCase()
-				: '';
-		const motor = machine.motor_run_state;
+		const timestamp = Date.parse(machine.latest_ts);
+		const stale =
+			machine.is_stale === true ||
+			(Number.isFinite(timestamp) && now - timestamp > staleAfter * 1000);
 		return {
 			connection:
 				connection === 'ONLINE'
@@ -119,15 +200,13 @@ export function waterMachineState(
 					: connection === 'OFFLINE'
 					  ? 'Offline'
 					  : 'Unknown',
-			timestamp: Date.parse(machine.latest_ts),
-			stale: false,
+			timestamp,
+			stale,
 			unavailable: failed,
-			mode: mode === 'auto' ? 'Auto' : mode === 'manual' ? 'Manual' : 'Unknown',
-			motor: ['1', 1, true].includes(motor)
-				? 'Running'
-				: ['0', 0, false].includes(motor)
-				  ? 'Stopped'
-				  : 'Unknown',
+			mode: ohtOperationMode(machine.operation_mode),
+			controlMode: ohtControlMode(machine.control_mode),
+			controlType: ohtControlType(machine.control_type),
+			motor: ohtMotorStatus(machine.motor_runstate),
 		};
 	}
 	const latest = machine.latest ?? {};
@@ -154,18 +233,10 @@ export function waterMachineState(
 		unavailable,
 		stale,
 		timestamp,
-		mode:
-			!unavailable && latest.controlMode === 'manual'
-				? 'Manual'
-				: !unavailable && latest.controlMode === 'auto'
-				  ? 'Auto'
-				  : 'Unknown',
-		motor:
-			!unavailable && String(latest.motorRunState) === '1'
-				? 'Running'
-				: !unavailable && String(latest.motorRunState) === '0'
-				  ? 'Stopped'
-				  : 'Unknown',
+		mode: ohtOperationMode(machine.operation_mode),
+		controlMode: ohtControlMode(machine.control_mode),
+		controlType: ohtControlType(machine.control_type),
+		motor: ohtMotorStatus(machine.motor_runstate),
 	};
 }
 

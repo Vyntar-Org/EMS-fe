@@ -150,8 +150,10 @@ export default function EquipmentInspector({
 								<dd>{state.connection}</dd>
 								<dt>Motor feedback</dt>
 								<dd>{state.motor}</dd>
-								<dt>Control mode</dt>
-								<dd>{state.mode}</dd>
+								<dt>Control Mode</dt>
+								<dd>{state.controlMode}</dd>
+								<dt>Control type</dt>
+								<dd>{state.controlType}</dd>
 								<dt>Last reading</dt>
 								<dd>
 									{preview

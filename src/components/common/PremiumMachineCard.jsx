@@ -23,6 +23,7 @@ const PremiumMachineCard = ({
 	footer,
 	accentColor,
 	headerIcon,
+	compact = false,
 	warningState = false,
 	statusMessage,
 	headerCaption,
@@ -44,7 +45,7 @@ const PremiumMachineCard = ({
 				width: '100%',
 				maxWidth: '100%',
 				boxSizing: 'border-box',
-				p: MACHINE_CARD_DESIGN.cardPadding,
+				p: compact ? 0.75 : MACHINE_CARD_DESIGN.cardPadding,
 				borderRadius: MACHINE_CARD_DESIGN.cardRadius,
 				border: '1px solid',
 				borderColor: (t) =>
@@ -63,7 +64,7 @@ const PremiumMachineCard = ({
 						: '0 12px 35px rgba(37,69,111,.10)',
 				display: 'flex',
 				flexDirection: 'column',
-				gap: MACHINE_CARD_DESIGN.cardGap,
+				gap: compact ? 0.625 : MACHINE_CARD_DESIGN.cardGap,
 				minWidth: 0,
 				transition: (t) =>
 					t.transitions.create(['transform', 'box-shadow', 'border-color'], {
@@ -84,7 +85,7 @@ const PremiumMachineCard = ({
 				sx={{
 					position: 'relative',
 					overflow: 'hidden',
-					minHeight: MACHINE_CARD_DESIGN.headerMinHeight,
+					minHeight: compact ? 62 : MACHINE_CARD_DESIGN.headerMinHeight,
 					borderRadius: MACHINE_CARD_DESIGN.sectionRadius,
 					border: '1px solid',
 					borderColor: (t) => alpha(getVisualColor(t), 0.42),
@@ -117,12 +118,12 @@ const PremiumMachineCard = ({
 					alignItems="center"
 					spacing={1}
 					height="100%"
-					p={1.05}
+					p={compact ? 0.75 : 1.05}
 				>
 					<Box
 						sx={{
-							width: 56,
-							height: 56,
+							width: compact ? 40 : 56,
+							height: compact ? 40 : 56,
 							borderRadius: '50%',
 							display: 'grid',
 							placeItems: 'center',
@@ -131,8 +132,8 @@ const PremiumMachineCard = ({
 							border: '3px solid rgba(255,255,255,.85)',
 							boxShadow: '0 7px 16px rgba(28,48,76,.16)',
 							'& .MuiAvatar-root': {
-								width: 50,
-								height: 50,
+								width: compact ? 34 : 50,
+								height: compact ? 34 : 50,
 								color: accent,
 								bgcolor: 'transparent',
 								background: 'transparent',

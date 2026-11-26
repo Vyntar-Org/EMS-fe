@@ -1,13 +1,18 @@
 import {
-	AutorenewRounded,
+	TouchAppRounded,
+	ArrowDownwardRounded,
+	InfoOutlined,
 	MemoryRounded,
-	SensorsRounded,
+	WarningRounded,
+	WifiOffRounded,
+	PersonOutlineRounded,
 	SettingsRounded,
 	SpeedRounded,
-	WaterDropRounded,
+	StorageRounded,
+	WavesRounded,
 } from '@mui/icons-material';
-import { Box, Chip, Typography } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
+import { Box, ButtonBase, Tooltip, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { memo } from 'react';
 
 import {
@@ -15,8 +20,8 @@ import {
 	waterMachineState,
 	waterMachineTitle,
 } from '../../../helpers/oht';
-import { MACHINE_CARD_DESIGN } from '../../common/machineCardDesign';
 import PremiumMachineCard from '../../common/PremiumMachineCard';
+import OHTTankIcon from '../../OHT/OHTTankIcon';
 
 import OHTMachineSummary from './OHTMachineSummary';
 import OHTMetric from './OHTMetric';
@@ -32,6 +37,9 @@ const OHTMachineCard = memo(function OHTMachineCard({
 	trendEnabled,
 	preview = false,
 	commandControl,
+	controlTypePending,
+	controlTypeBlocked,
+	onControlTypeChange,
 	onMotorRequest,
 }) {
 	const state = waterMachineState(machine, {
@@ -40,28 +48,43 @@ const OHTMachineCard = memo(function OHTMachineCard({
 		failed,
 		preview,
 	});
+
 	const tank = metricReading(machine, 'TankLevel', state.unavailable);
-	const tankFill = tankLevelState({
-		level: machine.latest?.TankLevel,
-		fillPercent: machine.fill_percent,
-		capacity: machine.capacity,
-		unit: tank.unit,
-		// OHTTankConfig.capacity declares the same unit as tank_level.
-		capacityUnitMatchesLevel: Object.hasOwn(machine, 'latest_ts'),
-		unavailable: state.unavailable,
-	});
-	tank.percentage = tankFill.percentage;
 	const flow = metricReading(machine, 'flowrate', state.unavailable);
 	const total = metricReading(machine, 'totalizer', state.unavailable);
 	const title = waterMachineTitle(machine);
+	let controlTypeReason = '';
+	if (state.connection !== 'Online') {
+		controlTypeReason = 'Control type changes require an online device.';
+	} else if (state.mode === 'Manual') {
+		controlTypeReason =
+			'The motor is controlled locally in Manual mode. Set its operation mode to Remote at the local panel to change the control type from this app.';
+	} else if (state.mode !== 'Remote') {
+		controlTypeReason = 'Control type changes require Remote mode.';
+	} else if (machine.control_type_switchable !== true || preview) {
+		controlTypeReason = 'You can’t change the control type for this motor.';
+	} else if (failed) {
+		controlTypeReason = 'Refresh the machine list to try again.';
+	} else if (controlTypePending) {
+		controlTypeReason = 'Sending the control type change…';
+	} else if (commandControl?.blockedReason) {
+		controlTypeReason =
+			'The server has blocked remote control for this device.';
+	} else if (commandControl?.locked) {
+		controlTypeReason =
+			'You can change the control type once the previous motor command is resolved.';
+	} else if (
+		controlTypeBlocked ||
+		!machine.device_uid ||
+		!onControlTypeChange
+	) {
+		controlTypeReason = 'You can’t change the control type right now.';
+	}
+	const controlTypeDisabled = Boolean(controlTypeReason);
+	const controlTypeUnknown = state.controlType === 'Unknown';
 	const canViewTrend = preview || trendEnabled;
 	const status = state.connection;
 	const theme = useTheme();
-	const strategy = String(machine.control_strategy ?? '')
-		.trim()
-		.toUpperCase();
-	const showStrategy =
-		state.mode === 'Auto' && (strategy === 'LEVEL' || strategy === 'REMOTE');
 	return (
 		<Box
 			component="article"
@@ -71,7 +94,9 @@ const OHTMachineCard = memo(function OHTMachineCard({
 			minWidth={0}
 		>
 			<PremiumMachineCard
+				compact
 				app="WATER"
+				headerIcon={<OHTTankIcon color="info" sx={{ fontSize: 26 }} />}
 				title={title}
 				status={status}
 				statusLabel={status.toUpperCase()}
@@ -88,53 +113,18 @@ const OHTMachineCard = memo(function OHTMachineCard({
 				onOpenTrend={onTrend}
 				footer={canViewTrend ? undefined : null}
 			>
-				<Box
-					data-water-ui="card-body"
-					sx={{
-						gap: MACHINE_CARD_DESIGN.cardGap,
-						pt: 0,
-						'& [data-water-ui~="status-panel"], & [data-water-ui~="motor-control"], & [data-water-ui~="period-panel"], & [data-water-ui~="instruments"] [data-water-ui~="metric-inline"]':
-							{
-								borderRadius: MACHINE_CARD_DESIGN.sectionRadius,
-								borderColor: 'divider',
-								bgcolor: 'background.paper',
-								backgroundImage: 'none',
-							},
-						'& [data-water-ui~="instruments"] [data-water-ui~="metric-copy"] h3, & [data-water-ui~="status-label"]':
-							{
-								fontSize: MACHINE_CARD_DESIGN.metricLabelSize,
-								color: 'text.secondary',
-							},
-						'& [data-water-ui~="metric-value"]': {
-							fontSize: MACHINE_CARD_DESIGN.metricValueSize,
-							color: 'text.primary',
-							fontWeight: 900,
-						},
-					}}
-				>
-					{!preview && (failed || state.stale) && (
+				<Box data-water-ui="card-body">
+					{!preview && failed && (
 						<Typography data-water-ui="data-warning" role="status">
-							{failed ? 'Refresh failed.' : 'Stale telemetry.'} Readings
-							unavailable.
+							Refresh failed. Readings unavailable.
 						</Typography>
 					)}
 					<Box data-water-ui="instruments">
 						<Box data-water-ui="tank-panel">
-							<Box data-water-ui="tank-heading">
-								<Typography>
-									Tank Level
-									{tank.percentage === null && tank.unit !== 'Unit unverified'
-										? ` (${tank.unit})`
-										: ''}
-								</Typography>
-							</Box>
 							<OHTTankGraphic
 								percentage={tank.percentage}
 								rawValue={tank.value}
-								unavailable={
-									state.unavailable ||
-									(tank.number === null && tank.percentage === null)
-								}
+								unavailable={tank.number === null}
 								unit={tank.unit === 'Unit unverified' ? '' : tank.unit}
 							/>
 						</Box>
@@ -157,7 +147,7 @@ const OHTMachineCard = memo(function OHTMachineCard({
 										: machine.totalizer_change_pct ?? null
 								}
 								comparisonLabel="vs. one hour ago"
-								labelIcon={<WaterDropRounded />}
+								labelIcon={<StorageRounded />}
 								previous={
 									state.unavailable ? null : machine.previous?.totalizer
 								}
@@ -171,156 +161,147 @@ const OHTMachineCard = memo(function OHTMachineCard({
 						preview={preview}
 					/>
 					<Box data-water-ui="status-panel">
-						<Box data-water-ui="mode-section">
-							<SettingsRounded data-water-ui="status-icon" />
-							<Box>
-								<Typography data-water-ui="status-label">
-									Control Mode
-								</Typography>
-								<Box display="flex" flexWrap="wrap" gap={0.5}>
-									<Chip
-										size="small"
-										label={state.mode}
-										icon={<SettingsRounded />}
-										color={
-											state.mode === 'Auto'
-												? 'success'
-												: state.mode === 'Manual'
-												  ? 'warning'
-												  : 'default'
-										}
-										variant="outlined"
-									/>
-									{showStrategy && (
-										<Chip
-											size="small"
-											label={strategy}
-											icon={
-												strategy === 'LEVEL' ? (
-													<WaterDropRounded />
-												) : (
-													<SensorsRounded />
-												)
-											}
-											aria-label={`Control strategy: ${strategy}`}
-											title={`Control strategy: ${strategy}`}
-											variant="outlined"
-											sx={(theme) => {
-												const color =
-													strategy === 'REMOTE'
-														? theme.palette.mode === 'dark'
-															? theme.palette.primary.light
-															: theme.palette.primary.main
-														: theme.palette.text.primary;
-												return {
-													color,
-													bgcolor: alpha(color, 0.05),
-													borderColor: alpha(color, 0.24),
-													'& .MuiChip-icon': { color: 'inherit' },
-													'& .MuiChip-label': { fontWeight: 700 },
-												};
-											}}
-										/>
-									)}
-								</Box>
+						<Box>
+							<Typography data-water-ui="status-label">
+								Operation Mode
+								<Tooltip
+									title="Remote mode allows control from the app. Manual mode uses local control."
+									describeChild
+								>
+									<Box
+										component="span"
+										data-water-ui="status-info"
+										tabIndex={0}
+										aria-label="About Operation Mode"
+									>
+										<InfoOutlined />
+									</Box>
+								</Tooltip>
+							</Typography>
+							<Box data-water-ui="mode-badge" data-mode={state.mode}>
+								{state.mode === 'Manual' ? (
+									<TouchAppRounded />
+								) : (
+									<SettingsRounded />
+								)}
+								{state.mode}
 							</Box>
 						</Box>
-						<Box data-water-ui="motor-section">
-							<MemoryRounded data-water-ui="status-icon" />
-							<Box>
-								<Typography data-water-ui="status-label">
-									Motor Status
-								</Typography>
-								<span
-									data-water-ui={`motor-status motor-${state.motor.toLowerCase()}${
-										preview ? ' motor-preview' : ''
-									}`}
+						<Box data-water-ui="control-type">
+							<Typography data-water-ui="status-label">
+								Control Type
+								<Tooltip
+									title="User Control switches the motor manually. Level Control runs it based on water level."
+									describeChild
 								>
-									<AutorenewRounded />
-									{state.motor}
-									{preview && state.motor === 'Running' && (
-										<span data-water-ui="status-demo">Demo</span>
+									<Box
+										component="span"
+										data-water-ui="status-info"
+										tabIndex={0}
+										aria-label="About Control Type"
+									>
+										<InfoOutlined />
+									</Box>
+								</Tooltip>
+							</Typography>
+							<Tooltip title={controlTypeReason} describeChild>
+								<Box
+									data-water-ui="segments"
+									data-control-type-disabled={controlTypeDisabled || undefined}
+									data-control-type-unknown={controlTypeUnknown || undefined}
+									role="group"
+									aria-label={`Control type: ${state.controlType}`}
+									tabIndex={controlTypeDisabled ? 0 : undefined}
+								>
+									{controlTypeUnknown && (
+										<Box data-water-ui="control-type-status">
+											<InfoOutlined aria-hidden="true" />
+											Control type unknown
+										</Box>
 									)}
-								</span>
-							</Box>
+									{[
+										[0, 'User Control', PersonOutlineRounded],
+										[1, 'Level Control', WavesRounded],
+									].map(([value, label, Icon]) => (
+										<ButtonBase
+											key={value}
+											data-active={machine.control_type === value}
+											aria-pressed={machine.control_type === value}
+											disabled={controlTypeDisabled}
+											onClick={() => {
+												if (machine.control_type !== value) {
+													onControlTypeChange(machine, value);
+												}
+											}}
+										>
+											<Icon /> {label}
+										</ButtonBase>
+									))}
+								</Box>
+							</Tooltip>
 						</Box>
 					</Box>
-					{state.connection === 'Offline' && (
-						<Typography variant="caption">
-							Offline — showing last reported readings and motor feedback.
-						</Typography>
-					)}
-					{machine.alerts?.map((alert) => (
-						<Chip
-							key={alert}
-							label={alert.replaceAll('_', ' ')}
-							color="warning"
-							variant="outlined"
-							size="small"
-						/>
-					))}
 					<OHTMotorControl
 						machine={machine}
 						state={state}
 						title={title}
 						preview={preview}
 						control={commandControl}
+						controlTypePending={controlTypePending}
 						failed={failed}
 						onRequest={onMotorRequest}
 					/>
+					{status === 'Offline' && (
+						<Box data-water-ui="offline-note">
+							<Box data-water-ui="offline-icon">
+								<WifiOffRounded />
+							</Box>
+							<Box data-water-ui="notice-copy">
+								<Typography data-water-ui="notice-title">
+									Device offline &mdash; showing last reported readings
+								</Typography>
+								<Typography data-water-ui="notice-detail">
+									<MemoryRounded /> Motor feedback:{' '}
+									{state.motor === 'Unknown'
+										? 'Unavailable'
+										: `${state.motor} (last reported)`}
+								</Typography>
+							</Box>
+						</Box>
+					)}
+					{machine.alerts?.map((alert) => {
+						const label = alert.replaceAll('_', ' ');
+						const lowLevel = ['low level', 'low water level'].includes(
+							label.trim().toLowerCase()
+						);
+						if (status === 'Offline' && lowLevel) {
+							return null;
+						}
+						return (
+							<Box key={alert} data-water-ui="tank-alert">
+								<WarningRounded data-water-ui="alert-icon" />
+								<Box data-water-ui="notice-copy">
+									<Typography data-water-ui="notice-title">
+										{lowLevel ? 'Low Water Level' : label}
+									</Typography>
+									{lowLevel && (
+										<Typography data-water-ui="notice-detail">
+											Tank level is critically low
+										</Typography>
+									)}
+								</Box>
+								{lowLevel && (
+									<Box data-water-ui="level-symbol">
+										<ArrowDownwardRounded />
+										<WavesRounded />
+									</Box>
+								)}
+							</Box>
+						);
+					})}
 				</Box>
 			</PremiumMachineCard>
 		</Box>
 	);
 });
 export default OHTMachineCard;
-
-const numeric = (value) =>
-	(typeof value === 'number' ||
-		(typeof value === 'string' && value.trim() !== '')) &&
-	Number.isFinite(Number(value))
-		? Number(value)
-		: null;
-
-// OHTTankConfig.capacity is documented in the backend as the same unit as
-// tank_level. Other callers must explicitly confirm that relationship.
-function tankLevelState({
-	level,
-	fillPercent,
-	capacity,
-	unit,
-	capacityUnitMatchesLevel = false,
-	unavailable = false,
-}) {
-	const raw = numeric(level);
-	const fill = numeric(fillPercent);
-	const full = numeric(capacity);
-	let percentage = null;
-	let source = null;
-	if (!unavailable) {
-		if (fill !== null) {
-			percentage = fill;
-			source = 'fill_percent';
-		} else if (
-			raw !== null &&
-			full !== null &&
-			full > 0 &&
-			capacityUnitMatchesLevel
-		) {
-			percentage = (raw / full) * 100;
-			source = 'capacity';
-		} else if (raw !== null && unit === '%') {
-			// Only an explicitly verified percentage unit permits this fallback.
-			percentage = raw;
-			source = 'level_percent';
-		}
-	}
-	return {
-		percentage:
-			percentage !== null && Number.isFinite(percentage)
-				? Math.min(100, Math.max(0, percentage))
-				: null,
-		source,
-		capacityMissing: full === null || full <= 0,
-	};
-}

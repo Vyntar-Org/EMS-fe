@@ -275,7 +275,12 @@ export default function useOHTMotorCommand({
 			}
 		} catch (failure) {
 			if (mounted.current) {
-				completeOperation(started, operationFailureMessage(failure));
+				completeOperation(
+					started,
+					failure?.status === 403
+						? waterApiError(failure, operationFailureMessage(failure))
+						: operationFailureMessage(failure)
+				);
 				setError(
 					failure?.status === 409
 						? 'Another motor command is already in progress for this device.'
@@ -381,6 +386,20 @@ async function postWaterMotorCommand(body) {
 	);
 }
 
+export async function postWaterControlType({
+	deviceUid,
+	motorId,
+	controlType,
+}) {
+	return commandResponse(
+		await api.post(API_URLS.WATER_MONITORING_CONTROL_TYPE_CONTROL, {
+			device_uid: deviceUid,
+			motor_id: motorId,
+			control_type: controlType,
+		})
+	);
+}
+
 async function getWaterMotorStatus({ commandId, deviceUid, signal }) {
 	const params = new URLSearchParams(
 		commandId !== undefined && commandId !== null
@@ -427,7 +446,7 @@ const isCommandPending = (command) =>
 const isCommandTerminal = (command) =>
 	['ACKED', 'TIMED_OUT', 'FAILED'].includes(command?.status);
 
-function motorIdFor(machine) {
+export function motorIdFor(machine) {
 	// Verified backend mapping, not a slave primary-key guess:
 	// apps/applications/oht/apis/motor_control.py resolves
 	// Slave.objects.filter(device=device, slave_index=motor_id).
@@ -490,28 +509,26 @@ export function motorControlReason(
 	state,
 	{ locked, failed, blockedReason, unavailable } = {}
 ) {
-	const mode =
-		typeof machine.control_mode === 'string'
-			? machine.control_mode.trim().toLowerCase()
-			: '';
-	if (mode === 'manual') {
-		return 'Motor control is disabled in Manual mode. Switch to Auto mode to enable remote control.';
+	if (state.connection === 'Offline' || machine.status !== 'ONLINE') {
+		return 'Motor control is unavailable while the device is offline.';
 	}
-	if (mode !== 'auto') {
-		return 'Motor control mode is unavailable.';
+	if (machine.control_type === 1) {
+		return 'Level Control is active. The motor starts and stops automatically based on the tank’s water level, so the On/Off switch is disabled.';
 	}
-	const eligible = machine.remote_control_eligible;
-	if (eligible === false) {
-		return 'This motor is operating in Level Mode. Manual ON/OFF control is unavailable.';
+	if (state.controlMode === 'Manual') {
+		return 'This motor is in Manual mode. Remote ON/OFF control is disabled.';
 	}
-	if (eligible !== true) {
-		return 'Remote motor control is currently unavailable.';
+	if (
+		state.controlMode === 'Auto' &&
+		machine.remote_control_eligible === false
+	) {
+		return 'This motor can’t be switched on or off remotely right now.';
+	}
+	if (machine.remote_control_eligible !== true) {
+		return 'Remote ON/OFF control is unavailable for this motor.';
 	}
 	if (unavailable) {
 		return 'Motor control is unavailable.';
-	}
-	if (machine.status !== 'ONLINE') {
-		return 'Motor control is unavailable while the device is offline.';
 	}
 	if (blockedReason) {
 		return blockedReason;
@@ -522,8 +539,12 @@ export function motorControlReason(
 	if (!machine.device_uid || motorIdFor(machine) === null) {
 		return 'Motor configuration is incomplete.';
 	}
-	if (state.motor === 'Unknown') {
-		return 'Current motor status is unavailable.';
+	if (
+		state.motor === 'Unknown' ||
+		(state.controlMode !== 'Auto' &&
+			[state.mode, state.controlType].includes('Unknown'))
+	) {
+		return 'Current motor telemetry is incomplete.';
 	}
 	if (failed) {
 		return 'Refresh machine information before issuing a command.';

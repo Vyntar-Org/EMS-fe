@@ -299,12 +299,7 @@ export const Header = ({
 							>
 								{applications.map((app) => {
 									const appCode = app.code?.toUpperCase();
-									const isWaterMonitoring =
-										appCode === 'WATER_MONITOR' || appCode === 'OHT';
-									const appLabel = isWaterMonitoring
-										? 'Water Monitoring'
-										: app.name;
-									const AppIcon = isWaterMonitoring
+									const AppIcon = appCode === 'OHT'
 										? OHTTankIcon
 										: APP_ICONS[appCode] || SensorsIcon;
 									// Each app tab lights up in that app's own identity color
@@ -331,7 +326,7 @@ export const Header = ({
 													}}
 												>
 													<AppIcon className="app-tab-icon" />
-													{appLabel}
+													{app.name}
 												</Box>
 											}
 											value={app.code}

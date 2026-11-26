@@ -17,7 +17,13 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { api } from '../../../helpers/api';
 import { API_URLS } from '../../../helpers/apiUrls';
 import { exportToCSV } from '../../../helpers/exports';
-import { getWaterMonitoringMachines } from '../../../helpers/oht';
+import {
+	getWaterMonitoringMachines,
+	ohtControlMode,
+	ohtControlType,
+	ohtMotorStatus,
+	ohtOperationMode,
+} from '../../../helpers/oht';
 import { CustomAutocomplete } from '../../common/CustomAutocomplete';
 import { CustomDatePicker } from '../../common/CustomDatePicker';
 import { CustomTable } from '../../common/CustomTable';
@@ -35,8 +41,9 @@ const WATER_MONITORING_LOG_FIELDS = [
 	{ key: 'flowrate', label: 'Flow Rate (m³/h)', size: 130 },
 	{ key: 'totalizer', label: 'Totalizer', size: 130 },
 	{ key: 'control_mode', label: 'Control Mode', size: 130 },
-	{ key: 'control_strategy', label: 'Control Strategy', size: 145 },
-	{ key: 'motor_run_state', label: 'Motor Status', size: 130 },
+	{ key: 'operation_mode', label: 'Operation Mode', size: 145 },
+	{ key: 'control_type', label: 'Control Type', size: 145 },
+	{ key: 'motor_runstate', label: 'Motor Status', size: 130 },
 ];
 
 const parameterOptions = WATER_MONITORING_LOG_FIELDS.slice(1).map(
@@ -134,7 +141,7 @@ export default function OHTLogs() {
 					: undefined,
 			cell: (info) => {
 				const value = waterMonitoringLogValue(info.row.original, field.key);
-				if (field.key === 'control_mode' || field.key === 'motor_run_state') {
+				if (field.key === 'control_mode' || field.key === 'motor_runstate') {
 					const color =
 						value === 'Auto' || value === 'Running'
 							? 'success'
@@ -542,33 +549,6 @@ function waterMonitoringLogsError(error) {
 	);
 }
 
-function waterMonitoringControlMode(value) {
-	const mode = String(value ?? '')
-		.trim()
-		.toLowerCase();
-	return mode === 'auto' ? 'Auto' : mode === 'manual' ? 'Manual' : 'Unknown';
-}
-
-function waterMonitoringMotorStatus(value) {
-	return [true, 1, '1'].includes(value)
-		? 'Running'
-		: [false, 0, '0'].includes(value)
-		  ? 'Stopped'
-		  : 'Unknown';
-}
-
-function formatControlStrategy(value) {
-	const strategy = typeof value === 'string' ? value.trim().toUpperCase() : '';
-	switch (strategy) {
-		case 'LEVEL':
-			return 'Level';
-		case 'REMOTE':
-			return 'Remote';
-		default:
-			return '—';
-	}
-}
-
 function waterMonitoringLogTimestamp(value) {
 	if (typeof value !== 'string' || !value.trim()) {
 		return '—';
@@ -607,13 +587,16 @@ function waterMonitoringLogValue(row, key) {
 		return waterMonitoringLogTimestamp(row[key]);
 	}
 	if (key === 'control_mode') {
-		return waterMonitoringControlMode(row[key]);
+		return ohtControlMode(row[key]);
 	}
-	if (key === 'control_strategy') {
-		return formatControlStrategy(row[key]);
+	if (key === 'operation_mode') {
+		return ohtOperationMode(row[key]);
 	}
-	if (key === 'motor_run_state') {
-		return waterMonitoringMotorStatus(row[key]);
+	if (key === 'control_type') {
+		return ohtControlType(row[key]);
+	}
+	if (key === 'motor_runstate') {
+		return ohtMotorStatus(row[key]);
 	}
 	return row[key] ?? null;
 }

@@ -1,5 +1,11 @@
 ﻿import { useId } from 'react';
 
+const levelMarks = [0, 25, 50, 75, 100];
+const levelPosition = (level) => 123 - level * 0.93;
+const formatPercentage = new Intl.NumberFormat(undefined, {
+	maximumFractionDigits: 1,
+});
+
 // Compact industrial vessel. Unverified raw units never drive the water fill.
 export default function OHTTankGraphic({
 	percentage: suppliedPercentage,
@@ -16,27 +22,20 @@ export default function OHTTankGraphic({
 		Number.isFinite(percentage) &&
 		percentage >= 0 &&
 		percentage <= 100;
-	const surface = valid ? 123 - percentage * 0.93 : 123;
+	const surface = levelPosition(valid ? percentage : 0);
 	const body =
 		'M24 36Q24 26 59 26Q94 26 94 36V119Q94 130 59 130Q24 130 24 119Z';
-	const levelBand = !valid
-		? 'unavailable'
-		: percentage <= 25
-		  ? 'red'
-		  : percentage <= 50
-		    ? 'orange'
-		    : percentage <= 75
-		      ? 'yellow'
-		      : 'green';
+	const activeMark = valid ? levelMarks[Math.round(percentage / 25)] : null;
+	const reading = valid ? `${formatPercentage.format(percentage)}%` : null;
 	return (
-		<figure data-water-ui="tank-visual">
+		<figure data-water-ui="tank-visual" data-tank-level={activeMark}>
 			<svg
 				data-water-ui="tank home-tank industrial-tank"
 				viewBox="0 0 140 144"
 				role="img"
 				aria-label={
 					valid
-						? `Industrial water tank, ${percentage}% full`
+						? `Industrial water tank, ${reading} full`
 						: unavailable
 						  ? 'Tank level unavailable'
 						  : `Tank reading ${rawValue}${
@@ -202,81 +201,58 @@ export default function OHTTankGraphic({
 					<path d="M30 127h9v9h-9zm40 0h9v9h-9z" />
 					<rect x="17" y="135" width="86" height="4" rx="1" />
 				</g>
-				{valid && (
-					<g aria-hidden="true">
-						<path d="M101 30v93" stroke="#276084" strokeWidth="1.2" />
-						{[100, 75, 50, 25, 0].map((mark) => {
-							const y = 123 - mark * 0.93;
-							return (
-								<g key={mark}>
-									<path d={`M101 ${y}h6`} stroke="#287da6" />
-									<circle
-										cx="101"
-										cy={y}
-										r="1.7"
-										fill="#effbff"
-										stroke="#276084"
-									/>
-									<rect
-										x="107"
-										y={y - 6.5}
-										width="32"
-										height="13"
-										rx="6.5"
-										fill={`url(#${id}-scale)`}
-										stroke="#90d7ef"
-										strokeWidth=".6"
-									/>
-									<text
-										x="123"
-										y={y + 3}
-										textAnchor="middle"
-										data-water-ui="tank-scale-text"
-									>
-										{mark}%
-									</text>
-								</g>
-							);
-						})}
+				<g aria-hidden="true">
+					<path d="M101 30v93" stroke="#276084" strokeWidth="1.2" />
+					{levelMarks.map((mark) => {
+						const y = levelPosition(mark);
+						const active = mark === activeMark;
+						const badgeHeight = active ? 18 : 13;
+						return (
+							<g
+								key={mark}
+								data-tank-active-marker={active || undefined}
+							>
+								<path d={`M101 ${y}h6`} stroke="#287da6" />
+								<circle
+									cx="101"
+									cy={y}
+									r="1.7"
+									fill="#effbff"
+									stroke="#276084"
+								/>
+								<rect
+									x={active ? 104 : 107}
+									y={y - badgeHeight / 2}
+									width={active ? 38 : 32}
+									height={badgeHeight}
+									rx={badgeHeight / 2}
+									fill={`url(#${id}-scale)`}
+									stroke="#90d7ef"
+									strokeWidth=".6"
+								/>
+								<text
+									x="123"
+									y={y + (active ? 4 : 3)}
+									textAnchor="middle"
+									data-water-ui="tank-scale-text"
+								>
+									{mark}%
+								</text>
+							</g>
+						);
+					})}
+					{valid && (
 						<circle
+							data-water-ui="tank-current-level"
 							cx="101"
 							cy={surface}
-							r="2.6"
-							fill="#21c7f3"
+							r="3.2"
 							stroke="#fff"
 							strokeWidth="1"
 						/>
-					</g>
-				)}
+					)}
+				</g>
 			</svg>
-			<figcaption data-water-ui={`tank-reading level-${levelBand}`}>
-				{valid && (
-					<svg
-						data-water-ui="tank-reading-icon"
-						viewBox="0 0 24 24"
-						aria-hidden="true"
-					>
-						<path
-							fill="currentColor"
-							d="M12 2c-2 3.5-7 8.4-7 13a7 7 0 0 0 14 0c0-4.6-5-9.5-7-13Z"
-						/>
-						<path
-							d="M8 15a4 4 0 0 0 4 4"
-							fill="none"
-							stroke="white"
-							strokeWidth="1.4"
-							strokeLinecap="round"
-						/>
-					</svg>
-				)}
-				<span data-water-ui="tank-value">
-					{valid
-						? percentage + '%'
-						: unavailable
-						  ? 'N/A'
-						  : `${rawValue ?? 'N/A'}${unit ? ` ${unit}` : ''}`}
-				</span>
-			</figcaption>
 		</figure>
 	);
 }
