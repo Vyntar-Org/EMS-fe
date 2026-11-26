@@ -87,9 +87,11 @@ export default function OHTMetric({
 					<Tooltip title={explanation}>
 						<span
 							tabIndex={0}
-							data-water-ui={
-								'change change-' + (comparison?.direction || 'flat')
-							}
+							data-water-ui={`change change-${comparison?.direction || 'flat'}${
+								comparison && comparison.direction !== 'down'
+									? ' change-positive'
+									: ''
+							}`}
 						>
 							{comparison && <ChangeIcon />}
 							{changeText}

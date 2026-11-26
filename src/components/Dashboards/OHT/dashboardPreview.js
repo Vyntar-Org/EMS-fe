@@ -267,9 +267,27 @@ const sample = (fields) => ({
 export const previewTelemetry = {
 	simulated: true,
 	equipment: [
-		sample({ asset_id: 'demo-p0', controlMode: 'manual', motorRunState: '1' }),
-		sample({ asset_id: 'demo-p1', controlMode: 'auto', motorRunState: '1' }),
-		sample({ asset_id: 'demo-p2', controlMode: 'auto', motorRunState: '0' }),
+		sample({
+			asset_id: 'demo-p0',
+			operation_mode: 0,
+			control_mode: 'manual',
+			control_type: 0,
+			motor_runstate: true,
+		}),
+		sample({
+			asset_id: 'demo-p1',
+			operation_mode: 1,
+			control_mode: 'auto',
+			control_type: 0,
+			motor_runstate: true,
+		}),
+		sample({
+			asset_id: 'demo-p2',
+			operation_mode: 1,
+			control_mode: 'auto',
+			control_type: 1,
+			motor_runstate: false,
+		}),
 		sample({ asset_id: 'demo-t0', TankLevel: '75', level_unit: '%' }),
 		sample({ asset_id: 'demo-t1', TankLevel: '50', level_unit: '%' }),
 		sample({ asset_id: 'demo-t2', TankLevel: '25', level_unit: '%' }),

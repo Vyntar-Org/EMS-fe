@@ -1,7 +1,9 @@
 import {
 	CheckRounded,
 	CloseRounded,
+	PersonOutlineRounded,
 	Refresh,
+	WavesRounded,
 	WarningAmberRounded,
 } from '@mui/icons-material';
 import {
@@ -160,6 +162,8 @@ export default function MotorOperationDialog({
 	operation,
 	confirmation,
 	confirmationReason,
+	controlType = false,
+	requestError,
 	onConfirm,
 	onClose,
 	onRefresh,
@@ -173,6 +177,8 @@ export default function MotorOperationDialog({
 	const success = operation?.severity === 'success';
 	const warning = operation?.severity === 'warning';
 	const starting = (operation ?? confirmation).action === 1;
+	const controlTypeName = starting ? 'Level Control' : 'User Control';
+	const ControlTypeIcon = starting ? WavesRounded : PersonOutlineRounded;
 	const verb = starting ? 'Start' : 'Stop';
 	const ResultIcon = success
 		? CheckRounded
@@ -180,7 +186,7 @@ export default function MotorOperationDialog({
 		  ? WarningAmberRounded
 		  : CloseRounded;
 	const tone = success ? 'success' : 'error';
-	const title = confirming
+	const motorTitle = confirming
 		? `${verb} Motor?`
 		: loading
 		  ? starting
@@ -191,6 +197,11 @@ export default function MotorOperationDialog({
 		    : warning
 		      ? 'Motor Status Unconfirmed'
 		      : `Unable to ${verb} Motor`;
+	const title = controlType
+		? loading
+			? `Switching to ${controlTypeName}`
+			: `Switch to ${controlTypeName}?`
+		: motorTitle;
 
 	async function refresh() {
 		setRefreshing(true);
@@ -232,7 +243,35 @@ export default function MotorOperationDialog({
 				},
 			}}
 		>
-			{loading && <PumpIllustration starting={starting} loading />}
+			{controlType ? (
+				<Box
+					aria-hidden="true"
+					sx={{
+						display: 'grid',
+						placeItems: 'center',
+						width: 80,
+						height: 80,
+						mx: 'auto',
+						mt: 3,
+						borderRadius: '50%',
+						bgcolor: 'action.hover',
+						color: 'primary.main',
+						animation: reduceMotion ? 'none' : `${appear} 220ms ease-out`,
+					}}
+				>
+					<ControlTypeIcon
+						sx={{
+							fontSize: 42,
+							animation:
+								loading && !reduceMotion
+									? `${pulse} 1.4s ease-in-out infinite`
+									: 'none',
+						}}
+					/>
+				</Box>
+			) : (
+				loading && <PumpIllustration starting={starting} loading />
+			)}
 			{operation && !loading && (
 				<Box
 					aria-hidden="true"
@@ -282,11 +321,20 @@ export default function MotorOperationDialog({
 					{confirming && (
 						<>
 							<Typography>
-								Are you sure you want to {verb.toLowerCase()} this motor?
+								{controlType
+									? starting
+										? 'The tank’s water level will control when the motor starts and stops.'
+										: 'User Control lets you send On/Off commands when remote control is available.'
+									: `Are you sure you want to ${verb.toLowerCase()} this motor?`}
 							</Typography>
 							{confirmationReason && (
 								<Alert severity="warning" sx={{ mt: 2 }}>
 									{confirmationReason}
+								</Alert>
+							)}
+							{requestError && (
+								<Alert severity="error" sx={{ mt: 2 }}>
+									{requestError}
 								</Alert>
 							)}
 						</>
@@ -334,9 +382,9 @@ export default function MotorOperationDialog({
 						onClick={onConfirm}
 						disabled={Boolean(confirmationReason)}
 						variant="contained"
-						color={starting ? 'success' : 'warning'}
+						color={controlType ? 'primary' : starting ? 'success' : 'warning'}
 					>
-						Yes, {verb} Motor
+						{controlType ? 'Switch Control Type' : `Yes, ${verb} Motor`}
 					</Button>
 				</DialogActions>
 			)}

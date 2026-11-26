@@ -1,10 +1,12 @@
 import { Box } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
 
+import { MACHINE_CARD_DESIGN } from '../../common/machineCardDesign';
+
 export const WaterMonitoringMachineGrid = styled(Box)(({ theme }) => ({
 	display: 'grid',
 	gridTemplateColumns: 'minmax(0, 1fr)',
-	gap: theme.spacing(1.5),
+	gap: theme.spacing(MACHINE_CARD_DESIGN.gridGap),
 	[theme.breakpoints.up('sm')]: {
 		gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
 	},
@@ -19,30 +21,22 @@ export const WaterMonitoringMachineGrid = styled(Box)(({ theme }) => ({
 export const MachineListSurface = styled(Box)(
 	({ theme }) => `
 & {
-	height: 100%;
+	display: flex;
+	flex-direction: column;
+	height: calc(100vh - 56px - 16px);
 	min-height: 0;
 	min-width: 0;
-	overflow: auto;
 	container: water-list / inline-size;
 	font-family: inherit;
+}
+${theme.breakpoints.up('sm')} {
+	& {
+		height: calc(100vh - 64px - 16px);
+	}
 }
 & *,
 & [data-water-ui~="machine-card"] * {
 	box-sizing: border-box;
-}
-& [data-water-ui~="api-status"] {
-	display: flex;
-	align-items: center;
-	gap: ${theme.spacing(0.625)};
-	margin-left: auto;
-	font-size: ${theme.typography.pxToRem(10)};
-	color: ${theme.palette.info.dark};
-}
-& [data-water-ui~="api-status"] svg {
-	font-size: ${theme.typography.pxToRem(16)};
-}
-& [data-water-ui~="api-error"] {
-	color: ${theme.palette.error.dark};
 }
 & [data-water-ui~="machine-card"] {
 	--wm-accent: ${theme.palette.info.main};
@@ -108,16 +102,6 @@ export const MachineListSurface = styled(Box)(
 }
 & [data-water-ui~="tank-panel"] {
 	padding: 0 ${theme.spacing(0.625)};
-}
-& [data-water-ui~="tank-heading"] {
-	display: flex;
-	justify-content: space-between;
-	gap: ${theme.spacing(1)};
-	align-items: baseline;
-}
-& [data-water-ui~="tank-heading"] .MuiTypography-root {
-	font-size: ${theme.typography.pxToRem(11)};
-	color: ${theme.palette.info.dark};
 }
 & [data-water-ui~="tank"] {
 	display: block;
@@ -291,24 +275,11 @@ export const MachineListSurface = styled(Box)(
 	color: ${theme.palette.info.light};
 	text-align: right;
 }
-& [data-water-ui~="toggle-target"] .MuiSwitch-track {
-	border-radius: ${theme.spacing(1.5)};
-	background-color: ${theme.palette.info.light};
-}
 & [data-water-ui~="toggle-target"] .MuiSwitch-switchBase.Mui-checked.Mui-disabled {
 	color: ${theme.palette.info.light};
 }
-& [data-water-ui~="toggle-target"]
-	.MuiSwitch-switchBase.Mui-checked.Mui-disabled
-	+ .MuiSwitch-track {
-	background-color: ${theme.palette.success.dark};
-	opacity: 0.3;
-}
 & [data-water-ui~="toggle-target"][data-water-ui~="toggle-enabled"] {
 	cursor: pointer;
-}
-& [data-water-ui~="toggle-target"][data-water-ui~="toggle-enabled"]:hover {
-	box-shadow: 0 0 0 3px ${alpha(theme.palette.info.main, 0.04)};
 }
 & :is([data-water-ui~="machine-card"], [data-water-ui~="reference-card"]) .MuiButton-root:focus-visible, & [data-water-ui~="toggle-target"]:focus-visible {
 	outline: 3px solid ${theme.palette.info.main};
@@ -365,10 +336,6 @@ export const MachineListSurface = styled(Box)(
 	}
 }
 @container water-list (max-width: 767px) {
-	& [data-water-ui~="api-status"] {
-		width: 100%;
-		margin-left: 0;
-	}
 }
 @media (prefers-reduced-motion: reduce) {
 	& *,
@@ -440,38 +407,22 @@ export const MachineListSurface = styled(Box)(
 & [data-water-ui~="toggle-target"] [data-water-ui~="industrial-switch"] {
 	width: 64px;
 	height: 36px;
-	padding: ${theme.spacing(0.5)};
+	padding: 4px;
 	overflow: visible;
 }
 & [data-water-ui~="industrial-switch"] .MuiSwitch-switchBase {
-	padding: ${theme.spacing(0.5)};
+	left: 0;
+	right: auto;
+	padding: 4px;
+	transform: translateX(0);
 }
 & [data-water-ui~="industrial-switch"] .MuiSwitch-switchBase.Mui-checked {
 	transform: translateX(28px);
 }
-& [data-water-ui~="toggle-target"] [data-water-ui~="industrial-switch"] .MuiSwitch-track {
-	border-radius: ${theme.spacing(2.5)};
-	background: linear-gradient(${alpha(theme.palette.info.main, 0.28)}, ${
-		theme.palette.background.paper
-	});
-	border: 1px solid ${alpha(theme.palette.info.main, 0.28)};
-	opacity: 1;
-	box-shadow: inset 0 2px 4px ${alpha(theme.palette.info.dark, 0.15)};
-}
-& [data-water-ui~="toggle-target"]
-	[data-water-ui~="industrial-switch"]
-	.MuiSwitch-switchBase.Mui-checked
-	+ .MuiSwitch-track {
-	background: linear-gradient(${theme.palette.info.light}, ${alpha(
-		theme.palette.info.main,
-		0.28
-	)});
-	border-color: ${theme.palette.info.light};
-	opacity: 0.7;
-}
 & [data-water-ui~="power-thumb"] {
 	display: grid;
 	place-items: center;
+	box-sizing: border-box;
 	width: 28px;
 	height: 28px;
 	border-radius: 50%;
@@ -535,101 +486,6 @@ export const MachineListSurface = styled(Box)(
 		animation: none !important;
 	}
 }
-& [data-water-ui~="toolbar"] {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: ${theme.spacing(1.25)} ${theme.spacing(2.25)};
-	padding: ${theme.spacing(1)} ${theme.spacing(1.25)};
-	margin-bottom: ${theme.spacing(1.5)};
-	border: 1px solid ${alpha(theme.palette.info.main, 0.16)};
-	border-radius: ${theme.spacing(1.5)};
-	background: ${alpha(theme.palette.background.paper, 0.94)};
-}
-& [data-water-ui~="counts"] {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: ${theme.spacing(1.75)};
-}
-& [data-water-ui~="count"] {
-	display: inline-flex;
-	align-items: center;
-	gap: ${theme.spacing(0.75)};
-	min-height: 32px;
-	color: ${theme.palette.info.dark};
-	border-radius: ${theme.spacing(0.625)};
-}
-& [data-water-ui~="count-copy"] {
-	display: inline-flex;
-	align-items: baseline;
-	gap: ${theme.spacing(0.75)};
-}
-& [data-water-ui~="count"] .MuiTypography-root {
-	font-size: ${theme.typography.pxToRem(11)};
-}
-& [data-water-ui~="count"] strong.MuiTypography-root {
-	font-size: ${theme.typography.pxToRem(15)};
-	font-weight: 700;
-	color: ${theme.palette.text.primary};
-	font-variant-numeric: tabular-nums;
-}
-& [data-water-ui~="count-dot"] {
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: ${theme.palette.info.main};
-}
-& [data-water-ui~="count-running"] [data-water-ui~="count-dot"] {
-	background: ${theme.palette.success.dark};
-}
-& [data-water-ui~="count-stopped"] [data-water-ui~="count-dot"] {
-	background: ${theme.palette.info.light};
-}
-& [data-water-ui~="count"]:focus-visible {
-	outline: 2px solid ${theme.palette.info.main};
-	outline-offset: 3px;
-}
-& [data-water-ui~="page-tools"] {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	flex: 1;
-	min-width: 0;
-	gap: ${theme.spacing(1)};
-}
-& [data-water-ui~="page-tools"] .MuiChip-root {
-	height: 22px;
-	font-size: ${theme.typography.pxToRem(10)};
-}
-& [data-water-ui~="page-tools"] .MuiTextField-root {
-	width: 260px;
-	max-width: 100%;
-}
-& [data-water-ui~="page-tools"] .MuiOutlinedInput-root {
-	font-size: ${theme.typography.pxToRem(12)};
-	min-height: 38px;
-	border-radius: ${theme.spacing(1.125)};
-	background: ${theme.palette.background.paper};
-}
-& [data-water-ui~="page-tools"] .MuiOutlinedInput-notchedOutline {
-	border-color: ${alpha(theme.palette.info.main, 0.16)};
-}
-& [data-water-ui~="page-tools"] .MuiIconButton-root {
-	width: 44px;
-	height: 44px;
-	border-radius: ${theme.spacing(1.125)};
-	color: ${theme.palette.info.dark};
-}
-@container water-list (max-width: 767px) {
-	& [data-water-ui~="page-tools"] {
-		flex-basis: 100%;
-	}
-	& [data-water-ui~="page-tools"] .MuiTextField-root {
-		flex: 1;
-		min-width: 130px;
-	}
-}
 & [data-water-ui~="metric-comparison"] {
 	display: flex;
 	flex-wrap: wrap;
@@ -658,28 +514,6 @@ export const MachineListSurface = styled(Box)(
 & [data-water-ui~="change-down"] {
 	color: ${theme.palette.error.dark};
 	background: ${alpha(theme.palette.info.main, 0.16)};
-}
-& [data-water-ui~="toolbar"] {
-	display: block;
-	padding: ${theme.spacing(1.25)} ${theme.spacing(1.5)};
-	background: ${alpha(theme.palette.background.paper, 0.93)};
-}
-& [data-water-ui~="counts"] {
-	padding-bottom: ${theme.spacing(1)};
-	margin-bottom: ${theme.spacing(1.25)};
-	border-bottom: 1px solid ${theme.palette.background.paper};
-	gap: ${theme.spacing(2.25)};
-}
-& [data-water-ui~="page-tools"] {
-	gap: ${theme.spacing(1.25)};
-}
-& [data-water-ui~="page-tools"] [data-water-ui~="result-count"] {
-	font-size: ${theme.typography.pxToRem(11)};
-	color: ${theme.palette.info.light};
-}
-& [data-water-ui~="page-tools"] .MuiButton-root {
-	min-height: 40px;
-	font-size: ${theme.typography.pxToRem(11)};
 }
 & [data-water-ui~="metric-inline"] {
 	justify-content: space-between;
@@ -771,14 +605,6 @@ export const MachineListSurface = styled(Box)(
 	padding: 0;
 	min-width: 0;
 }
-& [data-water-ui~="tank-heading"] {
-	justify-content: center;
-}
-& [data-water-ui~="tank-heading"] .MuiTypography-root {
-	font-weight: 500;
-	font-size: ${theme.typography.pxToRem(10)};
-	line-height: 1.4;
-}
 & [data-water-ui~="home-tank"] {
 	width: 100%;
 	min-height: 0;
@@ -814,54 +640,6 @@ export const MachineListSurface = styled(Box)(
 & [data-water-ui~="control-label"] [data-water-ui~="control-motor"] {
 	width: 36px;
 	height: 30px;
-}
-& [data-water-ui~="toolbar"] {
-	display: block;
-	padding: ${theme.spacing(1)} ${theme.spacing(1.25)};
-}
-& [data-water-ui~="page-tools"] {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: ${theme.spacing(1.25)} ${theme.spacing(1.75)};
-}
-& [data-water-ui~="page-tools"] .MuiTextField-root {
-	width: 240px;
-	flex: 0 1 240px;
-}
-& [data-water-ui~="page-tools"] .MuiOutlinedInput-root {
-	background: ${theme.palette.background.paper};
-}
-& [data-water-ui~="counts"] {
-	display: flex;
-	flex-wrap: wrap;
-	gap: ${theme.spacing(1.75)};
-	border: 0;
-	padding: 0;
-	margin: 0;
-}
-& [data-water-ui~="count"] {
-	min-height: 32px;
-}
-& [data-water-ui~="count-total"] strong.MuiTypography-root {
-	color: ${theme.palette.info.main};
-}
-& [data-water-ui~="count-running"] strong.MuiTypography-root {
-	color: ${theme.palette.success.dark};
-}
-& [data-water-ui~="count-stopped"] strong.MuiTypography-root {
-	color: ${theme.palette.info.light};
-}
-& [data-water-ui~="page-tools"] [data-water-ui~="api-status"] {
-	margin-left: auto;
-}
-@container water-list (max-width: 767px) {
-	& [data-water-ui~="page-tools"] .MuiTextField-root {
-		flex: 1 1 200px;
-	}
-	& [data-water-ui~="counts"] {
-		flex: 1 1 auto;
-	}
 }
 @container water-list (min-width: 960px) and (max-width: 1279px) {
 	& [data-water-ui~="machine-card"] {
@@ -1087,28 +865,6 @@ export const MachineListSurface = styled(Box)(
 & [data-water-ui~="control-stopped"] [data-water-ui~="toggle-state"] {
 	color: ${theme.palette.info.light};
 }
-& [data-water-ui~="control-stopped"] [data-water-ui~="control-label"] [data-water-ui~="control-motor"] {
-	color: ${theme.palette.info.light};
-}
-& [data-water-ui~="toggle-target"] [data-water-ui~="industrial-switch"] .MuiSwitch-track,
-& [data-water-ui~="toggle-target"]
-	[data-water-ui~="industrial-switch"]
-	.MuiSwitch-switchBase.Mui-disabled
-	+ .MuiSwitch-track {
-	background: ${alpha(theme.palette.info.main, 0.28)};
-	border-color: ${theme.palette.info.light};
-	opacity: 0.65;
-	box-shadow: inset 0 1px 3px ${alpha(theme.palette.text.primary, 0.13)};
-}
-& [data-water-ui~="toggle-target"]
-	[data-water-ui~="industrial-switch"]
-	.MuiSwitch-switchBase.Mui-checked
-	+ .MuiSwitch-track {
-	background: ${theme.palette.success.dark};
-	border-color: ${theme.palette.success.dark};
-	opacity: 0.8;
-	box-shadow: 0 0 6px ${alpha(theme.palette.success.dark, 0.13)};
-}
 & [data-water-ui~="power-thumb"],
 & [data-water-ui~="industrial-switch"] .Mui-checked [data-water-ui~="power-thumb"] {
 	background: ${theme.palette.background.paper};
@@ -1283,50 +1039,76 @@ export const MachineListSurface = styled(Box)(
 		height: 115px;
 	}
 }
-& [data-water-ui~="motor-user-control"]
-	[data-water-ui~="toggle-target"]
-	[data-water-ui~="industrial-switch"]
-	.MuiSwitch-track {
-	background: ${theme.palette.info.light};
-	border-color: ${theme.palette.info.light};
+/* Motor feedback is independent of remote-control availability. */
+& [data-water-ui~="motor-status"] {
+	color: #64748b;
+	border: 1px solid currentColor;
+}
+& [data-water-ui~="motor-status"][data-water-ui~="motor-running"] {
+	color: #16a34a;
+}
+& [data-water-ui~="motor-status"][data-water-ui~="motor-stopped"] {
+	color: #dc2626;
+}
+& [data-water-ui~="motor-user-control"] {
+	--motor-color: #94a3b8;
+}
+& [data-water-ui~="control-running"][data-control-enabled] {
+	--motor-color: #166534;
+	--motor-hover: #14532d;
+	--motor-hover-fill: rgba(21, 128, 61, 0.1);
+	--motor-ring: rgba(21, 128, 61, 0.28);
+}
+& [data-water-ui~="control-stopped"][data-control-enabled] {
+	--motor-color: #dc2626;
+	--motor-hover: #b91c1c;
+	--motor-hover-fill: rgba(220, 38, 38, 0.08);
+	--motor-ring: rgba(220, 38, 38, 0.24);
+}
+& [data-water-ui~="motor-user-control"] :is([data-water-ui~="control-motor"], [data-water-ui~="toggle-state"]),
+& [data-water-ui~="motor-user-control"] [data-water-ui~="industrial-switch"] .MuiSwitch-switchBase [data-water-ui~="power-thumb"] {
+	color: var(--motor-color);
+}
+& [data-water-ui~="motor-user-control"] [data-water-ui~="control-led"] {
+	background: var(--motor-color);
 	box-shadow: none;
-}
-& [data-water-ui~="motor-user-control"]
-	[data-water-ui~="toggle-target"]
-	[data-water-ui~="industrial-switch"]
-	.MuiSwitch-switchBase.Mui-checked:not(.Mui-disabled)
-	+ .MuiSwitch-track {
-	background: ${theme.palette.success.dark};
-	border-color: ${theme.palette.success.dark};
-	box-shadow: 0 0 6px ${alpha(theme.palette.success.dark, 0.13)};
-}
-& [data-water-ui~="motor-user-control"]
-	[data-water-ui~="toggle-target"]
-	[data-water-ui~="industrial-switch"]
-	.MuiSwitch-switchBase.Mui-disabled
-	+ .MuiSwitch-track {
-	background: ${alpha(theme.palette.info.main, 0.28)};
-	border-color: ${theme.palette.info.light};
-	opacity: 0.55;
-	box-shadow: none;
-}
-& [data-water-ui~="motor-user-control"]
-	[data-water-ui~="toggle-target"]
-	[data-water-ui~="industrial-switch"]
-	.MuiSwitch-switchBase.Mui-disabled
-	[data-water-ui~="power-thumb"],
-& [data-water-ui~="motor-user-control"]:has(.MuiSwitch-switchBase.Mui-disabled)
-	[data-water-ui~="control-motor"] {
-	color: ${theme.palette.info.light};
 	animation: none;
-	box-shadow: none;
 }
-& [data-water-ui~="motor-user-control"][data-water-ui~="control-stopped"] [data-water-ui~="toggle-state"] {
-	color: ${theme.palette.info.light};
-}
-& [data-water-ui~="motor-user-control"][data-water-ui~="control-stopped"] [data-water-ui~="control-led"] {
-	background: ${theme.palette.info.light};
+& [data-water-ui~="motor-user-control"] [data-water-ui~="toggle-target"] [data-water-ui~="industrial-switch"] .MuiSwitch-track {
+	border-radius: 999px;
+	border: 1px solid;
+	background: var(--motor-color);
+	border-color: var(--motor-color);
+	opacity: 1;
 	box-shadow: none;
+	transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+& [data-water-ui~="motor-user-control"] [data-water-ui~="toggle-enabled"] {
+	transition: background-color 180ms ease, box-shadow 180ms ease;
+}
+& [data-water-ui~="motor-user-control"] [data-water-ui~="toggle-enabled"]:hover {
+	background-color: var(--motor-hover-fill);
+	box-shadow: 0 0 0 2px var(--motor-ring);
+}
+& [data-water-ui~="motor-user-control"] [data-water-ui~="toggle-enabled"]:hover [data-water-ui~="industrial-switch"] .MuiSwitch-track {
+	background: var(--motor-hover);
+	border-color: var(--motor-hover);
+}
+& [data-water-ui~="motor-user-control"] [data-water-ui~="industrial-switch"] .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
+	background: linear-gradient(105deg,#138A3F 0%,#1DAA50 100%);
+	border-color: #138a3f;
+	opacity: 1;
+}
+& [data-water-ui~="motor-user-control"] [data-water-ui~="industrial-switch"] .MuiSwitch-switchBase.Mui-focusVisible + .MuiSwitch-track {
+	outline: 2px solid var(--motor-color);
+	outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+	& [data-water-ui~="motor-user-control"] [data-water-ui~="toggle-enabled"],
+	& [data-water-ui~="motor-user-control"] [data-water-ui~="toggle-target"] [data-water-ui~="industrial-switch"] .MuiSwitch-switchBase,
+	& [data-water-ui~="motor-user-control"] [data-water-ui~="toggle-target"] [data-water-ui~="industrial-switch"] .MuiSwitch-track {
+		transition: none;
+	}
 }
 & [data-water-ui~="machine-card"] {
 	border-color: var(--wm-line);
@@ -1364,20 +1146,6 @@ export const MachineListSurface = styled(Box)(
 	align-items: center;
 	padding: ${theme.spacing(1)} ${theme.spacing(0.375)};
 }
-& [data-water-ui~="tank-heading"] {
-	max-width: 100%;
-	padding: ${theme.spacing(0.375)} ${theme.spacing(1.125)};
-	border: 1px solid ${alpha(theme.palette.info.main, 0.28)};
-	border-radius: ${theme.spacing(1)};
-	background: linear-gradient(120deg, ${theme.palette.background.paper}, ${alpha(
-		theme.palette.info.main,
-		0.28
-	)});
-}
-& [data-water-ui~="tank-heading"] .MuiTypography-root {
-	color: ${theme.palette.text.primary};
-	font-weight: 800;
-}
 & [data-water-ui~="tank-visual"] {
 	display: flex;
 	flex-direction: column;
@@ -1404,57 +1172,437 @@ export const MachineListSurface = styled(Box)(
 	font-weight: 800;
 	font-variant-numeric: tabular-nums;
 }
-& [data-water-ui~="tank-reading"] {
+& [data-water-ui~="tank-visual"] [data-tank-active-marker] [data-water-ui~="tank-scale-text"] {
+	font-size: ${theme.typography.pxToRem(12)};
+}
+& [data-tank-level="0"] {
+	--wm-level-color: #b91c1c;
+	--wm-level-bg: #fee2e2;
+}
+& [data-tank-level="25"] {
+	--wm-level-color: #854d0e;
+	--wm-level-bg: #fef08a;
+}
+& [data-tank-level="50"] {
+	--wm-level-color: #9a3412;
+	--wm-level-bg: #fed7aa;
+}
+& [data-tank-level="75"] {
+	--wm-level-color: #15803d;
+	--wm-level-bg: #dcfce7;
+}
+& [data-tank-level="100"] {
+	--wm-level-color: #064e3b;
+	--wm-level-bg: #a7f3d0;
+}
+& [data-tank-active-marker] rect {
+	fill: var(--wm-level-bg);
+	stroke: var(--wm-level-color);
+	stroke-width: 1.2;
+}
+& [data-tank-active-marker] :is(path, circle) {
+	stroke: var(--wm-level-color);
+	stroke-width: 1.4;
+}
+& [data-tank-active-marker] [data-water-ui~="tank-scale-text"],
+& [data-water-ui~="tank-current-level"] {
+	fill: var(--wm-level-color);
+}
+
+
+/* Water Machine List metric and section styles for OHT telemetry. */
+& [data-water-ui~="reference-card"] [data-water-ui~="card-body"] {
+	gap: ${theme.spacing(0.65)};
+	padding: 0;
+}
+& [data-water-ui~="reference-card"] :is(
+	[data-water-ui~="status-panel"],
+	[data-water-ui~="motor-control"],
+	[data-water-ui~="period-panel"]
+) {
+	border: 1px solid ${theme.palette.divider};
+	border-radius: ${theme.spacing(MACHINE_CARD_DESIGN.sectionRadius)};
+	background: ${theme.palette.background.paper};
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="period-grid"] {
+	gap: ${theme.spacing(0.65)};
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="period-panel"] {
+	min-height: 42px;
+	box-shadow: 0 3px 10px rgba(37, 69, 111, .04);
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="period-grid"] [data-water-ui~="period-panel"] [data-water-ui~="metric-inline"] {
+	min-height: 0;
+	padding: ${theme.spacing(0.75)};
+	align-items: flex-start;
+	flex-wrap: wrap;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="period-sparkline"] {
+	position: static;
+	width: calc(100% - 16px);
+	height: 16px;
+	margin: 0 8px 3px;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="instruments"] [data-water-ui~="measurements"] {
+	grid-template-rows: repeat(2, minmax(0, 1fr));
+	gap: ${theme.spacing(0.65)};
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="instruments"] [data-water-ui~="measurements"] [data-water-ui~="metric-inline"] {
+	align-items: flex-start;
+	min-height: 0;
+	padding: ${theme.spacing(0.75, 0.75, 0.75, 1.15)};
+	border: 1px solid ${theme.palette.divider};
+	border-radius: ${theme.spacing(MACHINE_CARD_DESIGN.sectionRadius)};
+	background: ${theme.palette.background.paper};
+	box-shadow: 0 3px 10px rgba(37, 69, 111, .04);
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="instruments"] [data-water-ui~="measurements"] [data-water-ui~="metric-inline"]::before {
+	content: '';
+	top: 7px;
+	bottom: 7px;
+	border-radius: 0 4px 4px 0;
+	background: #7c3aed;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="instruments"] [data-water-ui~="measurements"] [data-water-ui~="metric-inline"]:last-child::before {
+	background: #14b8a6;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="card-body"] [data-water-ui~="metric-inline"] [data-water-ui~="metric-copy"] h3 {
+	font-size: 0.66rem;
+	font-weight: 600;
+	color: ${theme.palette.text.secondary};
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="period-grid"] [data-water-ui~="metric-copy"] h3 {
+	font-size: 0.65rem;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="measurements"] [data-water-ui~="metric-copy"] h3 svg {
+	display: none;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="period-panel"] [data-water-ui~="metric-copy"] h3 svg {
+	font-size: 16px;
+	color: #16a34a;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="card-body"] [data-water-ui~="metric-inline"] :is([data-water-ui~="metric-value"], [data-water-ui~="metric-unit"]) {
+	padding: 0;
+	background: none;
+	color: ${theme.palette.text.primary};
+	font-size: 0.88rem;
+	font-weight: 900;
+	letter-spacing: normal;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="period-panel"] [data-water-ui~="metric-inline"] :is([data-water-ui~="metric-value"], [data-water-ui~="metric-unit"]) {
+	font-size: 0.86rem;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="card-body"] [data-water-ui~="metric-inline"] [data-water-ui~="change"] {
+	padding: ${theme.spacing(0.25, 0.55)};
+	border-radius: ${theme.spacing(1)};
+	color: ${theme.palette.text.secondary};
+	font-size: 0.68rem;
+	font-weight: 900;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="card-body"] [data-water-ui~="metric-inline"] [data-water-ui~="change"][data-water-ui~="change-positive"] {
+	color: #16a34a;
+	background: ${alpha('#16a34a', 0.08)};
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="card-body"] [data-water-ui~="metric-inline"] [data-water-ui~="change"][data-water-ui~="change-down"] {
+	color: #f23857;
+	background: ${alpha('#f23857', 0.08)};
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="metric-inline"] [data-water-ui~="change"] svg {
+	font-size: 15px;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="card-body"] [data-water-ui~="metric-inline"] [data-water-ui~="comparison-range"] {
+	color: ${theme.palette.text.secondary};
+	font-size: 0.5rem;
+}
+& [data-water-ui~="reference-card"] :is(
+	[data-water-ui~="status-label"],
+	[data-water-ui~="control-label"] .MuiTypography-root
+) {
+	color: ${theme.palette.text.secondary};
+	font-size: ${MACHINE_CARD_DESIGN.metricLabelSize};
+	font-weight: 600;
+}
+
+& [data-water-ui~="reference-card"] {
+	container: tank-card / inline-size;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="tank-visual"],
+& [data-water-ui~="reference-card"] [data-water-ui~="tank-visual"] [data-water-ui~="home-tank"] {
+	max-width: 130px;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="tank-panel"] {
+	padding-block: 0;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="instruments"] [data-water-ui~="measurements"] [data-water-ui~="metric-inline"] {
+	align-items: center;
+	padding-block: 4px;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="measurements"] [data-water-ui~="metric-copy"] h3 svg {
+	display: block;
+	padding: 0;
+	flex-shrink: 0;
+	background: transparent;
+	color: #7c3aed;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="measurements"] [data-water-ui~="metric"]:last-child h3 svg {
+	color: #059669;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="measurements"] [data-water-ui~="metric-inline"] [data-water-ui~="comparison-range"] {
+	font-size: 0.65rem;
+	text-align: right;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="change-flat"]:not([data-water-ui~="change-positive"]) {
+	background: ${theme.palette.action.selected};
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="status-panel"] {
+	gap: 6px;
+	min-height: 0;
+	padding: 4px 8px;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="status-panel"] > * {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+& [data-water-ui~="control-type"],
+& [data-water-ui~="motor-command"] {
+	border-inline-start: 1px solid ${theme.palette.divider};
+	padding-inline-start: 8px;
+	min-width: 0;
+}
+& [data-water-ui~="segments"] {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 2px;
+	margin-top: 3px;
+	padding: 1px;
+	border-radius: 12px;
+	background: ${theme.palette.action.selected};
+}
+& [data-water-ui~="segments"] > * {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	min-height: 28px;
+	padding: 2px;
+	border-radius: 11px;
+	text-align: center;
+	font-size: 0.7rem;
+	font-weight: 700;
+	line-height: 1.15;
+	color: ${theme.palette.text.primary};
+}
+& [data-water-ui~="control-type"] [data-water-ui~="segments"]:is(:hover, :focus-within) {
+	outline: 1px solid ${theme.palette.info.main};
+}
+& [data-water-ui~="segments"][data-control-type-unknown] {
+	border: 1px solid ${theme.palette.divider};
+	background: ${theme.palette.background.paper};
+}
+& [data-water-ui~="segments"] > [data-water-ui~="control-type-status"] {
+	grid-column: 1 / -1;
+	flex-direction: row;
+	gap: 4px;
+	min-height: 24px;
+	padding-inline: 6px;
+	border-radius: 10px 10px 4px 4px;
+	background: ${theme.palette.action.hover};
+	color: ${theme.palette.text.secondary};
+}
+& [data-water-ui~="control-type-status"] svg {
+	flex-shrink: 0;
+}
+& [data-water-ui~="segments"][data-control-type-disabled] {
+	cursor: not-allowed;
+}
+& [data-water-ui~="control-type"] [data-control-type-disabled]:is(:hover, :focus-visible) {
+	outline: 1px solid ${theme.palette.warning.main};
+}
+& [data-water-ui~="segments"] .Mui-focusVisible {
+	outline: 2px solid ${theme.palette.info.main};
+	outline-offset: 2px;
+}
+& [data-water-ui~="segments"] svg {
+	font-size: 13px;
+}
+& [data-water-ui~="segments"] [data-active="true"] {
+	background: linear-gradient(120deg, #15803d, #16983a);
+	color: #fff;
+}
+& [data-water-ui~="control-type"] [data-active="true"] {
+	background: linear-gradient(120deg, #076fda, #0058dc);
+}
+& [data-water-ui~="motor-feedback"],
+& [data-water-ui~="motor-command"] {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+& [data-water-ui~="motor-state-toggle"] {
+	flex-shrink: 0;
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="motor-control"] {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	padding: 4px 8px;
+}
+& [data-water-ui~="motor-feedback"] [data-water-ui~="control-motor"] {
+	width: clamp(24px, 9cqw, 50px);
+	flex-shrink: 0;
+	color: ${theme.palette.info.main};
+}
+
+& [data-water-ui~="status-panel"] [data-water-ui~="status-label"] {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 4px;
+	text-align: left;
+}
+& [data-water-ui~="status-panel"] [data-water-ui~="status-label"] svg {
+	font-size: 0.95rem;
+}
+& [data-water-ui~="status-info"] {
+	display: inline-flex;
+	border-radius: 50%;
+	cursor: help;
+}
+& [data-water-ui~="status-info"]:focus-visible {
+	outline: 1px solid ${theme.palette.info.main};
+	outline-offset: 2px;
+}
+& [data-water-ui~="mode-badge"] {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: ${theme.spacing(0.5)};
-	min-width: 62px;
-	max-width: 100%;
-	padding: ${theme.spacing(0.5)} ${theme.spacing(0.875)};
-	border: 1px solid var(--wm-level-line, ${alpha(theme.palette.info.main, 0.16)});
-	border-radius: ${theme.spacing(124.875)};
-	color: var(--wm-level-color, ${theme.palette.info.light});
-	background: linear-gradient(145deg, ${
-		theme.palette.background.paper
-	}, var(--wm-level-bg, ${theme.palette.background.paper}) 72%);
-	box-shadow: 0 3px 8px ${alpha(theme.palette.info.dark, 0.08)};
-	text-align: center;
+	gap: 6px;
+	width: fit-content;
+	min-height: 28px;
+	margin: auto;
+	padding: 2px clamp(6px, 2.5cqi, 14px);
+	border-radius: 999px;
+	background: ${theme.palette.action.selected};
+	color: ${theme.palette.text.secondary};
+	font-size: clamp(0.7rem, 2.6cqi, 0.85rem);
+	font-weight: 800;
 }
-& [data-water-ui~="tank-reading-icon"] {
-	width: 14px;
-	height: 16px;
+& [data-water-ui~="mode-badge"][data-mode="Remote"] {
+	background: ${alpha(theme.palette.success.main, 0.16)};
+	color: ${theme.palette.success.dark};
+}
+& [data-water-ui~="mode-badge"][data-mode="Manual"] {
+	background: ${alpha(theme.palette.warning.main, 0.16)};
+	color: ${theme.palette.warning.dark};
+}
+& [data-water-ui~="mode-badge"] svg {
+	font-size: 1.15em;
+}
+& [data-water-ui~="offline-note"],
+& [data-water-ui~="tank-alert"] {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 5px 8px;
+	border: 1px solid;
+	border-radius: 14px;
+}
+& [data-water-ui~="offline-note"] {
+	border-color: ${alpha(theme.palette.info.main, 0.22)};
+	background:
+		radial-gradient(ellipse 80px 28px at 100% 108%, ${alpha(
+			theme.palette.info.main,
+			0.22
+		)} 99%, transparent),
+		radial-gradient(ellipse 100px 22px at 92% 116%, ${alpha(
+			theme.palette.info.main,
+			0.17
+		)} 99%, transparent),
+		linear-gradient(120deg, ${alpha(theme.palette.info.main, 0.08)}, ${alpha(
+			theme.palette.info.main,
+			0.16
+		)});
+	color: ${theme.palette.text.primary};
+}
+& [data-water-ui~="offline-icon"] {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	border-radius: 10px;
+	background: ${alpha(theme.palette.info.main, 0.2)};
+}
+& [data-water-ui~="notice-copy"] {
+	flex: 1;
+	min-width: 0;
+	padding-inline-start: 8px;
+	border-inline-start: 1px solid ${theme.palette.divider};
+}
+& [data-water-ui~="notice-title"] {
+	font-size: clamp(0.72rem, 2.9cqi, 1rem);
+	font-weight: 800;
+	line-height: 1.25;
+}
+& [data-water-ui~="notice-detail"] {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-top: 2px;
+	color: ${theme.palette.text.secondary};
+	font-size: clamp(0.65rem, 2.5cqi, 0.88rem);
+	line-height: 1.3;
+}
+& [data-water-ui~="notice-detail"] svg {
+	font-size: 1.1em;
 	flex-shrink: 0;
 }
-& [data-water-ui~="tank-value"] {
-	font-size: clamp(14px, 4cqi, 19px);
-	font-weight: 800;
-	line-height: 1.15;
-	font-variant-numeric: tabular-nums;
-	overflow-wrap: anywhere;
+& [data-water-ui~="tank-alert"] {
+	border-color: ${alpha(theme.palette.error.main, 0.52)};
+	background: ${alpha(theme.palette.error.main, 0.1)};
+	color: ${theme.palette.error.main};
 }
-& [data-water-ui~="level-red"] {
-	--wm-level-color: ${theme.palette.error.main};
-	--wm-level-bg: ${theme.palette.background.paper};
-	--wm-level-line: ${alpha(theme.palette.info.main, 0.28)};
+& [data-water-ui~="tank-alert"] [data-water-ui~="notice-title"] {
+	font-size: clamp(0.85rem, 3.8cqi, 1.2rem);
 }
-& [data-water-ui~="level-orange"] {
-	--wm-level-color: ${theme.palette.error.main};
-	--wm-level-bg: ${theme.palette.background.paper};
-	--wm-level-line: ${alpha(theme.palette.warning.main, 0.28)};
+& [data-water-ui~="alert-icon"] {
+	font-size: 26px;
+	flex-shrink: 0;
 }
-& [data-water-ui~="level-yellow"] {
-	--wm-level-color: ${theme.palette.error.dark};
-	--wm-level-bg: ${alpha(theme.palette.info.main, 0.07)};
-	--wm-level-line: ${theme.palette.warning.light};
+& [data-water-ui~="level-symbol"] {
+	display: grid;
+	justify-items: center;
+	flex-shrink: 0;
 }
-& [data-water-ui~="level-green"] {
-	--wm-level-color: ${theme.palette.success.dark};
-	--wm-level-bg: ${theme.palette.background.paper};
-	--wm-level-line: ${alpha(theme.palette.success.main, 0.28)};
+& [data-water-ui~="level-symbol"] svg:first-child {
+	font-size: 16px;
+	margin-bottom: -4px;
 }
-& [data-water-ui~="level-unavailable"] [data-water-ui~="tank-value"] {
-	font-size: ${theme.typography.pxToRem(14)};
+@container tank-card (max-width: 280px) {
+	& [data-water-ui~="reference-card"] [data-water-ui~="motor-control"] {
+		grid-template-columns: 1fr;
+	}
+	& [data-water-ui~="motor-command"] {
+		border-inline-start: 0;
+		border-top: 1px solid ${theme.palette.divider};
+		padding: 0;
+	}
+}
+@container tank-card (min-width: 330px) {
+	& [data-water-ui~="segments"] > * {
+		flex-direction: row;
+	}
+}
+@container tank-card (min-width: 380px) {
+	& [data-water-ui~="segments"] > * {
+		font-size: 0.8rem;
+	}
+	& [data-water-ui~="reference-card"] [data-water-ui~="card-body"] [data-water-ui~="metric-inline"] :is([data-water-ui~="metric-value"], [data-water-ui~="metric-unit"]) {
+		font-size: 1.05rem;
+	}
 }
 @media (prefers-reduced-motion: reduce) {
 	& [data-water-ui~="tank-visual"] *,

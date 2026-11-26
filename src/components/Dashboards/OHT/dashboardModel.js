@@ -1,4 +1,12 @@
-﻿export const NODE_WIDTH = 164;
+import {
+	ohtControlMode,
+	ohtControlType,
+	ohtMotorStatus,
+	ohtOperationMode,
+	OHT_TELEMETRY_STALE_SECONDS,
+} from '../../../helpers/oht';
+
+export const NODE_WIDTH = 164;
 export const NODE_HEIGHT = 184;
 export const WORLD = { width: 4000, height: 2400 };
 export const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -246,7 +254,11 @@ export function parseLayout(payload) {
 }
 export function readingState(
 	record,
-	{ preview = false, now = Date.now(), staleAfter = 60 } = {}
+	{
+		preview = false,
+		now = Date.now(),
+		staleAfter = OHT_TELEMETRY_STALE_SECONDS,
+	} = {}
 ) {
 	if (!record) {
 		return {
@@ -254,19 +266,24 @@ export function readingState(
 			connection: 'Unavailable',
 			motor: 'Unknown',
 			mode: 'Unknown',
+			controlMode: 'Unknown',
+			controlType: 'Unknown',
 		};
 	}
+	const live = record.live ?? record;
+	const timestamp = live.timestamp ?? record.timestamp;
 	const time =
-		typeof record.timestamp === 'string' &&
-		/(?:Z|[+-]\d{2}:\d{2})$/i.test(record.timestamp)
-			? Date.parse(record.timestamp)
+		typeof timestamp === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/i.test(timestamp)
+			? Date.parse(timestamp)
 			: NaN;
+	const stale = live.is_stale === true || record.is_stale === true;
 	const fresh = preview
 		? record.simulated === true && record.is_stale === false
 		: Number.isFinite(time) &&
 		  now - time <= staleAfter * 1000 &&
 		  time <= now + 5000 &&
-		  record.is_stale === false;
+		  !stale &&
+		  (live.is_stale === false || record.is_stale === false);
 	const ready = fresh && record.online === true;
 	return {
 		ready,
@@ -279,18 +296,12 @@ export function readingState(
 			    : ready
 			      ? 'Online'
 			      : 'Unknown',
-		motor:
-			ready && String(record.motorRunState) === '1'
-				? 'Running'
-				: ready && String(record.motorRunState) === '0'
-				  ? 'Stopped'
-				  : 'Unknown',
-		mode:
-			ready && record.controlMode === 'auto'
-				? 'Auto'
-				: ready && record.controlMode === 'manual'
-				  ? 'Manual'
-				  : 'Unknown',
+		motor: ready ? ohtMotorStatus(live.motor_runstate) : 'Unknown',
+		mode: ready ? ohtOperationMode(live.operation_mode) : 'Unknown',
+		controlMode: ready
+			? ohtControlMode(live.control_mode ?? record.control_mode)
+			: 'Unknown',
+		controlType: ready ? ohtControlType(live.control_type) : 'Unknown',
 		timestamp: time,
 	};
 }
@@ -324,7 +335,7 @@ export function commandBlock(
 		pending = false,
 		pathsReady = false,
 		now = Date.now(),
-		staleAfter = 60,
+		staleAfter = OHT_TELEMETRY_STALE_SECONDS,
 		action,
 	} = {}
 ) {
@@ -332,11 +343,18 @@ export function commandBlock(
 		return 'Simulated preview: physical commands are disabled.';
 	}
 	const state = readingState(record, { now, staleAfter });
-	if (state.mode === 'Manual') {
-		return 'Motor control is disabled in Manual mode.';
+	if (
+		!state.ready ||
+		[state.mode, state.controlType, state.motor].includes('Unknown')
+	) {
+		return 'Fresh online motor feedback is required for remote control.';
 	}
-	if (!state.ready || state.mode !== 'Auto' || state.motor === 'Unknown') {
-		return 'Fresh online telemetry, Auto mode and actual motor feedback are required.';
+	const eligible =
+		record.live && Object.hasOwn(record.live, 'remote_control_eligible')
+			? record.live.remote_control_eligible
+			: record.remote_control_eligible;
+	if (eligible !== true) {
+		return 'Remote ON/OFF control is unavailable for this motor.';
 	}
 	if (action && action !== (state.motor === 'Running' ? 'stop' : 'start')) {
 		return 'Motor feedback changed. Review the current state and confirm again.';
@@ -372,7 +390,7 @@ export function commandOutcome(command, status, record, options) {
 		status.status === 'completed' &&
 		state.ready &&
 		state.timestamp >= command.startedAt &&
-		String(record.motorRunState) === (command.action === 'start' ? '1' : '0')
+		state.motor === (command.action === 'start' ? 'Running' : 'Stopped')
 	) {
 		return 'confirmed';
 	}

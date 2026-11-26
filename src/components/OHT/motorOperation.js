@@ -37,13 +37,8 @@ export function feedbackConfirmsOperation(machine, operation, command) {
 	const threshold = Number.isFinite(requestedAt)
 		? requestedAt
 		: operation.startedAt;
-	const raw = machine.motor_run_state;
-	const actual =
-		raw === true || raw === 1 || raw === '1'
-			? 1
-			: raw === false || raw === 0 || raw === '0'
-			  ? 0
-			  : null;
+	const reading = machine.motor_runstate;
+	const actual = typeof reading === 'boolean' ? Number(reading) : null;
 	return (
 		actual === operation.action &&
 		Number.isFinite(timestamp) &&
@@ -54,6 +49,8 @@ export function feedbackConfirmsOperation(machine, operation, command) {
 
 export function operationFailureMessage(failure) {
 	switch (failure?.status) {
+		case 403:
+			return 'Remote motor control was denied by the backend for this device.';
 		case 409:
 			return operationMessages.conflict;
 		case 500:
