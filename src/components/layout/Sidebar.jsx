@@ -5,7 +5,6 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import HistoryIcon from '@mui/icons-material/History';
 import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft';
-import SettingsIcon from '@mui/icons-material/Settings';
 import {
 	Drawer,
 	List,
@@ -30,6 +29,7 @@ import {
 	getPagePath,
 	pageDisplayInfo,
 	getPageCodeFromPath,
+	isSidebarPage,
 } from '../../helpers/pageMapping.jsx';
 import {
 	getSubAppPagePath,
@@ -48,7 +48,6 @@ const iconMap = {
 	DescriptionIcon: <DescriptionIcon />,
 	HistoryIcon: <HistoryIcon />,
 	BarChartIcon: <BarChartIcon />,
-	SettingsIcon: <SettingsIcon />,
 };
 
 const MobileApplicationsSelectMenu = ({
@@ -226,7 +225,8 @@ export const Sidebar = ({
 
 	// The sidebar owns page navigation only. Its page collection follows the
 	// route: application pages on parent routes, sub-app pages on sub-app routes.
-	const visiblePages = activeSubApp?.pages || pages;
+	// Settings lives in the header's account menu, so it is left out here.
+	const visiblePages = (activeSubApp?.pages || pages).filter(isSidebarPage);
 
 	const getPageDisplayName = (pageCode) => {
 		const info = pageDisplayInfo[pageCode];
