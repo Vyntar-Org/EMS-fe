@@ -19,7 +19,6 @@ import { API_URLS } from '../../../helpers/apiUrls';
 import { exportToCSV } from '../../../helpers/exports';
 import {
 	getWaterMonitoringMachines,
-	ohtControlMode,
 	ohtControlType,
 	ohtMotorStatus,
 	ohtOperationMode,
@@ -40,7 +39,6 @@ const WATER_MONITORING_LOG_FIELDS = [
 	{ key: 'tank_level', label: 'Tank Level', size: 130 },
 	{ key: 'flowrate', label: 'Flow Rate (m³/h)', size: 130 },
 	{ key: 'totalizer', label: 'Totalizer', size: 130 },
-	{ key: 'control_mode', label: 'Control Mode', size: 130 },
 	{ key: 'operation_mode', label: 'Operation Mode', size: 145 },
 	{ key: 'control_type', label: 'Control Type', size: 145 },
 	{ key: 'motor_runstate', label: 'Motor Status', size: 130 },
@@ -141,13 +139,8 @@ export default function OHTLogs() {
 					: undefined,
 			cell: (info) => {
 				const value = waterMonitoringLogValue(info.row.original, field.key);
-				if (field.key === 'control_mode' || field.key === 'motor_runstate') {
-					const color =
-						value === 'Auto' || value === 'Running'
-							? 'success'
-							: value === 'Manual'
-							  ? 'warning'
-							  : 'default';
+				if (field.key === 'motor_runstate') {
+					const color = value === 'Running' ? 'success' : 'default';
 					return (
 						<Chip
 							component="span"
@@ -585,9 +578,6 @@ function waterMonitoringLogTimestamp(value) {
 function waterMonitoringLogValue(row, key) {
 	if (key === 'timestamp') {
 		return waterMonitoringLogTimestamp(row[key]);
-	}
-	if (key === 'control_mode') {
-		return ohtControlMode(row[key]);
 	}
 	if (key === 'operation_mode') {
 		return ohtOperationMode(row[key]);

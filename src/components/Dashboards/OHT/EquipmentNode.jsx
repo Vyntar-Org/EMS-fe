@@ -119,7 +119,9 @@ export default function EquipmentNode({
 							<strong data-water-ui={running ? 'text-green' : ''}>
 								{state.motor}
 							</strong>
-							<small>{state.controlMode} / {state.controlType}</small>
+							<small>
+								{state.controlMode} / {state.controlType}
+							</small>
 						</>
 					) : type?.kind === 'meter' ? (
 						<>

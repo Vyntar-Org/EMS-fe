@@ -4,15 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
 import {
-	waterMachineState,
 	getWaterMonitoringMachines,
+	waterMachineState,
 } from '../../helpers/oht';
 
 import {
-	feedbackConfirmsOperation,
-	MOTOR_FAILURE_DISPLAY_MS,
-	MOTOR_OPERATION_MAX_MS,
-	MOTOR_SUCCESS_DISPLAY_MS,
+	commandErrorMessage,
+	COMMAND_TIMEOUT_MS,
 	operationFailureMessage,
 	operationMessages,
 } from './motorOperation';
@@ -25,6 +23,7 @@ export default function useOHTMotorCommand({
 	scope,
 	listKey,
 	failed,
+	deferListRefresh,
 }) {
 	const client = useQueryClient();
 	const [local, setLocal] = useState(null);
@@ -37,12 +36,17 @@ export default function useOHTMotorCommand({
 		activeOperation.current = next;
 		setOperation(next);
 	};
-	function completeOperation(current, message, severity = 'error') {
+	function completeOperation(
+		current,
+		message,
+		severity = 'error',
+		reason = ''
+	) {
 		if (!mounted.current || activeOperation.current?.token !== current.token) {
 			return;
 		}
 		updateOperation(null);
-		setOutcome({ ...current, message, severity });
+		setOutcome({ ...current, message, severity, reason });
 	}
 	const posting = useRef(false);
 	const mounted = useRef(true);
@@ -60,128 +64,111 @@ export default function useOHTMotorCommand({
 	]);
 	const recovering =
 		local?.recover && String(seed?.id ?? '') === String(local.seedId ?? '');
-	const target = recovering ? `device-${local.generation}` : seed?.id ?? 'none';
+	const watchedOperation = operation ?? outcome;
+	const trackedId = watchedOperation?.commandId ?? seed?.id;
+	const target = recovering
+		? `device-${local.generation}`
+		: trackedId ?? 'none';
 	const tracking =
 		Boolean(deviceUid) &&
 		(local?.recover || isCommandPending(seed) || Boolean(local?.command));
 	const status = useQuery({
 		queryKey: ['water-monitor', scope, 'motor-command', deviceUid, target],
-		queryFn: ({ signal }) =>
-			getWaterMotorStatus({
-				commandId: recovering ? undefined : seed?.id,
+		queryFn: ({ queryKey, signal }) =>
+			observeWaterCommand({
+				client,
+				listKey,
+				queryKey,
+				commandId: recovering ? undefined : trackedId,
 				deviceUid,
+				operation: activeOperation.current ?? watchedOperation,
 				signal,
 			}),
 		enabled: Boolean(tracking) && !local?.submitting,
-		refetchInterval: commandPollInterval,
+		refetchInterval: (query) => commandPollInterval(query, watchedOperation),
 		refetchIntervalInBackground: false,
 		refetchOnWindowFocus: true,
 		retry: false,
 	});
 	const observed = status.isSuccess || status.data !== undefined;
-	const command = observed ? status.data : seed;
-	const awaitingFeedback = Boolean(
-		operation &&
-			command?.status === 'ACKED' &&
-			String(command.id) === String(operation.commandId)
-	);
-	const pollingFeedback = operation?.commandId !== undefined;
-	// Same query key as the page: observers share one authenticated request and
-	// update cards/summary together. No new telemetry endpoint or parameters.
-	const feedback = useQuery({
-		queryKey: listKey,
-		queryFn: ({ signal }) => getWaterMonitoringMachines({ signal }),
-		enabled: pollingFeedback,
-		refetchInterval: pollingFeedback ? 2000 : false,
-		refetchIntervalInBackground: false,
-		retry: false,
-	});
+	const command = observed
+		? status.data
+		: operation?.commandId !== undefined
+		  ? local?.command
+		  : seed;
+	const failure = waterCommandFailure(watchedOperation, status.data, machines);
+	const failedDialog = failure &&
+		watchedOperation && {
+			...watchedOperation,
+			message: `The controller could not complete your Motor ${
+				watchedOperation.action === 1 ? 'ON' : 'OFF'
+			} request.`,
+			severity: 'error',
+			reason: commandErrorMessage(failure) || outcome?.reason || '',
+		};
 	useEffect(() => {
+		if (
+			failure &&
+			!commandErrorMessage(failure) &&
+			status.data?.status !== 'FAILED'
+		) {
+			status.refetch({ cancelRefetch: false });
+		}
+		if (
+			outcome &&
+			failedDialog &&
+			(outcome.severity === 'success' ||
+				(outcome.severity === 'error' &&
+					outcome.reason !== failedDialog.reason))
+		) {
+			setOutcome(failedDialog);
+		}
 		if (!operation || operation.commandId === undefined) {
 			return;
 		}
-		if (Date.now() - operation.startedAt >= MOTOR_OPERATION_MAX_MS) {
+		if (performance.now() >= operation.deadline) {
 			completeOperation(operation, operationMessages.unconfirmed, 'warning');
 			return;
 		}
-		if (status.isError) {
-			return;
-		}
-		if (!command) {
-			return;
-		}
-		if (String(command.id) !== String(operation.commandId)) {
+		if (failedDialog) {
 			completeOperation(
 				operation,
-				'Motor status could not be confirmed. Please check the equipment.',
+				failedDialog.message,
+				'error',
+				failedDialog.reason
+			);
+			return;
+		}
+		const command = status.data;
+		if (!matchesCommandId(command, operation.commandId)) {
+			return;
+		}
+		if (command.status === 'ACKED' && command.acknowledgmentVerified) {
+			completeOperation(operation, '', 'success');
+		} else if (command.status === 'TIMED_OUT') {
+			completeOperation(
+				operation,
+				'The controller did not acknowledge your motor command before the backend timed out. Please check the latest motor status before trying again.',
 				'warning'
 			);
-			return;
 		}
-		if (command.status === 'FAILED' || command.status === 'TIMED_OUT') {
-			if (command.status === 'TIMED_OUT') {
-				completeOperation(operation, operationMessages.unconfirmed, 'warning');
-			} else {
-				completeOperation(operation, operationMessages.commandFailed);
-			}
-			return;
-		}
-		if (!awaitingFeedback) {
-			return;
-		}
-		const machine = (feedback.data?.machines ?? machines).find(
-			(item) => String(item.slave_id) === String(operation.slaveId)
-		);
-		if (
-			!feedback.isError &&
-			feedbackConfirmsOperation(machine, operation, command)
-		) {
-			completeOperation(
-				operation,
-				operation.action === 1
-					? 'Motor Started Successfully'
-					: 'Motor Stopped Successfully',
-				'success'
-			);
-			client.invalidateQueries({ queryKey: listKey });
-		}
-	}, [
-		operation,
-		command,
-		status.isError,
-		feedback.data,
-		feedback.isError,
-		machines,
-	]);
+	}, [operation, outcome, status.data, failure, failedDialog?.reason]);
 	// A separate frontend deadline covers stalled submission and acknowledgment.
 	useEffect(() => {
 		if (!operation) {
 			return;
 		}
 		const timer = setTimeout(
-			() => {
-				completeOperation(operation, operationMessages.unconfirmed, 'warning');
-			},
-			Math.max(0, operation.startedAt + MOTOR_OPERATION_MAX_MS - Date.now())
+			() =>
+				completeOperation(operation, operationMessages.unconfirmed, 'warning'),
+			Math.max(0, operation.deadline - performance.now())
 		);
 		return () => clearTimeout(timer);
 	}, [operation?.token]);
-	useEffect(() => {
-		if (!outcome) {
-			return;
-		}
-		const timer = setTimeout(
-			dismissDialog,
-			outcome.severity === 'success'
-				? MOTOR_SUCCESS_DISPLAY_MS
-				: MOTOR_FAILURE_DISPLAY_MS
-		);
-		return () => clearTimeout(timer);
-	}, [outcome]);
 	function dismissDialog() {
 		setOutcome(null);
-		if (outcome?.severity === 'warning') {
-			client.invalidateQueries({ queryKey: listKey });
+		if (outcome) {
+			refreshMachineList(resolution);
 		}
 	}
 	const resolution =
@@ -194,22 +181,55 @@ export default function useOHTMotorCommand({
 		}
 	}, [local?.recover, observed, command]);
 	useEffect(() => {
-		if (!resolution || terminalRefresh.current === resolution) {
+		if (
+			!resolution ||
+			terminalRefresh.current === resolution ||
+			operation ||
+			outcome ||
+			deferListRefresh
+		) {
 			return;
 		}
-		terminalRefresh.current = resolution;
-		setError((message) =>
-			message ===
-			'Another motor command is already in progress for this device.'
-				? ''
-				: message
-		);
-		client.invalidateQueries({ queryKey: listKey }).then(() => {
-			if (mounted.current) {
-				setRefreshed(resolution);
-			}
-		});
-	}, [resolution, client, listKey]);
+		refreshMachineList(resolution, false);
+	}, [
+		resolution,
+		client,
+		listKey,
+		operation,
+		outcome,
+		deferListRefresh,
+		status.dataUpdatedAt,
+	]);
+
+	function refreshMachineList(resolvedCommand, cancelRefetch = true) {
+		if (resolvedCommand) {
+			terminalRefresh.current = resolvedCommand;
+			setError((message) =>
+				message ===
+				'Another motor command is already in progress for this device.'
+					? ''
+					: message
+			);
+		}
+		// The Control Type OK handler may already have refreshed this list.
+		if (
+			!cancelRefetch &&
+			client.getQueryState(listKey)?.dataUpdatedAt > status.dataUpdatedAt
+		) {
+			setRefreshed(resolvedCommand);
+			return;
+		}
+		client
+			.refetchQueries(
+				{ queryKey: listKey, exact: true, type: 'active' },
+				{ cancelRefetch }
+			)
+			.then(() => {
+				if (mounted.current && resolvedCommand) {
+					setRefreshed(resolvedCommand);
+				}
+			});
+	}
 	const locked = Boolean(
 		operation ||
 			local?.submitting ||
@@ -250,8 +270,7 @@ export default function useOHTMotorCommand({
 				machine.slave_name ||
 				machine.name ||
 				`Machine ${machine.slave_id}`,
-			baselineTs: Date.parse(machine.latest_ts),
-			startedAt,
+			deadline: performance.now() + COMMAND_TIMEOUT_MS,
 		};
 		updateOperation(started);
 		setError('');
@@ -275,12 +294,16 @@ export default function useOHTMotorCommand({
 			}
 		} catch (failure) {
 			if (mounted.current) {
-				completeOperation(
-					started,
-					failure?.status === 403
-						? waterApiError(failure, operationFailureMessage(failure))
-						: operationFailureMessage(failure)
-				);
+				if (performance.now() >= started.deadline) {
+					completeOperation(started, operationMessages.unconfirmed, 'warning');
+				} else {
+					completeOperation(
+						started,
+						failure?.status === 403
+							? waterApiError(failure, operationFailureMessage(failure))
+							: operationFailureMessage(failure)
+					);
+				}
 				setError(
 					failure?.status === 409
 						? 'Another motor command is already in progress for this device.'
@@ -307,18 +330,11 @@ export default function useOHTMotorCommand({
 		}
 	}
 	return {
-		dialog: operation ?? outcome,
+		dialog:
+			outcome?.severity === 'success' && failedDialog
+				? failedDialog
+				: operation ?? outcome,
 		dismissDialog,
-		refreshStatus: () =>
-			Promise.all([
-				client.fetchQuery({
-					queryKey: listKey,
-					queryFn: ({ signal }) => getWaterMonitoringMachines({ signal }),
-				}),
-				...(tracking && !local?.submitting
-					? [status.refetch({ cancelRefetch: false, throwOnError: true })]
-					: []),
-			]),
 		command,
 		locked,
 		busy: Boolean(
@@ -342,7 +358,143 @@ export default function useOHTMotorCommand({
 	};
 }
 
-function commandResponse(response) {
+function machineCommand(machines, operation) {
+	return machines?.find(
+		(machine) =>
+			machine.device_uid === operation.deviceUid &&
+			String(machine.slave_id) === String(operation.slaveId)
+	)?.last_command;
+}
+
+function matchesCommandId(command, commandId) {
+	const id = command?.id ?? command?.command_id;
+	return id !== null && commandId !== null && String(id) === String(commandId);
+}
+
+export function matchingWaterCommand(machines, operation) {
+	const latest = machineCommand(machines, operation);
+	return matchesCommandId(latest, operation.commandId) ? latest : null;
+}
+
+export function waterCommandFailure(operation, command, machines) {
+	if (operation?.commandId === null) {
+		return null;
+	}
+	const statusFailure =
+		command?.status === 'FAILED' &&
+		matchesCommandId(command, operation.commandId)
+			? command
+			: null;
+	const latest = matchingWaterCommand(machines, operation);
+	const listFailure = latest?.status === 'FAILED' ? latest : null;
+	return commandErrorMessage(statusFailure)
+		? statusFailure
+		: listFailure ?? statusFailure;
+}
+
+export async function observeWaterCommand({
+	client,
+	listKey,
+	queryKey,
+	commandId,
+	deviceUid,
+	operation,
+	signal,
+}) {
+	const previous = client.getQueryData(queryKey);
+	const previousFailure =
+		previous?.status === 'FAILED' && matchesCommandId(previous, commandId)
+			? previous
+			: null;
+	if (commandErrorMessage(previousFailure)) {
+		return previousFailure;
+	}
+	const readStatus = () =>
+		getWaterMotorStatus({ commandId, deviceUid, signal });
+	const knownFailure =
+		waterCommandFailure(
+			operation,
+			previousFailure,
+			client.getQueryData(listKey)?.machines
+		) ?? previousFailure;
+	const readFailure = async (failure) => {
+		if (commandErrorMessage(failure)) {
+			return { ...failure, id: commandId };
+		}
+		try {
+			const status = await readStatus();
+			if (status?.status === 'FAILED') {
+				return status;
+			}
+		} catch {
+			// The confirmed list failure still applies if its details cannot be read.
+		}
+		return { ...failure, id: commandId };
+	};
+	if (knownFailure) {
+		return readFailure(knownFailure);
+	}
+	const command = await readStatus();
+	if (
+		command?.status !== 'ACKED' ||
+		!matchesCommandId(command, operation?.commandId) ||
+		operation.foregroundExpired ||
+		operation.severity === 'error' ||
+		operation.severity === 'warning' ||
+		signal.aborted ||
+		performance.now() >= operation.deadline
+	) {
+		return command;
+	}
+
+	// A request already in flight may have started before acknowledgment.
+	if (client.getQueryState(listKey)?.fetchStatus === 'fetching') {
+		await client.refetchQueries(
+			{ queryKey: listKey, exact: true },
+			{ cancelRefetch: false }
+		);
+	}
+	if (signal.aborted || performance.now() >= operation.deadline) {
+		return command;
+	}
+	const { machines } = await client.fetchQuery({
+		queryKey: listKey,
+		queryFn: ({ signal }) => getWaterMonitoringMachines({ signal, live: true }),
+		staleTime: 0,
+		retry: false,
+	});
+	const listFailure = waterCommandFailure(operation, command, machines);
+	if (listFailure) {
+		return readFailure(listFailure);
+	}
+	if (signal.aborted || performance.now() >= operation.deadline) {
+		return command;
+	}
+
+	// Re-read the exact command after the list check to catch a transition
+	// that happened while the first ACK or Machine List request was in flight.
+	const confirmed = await readStatus();
+	if (confirmed?.status !== 'ACKED') {
+		return confirmed;
+	}
+	const latest = machineCommand(machines, operation);
+	const latestId = latest?.id ?? latest?.command_id;
+	const unresolved =
+		(matchesCommandId(latest, commandId) &&
+			(latest.status !== 'ACKED' || commandErrorMessage(latest))) ||
+		(latestId === null && latest?.status === 'FAILED');
+	if (
+		!unresolved &&
+		!commandErrorMessage(confirmed) &&
+		!signal.aborted &&
+		performance.now() < operation.deadline
+	) {
+		return { ...confirmed, acknowledgmentVerified: true };
+	}
+	return confirmed;
+}
+
+function commandResponse(response, { submission = false } = {}) {
 	if (response?.success === false) {
 		throw new Error('Unable to read motor command.');
 	}
@@ -359,17 +511,25 @@ function commandResponse(response) {
 	if (command === null) {
 		return null;
 	}
+	const id = command?.id ?? command?.command_id;
 	if (
 		!command ||
-		command.id === undefined ||
-		command.id === null ||
-		!['PENDING', 'PUBLISHED', 'ACKED', 'TIMED_OUT', 'FAILED'].includes(
-			command.status
-		)
+		id === undefined ||
+		id === null ||
+		(!(submission && command.status === undefined) &&
+			![
+				'PENDING',
+				'PROCESSING',
+				'PUBLISHED',
+				'SENT',
+				'ACKED',
+				'TIMED_OUT',
+				'FAILED',
+			].includes(command.status))
 	) {
 		throw new Error('Invalid motor command response.');
 	}
-	return command;
+	return { ...command, id };
 }
 
 async function postWaterMotorCommand(body) {
@@ -382,7 +542,8 @@ async function postWaterMotorCommand(body) {
 		throw new Error('Device UID and a valid backend motor ID are required.');
 	}
 	return commandResponse(
-		await api.post(API_URLS.WATER_MONITORING_MOTOR_CONTROL, body)
+		await api.post(API_URLS.WATER_MONITORING_MOTOR_CONTROL, body),
+		{ submission: true }
 	);
 }
 
@@ -396,11 +557,12 @@ export async function postWaterControlType({
 			device_uid: deviceUid,
 			motor_id: motorId,
 			control_type: controlType,
-		})
+		}),
+		{ submission: true }
 	);
 }
 
-async function getWaterMotorStatus({ commandId, deviceUid, signal }) {
+export async function getWaterMotorStatus({ commandId, deviceUid, signal }) {
 	const params = new URLSearchParams(
 		commandId !== undefined && commandId !== null
 			? { command_id: commandId }
@@ -441,7 +603,7 @@ async function getWaterMotorStatus({ commandId, deviceUid, signal }) {
 }
 
 const isCommandPending = (command) =>
-	['PENDING', 'PUBLISHED'].includes(command?.status);
+	['PENDING', 'PROCESSING', 'PUBLISHED', 'SENT'].includes(command?.status);
 
 const isCommandTerminal = (command) =>
 	['ACKED', 'TIMED_OUT', 'FAILED'].includes(command?.status);
@@ -494,9 +656,23 @@ export function waterApiError(
 	return typeof message === 'string' ? message : fallback;
 }
 
-function commandPollInterval(query) {
+export function commandPollInterval(query, operation) {
+	const status = query.state.data?.status;
+	if (
+		operation?.commandId !== null &&
+		!operation.foregroundExpired &&
+		(!operation.severity || operation.severity === 'success') &&
+		performance.now() < operation.deadline &&
+		![403, 404].includes(query.state.error?.status) &&
+		status === 'ACKED'
+	) {
+		return 2000;
+	}
 	// Network failures do not resolve a command and never trigger a POST retry.
-	if ([403, 404].includes(query.state.error?.status)) {
+	if (
+		isCommandTerminal(query.state.data) ||
+		[403, 404].includes(query.state.error?.status)
+	) {
 		return false;
 	}
 	return query.state.status === 'error' || isCommandPending(query.state.data)

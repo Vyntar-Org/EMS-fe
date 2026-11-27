@@ -1204,7 +1204,7 @@ ${theme.breakpoints.up('sm')} {
 	stroke: var(--wm-level-color);
 	stroke-width: 1.4;
 }
-& [data-tank-active-marker] [data-water-ui~="tank-scale-text"],
+& [data-water-ui~="tank-visual"] [data-tank-active-marker] [data-water-ui~="tank-scale-text"],
 & [data-water-ui~="tank-current-level"] {
 	fill: var(--wm-level-color);
 }
@@ -1375,11 +1375,11 @@ ${theme.breakpoints.up('sm')} {
 & [data-water-ui~="segments"] {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 2px;
+	gap: 0;
 	margin-top: 3px;
-	padding: 1px;
 	border-radius: 12px;
 	background: ${theme.palette.action.selected};
+	box-shadow: inset 0 0 0 1px ${theme.palette.divider};
 }
 & [data-water-ui~="segments"] > * {
 	display: flex;
@@ -1429,12 +1429,24 @@ ${theme.breakpoints.up('sm')} {
 & [data-water-ui~="segments"] svg {
 	font-size: 13px;
 }
-& [data-water-ui~="segments"] [data-active="true"] {
-	background: linear-gradient(120deg, #15803d, #16983a);
-	color: #fff;
+& [data-water-ui~="segments"] > [data-water-ui~="control-type-option"] {
+	gap: 4px;
+	min-height: 44px;
+	padding: 4px;
+	font-weight: 800;
 }
-& [data-water-ui~="control-type"] [data-active="true"] {
-	background: linear-gradient(120deg, #076fda, #0058dc);
+& [data-water-ui~="control-type-option"] svg {
+	flex-shrink: 0;
+	font-size: clamp(18px, 6cqi, 29px);
+	color: ${theme.palette.info.main};
+}
+& [data-water-ui~="control-type-option"][data-active="true"] {
+	color: #fff;
+	background: linear-gradient(145deg, #0786e7, #0054bf 75%, #00469e);
+	box-shadow: inset 0 1px 1px rgb(255 255 255 / 24%), 0 1px 3px rgb(0 62 140 / 25%);
+}
+& [data-water-ui~="control-type-option"][data-active="true"] svg {
+	color: inherit;
 }
 & [data-water-ui~="motor-feedback"],
 & [data-water-ui~="motor-command"] {
@@ -1451,9 +1463,8 @@ ${theme.breakpoints.up('sm')} {
 	padding: 4px 8px;
 }
 & [data-water-ui~="motor-feedback"] [data-water-ui~="control-motor"] {
-	width: clamp(24px, 9cqw, 50px);
+	width: clamp(30px, 12cqw, 62px);
 	flex-shrink: 0;
-	color: ${theme.palette.info.main};
 }
 
 & [data-water-ui~="status-panel"] [data-water-ui~="status-label"] {
@@ -1580,6 +1591,94 @@ ${theme.breakpoints.up('sm')} {
 & [data-water-ui~="level-symbol"] svg:first-child {
 	font-size: 16px;
 	margin-bottom: -4px;
+}
+& [data-water-ui~="high-level-alert"] {
+	padding: 6px 8px;
+	color: ${
+		theme.palette.mode === 'dark'
+			? theme.palette.success.main
+			: theme.palette.success.dark
+	};
+	border-color: ${alpha(theme.palette.success.main, 0.3)};
+	border-inline-start: 3px solid ${theme.palette.success.main};
+	background: linear-gradient(
+		110deg,
+		${alpha(theme.palette.success.main, 0.12)},
+		${alpha(theme.palette.success.main, 0.04)}
+	);
+}
+& [data-water-ui~="high-level-alert"] [data-water-ui~="notice-copy"] {
+	padding-inline-start: 0;
+	border-inline-start: 0;
+}
+& [data-water-ui~="high-level-alert"] [data-water-ui~="notice-title"] {
+	color: ${theme.palette.text.primary};
+}
+& [data-water-ui~="high-level-icon"] {
+	display: grid;
+	place-items: center;
+	flex: 0 0 30px;
+	height: 30px;
+	border-radius: 8px;
+	background: ${alpha(theme.palette.success.main, 0.16)};
+}
+& [data-water-ui~="high-level-icon"] svg {
+	font-size: 18px;
+}
+${
+	theme.palette.mode === 'dark'
+		? `
+& [data-water-ui~="reference-card"] :is(
+	[data-water-ui~="status-panel"],
+	[data-water-ui~="motor-control"],
+	[data-water-ui~="period-panel"]
+),
+& [data-water-ui~="reference-card"] [data-water-ui~="instruments"] [data-water-ui~="measurements"] [data-water-ui~="metric-inline"] {
+	background: ${theme.palette.surface.muted};
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="period-panel"] [data-water-ui~="metric-copy"] h3 svg,
+& [data-water-ui~="reference-card"] [data-water-ui~="card-body"] [data-water-ui~="metric-inline"] [data-water-ui~="change-positive"],
+& [data-water-ui~="mode-badge"][data-mode="Remote"],
+& [data-water-ui~="motor-status"][data-water-ui~="motor-running"] {
+	color: ${theme.palette.success.main};
+}
+& [data-water-ui~="reference-card"] [data-water-ui~="card-body"] [data-water-ui~="metric-inline"] [data-water-ui~="change-down"],
+& [data-water-ui~="motor-status"][data-water-ui~="motor-stopped"],
+& [data-water-ui~="data-warning"] {
+	color: ${theme.palette.error.main};
+}
+& [data-water-ui~="motor-status"]:not([data-water-ui~="motor-running"], [data-water-ui~="motor-stopped"]) {
+	color: ${theme.palette.text.secondary};
+}
+& [data-water-ui~="mode-badge"][data-mode="Manual"] {
+	color: ${theme.palette.warning.main};
+}
+& [data-water-ui~="tank-scale-badge"] {
+	fill: #243553;
+	stroke: #647fa0;
+}
+& [data-tank-level="0"] {
+	--wm-level-color: #fca5a5;
+	--wm-level-bg: #42242e;
+}
+& [data-tank-level="25"] {
+	--wm-level-color: #fde68a;
+	--wm-level-bg: #3d3424;
+}
+& [data-tank-level="50"] {
+	--wm-level-color: #fdba74;
+	--wm-level-bg: #443023;
+}
+& [data-tank-level="75"] {
+	--wm-level-color: #86efac;
+	--wm-level-bg: #1b382e;
+}
+& [data-tank-level="100"] {
+	--wm-level-color: #6ee7b7;
+	--wm-level-bg: #143930;
+}
+`
+		: ''
 }
 @container tank-card (max-width: 280px) {
 	& [data-water-ui~="reference-card"] [data-water-ui~="motor-control"] {

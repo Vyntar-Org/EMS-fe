@@ -93,7 +93,13 @@ const TOOLTIP_CSS = `
 	color: #454f5b;
 	flex: 1;
 	min-width: 0;
+	white-space: normal;
 	overflow-wrap: anywhere;
+}
+.capx-tooltip-shift-day {
+	display: block;
+	font-size: 10.5px;
+	color: #637381;
 }
 .capx-tooltip-value {
 	font-size: 12px;
@@ -605,10 +611,12 @@ const CustomApexChart = ({
 					const color = w.globals.colors?.[idx] || '#637381';
 					const shiftDay =
 						w.config.series?.[idx]?.data?.[dataPointIndex]?.shiftDay;
-					const shiftLabel = shiftDay ? ` · Shift day ${shiftDay}` : '';
+					const shiftLabel = shiftDay
+						? `<span class="capx-tooltip-shift-day">Shift day ${escapeHtml(shiftDay)}</span>`
+						: '';
 					return `<div class="capx-tooltip-row"><span class="capx-tooltip-dot" style="background:${color}"></span><span class="capx-tooltip-name">${escapeHtml(
-						name + shiftLabel
-					)}</span><span class="capx-tooltip-value">${escapeHtml(
+						name
+					)}${shiftLabel}</span><span class="capx-tooltip-value">${escapeHtml(
 						formatValue(raw)
 					)}</span></div>`;
 				})

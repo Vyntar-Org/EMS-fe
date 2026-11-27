@@ -1,72 +1,18 @@
 import { api } from './api';
 import { API_URLS } from './apiUrls';
 export async function getWaterMonitoringMachines({ signal } = {}) {
-	// const response = await api.get(API_URLS.WATER_MONITORING_MACHINE_LIST, {
-	// 	signal,
-	// });
-
-	const response = {
-		success: true,
-		message: 'OHT machines fetched successfully',
-		data: {
-			machines: [
-				{
-					slave_id: 47551346,
-					slave_name: 'Tank 1',
-					slave_index: 1,
-					device_id: 88,
-					device_uid: 'VRT2026342',
-					status: 'ONLINE',
-					latest_ts: '2026-11-26T15:34:59',
-					tank_level: 25,
-					fill_percent: 25,
-					capacity: 100,
-					flowrate: 0,
-					flowrate_change_pct: null,
-					totalizer: 0,
-					totalizer_change_pct: null,
-					operation_mode: 1,
-					control_type: 0,
-					control_type_switchable: true,
-					remote_control_eligible: true,
-					motor_runstate: true,
-					motor_errorcode: 1,
-					alerts: ['LOW_LEVEL'],
-					consumption: {
-						today: 0,
-						today_change_pct: null,
-						mtd: 0,
-						mtd_change_pct: null,
-					},
-					last_command: {
-						id: 176,
-						motor_id: 1,
-						command: 1,
-						status: 'ACKED',
-						requested_at: '2026-11-26T10:01:24.988583Z',
-						acked_at: '2026-11-26T15:31:15',
-						error_message: null,
-					},
-				},
-			],
-			summary: {
-				total: 1,
-				running: 1,
-				stopped: 0,
-			},
-		},
-		errors: null,
-		meta: {
-			application: 'OHT',
-		},
-	};
-
+	
+	const response =await api.get(API_URLS.WATER_MONITORING_MACHINE_LIST, { signal })
+	
 	if (response?.success === false) {
 		throw new Error('Unable to load Water Monitoring machines.');
 	}
 	const payload = response?.data ?? response;
 	const machines = normalizeMachines(payload).map((machine) => ({
 		...machine,
+		motor_runstate: normalizeMotorFeedback(
+			machine.motor_runstate ?? machine.motor_run_state
+		),
 		latest_ts: machine.latest_ts ?? null,
 		name: machine.slave_name,
 		device_code: machine.device_uid,
@@ -95,6 +41,16 @@ export async function getWaterMonitoringMachines({ signal } = {}) {
 		),
 	}));
 	return { machines, summary: payload.summary };
+}
+
+function normalizeMotorFeedback(value) {
+	if (value === true || value === '1' || value === 1) {
+		return true;
+	}
+	if (value === false || value === '0' || value === 0) {
+		return false;
+	}
+	return null;
 }
 
 function normalizeMachines(payload) {
