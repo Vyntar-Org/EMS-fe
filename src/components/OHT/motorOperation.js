@@ -1,6 +1,6 @@
 // Independent of backend command acknowledgment timeout.
 export const COMMAND_TIMEOUT_MS = 60_000;
-export const INLINE_LOADING_MS = 15_000;
+export const INLINE_CONTROL_LOADING_MS = 15_000;
 
 export const operationMessages = {
 	requestFailed: 'Unable to send the motor request. Please try again.',
@@ -10,7 +10,7 @@ export const operationMessages = {
 	deliveryFailed:
 		'The motor request could not be sent. Please check the device connection.',
 	unconfirmed:
-		'The device did not acknowledge your motor command within 60 seconds. Please check the latest motor status.',
+		'The device response was received, but the final command result could not be confirmed. Please check the latest motor status.',
 };
 
 export function commandErrorMessage(command) {

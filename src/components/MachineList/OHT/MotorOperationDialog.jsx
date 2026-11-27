@@ -16,9 +16,11 @@ import {
 	useMediaQuery,
 } from '@mui/material';
 import { keyframes } from '@mui/material/styles';
-import { useId } from 'react';
+import { useCallback, useEffect, useId, useRef } from 'react';
 
 import { LevelControlIcon } from './WaterControlIcons';
+
+const RESULT_AUTO_CLOSE_MS = 10_000;
 
 const turn = keyframes`
 	from { transform: rotate(0deg); }
@@ -167,6 +169,30 @@ export default function MotorOperationDialog({
 	onClose,
 }) {
 	const id = useId();
+	const closeResult = useRef(onClose);
+	const dismissed = useRef(false);
+	const severity = operation?.severity;
+	const commandId = operation?.commandId;
+
+	useEffect(() => {
+		closeResult.current = onClose;
+	}, [onClose]);
+
+	const dismissResult = useCallback(() => {
+		if (!dismissed.current) {
+			dismissed.current = true;
+			closeResult.current();
+		}
+	}, []);
+
+	useEffect(() => {
+		if (!severity) {
+			return;
+		}
+		dismissed.current = false;
+		const timer = setTimeout(dismissResult, RESULT_AUTO_CLOSE_MS);
+		return () => clearTimeout(timer);
+	}, [commandId, dismissResult, severity]);
 	const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
 	const confirming = !operation;
 	const loading = Boolean(operation && !operation.severity);
@@ -196,14 +222,16 @@ export default function MotorOperationDialog({
 		}
 	} else if (success) {
 		title = controlType
-			? 'Gateway acknowledged the control type change command.'
-			: `Motor ${motorAction} Request Sent Successfully.`;
+			? 'Gateway acknowledged the control type change command'
+			: `Motor ${motorAction} Command Acknowledged`;
 	} else if (operation) {
 		title = warning
 			? controlType
 				? 'Gateway Control Change Not Confirmed'
 				: 'Command Result Not Confirmed'
-			: 'Request Could Not Be Completed';
+			: controlType
+			  ? 'Gateway Control Type Change Failed'
+			  : `Motor ${motorAction} Command Acknowledged but Failed to Execute`;
 	}
 
 	return (
@@ -321,9 +349,16 @@ export default function MotorOperationDialog({
 							severity={operation.severity}
 							sx={{ mt: 1, justifyContent: 'center', textAlign: 'center' }}
 						>
-							{warning
-								? operation.message
-								: 'The device could not complete your request. Please check the latest status before trying again.'}
+							{operation.reason && (
+								<Typography variant="body2">{operation.message}</Typography>
+							)}
+							{operation.reason ? (
+								<Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
+									<strong>Reason:</strong> {operation.reason}
+								</Typography>
+							) : (
+								operation.message
+							)}
 						</Alert>
 					)}
 				</Box>
@@ -347,7 +382,7 @@ export default function MotorOperationDialog({
 				<DialogActions sx={{ px: 3, pb: 2.5, justifyContent: 'center' }}>
 					<Button
 						autoFocus
-						onClick={onClose}
+						onClick={dismissResult}
 						variant="contained"
 						color="primary"
 						sx={{
@@ -361,7 +396,7 @@ export default function MotorOperationDialog({
 							},
 						}}
 					>
-						Close
+						OK
 					</Button>
 				</DialogActions>
 			)}

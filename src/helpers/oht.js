@@ -12,9 +12,7 @@ export async function getWaterMonitoringMachines({ signal } = {}) {
 	const machines = normalizeMachines(payload).map((machine) => ({
 		...machine,
 		motor_runstate: normalizeMotorFeedback(
-			Object.hasOwn(machine, 'motor_run_state')
-				? machine.motor_run_state
-				: machine.motor_runstate
+			machine.motor_runstate ?? machine.motor_run_state
 		),
 		latest_ts: machine.latest_ts ?? null,
 		name: machine.slave_name,

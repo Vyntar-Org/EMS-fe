@@ -3,7 +3,7 @@ import {
 	StopRounded,
 	WarningRounded,
 } from '@mui/icons-material';
-import { Box, Tooltip, Typography } from '@mui/material';
+import { Box, CircularProgress, Tooltip, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
 import { commandErrorMessage } from '../../OHT/motorOperation';
@@ -27,6 +27,12 @@ export default function OHTMotorControl({
 	failed,
 	onRequest,
 }) {
+	const waiting = Boolean(
+		control?.dialog &&
+			!control.dialog.severity &&
+			String(control.dialog.slaveId) === String(machine.slave_id)
+	);
+	const updating = waiting || Boolean(inline);
 	const progressLabel = 'Inprogress';
 	const eligibilityReason = motorControlReason(machine, state, {
 		unavailable: preview || !control || !onRequest,
@@ -35,7 +41,7 @@ export default function OHTMotorControl({
 		blockedReason: control?.blockedReason,
 	});
 	const reason =
-		(inline && progressLabel) ||
+		(updating && progressLabel) ||
 		eligibilityReason ||
 		(state.mode === 'Manual'
 			? 'This motor is in Manual mode. Remote ON/OFF control is disabled.'
@@ -48,10 +54,9 @@ export default function OHTMotorControl({
 			: '');
 	const lastCommand = machine.last_command;
 	const lastCommandId = lastCommand?.id ?? lastCommand?.command_id;
-	const hasCommandId = lastCommandId !== undefined && lastCommandId !== null;
 	const statusCommand = control?.command;
 	const matchingStatusFailure =
-		hasCommandId &&
+		lastCommandId != null &&
 		String(lastCommandId) === String(statusCommand?.id) &&
 		statusCommand?.status === 'FAILED';
 	const reportedFailure =
@@ -83,7 +88,7 @@ export default function OHTMotorControl({
 				machine.device_uid &&
 				hasFailedCommand &&
 				!preview &&
-				hasCommandId &&
+				lastCommandId != null &&
 				!reportedError &&
 				!observedError
 		),
@@ -119,7 +124,7 @@ export default function OHTMotorControl({
 		controlHint
 	);
 	const isRunning = state.motor === 'Running';
-	const feedback = inline
+	const feedback = updating
 		? progressLabel
 		: state.motor === 'Stopped'
 		  ? 'Stop'
@@ -142,10 +147,10 @@ export default function OHTMotorControl({
 			<Box data-water-ui="motor-feedback">
 				<svg
 					data-water-ui={`control-motor ${
-						isRunning && !inline ? 'control-motor-active' : ''
+						isRunning && !updating ? 'control-motor-active' : ''
 					}`}
 					viewBox="0 0 64 48"
-					style={{ color: inline ? 'inherit' : motorColor }}
+					style={{ color: updating ? 'inherit' : motorColor }}
 					aria-hidden="true"
 				>
 					<path
@@ -189,17 +194,18 @@ export default function OHTMotorControl({
 				<Box>
 					<Typography data-water-ui="status-label">Motor Run Status</Typography>
 					<span
+						role={updating ? 'status' : undefined}
 						data-water-ui={`motor-status motor-${
-							inline ? 'updating' : state.motor.toLowerCase()
+							updating ? 'updating' : state.motor.toLowerCase()
 						}${preview ? ' motor-preview' : ''}`}
 					>
-						{!inline && state.motor === 'Stopped' ? (
+						{!updating && state.motor === 'Stopped' ? (
 							<StopRounded />
 						) : (
 							<AutorenewRounded />
 						)}
 						{feedback}
-						{preview && isRunning && (
+						{preview && isRunning && !updating && (
 							<span data-water-ui="status-demo">Demo</span>
 						)}
 					</span>
@@ -210,13 +216,25 @@ export default function OHTMotorControl({
 					<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
 						<Typography data-water-ui="status-label">
 							<InlineControlStatus
-								loading={inline}
+								loading={inline?.loading}
 								message={progressLabel}
-								text="Inprogr..."
 							>
-								{!inline && 'Motor Control'}
+								Motor Control
 							</InlineControlStatus>
 						</Typography>
+						{waiting && (
+							<CircularProgress
+								size={14}
+								color="info"
+								aria-label="Awaiting motor confirmation"
+								sx={{
+									'@media (prefers-reduced-motion: reduce)': {
+										animation: 'none',
+										'& circle': { animation: 'none' },
+									},
+								}}
+							/>
+						)}
 					</Box>
 				</Box>
 				<Tooltip
@@ -272,10 +290,7 @@ export default function OHTMotorControl({
 								p: '3px',
 								border: 0,
 								borderRadius: 999,
-								bgcolor:
-									!inline && (canControlMotor || isRunning)
-										? motorColor
-										: '#64748B',
+								bgcolor: canControlMotor ? motorColor : '#64748B',
 								color: '#fff',
 								cursor: canControlMotor ? 'pointer' : 'not-allowed',
 								'&::before': {

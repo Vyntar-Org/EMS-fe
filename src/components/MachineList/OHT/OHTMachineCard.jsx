@@ -204,7 +204,7 @@ const OHTMachineCard = memo(function OHTMachineCard({
 						<Box data-water-ui="control-type">
 							<Typography data-water-ui="status-label">
 								<InlineControlStatus
-									loading={controlTypeInline}
+									loading={controlTypeInline?.loading}
 									message="Updating control type..."
 								>
 									Control Type
@@ -273,7 +273,7 @@ const OHTMachineCard = memo(function OHTMachineCard({
 						title={title}
 						preview={preview}
 						control={commandControl}
-						controlTypePending={controlTypePending || controlTypeInline}
+						controlTypePending={controlTypePending}
 						inline={motorInline}
 						failed={failed}
 						onRequest={onMotorRequest}

@@ -1,25 +1,23 @@
 import { Box, CircularProgress } from '@mui/material';
 
-export default function InlineControlStatus({
-	loading,
-	message,
-	text,
-	children,
-}) {
+export default function InlineControlStatus({ loading, message, children }) {
 	return (
 		<Box
 			component="span"
-			sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+			sx={{ position: 'relative', minWidth: 0, display: 'inline-block' }}
 		>
-			{children}
+			<Box component="span" sx={{ visibility: loading ? 'hidden' : 'visible' }}>
+				{children}
+			</Box>
 			{loading && (
 				<Box
 					component="span"
 					role="status"
-					aria-label={message}
 					title={message}
 					sx={{
-						display: 'inline-flex',
+						position: 'absolute',
+						inset: 0,
+						display: 'flex',
 						alignItems: 'center',
 						gap: 0.5,
 						color: 'info.main',
@@ -38,7 +36,16 @@ export default function InlineControlStatus({
 							},
 						}}
 					/>
-					{text}
+					<Box
+						component="span"
+						sx={{
+							overflow: 'hidden',
+							textOverflow: 'ellipsis',
+							whiteSpace: 'nowrap',
+						}}
+					>
+						{message}
+					</Box>
 				</Box>
 			)}
 		</Box>
