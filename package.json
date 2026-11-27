@@ -11,6 +11,8 @@
 		"lint:check": "eslint . --max-warnings=0",
 		"format": "prettier . --write",
 		"fix": "npm run lint && npm run format",
+		"deploy:dev": "./deploy.sh dev",
+		"deploy:prod": "./deploy.sh prod",
 		"prepare": "husky"
 	},
 	"dependencies": {

@@ -6,6 +6,7 @@ import EnergyLogs from '../components/Logs/EnergyLogs';
 import FireSafetyLogs from '../components/Logs/FireSafetyLogs';
 import FlowMeterLogs from '../components/Logs/FlowMeterLogs';
 import FuelLogs from '../components/Logs/FuelLogs';
+import OHTLogs from '../components/Logs/OHT/OHTLogs';
 import SolarLogs from '../components/Logs/SolarLogs';
 import SpinningLogs from '../components/Logs/SpinningLogs.jsx';
 import STPLogs from '../components/Logs/STPLogs';
@@ -15,6 +16,8 @@ import WeatherStationLogs from '../components/Logs/WeatherStationLogs';
 import { getAppCodeFromPath } from '../helpers/pageMapping.jsx';
 
 const LOGS_CONFIG = {
+	OHT: OHTLogs,
+	WATER_MONITOR: OHTLogs,
 	ENERGY: EnergyLogs,
 	SOLAR: SolarLogs,
 	TEMPERATURE: TemperatureLogs,

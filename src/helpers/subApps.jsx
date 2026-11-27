@@ -10,7 +10,7 @@ const SUB_APP_PAGE_COMPONENTS = {
 	},
 };
 
-export const getSubApps = (application) => application?.sub_apps || [];
+export const getSubApps = (application) => application?.sub_applications || [];
 
 export const getSubApp = (application, subAppCode) =>
 	getSubApps(application).find(

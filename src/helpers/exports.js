@@ -16,7 +16,12 @@ const flattenExportColumns = (columns, parentHeader = '') =>
 			: [{ ...column, header }];
 	});
 
-export const exportToCSV = (tableData, tableColumns, filename = 'Report') => {
+export const exportToCSV = (
+	tableData,
+	tableColumns,
+	filename = 'Report',
+	{ escapeFormulae = false, formatNumbers = true } = {}
+) => {
 	if (!tableData?.length) {
 		return;
 	}
@@ -26,11 +31,13 @@ export const exportToCSV = (tableData, tableColumns, filename = 'Report') => {
 	const csvRows = tableData.map((row) =>
 		exportColumns.map((col) => {
 			const val = row[col.accessorKey];
-			return typeof val === 'number' ? formatNumber(val) : val ?? '';
+			return formatNumbers && typeof val === 'number'
+				? formatNumber(val)
+				: val ?? '';
 		})
 	);
 
-	const csvString = Papa.unparse([csvHeaders, ...csvRows]);
+	const csvString = Papa.unparse([csvHeaders, ...csvRows], { escapeFormulae });
 	const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
 	const url = URL.createObjectURL(blob);
 

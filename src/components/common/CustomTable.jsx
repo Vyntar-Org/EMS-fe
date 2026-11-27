@@ -46,6 +46,7 @@ export const CustomTable = ({
 	totalRowCount,
 	onPageChange,
 	onRowsPerPageChange,
+	paginationProps = {},
 }) => {
 	const theme = useTheme();
 	const isServerSide = Boolean(onPageChange && onRowsPerPageChange);
@@ -290,6 +291,7 @@ export const CustomTable = ({
 							fontWeight: 500,
 						},
 				}}
+				{...paginationProps}
 			/>
 		</Paper>
 	);

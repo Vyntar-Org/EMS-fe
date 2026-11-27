@@ -225,6 +225,12 @@ export const api = {
 			method: 'PUT',
 			body: buildBody(body, options),
 		}),
+	patch: (endpoint, body, options) =>
+		fetchApi(endpoint, {
+			...options,
+			method: 'PATCH',
+			body: buildBody(body, options),
+		}),
 	delete: (endpoint, options) =>
 		fetchApi(endpoint, { ...options, method: 'DELETE' }),
 };

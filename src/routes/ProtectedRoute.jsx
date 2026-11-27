@@ -30,7 +30,7 @@ export const ProtectedRoute = ({
 	}
 
 	const availablePages = subAppCode
-		? app.sub_apps?.find((subApp) => subApp.code === subAppCode)?.pages
+		? app.sub_applications?.find((subApp) => subApp.code === subAppCode)?.pages
 		: app.pages;
 
 	// Parent pages and sub-app pages are separate grants in the Apps API.

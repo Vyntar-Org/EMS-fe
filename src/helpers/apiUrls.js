@@ -237,6 +237,12 @@ const WATER_DASHBOARD = {
 		`/applications/water/daily-consumption/?slave_id=${slaveId}`,
 };
 
+// Admin-only management of the dashboard's KPI cards (Settings page).
+const WATER_KPI_CARDS = {
+	WATER_KPI_CARDS: '/applications/water/kpi-cards/',
+	WATER_KPI_CARD_DETAIL: (cardId) => `/applications/water/kpi-cards/${cardId}/`,
+};
+
 const WATER_MACHINE_LIST = {
 	WATER_MACHINE_LIST_DATA: '/applications/water/machine-list/',
 	WATER_MACHINE_LIST_TREND: (slaveId) =>
@@ -354,6 +360,8 @@ const WEATHER_DASHBOARD = {
 		'/applications/weather/dashboard/air-quality-trend/',
 	WEATHER_DASHBOARD_IRRADIANCE:
 		'/applications/weather/dashboard/solar-irradiance-trend/',
+	WEATHER_DASHBOARD_SITE_LOCATION:
+		'/applications/weather/dashboard/site-location/',
 };
 
 const WEATHER_MACHINE_LIST = {
@@ -428,7 +436,61 @@ const FLOWMETER_REPORTS = {
 		`/applications/flowmeter/daily-reading-reports/?month=${month}&year=${year}`,
 };
 
+const waterMonitoringBasePath = new URL(
+	import.meta.env.VITE_API_BASE_URL || '/',
+	'http://local.invalid'
+).pathname.replace(/\/$/, '');
+const WATER_MONITORING_ROOT =
+	(waterMonitoringBasePath.endsWith('/api') ? '' : '/api') +
+	'/applications/oht/';
+
+const WATER_MONITORING = {
+	WATER_MONITORING_MACHINE_LIST: WATER_MONITORING_ROOT + 'machine-list/',
+	WATER_MONITORING_TREND: WATER_MONITORING_ROOT + 'machine-list-trend/',
+	WATER_MONITORING_MOTOR_CONTROL: WATER_MONITORING_ROOT + 'motor-control/',
+	WATER_MONITORING_CONTROL_TYPE_CONTROL:
+		WATER_MONITORING_ROOT + 'control-type-control/',
+	WATER_MONITORING_MOTOR_STATUS:
+		WATER_MONITORING_ROOT + 'motor-control/status/',
+	WATER_MONITORING_LOGS: WATER_MONITORING_ROOT + 'logs/',
+	WATER_MONITORING_ANALYTICS: WATER_MONITORING_ROOT + 'analytics/',
+	WATER_MONITORING_DAILY_CONSUMPTION:
+		WATER_MONITORING_ROOT + 'daily-consumption-reports/',
+	WATER_MONITORING_MONTHLY_CONSUMPTION:
+		WATER_MONITORING_ROOT + 'monthly-consumption-reports/',
+	WATER_MONITORING_DAILY_READING:
+		WATER_MONITORING_ROOT + 'daily-reading-reports/',
+	WATER_MONITORING_DAILY_RUNNING_HOURS:
+		WATER_MONITORING_ROOT + 'daily-running-hours-reports/',
+	WATER_MONITORING_MONTHLY_RUNNING_HOURS:
+		WATER_MONITORING_ROOT + 'monthly-running-hours-reports/',
+};
+
+export function getWaterMonitoringDashboardUrls(config) {
+	const names = [
+		'components_url',
+		'layout_url',
+		'telemetry_url',
+		'command_url',
+		'command_status_url',
+	];
+	const urls = Object.fromEntries(
+		names.map((name) => {
+			const value = config[name];
+			const valid =
+				typeof value === 'string' &&
+				/^\/(?!\/)/.test(value) &&
+				!/[\\#]/.test(value);
+			return [name, valid ? value : null];
+		})
+	);
+	const preview =
+		config.provider !== 'api' && !names.some((name) => config[name]);
+	return { urls, preview };
+}
+
 export const API_URLS = {
+	...WATER_MONITORING,
 	...ADMINS,
 	...AUTH,
 	...EMS_DASHBOARD,
@@ -454,6 +516,7 @@ export const API_URLS = {
 	...SPINNING_LOGS,
 	...SPINNING_ANALYTICS,
 	...WATER_DASHBOARD,
+	...WATER_KPI_CARDS,
 	...WATER_MACHINE_LIST,
 	...WATER_ANALYTICS,
 	...WATER_LOGS,

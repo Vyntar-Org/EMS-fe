@@ -28,15 +28,19 @@ import {
 } from '@mui/material';
 import { alpha, darken } from '@mui/material/styles';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useApplications } from '../../contexts/ApplicationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useThemeMode } from '../../contexts/ThemeModeContext';
 import { layoutBackgroundSx } from '../../helpers/layoutImages';
-import { getPagePath } from '../../helpers/pageMapping.jsx';
+import {
+	getPageCodeFromPath,
+	getPagePath,
+} from '../../helpers/pageMapping.jsx';
 import { APP_ICONS } from '../common/MachineCardBits';
 import PremiumModal from '../common/PremiumModal';
+import OHTTankIcon from '../OHT/OHTTankIcon';
 
 const menuItemSx = {
 	borderRadius: '10px',
@@ -58,9 +62,10 @@ export const Header = ({
 	onToggleAutoSwitch,
 }) => {
 	const { user, logout } = useAuth();
-	const { applications, selectedApp } = useApplications();
+	const { applications, selectedApp, getCurrentApp } = useApplications();
 	const { mode, setMode } = useThemeMode();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const theme = useTheme();
 	const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
@@ -112,6 +117,12 @@ export const Header = ({
 	};
 
 	const open = Boolean(anchorEl);
+
+	// Settings is opened from here, not the sidebar. It is only enabled when
+	// the selected app grants the SETTINGS page (ProtectedRoute would send
+	// anyone else to /unauthorized).
+	const canOpenSettings = Boolean(getCurrentApp()?.pages?.includes('SETTINGS'));
+	const isOnSettings = getPageCodeFromPath(location.pathname) === 'SETTINGS';
 
 	const LogoUrl = user?.branding?.logo || '';
 	const userName = user?.tenant?.name || 'User';
@@ -298,7 +309,10 @@ export const Header = ({
 							>
 								{applications.map((app) => {
 									const appCode = app.code?.toUpperCase();
-									const AppIcon = APP_ICONS[appCode] || SensorsIcon;
+									const AppIcon =
+										appCode === 'OHT'
+											? OHTTankIcon
+											: APP_ICONS[appCode] || SensorsIcon;
 									// Each app tab lights up in that app's own identity color
 									// when selected (same palette used on its cards/charts
 									// everywhere else) instead of one generic accent for every
@@ -562,8 +576,23 @@ export const Header = ({
 				/>
 
 				<Box sx={{ py: 1 }}>
-					<MenuItem disabled onClick={handleSettingsClick} sx={menuItemSx}>
-						<ListItemIcon sx={{ color: 'text.secondary' }}>
+					<MenuItem
+						disabled={!canOpenSettings}
+						selected={isOnSettings}
+						onClick={handleSettingsClick}
+						sx={{
+							...menuItemSx,
+							'&.Mui-selected': {
+								backgroundColor: alpha(theme.palette.secondary.main, 0.18),
+								'&:hover': {
+									backgroundColor: alpha(theme.palette.secondary.main, 0.26),
+								},
+							},
+						}}
+					>
+						<ListItemIcon
+							sx={{ color: isOnSettings ? 'primary.main' : 'text.secondary' }}
+						>
 							<SettingsOutlinedIcon fontSize="small" />
 						</ListItemIcon>
 						Settings

@@ -222,7 +222,7 @@ export const transformDynamicDataToDailyMatrix = (
 			accessorKey: 'unit',
 			header: 'Unit',
 			size: 90,
-			meta: { fixedExport: true },
+			meta: { sticky: 'left', stickyOffset: 160, fixedExport: true },
 		},
 		...sortedDates.map((dateString) => {
 			let headerLabel = dateString;
