@@ -1,9 +1,7 @@
 import {
 	CheckRounded,
 	CloseRounded,
-	PersonOutlineRounded,
-	Refresh,
-	WavesRounded,
+	EngineeringRounded,
 	WarningAmberRounded,
 } from '@mui/icons-material';
 import {
@@ -18,7 +16,9 @@ import {
 	useMediaQuery,
 } from '@mui/material';
 import { keyframes } from '@mui/material/styles';
-import { useId, useState } from 'react';
+import { useId } from 'react';
+
+import { LevelControlIcon } from './WaterControlIcons';
 
 const turn = keyframes`
 	from { transform: rotate(0deg); }
@@ -163,22 +163,18 @@ export default function MotorOperationDialog({
 	confirmation,
 	confirmationReason,
 	controlType = false,
-	requestError,
 	onConfirm,
 	onClose,
-	onRefresh,
 }) {
 	const id = useId();
 	const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
-	const [refreshing, setRefreshing] = useState(false);
-	const [refreshMessage, setRefreshMessage] = useState('');
 	const confirming = !operation;
-	const loading = Boolean(operation && !operation.message);
+	const loading = Boolean(operation && !operation.severity);
 	const success = operation?.severity === 'success';
 	const warning = operation?.severity === 'warning';
 	const starting = (operation ?? confirmation).action === 1;
 	const controlTypeName = starting ? 'Level Control' : 'User Control';
-	const ControlTypeIcon = starting ? WavesRounded : PersonOutlineRounded;
+	const ControlTypeIcon = starting ? LevelControlIcon : EngineeringRounded;
 	const verb = starting ? 'Start' : 'Stop';
 	const ResultIcon = success
 		? CheckRounded
@@ -186,41 +182,35 @@ export default function MotorOperationDialog({
 		  ? WarningAmberRounded
 		  : CloseRounded;
 	const tone = success ? 'success' : 'error';
-	const motorTitle = confirming
-		? `${verb} Motor?`
-		: loading
-		  ? starting
-				? 'Starting Motor'
-				: 'Stopping Motor'
-		  : success
-		    ? operation.message
-		    : warning
-		      ? 'Motor Status Unconfirmed'
-		      : `Unable to ${verb} Motor`;
-	const title = controlType
-		? loading
-			? `Switching to ${controlTypeName}`
-			: `Switch to ${controlTypeName}?`
-		: motorTitle;
-
-	async function refresh() {
-		setRefreshing(true);
-		setRefreshMessage('');
-		try {
-			await onRefresh();
-			setRefreshMessage('Motor status refreshed.');
-		} catch {
-			setRefreshMessage('Unable to refresh motor status. Please try again.');
-		} finally {
-			setRefreshing(false);
+	const motorAction = starting ? 'ON' : 'OFF';
+	let title = controlType ? `Switch to ${controlTypeName}?` : `${verb} Motor?`;
+	if (loading) {
+		if (operation.commandId !== undefined) {
+			title = controlType
+				? 'Waiting for Gateway Acknowledgment'
+				: 'Waiting for Device Acknowledgment';
+		} else {
+			title = controlType
+				? `Switching to ${controlTypeName}...`
+				: `Sending Motor ${motorAction} Request...`;
 		}
+	} else if (success) {
+		title = controlType
+			? 'Gateway acknowledged the control type change command.'
+			: `Motor ${motorAction} Request Sent Successfully.`;
+	} else if (operation) {
+		title = warning
+			? controlType
+				? 'Gateway Control Change Not Confirmed'
+				: 'Command Result Not Confirmed'
+			: 'Request Could Not Be Completed';
 	}
 
 	return (
 		<Dialog
 			open
-			onClose={loading || success ? undefined : onClose}
-			disableEscapeKeyDown={loading || success}
+			onClose={confirming ? onClose : undefined}
+			disableEscapeKeyDown={!confirming}
 			transitionDuration={reduceMotion ? 0 : undefined}
 			aria-labelledby={id + '-title'}
 			aria-describedby={id + '-status'}
@@ -234,8 +224,7 @@ export default function MotorOperationDialog({
 					justifyContent: confirming ? 'flex-start' : 'center',
 					m: { xs: 2, sm: 4 },
 					width: { xs: 'calc(100% - 32px)', sm: 'calc(100% - 64px)' },
-					maxWidth: 600,
-					minHeight: { sm: confirming ? 240 : 300 },
+					maxWidth: 420,
 					overflow: 'visible',
 					borderRadius: '18px',
 					backgroundColor: 'background.paper',
@@ -253,9 +242,12 @@ export default function MotorOperationDialog({
 						height: 80,
 						mx: 'auto',
 						mt: 3,
-						borderRadius: '50%',
-						bgcolor: 'action.hover',
-						color: 'primary.main',
+						borderRadius: 4,
+						background:
+							'linear-gradient(145deg, #0786e7, #0054bf 75%, #00469e)',
+						boxShadow:
+							'inset 0 1px 1px rgb(255 255 255 / 24%), 0 2px 6px rgb(0 62 140 / 25%)',
+						color: '#fff',
 						animation: reduceMotion ? 'none' : `${appear} 220ms ease-out`,
 					}}
 				>
@@ -301,6 +293,7 @@ export default function MotorOperationDialog({
 			)}
 			<DialogTitle
 				id={id + '-title'}
+				aria-live="polite"
 				sx={{ textAlign: 'center', pt: confirming ? 2.5 : 0, pb: 0.5 }}
 			>
 				{title}
@@ -311,67 +304,29 @@ export default function MotorOperationDialog({
 					flex: confirming ? undefined : '0 0 auto',
 					overflow: 'visible',
 					px: { xs: 2.5, sm: 4 },
-					pb: confirming ? 2 : 3,
+					pb: loading ? 2 : 1,
 				}}
 			>
-				<Typography fontWeight={700} sx={{ mb: 2, overflowWrap: 'anywhere' }}>
+				<Typography fontWeight={700} sx={{ overflowWrap: 'anywhere' }}>
 					{(operation ?? confirmation).name}
 				</Typography>
 				<Box id={id + '-status'}>
-					{confirming && (
-						<>
-							<Typography>
-								{controlType
-									? starting
-										? 'The tank’s water level will control when the motor starts and stops.'
-										: 'User Control lets you send On/Off commands when remote control is available.'
-									: `Are you sure you want to ${verb.toLowerCase()} this motor?`}
-							</Typography>
-							{confirmationReason && (
-								<Alert severity="warning" sx={{ mt: 2 }}>
-									{confirmationReason}
-								</Alert>
-							)}
-							{requestError && (
-								<Alert severity="error" sx={{ mt: 2 }}>
-									{requestError}
-								</Alert>
-							)}
-						</>
-					)}
-					{loading && (
-						<Typography role="status" color="text.secondary">
-							Sending your request. Please wait...
-						</Typography>
-					)}
-					{success && (
-						<Box
-							role="status"
-							sx={{
-								position: 'absolute',
-								width: 1,
-								height: 1,
-								overflow: 'hidden',
-								clipPath: 'inset(50%)',
-							}}
-						>
-							{title}
-						</Box>
+					{confirming && confirmationReason && (
+						<Alert severity="warning" sx={{ mt: 1 }}>
+							{confirmationReason}
+						</Alert>
 					)}
 					{operation && !loading && !success && (
 						<Alert
 							severity={operation.severity}
-							sx={{ justifyContent: 'center', textAlign: 'center' }}
+							sx={{ mt: 1, justifyContent: 'center', textAlign: 'center' }}
 						>
-							{operation.message}
+							{warning
+								? operation.message
+								: 'The device could not complete your request. Please check the latest status before trying again.'}
 						</Alert>
 					)}
 				</Box>
-				{refreshMessage && (
-					<Typography role="status" variant="body2" sx={{ mt: 1 }}>
-						{refreshMessage}
-					</Typography>
-				)}
 			</DialogContent>
 			{confirming && (
 				<DialogActions sx={{ px: 3, pb: 2.5, gap: 1, flexWrap: 'wrap' }}>
@@ -388,17 +343,25 @@ export default function MotorOperationDialog({
 					</Button>
 				</DialogActions>
 			)}
-			{operation && !loading && !success && (
-				<DialogActions sx={{ px: 3, pb: 2.5, flexWrap: 'wrap' }}>
-					<Button onClick={onClose} color="inherit">
-						Close
-					</Button>
+			{operation && !loading && (
+				<DialogActions sx={{ px: 3, pb: 2.5, justifyContent: 'center' }}>
 					<Button
-						onClick={refresh}
-						disabled={refreshing}
-						startIcon={<Refresh />}
+						autoFocus
+						onClick={onClose}
+						variant="contained"
+						color="primary"
+						sx={{
+							minWidth: 80,
+							minHeight: 44,
+							borderRadius: 2,
+							'&.Mui-focusVisible': {
+								outline: '2px solid',
+								outlineColor: 'primary.main',
+								outlineOffset: 2,
+							},
+						}}
 					>
-						{refreshing ? 'Refreshing…' : 'Refresh Motor Status'}
+						Close
 					</Button>
 				</DialogActions>
 			)}

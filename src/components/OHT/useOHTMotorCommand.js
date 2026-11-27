@@ -3,16 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 
 import { api } from '../../helpers/api';
 import { API_URLS } from '../../helpers/apiUrls';
-import {
-	waterMachineState,
-	getWaterMonitoringMachines,
-} from '../../helpers/oht';
+import { waterMachineState } from '../../helpers/oht';
 
 import {
-	feedbackConfirmsOperation,
-	MOTOR_FAILURE_DISPLAY_MS,
-	MOTOR_OPERATION_MAX_MS,
-	MOTOR_SUCCESS_DISPLAY_MS,
+	COMMAND_TIMEOUT_MS,
 	operationFailureMessage,
 	operationMessages,
 } from './motorOperation';
@@ -25,6 +19,7 @@ export default function useOHTMotorCommand({
 	scope,
 	listKey,
 	failed,
+	deferListRefresh,
 }) {
 	const client = useQueryClient();
 	const [local, setLocal] = useState(null);
@@ -60,7 +55,11 @@ export default function useOHTMotorCommand({
 	]);
 	const recovering =
 		local?.recover && String(seed?.id ?? '') === String(local.seedId ?? '');
-	const target = recovering ? `device-${local.generation}` : seed?.id ?? 'none';
+	const watchedOperation = operation ?? outcome;
+	const trackedId = watchedOperation?.commandId ?? seed?.id;
+	const target = recovering
+		? `device-${local.generation}`
+		: trackedId ?? 'none';
 	const tracking =
 		Boolean(deviceUid) &&
 		(local?.recover || isCommandPending(seed) || Boolean(local?.command));
@@ -68,121 +67,68 @@ export default function useOHTMotorCommand({
 		queryKey: ['water-monitor', scope, 'motor-command', deviceUid, target],
 		queryFn: ({ signal }) =>
 			getWaterMotorStatus({
-				commandId: recovering ? undefined : seed?.id,
+				commandId: recovering ? undefined : trackedId,
 				deviceUid,
 				signal,
 			}),
 		enabled: Boolean(tracking) && !local?.submitting,
 		refetchInterval: commandPollInterval,
 		refetchIntervalInBackground: false,
-		refetchOnWindowFocus: true,
+		refetchOnWindowFocus: (query) => !isCommandTerminal(query.state.data),
+		refetchOnMount: (query) => !isCommandTerminal(query.state.data),
 		retry: false,
 	});
 	const observed = status.isSuccess || status.data !== undefined;
-	const command = observed ? status.data : seed;
-	const awaitingFeedback = Boolean(
-		operation &&
-			command?.status === 'ACKED' &&
-			String(command.id) === String(operation.commandId)
-	);
-	const pollingFeedback = operation?.commandId !== undefined;
-	// Same query key as the page: observers share one authenticated request and
-	// update cards/summary together. No new telemetry endpoint or parameters.
-	const feedback = useQuery({
-		queryKey: listKey,
-		queryFn: ({ signal }) => getWaterMonitoringMachines({ signal }),
-		enabled: pollingFeedback,
-		refetchInterval: pollingFeedback ? 2000 : false,
-		refetchIntervalInBackground: false,
-		retry: false,
-	});
+	const command = observed
+		? status.data
+		: operation?.commandId !== undefined
+		  ? local?.command
+		  : seed;
 	useEffect(() => {
 		if (!operation || operation.commandId === undefined) {
 			return;
 		}
-		if (Date.now() - operation.startedAt >= MOTOR_OPERATION_MAX_MS) {
+		if (performance.now() >= operation.deadline) {
 			completeOperation(operation, operationMessages.unconfirmed, 'warning');
 			return;
 		}
-		if (status.isError) {
+		const command = status.data;
+		if (!matchesCommandId(command, operation.commandId)) {
 			return;
 		}
-		if (!command) {
-			return;
-		}
-		if (String(command.id) !== String(operation.commandId)) {
+		if (command.status === 'ACKED') {
+			completeOperation(operation, '', 'success');
+		} else if (command.status === 'FAILED') {
+			completeOperation(operation, operationMessages.requestFailed);
+		} else if (command.status === 'TIMED_OUT') {
 			completeOperation(
 				operation,
-				'Motor status could not be confirmed. Please check the equipment.',
+				'The controller did not acknowledge your motor command before the backend timed out. Please check the latest motor status before trying again.',
 				'warning'
 			);
-			return;
 		}
-		if (command.status === 'FAILED' || command.status === 'TIMED_OUT') {
-			if (command.status === 'TIMED_OUT') {
-				completeOperation(operation, operationMessages.unconfirmed, 'warning');
-			} else {
-				completeOperation(operation, operationMessages.commandFailed);
-			}
-			return;
-		}
-		if (!awaitingFeedback) {
-			return;
-		}
-		const machine = (feedback.data?.machines ?? machines).find(
-			(item) => String(item.slave_id) === String(operation.slaveId)
-		);
-		if (
-			!feedback.isError &&
-			feedbackConfirmsOperation(machine, operation, command)
-		) {
-			completeOperation(
-				operation,
-				operation.action === 1
-					? 'Motor Started Successfully'
-					: 'Motor Stopped Successfully',
-				'success'
-			);
-			client.invalidateQueries({ queryKey: listKey });
-		}
-	}, [
-		operation,
-		command,
-		status.isError,
-		feedback.data,
-		feedback.isError,
-		machines,
-	]);
+	}, [operation, status.data]);
 	// A separate frontend deadline covers stalled submission and acknowledgment.
 	useEffect(() => {
 		if (!operation) {
 			return;
 		}
 		const timer = setTimeout(
-			() => {
-				completeOperation(operation, operationMessages.unconfirmed, 'warning');
-			},
-			Math.max(0, operation.startedAt + MOTOR_OPERATION_MAX_MS - Date.now())
+			() =>
+				completeOperation(operation, operationMessages.unconfirmed, 'warning'),
+			Math.max(0, operation.deadline - performance.now())
 		);
 		return () => clearTimeout(timer);
 	}, [operation?.token]);
-	useEffect(() => {
-		if (!outcome) {
-			return;
-		}
-		const timer = setTimeout(
-			dismissDialog,
-			outcome.severity === 'success'
-				? MOTOR_SUCCESS_DISPLAY_MS
-				: MOTOR_FAILURE_DISPLAY_MS
-		);
-		return () => clearTimeout(timer);
-	}, [outcome]);
 	function dismissDialog() {
 		setOutcome(null);
-		if (outcome?.severity === 'warning') {
-			client.invalidateQueries({ queryKey: listKey });
+		if (outcome?.severity === 'success') {
+			// The Machine List now owns the refresh and the card's loading state.
+			terminalRefresh.current = resolution;
+			setRefreshed(resolution);
+			return;
 		}
+		refreshMachineList(resolution);
 	}
 	const resolution =
 		tracking && observed && (command === null || isCommandTerminal(command))
@@ -194,24 +140,58 @@ export default function useOHTMotorCommand({
 		}
 	}, [local?.recover, observed, command]);
 	useEffect(() => {
-		if (!resolution || terminalRefresh.current === resolution) {
+		if (
+			!resolution ||
+			terminalRefresh.current === resolution ||
+			operation ||
+			outcome ||
+			deferListRefresh
+		) {
 			return;
 		}
-		terminalRefresh.current = resolution;
-		setError((message) =>
-			message ===
-			'Another motor command is already in progress for this device.'
-				? ''
-				: message
-		);
-		client.invalidateQueries({ queryKey: listKey }).then(() => {
-			if (mounted.current) {
-				setRefreshed(resolution);
-			}
-		});
-	}, [resolution, client, listKey]);
+		refreshMachineList(resolution, false);
+	}, [
+		resolution,
+		client,
+		listKey,
+		operation,
+		outcome,
+		deferListRefresh,
+		status.dataUpdatedAt,
+	]);
+
+	function refreshMachineList(resolvedCommand, force = true) {
+		if (resolvedCommand) {
+			terminalRefresh.current = resolvedCommand;
+			setError((message) =>
+				message ===
+				'Another motor command is already in progress for this device.'
+					? ''
+					: message
+			);
+		}
+		// The Control Type OK handler may already have refreshed this list.
+		if (
+			!force &&
+			client.getQueryState(listKey)?.dataUpdatedAt > status.dataUpdatedAt
+		) {
+			setRefreshed(resolvedCommand);
+			return;
+		}
+		client
+			.refetchQueries(
+				{ queryKey: listKey, exact: true, type: 'active' },
+				{ cancelRefetch: false }
+			)
+			.then(() => {
+				if (mounted.current && resolvedCommand) {
+					setRefreshed(resolvedCommand);
+				}
+			});
+	}
 	const locked = Boolean(
 		operation ||
+			outcome ||
 			local?.submitting ||
 			local?.prohibited ||
 			status.isError ||
@@ -250,8 +230,7 @@ export default function useOHTMotorCommand({
 				machine.slave_name ||
 				machine.name ||
 				`Machine ${machine.slave_id}`,
-			baselineTs: Date.parse(machine.latest_ts),
-			startedAt,
+			deadline: performance.now() + COMMAND_TIMEOUT_MS,
 		};
 		updateOperation(started);
 		setError('');
@@ -275,12 +254,11 @@ export default function useOHTMotorCommand({
 			}
 		} catch (failure) {
 			if (mounted.current) {
-				completeOperation(
-					started,
-					failure?.status === 403
-						? waterApiError(failure, operationFailureMessage(failure))
-						: operationFailureMessage(failure)
-				);
+				if (performance.now() >= started.deadline) {
+					completeOperation(started, operationMessages.unconfirmed, 'warning');
+				} else {
+					completeOperation(started, operationFailureMessage(failure));
+				}
 				setError(
 					failure?.status === 409
 						? 'Another motor command is already in progress for this device.'
@@ -309,16 +287,6 @@ export default function useOHTMotorCommand({
 	return {
 		dialog: operation ?? outcome,
 		dismissDialog,
-		refreshStatus: () =>
-			Promise.all([
-				client.fetchQuery({
-					queryKey: listKey,
-					queryFn: ({ signal }) => getWaterMonitoringMachines({ signal }),
-				}),
-				...(tracking && !local?.submitting
-					? [status.refetch({ cancelRefetch: false, throwOnError: true })]
-					: []),
-			]),
 		command,
 		locked,
 		busy: Boolean(
@@ -342,7 +310,18 @@ export default function useOHTMotorCommand({
 	};
 }
 
-function commandResponse(response) {
+function matchesCommandId(command, commandId) {
+	const id = command?.id ?? command?.command_id;
+	return (
+		id !== undefined &&
+		id !== null &&
+		commandId !== undefined &&
+		commandId !== null &&
+		String(id) === String(commandId)
+	);
+}
+
+function commandResponse(response, { submission = false } = {}) {
 	if (response?.success === false) {
 		throw new Error('Unable to read motor command.');
 	}
@@ -359,17 +338,25 @@ function commandResponse(response) {
 	if (command === null) {
 		return null;
 	}
+	const id = command?.id ?? command?.command_id;
 	if (
 		!command ||
-		command.id === undefined ||
-		command.id === null ||
-		!['PENDING', 'PUBLISHED', 'ACKED', 'TIMED_OUT', 'FAILED'].includes(
-			command.status
-		)
+		id === undefined ||
+		id === null ||
+		(!(submission && command.status === undefined) &&
+			![
+				'PENDING',
+				'PROCESSING',
+				'PUBLISHED',
+				'SENT',
+				'ACKED',
+				'TIMED_OUT',
+				'FAILED',
+			].includes(command.status))
 	) {
 		throw new Error('Invalid motor command response.');
 	}
-	return command;
+	return { ...command, id };
 }
 
 async function postWaterMotorCommand(body) {
@@ -382,7 +369,8 @@ async function postWaterMotorCommand(body) {
 		throw new Error('Device UID and a valid backend motor ID are required.');
 	}
 	return commandResponse(
-		await api.post(API_URLS.WATER_MONITORING_MOTOR_CONTROL, body)
+		await api.post(API_URLS.WATER_MONITORING_MOTOR_CONTROL, body),
+		{ submission: true }
 	);
 }
 
@@ -396,11 +384,12 @@ export async function postWaterControlType({
 			device_uid: deviceUid,
 			motor_id: motorId,
 			control_type: controlType,
-		})
+		}),
+		{ submission: true }
 	);
 }
 
-async function getWaterMotorStatus({ commandId, deviceUid, signal }) {
+export async function getWaterMotorStatus({ commandId, deviceUid, signal }) {
 	const params = new URLSearchParams(
 		commandId !== undefined && commandId !== null
 			? { command_id: commandId }
@@ -441,7 +430,7 @@ async function getWaterMotorStatus({ commandId, deviceUid, signal }) {
 }
 
 const isCommandPending = (command) =>
-	['PENDING', 'PUBLISHED'].includes(command?.status);
+	['PENDING', 'PROCESSING', 'PUBLISHED', 'SENT'].includes(command?.status);
 
 const isCommandTerminal = (command) =>
 	['ACKED', 'TIMED_OUT', 'FAILED'].includes(command?.status);
@@ -494,9 +483,12 @@ export function waterApiError(
 	return typeof message === 'string' ? message : fallback;
 }
 
-function commandPollInterval(query) {
+export function commandPollInterval(query) {
 	// Network failures do not resolve a command and never trigger a POST retry.
-	if ([403, 404].includes(query.state.error?.status)) {
+	if (
+		isCommandTerminal(query.state.data) ||
+		[403, 404].includes(query.state.error?.status)
+	) {
 		return false;
 	}
 	return query.state.status === 'error' || isCommandPending(query.state.data)

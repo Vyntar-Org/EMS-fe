@@ -35,16 +35,18 @@ export const getLayoutImage = (section, appCode, mode = 'light') => {
 		`url("/assets/DEFAULT-LAYOUT-IMAGES/${section}.png")`,
 	];
 	const tint = mode === 'dark' ? darkTint(section) : null;
-	// Water Monitoring reuses the existing Water artwork for all shell sections.
 	const imageAppCode = appCode?.toUpperCase();
-	const artworkCode = ['WATER_MONITOR', 'OHT'].includes(imageAppCode)
-		? 'WATER'
-		: imageAppCode;
+	const isOHT = ['WATER_MONITOR', 'OHT'].includes(imageAppCode);
+	const artworkCode = isOHT ? 'WATER' : imageAppCode;
+	const ohtImage =
+		isOHT && (section === 'sidebar' || section === 'main')
+			? `url("/assets/OHT-LAYOUT-IMAGES/${section}.png")`
+			: null;
 	const folder = artworkCode ? `/assets/${artworkCode}-LAYOUT-IMAGES` : null;
 	const appLayers = folder
 		? [`url("${folder}/${section}.svg")`, `url("${folder}/${section}.png")`]
 		: [];
-	return [tint, ...appLayers, ...defaults].filter(Boolean).join(', ');
+	return [tint, ohtImage, ...appLayers, ...defaults].filter(Boolean).join(', ');
 };
 
 export const layoutBackgroundSx = (section, appCode, mode = 'light') => ({
