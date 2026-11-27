@@ -309,9 +309,10 @@ export const Header = ({
 							>
 								{applications.map((app) => {
 									const appCode = app.code?.toUpperCase();
-									const AppIcon = appCode === 'OHT'
-										? OHTTankIcon
-										: APP_ICONS[appCode] || SensorsIcon;
+									const AppIcon =
+										appCode === 'OHT'
+											? OHTTankIcon
+											: APP_ICONS[appCode] || SensorsIcon;
 									// Each app tab lights up in that app's own identity color
 									// when selected (same palette used on its cards/charts
 									// everywhere else) instead of one generic accent for every

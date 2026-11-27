@@ -208,10 +208,7 @@ export default function OHTTankGraphic({
 						const active = mark === activeMark;
 						const badgeHeight = active ? 18 : 13;
 						return (
-							<g
-								key={mark}
-								data-tank-active-marker={active || undefined}
-							>
+							<g key={mark} data-tank-active-marker={active || undefined}>
 								<path d={`M101 ${y}h6`} stroke="#287da6" />
 								<circle
 									cx="101"
