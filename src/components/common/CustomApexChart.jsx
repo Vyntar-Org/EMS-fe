@@ -466,15 +466,9 @@ const CustomApexChart = ({
 				visibleRight
 			);
 			const availableRight =
-				visibleRight -
-				pointerX -
-				tooltipPointerGap -
-				HOVER_PANEL_EDGE_PADDING;
+				visibleRight - pointerX - tooltipPointerGap - HOVER_PANEL_EDGE_PADDING;
 			const availableLeft =
-				pointerX -
-				visibleLeft -
-				tooltipPointerGap -
-				HOVER_PANEL_EDGE_PADDING;
+				pointerX - visibleLeft - tooltipPointerGap - HOVER_PANEL_EDGE_PADDING;
 
 			let side = hoverPanelSideRef.current;
 			if (side === 'right') {
