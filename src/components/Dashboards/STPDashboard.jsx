@@ -294,12 +294,19 @@ const STPDashboard = () => {
 										yaxis: [
 											{
 												seriesName: historyTrends.series
-													.filter((item) => !String(item?.name || '').toLowerCase().includes('ph'))
+													.filter(
+														(item) =>
+															!String(item?.name || '')
+																.toLowerCase()
+																.includes('ph')
+													)
 													.map((item) => item.name),
 											},
 											{
 												seriesName: historyTrends.series.find((item) =>
-													String(item?.name || '').toLowerCase().includes('ph')
+													String(item?.name || '')
+														.toLowerCase()
+														.includes('ph')
 												)?.name,
 												opposite: true,
 												show: false,
