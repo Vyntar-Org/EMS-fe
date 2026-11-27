@@ -636,6 +636,17 @@ const CustomApexChart = ({
 						pan: false,
 						reset: true,
 					},
+					export: {
+						csv: {
+							categoryFormatter: (value) => {
+								const parsed = smartParseDate(value);
+
+								return parsed
+									? `\u200B${parsed.format('DD MMM YYYY HH:mm:ss')}`
+									: String(value ?? '');
+							},
+						},
+					},
 				},
 				animations: {
 					enabled: animationsEnabled,
