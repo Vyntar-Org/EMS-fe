@@ -333,6 +333,7 @@ const CustomApexChart = ({
 	tickAmount = 6,
 	showToolbar = true,
 	minimal = false, // strips background grid + intermediate ticks down to baseline X/Y axes with only start/end labels
+	tooltipPointerGap = HOVER_PANEL_POINTER_GAP,
 	customOptions = {}, // Only for absolute emergency overrides
 }) => {
 	const chartContainerRef = useRef(null);
@@ -458,12 +459,12 @@ const CustomApexChart = ({
 			const availableRight =
 				visibleRight -
 				pointerX -
-				HOVER_PANEL_POINTER_GAP -
+				tooltipPointerGap -
 				HOVER_PANEL_EDGE_PADDING;
 			const availableLeft =
 				pointerX -
 				visibleLeft -
-				HOVER_PANEL_POINTER_GAP -
+				tooltipPointerGap -
 				HOVER_PANEL_EDGE_PADDING;
 
 			let side = hoverPanelSideRef.current;
@@ -484,8 +485,8 @@ const CustomApexChart = ({
 
 			const idealClientLeft =
 				side === 'right'
-					? pointerX + HOVER_PANEL_POINTER_GAP
-					: pointerX - HOVER_PANEL_POINTER_GAP - hoverPanelWidth;
+					? pointerX + tooltipPointerGap
+					: pointerX - tooltipPointerGap - hoverPanelWidth;
 			const clampedClientLeft = Math.min(
 				Math.max(idealClientLeft, minimumClientLeft),
 				maximumClientLeft
@@ -545,7 +546,7 @@ const CustomApexChart = ({
 			window.visualViewport?.removeEventListener('resize', handleBoundsChange);
 			window.visualViewport?.removeEventListener('scroll', handleBoundsChange);
 		};
-	}, []);
+	}, [tooltipPointerGap]);
 
 	const formatValue = useCallback(
 		(val) => {
@@ -573,7 +574,8 @@ const CustomApexChart = ({
 			// "Mon" and "Wed" are shown unchanged in the tooltip.
 			const xVal =
 				effectiveXAxesType === 'category'
-					? w.globals.labels?.[dataPointIndex] ??
+					? categories?.[dataPointIndex] ??
+					  w.globals.labels?.[dataPointIndex] ??
 					  w.globals.seriesX?.[seriesIndex]?.[dataPointIndex]
 					: w.globals.seriesX?.[seriesIndex]?.[dataPointIndex] ??
 					  w.globals.labels?.[dataPointIndex];
@@ -581,7 +583,13 @@ const CustomApexChart = ({
 			let dateHtml = '';
 			const parsed =
 				effectiveXAxesType === 'datetime' ? smartParseDate(xVal) : null;
-			if (parsed) {
+			if (
+				effectiveXAxesType === 'category' &&
+				typeof xVal === 'string' &&
+				/^\d{1,2}:\d{2}/.test(xVal)
+			) {
+				dateHtml = `<div class="capx-tooltip-date">${dataPointIndex + 1}</div>`;
+			} else if (parsed) {
 				const dateStr = parsed.format('DD MMM YYYY');
 				const istStr = parsed.format('hh:mm:ss A');
 				// Explicit UTC text is intentionally hidden; keep the local timestamp
@@ -610,7 +618,7 @@ const CustomApexChart = ({
 
 			return `<div class="capx-tooltip">${dateHtml}<div class="capx-tooltip-series">${rows}</div></div>`;
 		},
-		[effectiveXAxesType, formatValue]
+		[effectiveXAxesType, categories, formatValue]
 	);
 
 	const baseOptions = useMemo(

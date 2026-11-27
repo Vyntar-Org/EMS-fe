@@ -285,6 +285,7 @@ const STPDashboard = () => {
 									height="100%"
 									meta={historyTrends?.meta}
 									tickAmount={6}
+									tooltipPointerGap={64}
 									customOptions={{
 										chart: { parentHeightOffset: 0 },
 										grid: {
