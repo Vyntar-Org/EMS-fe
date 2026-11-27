@@ -59,8 +59,8 @@ const normalizeApplication = (app) => {
 		...app,
 		code: app.code?.toUpperCase(),
 		pages,
-		sub_apps: Array.isArray(app.sub_apps)
-			? app.sub_apps.map((subApp) => ({
+		sub_applications: Array.isArray(app.sub_applications)
+			? app.sub_applications.map((subApp) => ({
 					...subApp,
 					code: subApp.code?.toUpperCase(),
 					pages: normalizePages(subApp.pages),
@@ -74,7 +74,7 @@ const normalizeApplication = (app) => {
 		return {
 			...normalizedApp,
 			name: 'HVAC',
-			sub_apps: [
+			sub_applications: [
 				{
 					code: 'SOLAR',
 					name: 'Solar',
