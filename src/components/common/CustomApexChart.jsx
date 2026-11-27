@@ -135,12 +135,12 @@ const buildYAxisConfig = (axisOptions, { unit, minimal }) => {
 		...axisOptions,
 		axisBorder: {
 			...axisOptions?.axisBorder,
-			show: true,
+			show: axisOptions?.axisBorder?.show ?? true,
 			color: axisOptions?.axisBorder?.color || 'rgba(145, 158, 171, 0.32)',
 		},
 		axisTicks: {
 			...axisOptions?.axisTicks,
-			show: true,
+			show: axisOptions?.axisTicks?.show ?? true,
 			color: axisOptions?.axisTicks?.color || 'rgba(145, 158, 171, 0.32)',
 		},
 		title: {
@@ -160,7 +160,7 @@ const buildYAxisConfig = (axisOptions, { unit, minimal }) => {
 				...defaultConfig.labels.style,
 				...axisOptions?.labels?.style,
 			},
-			show: true,
+			show: axisOptions?.labels?.show ?? true,
 		},
 	};
 };

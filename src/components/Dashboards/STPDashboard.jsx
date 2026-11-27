@@ -286,7 +286,32 @@ const STPDashboard = () => {
 									meta={historyTrends?.meta}
 									tickAmount={6}
 									customOptions={{
+										chart: { parentHeightOffset: 0 },
+										grid: {
+											padding: { top: 2, right: 20, bottom: 0, left: 14 },
+										},
 										xaxis: { title: { text: 'Time' } },
+										yaxis: [
+											{
+												seriesName: historyTrends.series
+													.filter((item) => !String(item?.name || '').toLowerCase().includes('ph'))
+													.map((item) => item.name),
+											},
+											{
+												seriesName: historyTrends.series.find((item) =>
+													String(item?.name || '').toLowerCase().includes('ph')
+												)?.name,
+												opposite: true,
+												show: false,
+												title: { text: '' },
+												axisBorder: { show: false },
+												axisTicks: { show: false },
+												labels: {
+													show: false,
+													formatter: (value) => formatChartValue(value),
+												},
+											},
+										],
 										responsive: [
 											{
 												breakpoint: 900,
