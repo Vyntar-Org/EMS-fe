@@ -52,6 +52,10 @@ const CompactSecondaryMetricCard = ({
 				justifyContent: 'space-between',
 				minWidth: 0,
 				gap: 0.5,
+				// Lets the value scale with the tile's own height (`cqh`), since
+				// the dashboard splits its column evenly between however many
+				// tiles are visible.
+				containerType: 'size',
 			}}
 		>
 			<Stack direction="row" alignItems="center" gap={0.75} minWidth={0}>
@@ -89,7 +93,9 @@ const CompactSecondaryMetricCard = ({
 			<Typography
 				noWrap
 				fontWeight={800}
-				fontSize={{ xs: '17px', md: '19px' }}
+				// 19px at the standard 4-tile height (unchanged), growing up to
+				// 30px when fewer tiles give each one a taller slot.
+				fontSize={{ xs: '17px', md: 'clamp(19px, 12cqh, 30px)' }}
 				color={accent}
 				lineHeight={1.05}
 			>

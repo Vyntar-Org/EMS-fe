@@ -237,6 +237,12 @@ const WATER_DASHBOARD = {
 		`/applications/water/daily-consumption/?slave_id=${slaveId}`,
 };
 
+// Admin-only management of the dashboard's KPI cards (Settings page).
+const WATER_KPI_CARDS = {
+	WATER_KPI_CARDS: '/applications/water/kpi-cards/',
+	WATER_KPI_CARD_DETAIL: (cardId) => `/applications/water/kpi-cards/${cardId}/`,
+};
+
 const WATER_MACHINE_LIST = {
 	WATER_MACHINE_LIST_DATA: '/applications/water/machine-list/',
 	WATER_MACHINE_LIST_TREND: (slaveId) =>
@@ -354,6 +360,8 @@ const WEATHER_DASHBOARD = {
 		'/applications/weather/dashboard/air-quality-trend/',
 	WEATHER_DASHBOARD_IRRADIANCE:
 		'/applications/weather/dashboard/solar-irradiance-trend/',
+	WEATHER_DASHBOARD_SITE_LOCATION:
+		'/applications/weather/dashboard/site-location/',
 };
 
 const WEATHER_MACHINE_LIST = {
@@ -508,6 +516,7 @@ export const API_URLS = {
 	...SPINNING_LOGS,
 	...SPINNING_ANALYTICS,
 	...WATER_DASHBOARD,
+	...WATER_KPI_CARDS,
 	...WATER_MACHINE_LIST,
 	...WATER_ANALYTICS,
 	...WATER_LOGS,

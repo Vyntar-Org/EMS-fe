@@ -25,8 +25,15 @@ export const pageDisplayInfo = {
 	REPORTS: { name: 'Reports', icon: 'DescriptionIcon' },
 	LOGS: { name: 'Logs', icon: 'HistoryIcon' },
 	ANALYTICS: { name: 'Analytics', icon: 'BarChartIcon' },
-	SETTINGS: { name: 'Settings', icon: 'SettingsIcon' },
 };
+
+// Pages opened from the header's account menu instead of the sidebar. They
+// stay in the app's `pages` list so routing and ProtectedRoute still grant
+// them; only the sidebar leaves them out.
+export const ACCOUNT_MENU_PAGES = ['SETTINGS'];
+
+export const isSidebarPage = (pageCode) =>
+	!ACCOUNT_MENU_PAGES.includes(pageCode);
 
 // Get route path from page code
 export const getPagePath = (pageCode, appCode = '') => {
