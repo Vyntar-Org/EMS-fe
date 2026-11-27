@@ -614,7 +614,9 @@ const CustomApexChart = ({
 					const shiftDay =
 						w.config.series?.[idx]?.data?.[dataPointIndex]?.shiftDay;
 					const shiftLabel = shiftDay
-						? `<span class="capx-tooltip-shift-day">Shift day ${escapeHtml(shiftDay)}</span>`
+						? `<span class="capx-tooltip-shift-day">Shift day ${escapeHtml(
+								shiftDay
+						  )}</span>`
 						: '';
 					return `<div class="capx-tooltip-row"><span class="capx-tooltip-dot" style="background:${color}"></span><span class="capx-tooltip-name">${escapeHtml(
 						name
