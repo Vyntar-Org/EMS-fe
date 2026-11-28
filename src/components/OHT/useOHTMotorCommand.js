@@ -371,21 +371,31 @@ function machineCommand(machines, operation) {
 
 function matchesCommandId(command, commandId) {
 	const id = command?.id ?? command?.command_id;
-	return id !== null && commandId !== null && String(id) === String(commandId);
+	return (
+		id !== undefined &&
+		id !== null &&
+		commandId !== undefined &&
+		commandId !== null &&
+		String(id) === String(commandId)
+	);
 }
 
 export function matchingWaterCommand(machines, operation) {
+	if (!operation) {
+		return null;
+	}
 	const latest = machineCommand(machines, operation);
 	return matchesCommandId(latest, operation.commandId) ? latest : null;
 }
 
 export function waterCommandFailure(operation, command, machines) {
-	if (operation?.commandId === null) {
+	const commandId = operation?.commandId;
+	if (commandId === undefined || commandId === null) {
 		return null;
 	}
 	const statusFailure =
 		command?.status === 'FAILED' &&
-		matchesCommandId(command, operation.commandId)
+		matchesCommandId(command, commandId)
 			? command
 			: null;
 	const latest = matchingWaterCommand(machines, operation);
@@ -661,8 +671,10 @@ export function waterApiError(
 
 export function commandPollInterval(query, operation) {
 	const status = query.state.data?.status;
+	const commandId = operation?.commandId;
 	if (
-		operation?.commandId !== null &&
+		commandId !== undefined &&
+		commandId !== null &&
 		!operation.foregroundExpired &&
 		(!operation.severity || operation.severity === 'success') &&
 		performance.now() < operation.deadline &&
