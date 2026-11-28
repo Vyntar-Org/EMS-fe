@@ -62,13 +62,13 @@ const getCommonDataErrorMessage = (error, fallback) => {
 	return fallback;
 };
 
-const fetchSlaves = async (appName, signal, isWeather) => {
+const fetchSlaves = async (appName, isWeather) => {
 	if (isWeather) {
-		return weatherStationApi.getSlaves({ signal });
+		return weatherStationApi.getSlaves();
 	}
 
 	try {
-		const response = await api.get(API_URLS.SLAVES(appName), { signal });
+		const response = await api.get(API_URLS.SLAVES(appName));
 
 		if (response?.success === false) {
 			throw new Error('Primary slaves API returned an unsuccessful state.');
@@ -76,13 +76,7 @@ const fetchSlaves = async (appName, signal, isWeather) => {
 
 		return getCollection(response, 'slaves');
 	} catch (primaryError) {
-		if (signal.aborted) {
-			throw primaryError;
-		}
-
-		const fallbackResponse = await api.get(API_URLS.SLAVE_LIST(appName), {
-			signal,
-		});
+		const fallbackResponse = await api.get(API_URLS.SLAVE_LIST(appName));
 
 		if (fallbackResponse?.success === false) {
 			throw primaryError;
@@ -92,8 +86,8 @@ const fetchSlaves = async (appName, signal, isWeather) => {
 	}
 };
 
-const fetchParameters = async (appName, signal) => {
-	const response = await api.get(API_URLS.PARAMETERS(appName), { signal });
+const fetchParameters = async (appName) => {
+	const response = await api.get(API_URLS.PARAMETERS(appName));
 
 	if (response?.success === false) {
 		throw new Error('Parameters API returned an unsuccessful state.');
@@ -120,14 +114,17 @@ export const CommonDataContextProvider = ({ children }) => {
 
 	const slavesQuery = useQuery({
 		queryKey: ['common-data', appName, 'slaves'],
-		queryFn: ({ signal }) => fetchSlaves(appName, signal, isWeather),
+		// Shared application data is cached for five minutes and is needed after
+		// navigation/remount. Do not couple this GET to React Query's observer
+		// signal, otherwise route transitions can cancel a valid in-flight request.
+		queryFn: () => fetchSlaves(appName, isWeather),
 		enabled: commonQueryEnabled,
 		staleTime: 5 * 60 * 1000,
 	});
 
 	const parametersQuery = useQuery({
 		queryKey: ['common-data', appName, 'parameters'],
-		queryFn: ({ signal }) => fetchParameters(appName, signal),
+		queryFn: () => fetchParameters(appName),
 		enabled: commonQueryEnabled && hasDynamicParameters,
 		staleTime: 5 * 60 * 1000,
 	});

@@ -1,7 +1,6 @@
 // Independent of backend command acknowledgment timeout.
-export const MOTOR_OPERATION_MAX_MS = 15000;
-export const MOTOR_SUCCESS_DISPLAY_MS = 1200;
-export const MOTOR_FAILURE_DISPLAY_MS = 2500;
+export const COMMAND_TIMEOUT_MS = 60_000;
+export const INLINE_CONTROL_LOADING_MS = 15_000;
 
 export const operationMessages = {
 	requestFailed: 'Unable to send the motor request. Please try again.',
@@ -10,40 +9,17 @@ export const operationMessages = {
 	conflict: 'Another motor operation is in progress. Please wait.',
 	deliveryFailed:
 		'The motor request could not be sent. Please check the device connection.',
-	commandFailed: 'Motor operation failed. Please try again.',
-	unconfirmed: 'Motor is not responding. Please try again.',
+	unconfirmed:
+		'The device response was received, but the final command result could not be confirmed. Please check the latest motor status.',
 };
 
-export function feedbackConfirmsOperation(machine, operation, command) {
-	if (
-		!machine ||
-		!operation ||
-		command?.status !== 'ACKED' ||
-		String(command.id) !== String(operation.commandId)
-	) {
-		return false;
-	}
-	if (
-		String(machine.slave_id) !== String(operation.slaveId) ||
-		machine.device_uid !== operation.deviceUid ||
-		String(machine.status ?? '')
-			.trim()
-			.toUpperCase() !== 'ONLINE'
-	) {
-		return false;
-	}
-	const timestamp = Date.parse(machine.latest_ts);
-	const requestedAt = Date.parse(command.requested_at);
-	const threshold = Number.isFinite(requestedAt)
-		? requestedAt
-		: operation.startedAt;
-	const reading = machine.motor_runstate;
-	const actual = typeof reading === 'boolean' ? Number(reading) : null;
+export function commandErrorMessage(command) {
+	const error = typeof command?.error === 'string' ? command.error.trim() : '';
 	return (
-		actual === operation.action &&
-		Number.isFinite(timestamp) &&
-		timestamp >= threshold &&
-		(!Number.isFinite(operation.baselineTs) || timestamp > operation.baselineTs)
+		error ||
+		(typeof command?.error_message === 'string'
+			? command.error_message.trim()
+			: '')
 	);
 }
 

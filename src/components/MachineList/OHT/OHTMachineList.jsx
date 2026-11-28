@@ -17,7 +17,7 @@ import {
 	Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { useAuth } from '../../../contexts/AuthContext';
 import { formatTimestamp } from '../../../helpers/common';
@@ -30,11 +30,19 @@ import {
 	waterMachineTitle,
 } from '../../../helpers/oht';
 import PremiumModal from '../../common/PremiumModal';
+import {
+	commandErrorMessage,
+	COMMAND_TIMEOUT_MS,
+	INLINE_CONTROL_LOADING_MS,
+} from '../../OHT/motorOperation';
 import { useWaterMonitoringMotorOperations } from '../../OHT/OHTMotorOperations';
 import {
+	commandPollInterval,
 	motorControlReason,
 	motorIdFor,
 	postWaterControlType,
+	observeWaterCommand,
+	waterCommandFailure,
 	waterApiError,
 } from '../../OHT/useOHTMotorCommand';
 import OHTMachineListSkeleton from '../../skeletonLoaders/OHTMachineListSkeleton';
@@ -46,6 +54,14 @@ import {
 import MotorOperationDialog from './MotorOperationDialog';
 import OHTMachineCard from './OHTMachineCard';
 import OHTMachineTrend from './OHTMachineTrend';
+
+const controlTypeUnconfirmed =
+	'The final control type change result could not be confirmed within 60 seconds. Please check the current control setting.';
+
+const MOTOR_FEEDBACK_PENDING = { loading: true };
+
+const inlineControlKey = (deviceUid, slaveId, kind) =>
+	JSON.stringify([deviceUid, String(slaveId), kind]);
 
 const reportColumns = [
 	{ accessorKey: 'deviceUid', header: 'Device UID' },
@@ -86,7 +102,7 @@ export default function OHTMachineList() {
 	const scope = String(
 		user?.id ?? user?.username ?? user?.email ?? 'authenticated'
 	);
-	const listKey = ['water-monitor', scope, 'machine-list'];
+	const listKey = ['water-monitor', scope, 'machine-list-live'];
 	const [search, setSearch] = useState('');
 	const [now, setNow] = useState(Date.now);
 	useEffect(() => {
@@ -96,14 +112,83 @@ export default function OHTMachineList() {
 	const [trendMachine, setTrendMachine] = useState(null);
 	const [confirmation, setConfirmation] = useState(null);
 	const [controlTypeConfirmation, setControlTypeConfirmation] = useState(null);
+	const [controlTypeOperation, setControlTypeOperation] = useState(null);
+	const [controlTypeOutcome, setControlTypeOutcome] = useState(null);
+	const expiredControlTypeDeadline = useRef(null);
 	const dashboard = useQuery({
 		queryKey: listKey,
-		queryFn: ({ signal }) => getWaterMonitoringMachines({ signal }),
+		queryFn: ({ signal }) => getWaterMonitoringMachines({ signal, live: true }),
 		retry: false,
 		refetchOnWindowFocus: true,
 		refetchInterval: 60_000,
 		refetchIntervalInBackground: false,
 	});
+	const [inlineControls, setInlineControls] = useState({});
+	const inlineTimers = useRef(new Map());
+	useEffect(() => {
+		const timers = inlineTimers.current;
+		return () => {
+			for (const { timer } of timers.values()) {
+				clearTimeout(timer);
+			}
+			timers.clear();
+		};
+	}, []);
+
+	function startInlineLoading(outcome, kind) {
+		if (outcome?.severity !== 'success') {
+			return;
+		}
+		const key = inlineControlKey(outcome.deviceUid, outcome.slaveId, kind);
+		const timers = inlineTimers.current;
+		const existing = timers.get(key);
+		if (existing?.commandId === outcome.commandId) {
+			return;
+		}
+		clearTimeout(existing?.timer);
+		setInlineControls((current) => ({
+			...current,
+			[key]: {
+				commandId: outcome.commandId,
+				action: outcome.action,
+				loading: true,
+			},
+		}));
+		const timer = setTimeout(async () => {
+			setInlineControls((current) => ({
+				...current,
+				[key]: { ...current[key], loading: false },
+			}));
+			await dashboard.refetch();
+			if (timers.get(key)?.timer !== timer) {
+				return;
+			}
+			timers.delete(key);
+			setInlineControls((current) => {
+				const next = { ...current };
+				delete next[key];
+				return next;
+			});
+		}, INLINE_CONTROL_LOADING_MS);
+		timers.set(key, { timer, commandId: outcome.commandId });
+	}
+
+	function inlineControlFor(machine, kind) {
+		const { device_uid: deviceUid, slave_id: slaveId } = machine;
+		const inline = inlineControls[inlineControlKey(deviceUid, slaveId, kind)];
+		if (!inline) {
+			return undefined;
+		}
+		const statusCommand =
+			kind === 'motor' ? controls[deviceUid]?.command : null;
+		const failure = waterCommandFailure(
+			{ ...inline, deviceUid, slaveId },
+			statusCommand,
+			[machine]
+		);
+		return failure ? undefined : inline;
+	}
+
 	const { register, controls } = useWaterMonitoringMotorOperations();
 	const controlTypeChange = useMutation({
 		mutationFn: ({ machine, controlType }) => {
@@ -123,12 +208,204 @@ export default function OHTMachineList() {
 				controlType,
 			});
 		},
-		onSuccess: async () => {
-			await dashboard.refetch();
-			setControlTypeConfirmation(null);
-		},
 		retry: false,
 	});
+	const watchedControlType = controlTypeOperation ?? controlTypeOutcome;
+	const controlTypeStatus = useQuery({
+		queryKey: [
+			'water-monitor',
+			scope,
+			'control-type-command',
+			watchedControlType?.deviceUid,
+			watchedControlType?.commandId,
+		],
+		queryFn: ({ queryKey, signal }) =>
+			observeWaterCommand({
+				client: queryClient,
+				listKey,
+				queryKey,
+				commandId: watchedControlType.commandId,
+				deviceUid: watchedControlType.deviceUid,
+				operation: watchedControlType,
+				signal,
+			}),
+		enabled: watchedControlType?.commandId !== undefined,
+		refetchInterval: (query) => commandPollInterval(query, watchedControlType),
+		refetchIntervalInBackground: false,
+		retry: false,
+	});
+	const controlTypeCommand = controlTypeStatus.data;
+	const controlTypePending = Boolean(controlTypeOperation);
+
+	function motorUpdateFor(machine) {
+		const motorInline = inlineControlFor(machine, 'motor');
+		const controlTypeInline = inlineControlFor(machine, 'control-type');
+		const switchingToUserControl =
+			controlTypeOperation?.action === 0 &&
+			!controlTypeOperation.foregroundExpired &&
+			controlTypeOperation.deviceUid === machine.device_uid &&
+			controlTypeOperation.slaveId === machine.slave_id;
+
+		if (switchingToUserControl) {
+			return MOTOR_FEEDBACK_PENDING;
+		}
+		return (
+			motorInline ??
+			(controlTypeInline?.action === 0 ? controlTypeInline : undefined)
+		);
+	}
+
+	function finishControlType(operation, outcome) {
+		setControlTypeOperation(null);
+		if (
+			!operation.foregroundExpired &&
+			performance.now() < operation.deadline
+		) {
+			setControlTypeOutcome({ ...operation, ...outcome });
+		} else if (!operation.foregroundExpired) {
+			setControlTypeOutcome({
+				...operation,
+				severity: 'warning',
+				message: controlTypeUnconfirmed,
+			});
+		}
+	}
+
+	const controlTypeFailure = waterCommandFailure(
+		watchedControlType,
+		controlTypeCommand,
+		dashboard.data?.machines
+	);
+	const failedControlType = controlTypeFailure && {
+		...watchedControlType,
+		severity: 'error',
+		message:
+			'The controller could not process your control type change request.',
+		reason:
+			commandErrorMessage(controlTypeFailure) ||
+			controlTypeOutcome?.reason ||
+			'',
+	};
+	const controlTypeResult =
+		controlTypeOutcome?.severity === 'success' && failedControlType
+			? failedControlType
+			: controlTypeOutcome;
+	useEffect(() => {
+		if (
+			controlTypeFailure &&
+			!commandErrorMessage(controlTypeFailure) &&
+			controlTypeCommand?.status !== 'FAILED'
+		) {
+			controlTypeStatus.refetch({ cancelRefetch: false });
+		}
+		if (
+			controlTypeOutcome &&
+			failedControlType &&
+			(controlTypeOutcome.severity === 'success' ||
+				(controlTypeOutcome.severity === 'error' &&
+					controlTypeOutcome.reason !== failedControlType.reason))
+		) {
+			setControlTypeOutcome(failedControlType);
+		}
+		if (!controlTypeOperation) {
+			return;
+		}
+		const operation = controlTypeOperation;
+		if (failedControlType) {
+			finishControlType(operation, failedControlType);
+			return;
+		}
+		if (
+			!controlTypeCommand ||
+			String(controlTypeCommand.id) !== String(operation.commandId)
+		) {
+			return;
+		}
+		if (controlTypeCommand.status === 'TIMED_OUT') {
+			finishControlType(operation, {
+				severity: 'warning',
+				message:
+					'The controller did not acknowledge your control type change before the backend timed out. Please check the current control setting before trying again.',
+			});
+		} else if (controlTypeCommand.status === 'ACKED') {
+			if (operation.foregroundExpired) {
+				setControlTypeOperation(null);
+			} else if (controlTypeCommand.acknowledgmentVerified) {
+				finishControlType(operation, { severity: 'success' });
+			}
+		}
+	}, [
+		controlTypeOperation,
+		controlTypeOutcome,
+		controlTypeCommand,
+		controlTypeFailure,
+		failedControlType?.reason,
+	]);
+
+	useEffect(() => {
+		if (!controlTypeOperation) {
+			return;
+		}
+		const timer = setTimeout(
+			() => {
+				expiredControlTypeDeadline.current = controlTypeOperation.deadline;
+				setControlTypeOutcome({
+					...controlTypeOperation,
+					severity: 'warning',
+					message: controlTypeUnconfirmed,
+				});
+				setControlTypeOperation(
+					(current) => current && { ...current, foregroundExpired: true }
+				);
+			},
+			Math.max(0, controlTypeOperation.deadline - performance.now())
+		);
+		return () => clearTimeout(timer);
+	}, [controlTypeOperation?.deadline]);
+
+	function dismissControlTypeOutcome() {
+		startInlineLoading(controlTypeResult, 'control-type');
+		setControlTypeOutcome(null);
+		dashboard.refetch();
+	}
+
+	async function submitControlType(machine, confirmation) {
+		const operation = {
+			...confirmation,
+			deadline: performance.now() + COMMAND_TIMEOUT_MS,
+		};
+		setControlTypeConfirmation(null);
+		setControlTypeOperation(operation);
+		try {
+			const command = await controlTypeChange.mutateAsync({
+				machine,
+				controlType: operation.action,
+			});
+			if (!command) {
+				throw new Error('The control type response did not include a command.');
+			}
+			setControlTypeOperation(
+				(current) => current && { ...current, commandId: command.id }
+			);
+		} catch (error) {
+			setControlTypeOperation(null);
+			if (performance.now() < operation.deadline) {
+				setControlTypeOutcome({
+					...operation,
+					severity: 'error',
+					message:
+						'The controller could not process your control type change request.',
+					reason: waterApiError(error, '').trim(),
+				});
+			} else if (expiredControlTypeDeadline.current !== operation.deadline) {
+				setControlTypeOutcome({
+					...operation,
+					severity: 'warning',
+					message: controlTypeUnconfirmed,
+				});
+			}
+		}
+	}
 	function canChangeControlType(machine, controlType) {
 		if (!machine) {
 			return false;
@@ -140,10 +417,12 @@ export default function OHTMachineList() {
 			machine.control_type_switchable !== true ||
 			![0, 1].includes(controlType) ||
 			controlType === machine.control_type ||
+			inlineControlFor(machine, 'control-type') ||
 			!machine.device_uid ||
 			motorIdFor(machine) === null ||
 			dashboard.isError ||
-			controlTypeChange.isPending ||
+			controlTypePending ||
+			controlTypeOutcome ||
 			confirmation ||
 			control?.locked ||
 			control?.blockedReason
@@ -158,6 +437,8 @@ export default function OHTMachineList() {
 			setConfirmation(null);
 		}
 	}, [operationToken]);
+	const controlTypeDevice = (controlTypeOperation ?? controlTypeOutcome)
+		?.deviceUid;
 	useEffect(() => {
 		const entries = {};
 		for (const machine of dashboard.data?.machines ?? []) {
@@ -169,13 +450,17 @@ export default function OHTMachineList() {
 				deviceUid: uid,
 				machines: [],
 				scope,
-				listKey: ['water-monitor', scope, 'machine-list'],
+				listKey: ['water-monitor', scope, 'machine-list-live'],
 				failed: dashboard.isError,
+				deferListRefresh: uid === controlTypeDevice,
 			};
+			entries[uid].deferListRefresh ||= Boolean(
+				inlineControlFor(machine, 'control-type')
+			);
 			entries[uid].machines.push(machine);
 		}
 		register(entries);
-	}, [register, scope, dashboard.data, dashboard.isError]);
+	}, [register, scope, dashboard.data, dashboard.isError, controlTypeDevice]);
 	const allMachines = dashboard.data?.machines ?? [];
 	const controlTypeTarget =
 		controlTypeConfirmation &&
@@ -203,7 +488,10 @@ export default function OHTMachineList() {
 		} else {
 			const state = waterMachineState(target, { now });
 			confirmationReason = motorControlReason(target, state, {
-				locked: targetControl.locked || controlTypeChange.isPending,
+				locked:
+					targetControl.locked ||
+					controlTypePending ||
+					Boolean(motorUpdateFor(target)),
 				failed: dashboard.isError,
 				blockedReason: targetControl.blockedReason,
 			});
@@ -390,7 +678,13 @@ export default function OHTMachineList() {
 				{dashboard.isError && (
 					<Alert
 						severity="error"
-						action={<Button onClick={() => dashboard.refetch()}>Retry</Button>}
+						action={
+							<Button
+								onClick={() => dashboard.refetch({ cancelRefetch: false })}
+							>
+								Retry
+							</Button>
+						}
 					>
 						{waterApiError(dashboard.error, 'Unable to load machines.')}
 					</Alert>
@@ -403,10 +697,13 @@ export default function OHTMachineList() {
 							<OHTMachineCard
 								key={JSON.stringify([scope, machine.slave_id])}
 								machine={machine}
+								scope={scope}
 								now={now}
 								failed={dashboard.isError}
 								commandControl={controls[machine.device_uid]}
-								controlTypePending={controlTypeChange.isPending}
+								motorInline={motorUpdateFor(machine)}
+								controlTypeInline={inlineControlFor(machine, 'control-type')}
+								controlTypePending={controlTypePending}
 								controlTypeBlocked={
 									Boolean(confirmation) || motorIdFor(machine) === null
 								}
@@ -466,51 +763,48 @@ export default function OHTMachineList() {
 							targetControl.submit(target, confirmation.action);
 						}
 					}}
-					onClose={
-						pendingDialog?.dismissDialog ?? (() => setConfirmation(null))
-					}
-					onRefresh={pendingDialog?.refreshStatus}
-				/>
-			)}
-			{controlTypeConfirmation && !pendingDialog && (
-				<MotorOperationDialog
-					controlType
-					confirmation={controlTypeConfirmation}
-					operation={
-						controlTypeChange.isPending ? controlTypeConfirmation : undefined
-					}
-					confirmationReason={
-						canConfirmControlType
-							? ''
-							: 'You can’t change the control type right now.'
-					}
-					requestError={
-						controlTypeChange.isError
-							? waterApiError(
-									controlTypeChange.error,
-									'Couldn’t change the motor control type.'
-							  )
-							: ''
-					}
-					onConfirm={() => {
-						if (
-							canChangeControlType(
-								controlTypeTarget,
-								controlTypeConfirmation.action
-							)
-						) {
-							controlTypeChange.mutate({
-								machine: controlTypeTarget,
-								controlType: controlTypeConfirmation.action,
-							});
+					onClose={() => {
+						if (pendingDialog) {
+							startInlineLoading(pendingDialog.dialog, 'motor');
+							pendingDialog.dismissDialog();
+						} else {
+							setConfirmation(null);
 						}
 					}}
-					onClose={() => {
-						controlTypeChange.reset();
-						setControlTypeConfirmation(null);
-					}}
 				/>
 			)}
+			{(controlTypeConfirmation ||
+				controlTypeOutcome ||
+				(controlTypeOperation && !controlTypeOperation.foregroundExpired)) &&
+				!pendingDialog && (
+					<MotorOperationDialog
+						controlType
+						confirmation={controlTypeConfirmation}
+						operation={controlTypeResult ?? controlTypeOperation}
+						confirmationReason={
+							canConfirmControlType
+								? ''
+								: 'You can’t change the control type right now.'
+						}
+						onConfirm={() => {
+							if (
+								canChangeControlType(
+									controlTypeTarget,
+									controlTypeConfirmation.action
+								)
+							) {
+								submitControlType(controlTypeTarget, controlTypeConfirmation);
+							}
+						}}
+						onClose={() => {
+							controlTypeChange.reset();
+							setControlTypeConfirmation(null);
+							if (controlTypeOutcome) {
+								dismissControlTypeOutcome();
+							}
+						}}
+					/>
+				)}
 		</MachineListSurface>
 	);
 }

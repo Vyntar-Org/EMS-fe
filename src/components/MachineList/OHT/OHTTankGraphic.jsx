@@ -218,6 +218,7 @@ export default function OHTTankGraphic({
 									stroke="#276084"
 								/>
 								<rect
+									data-water-ui={active ? undefined : 'tank-scale-badge'}
 									x={active ? 104 : 107}
 									y={y - badgeHeight / 2}
 									width={active ? 38 : 32}

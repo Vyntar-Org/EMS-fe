@@ -1,14 +1,15 @@
 import {
 	TouchAppRounded,
 	ArrowDownwardRounded,
+	ArrowUpwardRounded,
 	InfoOutlined,
 	MemoryRounded,
 	WarningRounded,
+	WaterDropRounded,
 	WifiOffRounded,
-	PersonOutlineRounded,
+	EngineeringRounded,
 	SettingsRounded,
 	SpeedRounded,
-	StorageRounded,
 	WavesRounded,
 } from '@mui/icons-material';
 import { Box, ButtonBase, Tooltip, Typography } from '@mui/material';
@@ -23,13 +24,16 @@ import {
 import PremiumMachineCard from '../../common/PremiumMachineCard';
 import OHTTankIcon from '../../OHT/OHTTankIcon';
 
+import InlineControlStatus from './InlineControlStatus';
 import OHTMachineSummary from './OHTMachineSummary';
 import OHTMetric from './OHTMetric';
 import OHTMotorControl from './OHTMotorControl';
 import OHTTankGraphic from './OHTTankGraphic';
+import { LevelControlIcon, TotalizerIcon } from './WaterControlIcons';
 
 const OHTMachineCard = memo(function OHTMachineCard({
 	machine,
+	scope,
 	now,
 	staleAfter,
 	failed,
@@ -38,6 +42,8 @@ const OHTMachineCard = memo(function OHTMachineCard({
 	preview = false,
 	commandControl,
 	controlTypePending,
+	controlTypeInline,
+	motorInline,
 	controlTypeBlocked,
 	onControlTypeChange,
 	onMotorRequest,
@@ -67,10 +73,12 @@ const OHTMachineCard = memo(function OHTMachineCard({
 		controlTypeReason = 'Refresh the machine list to try again.';
 	} else if (controlTypePending) {
 		controlTypeReason = 'Sending the control type change…';
+	} else if (controlTypeInline) {
+		controlTypeReason = 'Updating control type...';
 	} else if (commandControl?.blockedReason) {
 		controlTypeReason =
 			'The server has blocked remote control for this device.';
-	} else if (commandControl?.locked) {
+	} else if (commandControl?.locked || motorInline) {
 		controlTypeReason =
 			'You can change the control type once the previous motor command is resolved.';
 	} else if (
@@ -101,9 +109,15 @@ const OHTMachineCard = memo(function OHTMachineCard({
 				status={status}
 				statusLabel={status.toUpperCase()}
 				statusColor={
-					status === 'Online' || status === 'Offline'
-						? undefined
-						: theme.palette.text.secondary
+					status === 'Online'
+						? theme.palette.mode === 'dark'
+							? theme.palette.success.main
+							: undefined
+						: status === 'Offline'
+						  ? theme.palette.mode === 'dark'
+								? theme.palette.error.main
+								: undefined
+						  : theme.palette.text.secondary
 				}
 				lastUpdated={
 					Number.isFinite(state.timestamp)
@@ -147,7 +161,7 @@ const OHTMachineCard = memo(function OHTMachineCard({
 										: machine.totalizer_change_pct ?? null
 								}
 								comparisonLabel="vs. one hour ago"
-								labelIcon={<StorageRounded />}
+								labelIcon={<TotalizerIcon />}
 								previous={
 									state.unavailable ? null : machine.previous?.totalizer
 								}
@@ -189,7 +203,12 @@ const OHTMachineCard = memo(function OHTMachineCard({
 						</Box>
 						<Box data-water-ui="control-type">
 							<Typography data-water-ui="status-label">
-								Control Type
+								<InlineControlStatus
+									loading={controlTypeInline?.loading}
+									message="Updating control type..."
+								>
+									Control Type
+								</InlineControlStatus>
 								<Tooltip
 									title="User Control switches the motor manually. Level Control runs it based on water level."
 									describeChild
@@ -220,11 +239,12 @@ const OHTMachineCard = memo(function OHTMachineCard({
 										</Box>
 									)}
 									{[
-										[0, 'User Control', PersonOutlineRounded],
-										[1, 'Level Control', WavesRounded],
+										[0, 'User', EngineeringRounded],
+										[1, 'Level', LevelControlIcon],
 									].map(([value, label, Icon]) => (
 										<ButtonBase
 											key={value}
+											data-water-ui="control-type-option"
 											data-active={machine.control_type === value}
 											aria-pressed={machine.control_type === value}
 											disabled={controlTypeDisabled}
@@ -234,7 +254,12 @@ const OHTMachineCard = memo(function OHTMachineCard({
 												}
 											}}
 										>
-											<Icon /> {label}
+											<Icon aria-hidden="true" />
+											<span>
+												{label}
+												<br />
+												Control
+											</span>
 										</ButtonBase>
 									))}
 								</Box>
@@ -242,12 +267,14 @@ const OHTMachineCard = memo(function OHTMachineCard({
 						</Box>
 					</Box>
 					<OHTMotorControl
+						scope={scope}
 						machine={machine}
 						state={state}
 						title={title}
 						preview={preview}
 						control={commandControl}
 						controlTypePending={controlTypePending}
+						inline={motorInline}
 						failed={failed}
 						onRequest={onMotorRequest}
 					/>
@@ -264,35 +291,65 @@ const OHTMachineCard = memo(function OHTMachineCard({
 									<MemoryRounded /> Motor feedback:{' '}
 									{state.motor === 'Unknown'
 										? 'Unavailable'
-										: `${state.motor} (last reported)`}
+										: `${
+												state.motor === 'Stopped' ? 'Stop' : state.motor
+										  } (last reported)`}
 								</Typography>
 							</Box>
 						</Box>
 					)}
 					{machine.alerts?.map((alert) => {
 						const label = alert.replaceAll('_', ' ');
+						const levelLabel = label.trim().toLowerCase();
 						const lowLevel = ['low level', 'low water level'].includes(
-							label.trim().toLowerCase()
+							levelLabel
+						);
+						const highLevel = ['high level', 'high water level'].includes(
+							levelLabel
 						);
 						if (status === 'Offline' && lowLevel) {
 							return null;
 						}
 						return (
-							<Box key={alert} data-water-ui="tank-alert">
-								<WarningRounded data-water-ui="alert-icon" />
+							<Box
+								key={alert}
+								data-water-ui={
+									highLevel ? 'tank-alert high-level-alert' : 'tank-alert'
+								}
+							>
+								{highLevel ? (
+									<Box data-water-ui="high-level-icon" aria-hidden="true">
+										<WaterDropRounded />
+									</Box>
+								) : (
+									<WarningRounded data-water-ui="alert-icon" />
+								)}
 								<Box data-water-ui="notice-copy">
 									<Typography data-water-ui="notice-title">
-										{lowLevel ? 'Low Water Level' : label}
+										{highLevel
+											? 'High Water Level'
+											: lowLevel
+											  ? 'Low Water Level'
+											  : label}
 									</Typography>
 									{lowLevel && (
 										<Typography data-water-ui="notice-detail">
 											Tank level is critically low
 										</Typography>
 									)}
+									{highLevel && (
+										<Typography data-water-ui="notice-detail">
+											Tank level is above the high-level threshold
+										</Typography>
+									)}
 								</Box>
-								{lowLevel && (
-									<Box data-water-ui="level-symbol">
-										<ArrowDownwardRounded />
+								{(lowLevel || highLevel) && (
+									<Box data-water-ui="level-symbol" aria-hidden="true">
+										{highLevel ? (
+											<ArrowUpwardRounded />
+										) : (
+											<ArrowDownwardRounded />
+										)}
 										<WavesRounded />
 									</Box>
 								)}
